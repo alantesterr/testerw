@@ -396,3 +396,5 @@ Object.assign(SP.I18N.en, {
   'settings.font.xl': 'Very large', 'settings.font.xxl': 'Huge'
 });
 Object.assign(SP.I18N.en, { 'schedule.roomInFolder': 'Room and teacher are in the subject folder', 'subjects.lessons': 'Classes and rooms' });
+
+Object.assign(SP.I18N.en, { 'schedule.custom': 'Block size', 'schedule.blockW': 'Width', 'schedule.blockH': 'Height', 'schedule.auto': 'auto', 'schedule.reset': 'Reset' });

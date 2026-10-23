@@ -829,3 +829,5 @@ Object.assign(SP.I18N.ru, {
   'settings.font.xl': 'Очень большой', 'settings.font.xxl': 'Огромный'
 });
 Object.assign(SP.I18N.ru, { 'schedule.roomInFolder': 'Кабинет и преподаватель — в папке предмета', 'subjects.lessons': 'Занятия и кабинеты' });
+
+Object.assign(SP.I18N.ru, { 'schedule.custom': 'Размер блоков', 'schedule.blockW': 'Ширина', 'schedule.blockH': 'Высота', 'schedule.auto': 'авто', 'schedule.reset': 'Сбросить' });

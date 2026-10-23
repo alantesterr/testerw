@@ -110,8 +110,13 @@
     var opts = '';
     for (var w = -20; w <= 20; w++) { var m = monday(w); opts += '<option value="' + w + '"' + (w === weekOff ? ' selected' : '') + '>' + p2(m.getDate()) + '-' + p2(m.getMonth() + 1) + '-' + m.getFullYear() + '</option>'; }
     var h = '<div class="tt-wrap"><div class="tt-form"><select id="ttWeek" aria-label="' + esc(SP.t('schedule.weekOf')) + '">' + opts + '</select><button type="button" id="ttGo" class="tt-btn">' + esc(SP.t('schedule.select')) + '</button>' +
-      '<div class="tt-zm"><button type="button" class="tt-btn" data-z="-10" aria-label="−">−</button><input type="range" id="ttZoom" min="50" max="200" step="5" value="' + ttZ() + '" aria-label="Zoom"><button type="button" class="tt-btn" data-z="10" aria-label="+">+</button><span id="ttZv">' + ttZ() + '%</span></div></div>' +
-      '<div class="tt-scroll"><div class="tt-zoom" style="zoom:' + (ttZ() / 100) + '"><table class="tt-table"><tbody><tr><td class="tt-corner"></td>';
+      '<div class="tt-zm"><button type="button" class="tt-btn" data-z="-5" aria-label="−">−</button><input type="range" id="ttZoom" min="30" max="250" step="1" value="' + ttZ() + '" aria-label="Zoom"><button type="button" class="tt-btn" data-z="5" aria-label="+">+</button><span id="ttZv">' + ttZ() + '%</span>' +
+      '<button type="button" class="tt-btn" id="ttCust" aria-expanded="' + !!ui.ttOpen + '">' + SP.icon('settings', 'ic-sm') + '<span>' + esc(SP.t('schedule.custom')) + '</span></button></div></div>' +
+      '<div class="tt-cust"' + (ui.ttOpen ? '' : ' hidden') + '>' +
+      '<label>' + esc(SP.t('schedule.blockW')) + ' <input type="range" id="ttW" min="0" max="320" step="1" value="' + (ui.ttw || 0) + '"><span id="ttWv">' + (ui.ttw ? ui.ttw + 'px' : SP.t('schedule.auto')) + '</span></label>' +
+      '<label>' + esc(SP.t('schedule.blockH')) + ' <input type="range" id="ttH" min="40" max="200" step="1" value="' + (ui.tth || 88) + '"><span id="ttHv">' + (ui.tth || 88) + 'px</span></label>' +
+      '<button type="button" class="tt-btn" id="ttReset">' + esc(SP.t('schedule.reset')) + '</button></div>' +
+      '<div class="tt-scroll"><div class="tt-zoom" style="zoom:' + (ttZ() / 100) + ';' + ttVars() + '"><table class="tt-table' + (ui.ttw ? ' tt-fixed' : '') + '"><tbody><tr><td class="tt-corner"></td>';
     for (var i = 0; i < 6; i++) h += '<td class="tt-head' + (i === td ? ' tt-today' : '') + '"><b>' + esc(SP.t(DAY_KEYS[i])) + '</b><br>' + fmtDM(addDays(mon, i)) + '</td>';
     h += '</tr>';
     slots.forEach(function (s) {
@@ -121,7 +126,7 @@
           var x = info(l);
           return '<button type="button" class="tt-l ' + kindCls(x.ab) + '" data-sid="' + esc(x.sid) + '" title="' + esc(SP.t('schedule.openFolder')) + '">' +
             '<b>' + esc(x.name) + '</b>' + (x.ab ? ' <span class="tt-ab">' + esc(x.ab) + '</span>' : '') +
-            (x.room || x.building ? '<span class="tt-line">' + esc(x.room) + (x.building ? ' (' + esc(x.building) + ')' : '') + '</span>' : '') +
+            (x.room || x.building ? '<span class="tt-line">' + esc(ttRoom(x.room)) + (x.building ? ' (' + esc(ttBld(x.building)) + ')' : '') + '</span>' : '') +
             (x.teacher ? '<span class="tt-line">' + esc(x.teacher) + '</span>' : '') + '</button>';
         }).join('') + '</td>';
       }
@@ -129,9 +134,25 @@
     });
     return h + '</tbody></table></div></div></div>';
   }
-  function ttZ() { var z = +(ui.ttz || 100); return z >= 50 && z <= 200 ? z : 100; }
+  /* Timetable: «Актовый зал (302)» → «302», «223 (спортзал)» → «223», «Главный корпус» → «Главка» */
+  function ttRoom(r) {
+    r = String(r || ''); var m = r.match(/\((\d[\w\-\/]*)\)/);
+    if (m && !/^\d/.test(r)) return m[1];
+    return /^\d/.test(r) ? r.replace(/\s*\([^)]*\)/g, '').trim() : r;
+  }
+  function ttBld(b) { return /^главный корпус$/i.test(String(b).trim()) ? 'Главка' : b; }
+  function ttVars() { return (ui.ttw ? '--tt-cw:' + ui.ttw + 'px;' : '') + '--tt-ch:' + (ui.tth || 88) + 'px'; }
+  function applyTtVars() {
+    var zw = SP.$('.tt-zoom', root), t = SP.$('.tt-table', root); if (!zw) return;
+    zw.style.setProperty('--tt-ch', (ui.tth || 88) + 'px');
+    if (ui.ttw) zw.style.setProperty('--tt-cw', ui.ttw + 'px'); else zw.style.removeProperty('--tt-cw');
+    t.classList.toggle('tt-fixed', !!ui.ttw);
+    SP.$('#ttWv', root).textContent = ui.ttw ? ui.ttw + 'px' : SP.t('schedule.auto');
+    SP.$('#ttHv', root).textContent = (ui.tth || 88) + 'px';
+  }
+  function ttZ() { var z = +(ui.ttz || 100); return z >= 30 && z <= 250 ? z : 100; }
   function setTtZ(z) {
-    z = Math.max(50, Math.min(200, Math.round(z / 5) * 5)); ui.ttz = z; saveUI();
+    z = Math.max(30, Math.min(250, Math.round(z))); ui.ttz = z; saveUI();
     var zw = SP.$('.tt-zoom', root), r = SP.$('#ttZoom', root), v = SP.$('#ttZv', root);
     if (zw) zw.style.zoom = z / 100; if (r) r.value = z; if (v) v.textContent = z + '%';
   }
@@ -224,6 +245,10 @@
     SP.$$('[data-lid]', root).forEach(function (b) { b.onclick = function () { detail = SP.hub.data().schedule[+b.getAttribute('data-lid')] || null; render(); var k = q('#shkBack'); if (k) k.focus(); window.scrollTo(0, 0); }; });
     var bk = q('#shkBack'); if (bk) bk.onclick = function () { detail = null; render(); };
     var zr = q('#ttZoom'); if (zr) zr.oninput = function () { setTtZ(+zr.value); };
+    var tc = q('#ttCust'); if (tc) tc.onclick = function () { ui.ttOpen = !ui.ttOpen; saveUI(); q('.tt-cust').hidden = !ui.ttOpen; tc.setAttribute('aria-expanded', ui.ttOpen); };
+    var tw = q('#ttW'); if (tw) tw.oninput = function () { ui.ttw = +tw.value < 60 ? 0 : +tw.value; saveUI(); applyTtVars(); };
+    var th = q('#ttH'); if (th) th.oninput = function () { ui.tth = +th.value; saveUI(); applyTtVars(); };
+    var trs = q('#ttReset'); if (trs) trs.onclick = function () { ui.ttw = 0; ui.tth = 88; ui.ttz = 100; saveUI(); render(); };
     SP.$$('[data-z]', root).forEach(function (b) { b.onclick = function () { setTtZ(ttZ() + +b.getAttribute('data-z')); }; });
     var tg = q('#ttGo'); if (tg) tg.onclick = function () { weekOff = +q('#ttWeek').value; render(); };
     var sd = q('#shkDate'); if (sd) { var d0 = addDays(monday(weekOff), dayIdx || 0); sd.value = d0.getFullYear() + '-' + p2(d0.getMonth() + 1) + '-' + p2(d0.getDate()); sd.onchange = function () { goDate(sd.value); }; }

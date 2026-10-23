@@ -292,15 +292,25 @@
 .tt-zm .tt-btn { min-width: 2.25rem; padding-inline: 0.5rem; }
 .tt-zm input[type=range] { width: 9rem; accent-color: var(--accent); }
 .tt-zm span { min-width: 3rem; color: var(--text-2); font-variant-numeric: tabular-nums; }
-.tt-table { width: 62.5rem; min-width: 0; }
-.tt-table td.tt-head, .tt-table td.tt-cell { width: 9.5rem; }
+.tt-table.tt-fixed { width: calc(5.5rem + 6 * var(--tt-cw)); min-width: 0; }
+.tt-table.tt-fixed td.tt-head, .tt-table.tt-fixed td.tt-cell { width: var(--tt-cw); }
+.tt-zoom .tt-cell { height: var(--tt-ch, 5.5rem); }
+.tt-cust { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-5); margin-bottom: var(--sp-3); padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
+.tt-cust[hidden] { display: none; }
+.tt-cust label { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--text-2); font-size: var(--fs-sm); }
+.tt-cust input[type=range] { width: 9rem; accent-color: var(--accent); }
+.tt-cust span { min-width: 3.5rem; font-variant-numeric: tabular-nums; }
+.tt-zm { flex-wrap: wrap; }
 
 /* Шокан: карточка занятия */
 .shk-det { display: flex; flex-direction: column; gap: var(--sp-3); max-width: 40rem; }
 .shk-back { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; background: none; border: 0; color: var(--accent-text); font-size: 1.125rem; padding: var(--sp-2) 0; cursor: pointer; }
 .shk-back:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--r-sm); }
 .shk-det-kind { color: var(--accent-text); font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.03em; margin-top: var(--sp-2); }
-.shk-det-name { margin: 0; font-size: 1.375rem; font-weight: 700; }
+.shk-det-name { margin: 0; color: var(--text); font-size: 1.375rem; font-weight: 700; }
 .shk-det-list { list-style: none; margin: 0; padding: 0; }
 .shk-det-list li { padding: 0.9rem 0; border-bottom: 1px solid var(--border); color: var(--text); }
 .shk-det-go { align-self: flex-start; margin-top: var(--sp-3); }
+.shk-det { box-sizing: border-box; width: 100%; max-width: 40rem; min-width: 0; padding: 0 1.5rem var(--sp-5) 1.75rem; overflow-wrap: anywhere; }
+.shk-det-list li { overflow-wrap: anywhere; }
+.shk-det-go { max-width: 100%; white-space: normal; }

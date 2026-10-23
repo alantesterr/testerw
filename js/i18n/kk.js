@@ -396,3 +396,5 @@ Object.assign(SP.I18N.kk, {
   'settings.font.xl': 'Өте үлкен', 'settings.font.xxl': 'Орасан'
 });
 Object.assign(SP.I18N.kk, { 'schedule.roomInFolder': 'Кабинет пен оқытушы — пән папкасында', 'subjects.lessons': 'Сабақтар мен кабинеттер' });
+
+Object.assign(SP.I18N.kk, { 'schedule.custom': 'Блок өлшемі', 'schedule.blockW': 'Ені', 'schedule.blockH': 'Биіктігі', 'schedule.auto': 'авто', 'schedule.reset': 'Қалпына келтіру' });

@@ -1,0 +1,18 @@
+# Служебное
+.DS_Store
+Thumbs.db
+*.log
+
+# Редакторы
+.vscode/
+.idea/
+
+# Временные и личные файлы (не публикуйте свои пароли и свои выгрузки!)
+*.tmp
+*.bak
+accounts.json
+platonus-journal*.json
+studyplay-backup*.json
+
+# Node (на случай, если добавите инструменты сборки — сейчас они не нужны)
+node_modules/

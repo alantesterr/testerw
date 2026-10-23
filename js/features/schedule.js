@@ -11,7 +11,7 @@
   var SP = window.SP, esc = SP.esc;
   var UI_KEY = 'sp-schedule-ui2';
   var ui = Object.assign({ mode: 'timetable', view: window.innerWidth < 768 ? 'day' : 'week' }, SP.store.get(UI_KEY, {}));
-  var weekOff = 0, dayIdx = null, root = null, updDismissed = false;
+  var weekOff = 0, dayIdx = null, root = null, updDismissed = false, detail = null;
   var DAY_KEYS = ['day.mon', 'day.tue', 'day.wed', 'day.thu', 'day.fri', 'day.sat'];
 
   function saveUI() { SP.store.set(UI_KEY, ui); }
@@ -109,8 +109,9 @@
     var mon = monday(weekOff), slots = allSlots();
     var opts = '';
     for (var w = -20; w <= 20; w++) { var m = monday(w); opts += '<option value="' + w + '"' + (w === weekOff ? ' selected' : '') + '>' + p2(m.getDate()) + '-' + p2(m.getMonth() + 1) + '-' + m.getFullYear() + '</option>'; }
-    var h = '<div class="tt-wrap"><div class="tt-form"><select id="ttWeek" aria-label="' + esc(SP.t('schedule.weekOf')) + '">' + opts + '</select><button type="button" id="ttGo" class="tt-btn">' + esc(SP.t('schedule.select')) + '</button></div>' +
-      '<div class="tt-scroll"><table class="tt-table"><tbody><tr><td class="tt-corner"></td>';
+    var h = '<div class="tt-wrap"><div class="tt-form"><select id="ttWeek" aria-label="' + esc(SP.t('schedule.weekOf')) + '">' + opts + '</select><button type="button" id="ttGo" class="tt-btn">' + esc(SP.t('schedule.select')) + '</button>' +
+      '<div class="tt-zm"><button type="button" class="tt-btn" data-z="-10" aria-label="−">−</button><input type="range" id="ttZoom" min="50" max="200" step="5" value="' + ttZ() + '" aria-label="Zoom"><button type="button" class="tt-btn" data-z="10" aria-label="+">+</button><span id="ttZv">' + ttZ() + '%</span></div></div>' +
+      '<div class="tt-scroll"><div class="tt-zoom" style="zoom:' + (ttZ() / 100) + '"><table class="tt-table"><tbody><tr><td class="tt-corner"></td>';
     for (var i = 0; i < 6; i++) h += '<td class="tt-head' + (i === td ? ' tt-today' : '') + '"><b>' + esc(SP.t(DAY_KEYS[i])) + '</b><br>' + fmtDM(addDays(mon, i)) + '</td>';
     h += '</tr>';
     slots.forEach(function (s) {
@@ -126,12 +127,31 @@
       }
       h += '</tr>';
     });
-    return h + '</tbody></table></div></div>';
+    return h + '</tbody></table></div></div></div>';
+  }
+  function ttZ() { var z = +(ui.ttz || 100); return z >= 50 && z <= 200 ? z : 100; }
+  function setTtZ(z) {
+    z = Math.max(50, Math.min(200, Math.round(z / 5) * 5)); ui.ttz = z; saveUI();
+    var zw = SP.$('.tt-zoom', root), r = SP.$('#ttZoom', root), v = SP.$('#ttZv', root);
+    if (zw) zw.style.zoom = z / 100; if (r) r.value = z; if (v) v.textContent = z + '%';
+  }
+
+  /* Шокан: карточка занятия (как в приложении) */
+  function shokanDetail(l) {
+    var x = info(l), mon = monday(weekOff), s = allSlots().filter(function (t) { return t.id === l.slotId; })[0] || {};
+    var date = addDays(mon, +l.day || 0).toLocaleDateString(SP.locale(), { day: 'numeric', month: 'long' }).replace(/\s*г\.?$/, '');
+    var when = SP.t(DAY_KEYS[l.day] || 'day.mon') + ', ' + date + ', ' + String(s.start || '').slice(0, 5) + ' - ' + String(s.end || '').slice(0, 5);
+    var place = [x.building, x.room].filter(Boolean).join(', ');
+    return '<div class="shk-det"><button type="button" class="shk-back" id="shkBack">' + SP.icon('chevron-left') + '<span>' + esc(SP.t('nav.schedule')) + '</span></button>' +
+      '<div class="shk-det-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</div><h2 class="shk-det-name">' + esc(x.name) + '</h2>' +
+      '<ul class="shk-det-list"><li>' + esc(when) + '</li>' + (place ? '<li>' + esc(place) + '</li>' : '') + (x.teacher ? '<li>' + esc(x.teacher) + '</li>' : '') + '</ul>' +
+      '<button type="button" class="btn btn-primary shk-det-go" data-sid="' + esc(x.sid) + '">' + SP.icon('folder') + '<span>' + esc(SP.t('schedule.openFolder')) + '</span></button></div>';
   }
 
   /* ===== Режим «Shokan» (как в приложении Shokan University) ===== */
   function shokan(td) {
     var mon = monday(weekOff);
+    if (detail) return '<div class="shk">' + shokanDetail(detail) + '</div>';
     var h = '<div class="shk"><div class="shk-head">' +
       '<div class="shk-seg" role="tablist">' + ['day', 'week'].map(function (v) { return '<button type="button" role="tab" data-view="' + v + '" aria-selected="' + (ui.view === v) + '">' + esc(SP.t('schedule.' + v)) + '</button>'; }).join('') + '</div>' +
       '<h2 class="shk-title">' + esc(SP.t('nav.schedule')) + '</h2>' +
@@ -150,7 +170,7 @@
         var ls = lessonsAt(d, s.id);
         if (!ls.length) { h += '<td class="shk-empty"></td>'; return; }
         var x = info(ls[0]);
-        h += '<td class="shk-fill"><button type="button" class="shk-wl" data-sid="' + esc(x.sid) + '" title="' + esc(x.name + (kindLong(x.ab) ? ' · ' + kindLong(x.ab) : '')) + '"><span class="shk-wn">' + esc(x.name) + '</span><span class="shk-wk">' + esc(kindLong(x.ab) || x.ab) + (ls.length > 1 ? ' +' + (ls.length - 1) : '') + '</span></button></td>';
+        h += '<td class="shk-fill"><button type="button" class="shk-wl" data-lid="' + SP.hub.data().schedule.indexOf(ls[0]) + '" title="' + esc(x.name + (kindLong(x.ab) ? ' · ' + kindLong(x.ab) : '')) + '"><span class="shk-wn">' + esc(x.name) + '</span><span class="shk-wk">' + esc(kindLong(x.ab) || x.ab) + (ls.length > 1 ? ' +' + (ls.length - 1) : '') + '</span></button></td>';
       });
       h += '</tr>';
     });
@@ -170,7 +190,7 @@
       h += '<li class="shk-row' + (ls.length ? ' has' : '') + '"><div class="shk-time"><b>' + esc(String(s.start).slice(0, 5)) + '</b><span>' + esc(String(s.end).slice(0, 5)) + '</span></div><div class="shk-slot">';
       if (ls.length) h += ls.map(function (l) {
         var x = info(l);
-        return '<button type="button" class="shk-card" data-sid="' + esc(x.sid) + '" title="' + esc(SP.t('schedule.roomInFolder')) + '"><span class="shk-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</span><span class="shk-name">' + esc(x.name) + '</span></button>';
+        return '<button type="button" class="shk-card" data-lid="' + SP.hub.data().schedule.indexOf(l) + '"><span class="shk-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</span><span class="shk-name">' + esc(x.name) + '</span></button>';
       }).join('');
       else if (i > first && i < last) h += '<span class="shk-gap">' + esc(SP.t('schedule.gap', { m: toMin(s.end) - toMin(s.start) })) + '</span>';
       h += '</div></li>';
@@ -195,12 +215,16 @@
 
   function wire() {
     var q = function (s) { return SP.$(s, root); };
-    SP.$$('[data-mode]', root).forEach(function (b) { b.onclick = function () { ui.mode = b.getAttribute('data-mode'); saveUI(); render(); var n = SP.$('[data-mode="' + ui.mode + '"]', root); if (n) n.focus(); }; });
+    SP.$$('[data-mode]', root).forEach(function (b) { b.onclick = function () { ui.mode = b.getAttribute('data-mode'); detail = null; saveUI(); render(); var n = SP.$('[data-mode="' + ui.mode + '"]', root); if (n) n.focus(); }; });
     SP.$$('[data-view]', root).forEach(function (b) { b.onclick = function () { ui.view = b.getAttribute('data-view'); saveUI(); render(); }; });
     SP.$$('[data-src]', root).forEach(function (b) { b.onclick = function () { SP.hub.setPref(b.getAttribute('data-src')); }; });
     SP.$$('[data-wk]', root).forEach(function (b) { b.onclick = function () { weekOff += +b.getAttribute('data-wk'); render(); }; });
     SP.$$('[data-day]', root).forEach(function (b) { b.onclick = function () { dayIdx = +b.getAttribute('data-day'); render(); var c = SP.$('[data-day="' + dayIdx + '"]', root); if (c) c.focus(); }; });
     SP.$$('[data-sid]', root).forEach(function (b) { b.onclick = function () { SP.navigate('subjects', [b.getAttribute('data-sid')]); }; });
+    SP.$$('[data-lid]', root).forEach(function (b) { b.onclick = function () { detail = SP.hub.data().schedule[+b.getAttribute('data-lid')] || null; render(); var k = q('#shkBack'); if (k) k.focus(); window.scrollTo(0, 0); }; });
+    var bk = q('#shkBack'); if (bk) bk.onclick = function () { detail = null; render(); };
+    var zr = q('#ttZoom'); if (zr) zr.oninput = function () { setTtZ(+zr.value); };
+    SP.$$('[data-z]', root).forEach(function (b) { b.onclick = function () { setTtZ(ttZ() + +b.getAttribute('data-z')); }; });
     var tg = q('#ttGo'); if (tg) tg.onclick = function () { weekOff = +q('#ttWeek').value; render(); };
     var sd = q('#shkDate'); if (sd) { var d0 = addDays(monday(weekOff), dayIdx || 0); sd.value = d0.getFullYear() + '-' + p2(d0.getMonth() + 1) + '-' + p2(d0.getDate()); sd.onchange = function () { goDate(sd.value); }; }
     var ug = q('#updGo'); if (ug) ug.onclick = function () { SP.hub.acceptUpdate(); };

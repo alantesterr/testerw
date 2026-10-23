@@ -1,0 +1,26 @@
+{
+  "version": "2026-10-23.8",
+  "files": [
+    {
+      "subject": "Философия",
+      "kind": "link",
+      "name": "Философия ТГ",
+      "url": "https://t.me/+fJjFpTkfN7Y1ODY6",
+      "note": ""
+    },
+    {
+      "subject": "Ақпараттық-коммуникациялық технологиялар",
+      "kind": "test",
+      "name": "studyplay-all.txt",
+      "path": "data/ir-252/files/Ақпараттық-коммуникациялық технологиялар/studyplay-all.txt",
+      "size": 74408
+    },
+    {
+      "subject": "Объектіге бағытталған бағдарламалау",
+      "kind": "test",
+      "name": "C_questions_English.txt",
+      "path": "data/ir-252/files/Объектіге бағытталған бағдарламалау/C_questions_English.txt",
+      "size": 40420
+    }
+  ]
+}

@@ -1,0 +1,302 @@
+{
+  "version": "2026-10-23.7",
+  "updatedAt": "2026-10-23T10:39:28.640Z",
+  "timeSlots": [
+    {
+      "id": "slot1",
+      "start": "08:30:00",
+      "end": "09:20:00"
+    },
+    {
+      "id": "slot2",
+      "start": "09:30:00",
+      "end": "10:20:00"
+    },
+    {
+      "id": "slot3",
+      "start": "10:30:00",
+      "end": "11:20:00"
+    },
+    {
+      "id": "slot4",
+      "start": "11:30:00",
+      "end": "12:20:00"
+    },
+    {
+      "id": "slot5",
+      "start": "12:30:00",
+      "end": "13:20:00"
+    },
+    {
+      "id": "slot6",
+      "start": "13:40:00",
+      "end": "14:30:00"
+    },
+    {
+      "id": "slot7",
+      "start": "14:40:00",
+      "end": "15:30:00"
+    },
+    {
+      "id": "slot8",
+      "start": "15:40:00",
+      "end": "16:30:00"
+    }
+  ],
+  "subjects": [
+    {
+      "id": "s48108",
+      "code": "",
+      "name": "Философия",
+      "teacher": ""
+    },
+    {
+      "id": "subject-1",
+      "code": "",
+      "name": "Ақпараттық-коммуникациялық технологиялар",
+      "teacher": ""
+    },
+    {
+      "id": "subject-2",
+      "code": "",
+      "name": "Операциялық жүйелер",
+      "teacher": ""
+    },
+    {
+      "id": "subject-4",
+      "code": "",
+      "name": "Объектіге бағытталған бағдарламалау",
+      "teacher": ""
+    },
+    {
+      "id": "subject-5",
+      "code": "",
+      "name": "Дене шынықтыру",
+      "teacher": ""
+    },
+    {
+      "id": "subject-6",
+      "code": "",
+      "name": "Компьютерлік желілер",
+      "teacher": ""
+    }
+  ],
+  "schedule": [
+    {
+      "id": "lesson-1",
+      "day": 0,
+      "slotId": "slot1",
+      "subjectId": "subject-1",
+      "code": "",
+      "name": "Ақпараттық-коммуникациялық технологиялар",
+      "kind": "Зертханалық жұмыс",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-2",
+      "day": 0,
+      "slotId": "slot2",
+      "subjectId": "subject-1",
+      "code": "",
+      "name": "Ақпараттық-коммуникациялық технологиялар",
+      "kind": "Зертханалық жұмыс",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-3",
+      "day": 0,
+      "slotId": "slot6",
+      "subjectId": "subject-2",
+      "code": "",
+      "name": "Операциялық жүйелер",
+      "kind": "Дәрістер",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-4",
+      "day": 0,
+      "slotId": "slot8",
+      "subjectId": "s48108",
+      "code": "",
+      "name": "Философия",
+      "kind": "Практика",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-5",
+      "day": 1,
+      "slotId": "slot2",
+      "subjectId": "subject-4",
+      "code": "",
+      "name": "Объектіге бағытталған бағдарламалау",
+      "kind": "Зертханалық жұмыс",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-6",
+      "day": 1,
+      "slotId": "slot3",
+      "subjectId": "subject-4",
+      "code": "",
+      "name": "Объектіге бағытталған бағдарламалау",
+      "kind": "Зертханалық жұмыс",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-7",
+      "day": 1,
+      "slotId": "slot5",
+      "subjectId": "subject-5",
+      "code": "",
+      "name": "Дене шынықтыру",
+      "kind": "Практика",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-8",
+      "day": 1,
+      "slotId": "slot6",
+      "subjectId": "subject-5",
+      "code": "",
+      "name": "Дене шынықтыру",
+      "kind": "Практика",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-9",
+      "day": 2,
+      "slotId": "slot2",
+      "subjectId": "s48108",
+      "code": "",
+      "name": "Философия",
+      "kind": "Дәрістер",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-10",
+      "day": 2,
+      "slotId": "slot3",
+      "subjectId": "s48108",
+      "code": "",
+      "name": "Философия",
+      "kind": "Дәрістер",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-11",
+      "day": 2,
+      "slotId": "slot5",
+      "subjectId": "subject-2",
+      "code": "",
+      "name": "Операциялық жүйелер",
+      "kind": "Зертханалық жұмыс",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-12",
+      "day": 2,
+      "slotId": "slot6",
+      "subjectId": "subject-2",
+      "code": "",
+      "name": "Операциялық жүйелер",
+      "kind": "Зертханалық жұмыс",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-13",
+      "day": 4,
+      "slotId": "slot2",
+      "subjectId": "subject-6",
+      "code": "",
+      "name": "Компьютерлік желілер",
+      "kind": "Дәрістер",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-14",
+      "day": 4,
+      "slotId": "slot3",
+      "subjectId": "subject-1",
+      "code": "",
+      "name": "Ақпараттық-коммуникациялық технологиялар",
+      "kind": "Дәрістер",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-15",
+      "day": 4,
+      "slotId": "slot4",
+      "subjectId": "subject-4",
+      "code": "",
+      "name": "Объектіге бағытталған бағдарламалау",
+      "kind": "Дәрістер",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-16",
+      "day": 4,
+      "slotId": "slot5",
+      "subjectId": "subject-4",
+      "code": "",
+      "name": "Объектіге бағытталған бағдарламалау",
+      "kind": "Дәрістер",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-17",
+      "day": 4,
+      "slotId": "slot7",
+      "subjectId": "subject-6",
+      "code": "",
+      "name": "Компьютерлік желілер",
+      "kind": "Зертханалық жұмыс",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    },
+    {
+      "id": "lesson-18",
+      "day": 4,
+      "slotId": "slot8",
+      "subjectId": "subject-6",
+      "code": "",
+      "name": "Компьютерлік желілер",
+      "kind": "Зертханалық жұмыс",
+      "room": "",
+      "building": "",
+      "teacher": ""
+    }
+  ]
+}

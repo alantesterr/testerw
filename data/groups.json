@@ -1,0 +1,7 @@
+{
+  "version": "2026-10-23.1",
+  "groups": [
+    { "name": "ИР-252", "folder": "ir-252", "legacy": true },
+    { "name": "ИК-252", "folder": "ik-252" }
+  ]
+}

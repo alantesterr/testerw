@@ -1,1 +1,222 @@
+/* =====================================================================
+   ДИЗАЙН-СИСТЕМА: все цвета, отступы, радиусы, тени и размеры шрифтов.
+   Меняете цвет здесь — он меняется на всём сайте.
+   Тема задаётся атрибутом <html data-theme="light|dark">,
+   размер шрифта — <html data-font="s|ms|m|l">.
+   ===================================================================== */
 
+:root {
+  /* --- Размер шрифта: 1rem зависит от выбора в Настройках --- */
+  font-size: 16px;
+
+  /* --- Шрифты --- */
+  --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.75rem;
+  --fs-3xl: 2.25rem;
+  --lh: 1.5;
+  --lh-tight: 1.25;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* --- Отступы: шкала с шагом 4px --- */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+
+  /* Уровни отступов: связанные элементы < внутри карточки < между секциями */
+  --gap-related: var(--sp-2);
+  --gap-inner: var(--sp-4);
+  --gap-section: var(--sp-8);
+  --page-pad: var(--sp-6);
+
+  /* --- Радиусы --- */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-full: 999px;
+
+  /* --- Размеры --- */
+  --hit: 2.5rem;            /* высота кнопок и полей на ПК */
+  --hit-touch: 2.75rem;     /* минимум 44px на касание */
+  --sb-collapsed: 4.5rem;
+  --sb-expanded: 15rem;
+  --content-max: 76rem;
+  --focus-ring: 0 0 0 3px var(--focus);
+
+  /* --- Анимации --- */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 320ms;
+
+  /* --- Слои --- */
+  --z-sidebar: 40;
+  --z-header: 30;
+  --z-popover: 60;
+  --z-modal: 80;
+  --z-toast: 90;
+}
+
+/* =========================== СВЕТЛАЯ ТЕМА =========================== */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #f8f9fb;
+  --surface-3: #eef1f5;
+  --hover: #eceff4;
+  --press: #e2e6ed;
+  --border: #dde2ea;
+  --border-strong: #c5ccd8;
+  --text: #161b24;
+  --text-2: #4a5464;
+  --text-3: #6b7587;
+  --text-inverse: #ffffff;
+
+  --accent: #2563eb;          /* главное действие: синий */
+  --accent-hover: #1d55d3;
+  --accent-press: #1a4bb9;
+  --accent-text: #1d4ed8;
+  --accent-soft: #e6eefe;
+  --accent-soft-2: #d3e1fd;
+  --on-accent: #ffffff;
+
+  --success: #15803d;
+  --success-hover: #126b33;
+  --success-soft: #e3f5ea;
+  --success-text: #166534;
+
+  --warning: #b45309;
+  --warning-solid: #d97706;
+  --warning-soft: #fdf1df;
+  --warning-text: #92400e;
+
+  --danger: #dc2626;
+  --danger-hover: #c11f1f;
+  --danger-press: #a91b1b;
+  --danger-soft: #fde8e8;
+  --danger-text: #b91c1c;
+
+  --info-soft: #e7f0fb;
+  --focus: rgba(37, 99, 235, 0.35);
+  --overlay: rgba(15, 20, 30, 0.45);
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-lg: 0 16px 40px rgba(16, 24, 40, 0.16), 0 2px 6px rgba(16, 24, 40, 0.06);
+
+  /* Типы занятий в расписании */
+  --k-lecture: #e6eefe;  --k-lecture-b: #2563eb;
+  --k-practice: #e3f5ea; --k-practice-b: #15803d;
+  --k-lab: #fdf1df;      --k-lab-b: #b45309;
+  --k-seminar: #e0f4f2;  --k-seminar-b: #0f766e;
+  --k-other: #eef1f5;    --k-other-b: #6b7587;
+
+  /* Подсветка кода в вопросах */
+  --hl-kw: #1d4ed8; --hl-ty: #0f766e; --hl-st: #b45309; --hl-nu: #0e7490;
+  --hl-cm: #6b7587; --hl-fn: #b91c1c; --hl-pp: #be185d; --hl-ct: #c2410c;
+  --code-bg: #f3f5f8;
+}
+
+/* ============================ ТЁМНАЯ ТЕМА ============================ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1116;
+  --surface: #161a21;
+  --surface-2: #1b2029;
+  --surface-3: #222833;
+  --hover: #252c38;
+  --press: #2d3542;
+  --border: #2a313d;
+  --border-strong: #3a4352;
+  --text: #e8ecf2;
+  --text-2: #aeb7c5;
+  --text-3: #8690a1;
+  --text-inverse: #0e1116;
+
+  --accent: #2f6fe4;
+  --accent-hover: #3b7bf0;
+  --accent-press: #2961cc;
+  --accent-text: #7fb0ff;
+  --accent-soft: #17253d;
+  --accent-soft-2: #1e3152;
+  --on-accent: #ffffff;
+
+  --success: #2f9e55;
+  --success-hover: #35b061;
+  --success-soft: #142a1d;
+  --success-text: #6fd28f;
+
+  --warning: #d29922;
+  --warning-solid: #d29922;
+  --warning-soft: #2e2412;
+  --warning-text: #f0c35c;
+
+  --danger: #d73a37;
+  --danger-hover: #e5484d;
+  --danger-press: #c0302d;
+  --danger-soft: #331718;
+  --danger-text: #ff8a85;
+
+  --info-soft: #16243a;
+  --focus: rgba(127, 176, 255, 0.45);
+  --overlay: rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.6);
+
+  --k-lecture: #17253d;  --k-lecture-b: #5b9bff;
+  --k-practice: #142a1d; --k-practice-b: #4cc07a;
+  --k-lab: #2e2412;      --k-lab-b: #e0a93a;
+  --k-seminar: #11292a;  --k-seminar-b: #4cc4bb;
+  --k-other: #222833;    --k-other-b: #8690a1;
+
+  --hl-kw: #7fb0ff; --hl-ty: #5fd4c4; --hl-st: #f0c35c; --hl-nu: #67d4e8;
+  --hl-cm: #7c8696; --hl-fn: #ff9b94; --hl-pp: #f489b8; --hl-ct: #ffad66;
+  --code-bg: #10141a;
+}
+
+/* Если JS ещё не выставил тему — следуем системе */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: #0e1116; --surface: #161a21; --surface-2: #1b2029; --surface-3: #222833;
+    --hover: #252c38; --press: #2d3542; --border: #2a313d; --border-strong: #3a4352;
+    --text: #e8ecf2; --text-2: #aeb7c5; --text-3: #8690a1;
+    --accent: #2f6fe4; --accent-text: #7fb0ff; --accent-soft: #17253d;
+  }
+}
+
+/* ======================= РАЗМЕР ШРИФТА (4 уровня) ===================== */
+:root[data-font="s"]  { font-size: 14px; }
+:root[data-font="ms"] { font-size: 15px; }
+:root[data-font="m"]  { font-size: 16px; }
+:root[data-font="l"]  { font-size: 18px; }
+
+/* На телефоне — чуть крупнее зоны нажатия */
+@media (pointer: coarse) {
+  :root { --hit: var(--hit-touch); }
+}
+@media (max-width: 767px) {
+  :root { --page-pad: var(--sp-4); --gap-section: var(--sp-6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur: 0ms; --dur-slow: 0ms; }
+}

@@ -57,10 +57,9 @@
         '<nav class="qn-list" aria-label="' + esc(SP.t('quiz.nav')) + '">' + navHtml() + '</nav></section>' +
         '<section class="card quiz-card"><div class="row-between"><span class="badge">' + esc(typeLabel) + '</span>' +
         '<div class="row quiz-tools">' +
-        '<button type="button" class="btn btn-ghost btn-sm" id="qLupa" data-tip="' + esc(SP.t('quiz.searchTip')) + '">' + SP.icon('search') + '<span>' + esc(SP.t('quiz.search')) + '</span></button>' +
-        '<button type="button" class="btn btn-ghost btn-sm" id="qSuper" data-tip="' + esc(SP.t('quiz.superTip')) + '">' + SP.icon('scan-search') + '<span>' + esc(SP.t('quiz.super')) + '</span></button>' +
-        '<button type="button" class="btn btn-ghost btn-sm" id="qAi" data-tip="' + esc(SP.t('quiz.aiTip')) + '">' + SP.icon('sparkles') + '<span>' + esc(SP.t('quiz.ai')) + '</span></button>' +
-        '<button type="button" class="btn btn-ghost btn-sm" id="qTr">' + SP.icon('languages') + '<span>' + esc(T ? SP.t('quiz.original') : SP.t('quiz.translate')) + '</span></button>' +
+        '<button type="button" class="btn btn-sm btn-tool tool-super" id="qSuper" data-tip="' + esc(SP.t('quiz.superTip')) + '">' + SP.icon('scan-search') + '<span>' + esc(SP.t('quiz.super')) + '</span></button>' +
+        '<button type="button" class="btn btn-sm btn-tool tool-ai" id="qAi" data-tip="' + esc(SP.t('quiz.aiTip')) + '">' + SP.icon('sparkles') + '<span>' + esc(SP.t('quiz.ai')) + '</span></button>' +
+        '<button type="button" class="btn btn-sm btn-tool tool-tr" id="qTr">' + SP.icon('languages') + '<span>' + esc(T ? SP.t('quiz.original') : SP.t('quiz.translate')) + '</span></button>' +
         '</div></div>' +
         '<div class="q-text"><span class="q-num">' + (cur + 1) + '.</span>' + E.richHtml(T ? T.q : q.q) + '</div>' + E.img(q.img) +
         (T ? '<div class="q-orig small subtle">' + E.richHtml(q.q, true) + '</div>' : '') +
@@ -82,7 +81,6 @@
       var ck = $('#qCheck'); if (ck) ck.onclick = submitKb;
       var ki = $('#kbAns');
       if (ki) { ki.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); if (!ans[cur]) submitKb(); else if (nx) nx.click(); else if (fn) fn.click(); } }; if (!a) setTimeout(function () { ki.focus(); }, 30); }
-      $('#qLupa').onclick = function () { E.google(q.q.replace(/```\w*/g, '') + ' ' + SP.t('quiz.answerWord')); };
       $('#qSuper').onclick = function () { E.google(E.aiPrompt(q)); };
       $('#qAi').onclick = function () { E.google(E.aiPrompt(q), true); };
       $('#qTr').onclick = function () { toggleTr(this); };

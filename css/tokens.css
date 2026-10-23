@@ -13,7 +13,8 @@
   --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
 
-  --fs-xs: 0.75rem;
+  /* минимальный размер текста поднят: мелкие подписи не меньше 0.8125rem */
+  --fs-xs: 0.8125rem;
   --fs-sm: 0.875rem;
   --fs-md: 1rem;
   --fs-lg: 1.125rem;
@@ -208,6 +209,46 @@
 :root[data-font="ms"] { font-size: 15px; }
 :root[data-font="m"]  { font-size: 16px; }
 :root[data-font="l"]  { font-size: 18px; }
+:root[data-font="xl"] { font-size: 20px; }
+:root[data-font="xxl"] { font-size: 22px; }
+
+/* =====================================================================
+   РАСШИРЕННАЯ ПАЛИТРА (обе темы): типы файлов, инструменты ИИ,
+   режимы расписания Shokan и Timetable, подсказки в полях.
+   ===================================================================== */
+:root, :root[data-theme="light"] {
+  --placeholder: #7d8594;
+  --info: #0e6fb8; --info-text: #0b5c99;
+  /* Типы файлов */
+  --ft-word: #2b579a; --ft-excel: #1d6f42; --ft-ppt: #c4441c; --ft-pdf: #c62828;
+  --ft-json: #8a6100; --ft-json-bg: #fff3d6; --ft-img: #0f7b75; --ft-video: #b3261e;
+  --ft-audio: #6d4c9f; --ft-zip: #6b5b3e; --ft-txt: #4a5464; --ft-other: #6b7587; --ft-folder: #d18a00;
+  /* Кнопки инструментов в тестах */
+  --tool-super: #0f766e; --tool-super-bg: #e0f4f1; --tool-super-bg2: #c9ebe6;
+  --tool-ai: #9a5b00; --tool-ai-bg: #fdf0dc; --tool-ai-bg2: #f8e0bb;
+  --tool-tr: #1d4ed8; --tool-tr-bg: #e6eefe; --tool-tr-bg2: #d3e1fd;
+  /* Журнал: кольца */
+  --ring-green: #34c759; --ring-blue: #5aa9e6; --ring-yellow: #e3c92c; --ring-red: #f0413b; --ring-empty: #e5e5ea;
+  /* Режим Shokan (по скриншотам, светлая тема) */
+  --shk-page: #ffffff; --shk-fill: #ffffff; --shk-empty: #f2f2f7; --shk-line: #e5e5ea;
+  --shk-text: #000000; --shk-sub: #8e8e93; --shk-accent: #1f4fd1; --shk-seg: #e5e5ea; --shk-seg-on: #ffffff; --shk-band: #f2f2f7;
+  /* Режим Timetable (монохром, светлая) */
+  --tt-bg: #ffffff; --tt-text: #000000; --tt-sub: #555555; --tt-line: #8c8c8c; --tt-head: #ffffff; --tt-hover: #f0f0f0;
+}
+:root[data-theme="dark"] {
+  --placeholder: #8a93a3;
+  --info: #4ea1e8; --info-text: #8cc4f2;
+  --ft-word: #6b9cf0; --ft-excel: #4cc07a; --ft-ppt: #f08a5d; --ft-pdf: #ff6b66;
+  --ft-json: #f0c35c; --ft-json-bg: #2e2412; --ft-img: #4cc4bb; --ft-video: #ff8a85;
+  --ft-audio: #b8a0e0; --ft-zip: #c8b48a; --ft-txt: #aeb7c5; --ft-other: #8690a1; --ft-folder: #f0b43c;
+  --tool-super: #5fd4c4; --tool-super-bg: #12302d; --tool-super-bg2: #19403c;
+  --tool-ai: #f0c35c; --tool-ai-bg: #2e2412; --tool-ai-bg2: #3d3018;
+  --tool-tr: #7fb0ff; --tool-tr-bg: #17253d; --tool-tr-bg2: #1e3152;
+  --ring-green: #30d158; --ring-blue: #64aef0; --ring-yellow: #e6cf2e; --ring-red: #ff453a; --ring-empty: #3a3a3c;
+  --shk-page: #121212; --shk-fill: #1c1c1e; --shk-empty: #0a0a0a; --shk-line: #2c2c2e;
+  --shk-text: #ffffff; --shk-sub: #8e8e93; --shk-accent: #6f96f5; --shk-seg: #2c2c2e; --shk-seg-on: #636366; --shk-band: #1c1c1e;
+  --tt-bg: #000000; --tt-text: #ffffff; --tt-sub: #b0b0b0; --tt-line: #5a5a5a; --tt-head: #000000; --tt-hover: #1a1a1a;
+}
 
 /* На телефоне — чуть крупнее зоны нажатия */
 @media (pointer: coarse) {

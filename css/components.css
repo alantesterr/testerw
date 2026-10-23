@@ -110,7 +110,7 @@
   transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), background-color var(--dur-fast);
 }
 @media (min-width: 768px) { .input, .select, .textarea { font-size: var(--fs-sm); } }
-.input::placeholder, .textarea::placeholder { color: var(--text-3); }
+.input::placeholder, .textarea::placeholder { color: var(--placeholder); opacity: 1; }
 .input:hover, .select:hover, .textarea:hover { border-color: var(--text-3); }
 .input:focus-visible, .select:focus-visible, .textarea:focus-visible,
 .input:focus, .select:focus, .textarea:focus { border-color: var(--accent); box-shadow: var(--focus-ring); outline: none; }

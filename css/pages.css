@@ -276,7 +276,7 @@ button.qn:active { background: var(--press); }
 .vs-knob { position: absolute; top: 50%; width: 0.75rem; height: 0.75rem; margin: -0.375rem 0 0 -0.375rem; border-radius: 50%; background: #fff; }
 .time { font-size: var(--fs-xs); font-variant-numeric: tabular-nums; padding: 0 var(--sp-2); white-space: nowrap; }
 .spacer { flex: 1; }
-@media (max-width: 480px) { .vol-slider { display: none; } .time { font-size: 0.7rem; padding: 0 2px; } .cb { width: 2.25rem; } }
+@media (max-width: 480px) { .vol-slider { display: none; } .time { font-size: 0.75rem; padding: 0 2px; } .cb { width: 2.25rem; } }
 .pmenu { position: absolute; right: var(--sp-3); bottom: 4.25rem; z-index: 7; width: min(20rem, calc(100% - 1.5rem)); max-height: calc(100% - 5rem); overflow: auto; padding: var(--sp-3); border-radius: var(--r-md); background: rgba(20, 22, 28, 0.96); color: #e8ecf2; display: none; font-size: var(--fs-sm); }
 .pmenu.open { display: block; }
 .pmenu h4 { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .05em; color: #9aa3b2; margin: var(--sp-3) 0 var(--sp-2); }

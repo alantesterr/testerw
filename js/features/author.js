@@ -18,7 +18,8 @@
     var m = SP.modal({ title: SP.t('author.groups'), size: 'lg', body: '<div id="grEd"></div>', actions: [
       { label: SP.t('author.groupsReload'), icon: 'cloud', close: false, onClick: function () { SP.groups.load().then(function (l) { rows = l.map(function (g) { return { name: g.name, folder: g.folder || SP.slug(g.name), legacy: !!g.legacy }; }); draw(); SP.toast(SP.t('author.groupsLoaded', { n: l.length }), 'success'); }); return false; } },
       { label: SP.t('author.groupsDownload'), icon: 'download', kind: 'primary', close: false, onClick: function () {
-        var bad = rows.findIndex(function (r) { return !r.name.trim() || !(r.folder.trim() || SP.slug(r.name)); });
+        var bad = rows.findIndex(function (r) { return !SP.group.valid(SP.group.format(r.name)) || !(r.folder.trim() || SP.slug(r.name)); });
+        rows.forEach(function (r) { r.name = SP.group.format(r.name); });
         if (bad >= 0) { SP.toast(SP.t('author.groupsBad', { n: bad + 1 }), 'warning'); return false; }
         var out = { version: new Date().toISOString().slice(0, 10) + '.1', groups: rows.map(function (r) { var o = { name: r.name.trim(), folder: (r.folder.trim() || SP.slug(r.name)).toLowerCase().replace(/[^a-z0-9_-]+/g, '-') }; if (r.legacy) o.legacy = true; return o; }) };
         SP.downloadText(JSON.stringify(out, null, 2) + '\n', 'groups.json', 'application/json');
@@ -41,6 +42,7 @@
     host.addEventListener('input', function (e) {
       var row = e.target.closest('.gr-row'); if (!row) return;
       var r = rows[+row.getAttribute('data-i')], k = e.target.getAttribute('data-k');
+      if (k === 'name') { var fv = SP.group.format(e.target.value, true); if (fv !== e.target.value) e.target.value = fv; e.target.setAttribute('aria-invalid', String(!!fv && fv.slice(-1) !== '-' && !SP.group.valid(fv))); }
       r[k] = e.target.value;
       if (k === 'name') { var f = row.querySelector('[data-k=folder]'); if (!f.dataset.touched) { r.folder = SP.slug(r.name); f.value = r.folder; } }
       if (k === 'folder') e.target.dataset.touched = '1';

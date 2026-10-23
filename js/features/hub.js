@@ -19,13 +19,14 @@
   var lc = SP.lc, esc = SP.esc, uid = function () { return SP.uid('sp-'); };
 
   /* ---------- Загрузка / сохранение ---------- */
-  function emptyData() { return { version: 2, updatedAt: new Date().toISOString(), own: null, schedule: [], timeSlots: defaultSlots(), subjects: [], shared: [], pins: {}, pref: 'auto', source: '' }; }
+  function emptyData() { return { version: 2, updatedAt: new Date().toISOString(), own: null, schedule: [], timeSlots: defaultSlots(), subjects: [], shared: [], pins: {}, order: {}, hidden: {}, removed: {}, pref: 'auto', source: '' }; }
   function normalize(x) {
     if (!x || typeof x !== 'object') return emptyData();
     var d = emptyData();
     d.subjects = Array.isArray(x.subjects) ? x.subjects.map(function (s) { return Object.assign({}, s, { materials: Array.isArray(s.materials) ? s.materials : [], tests: Array.isArray(s.tests) ? s.tests : [], notes: String(s.notes || '') }); }) : [];
     d.pins = x.pins && typeof x.pins === 'object' ? x.pins : {};
     d.pref = x.pref || 'auto';
+    ['order', 'hidden', 'removed'].forEach(function (k) { d[k] = x[k] && typeof x[k] === 'object' ? x[k] : {}; });
     if (x.own && Array.isArray(x.own.schedule)) d.own = x.own;
     else if (x.scheduleOwn || (x.scheduleOwn === undefined && Array.isArray(x.schedule) && x.schedule.length && x.version !== 2)) {
       d.own = { schedule: Array.isArray(x.schedule) ? x.schedule : [], timeSlots: Array.isArray(x.timeSlots) && x.timeSlots.length ? x.timeSlots : defaultSlots() };
@@ -37,7 +38,7 @@
   var hasOwn = function (s) { return (s.materials || []).length || (s.tests || []).length || String(s.notes || '').trim(); };
   function persistView() {
     return {
-      version: 2, updatedAt: data.updatedAt, own: data.own, pins: data.pins, pref: data.pref, shared: [],
+      version: 2, updatedAt: data.updatedAt, own: data.own, pins: data.pins, order: data.order, hidden: data.hidden, removed: data.removed, pref: data.pref, shared: [],
       subjects: data.subjects.filter(function (s) { return !s.base || hasOwn(s); }).map(function (s) {
         var r = Object.assign({}, s); delete r.base;
         r.materials = (s.materials || []).filter(function (f) { return !f.base; });
@@ -150,6 +151,8 @@
   }
   function ensureSubject(bs, tag) {
     if (!bs || !bs.name) return null;
+    /* папку курса удалили вручную — не создаём её снова */
+    if (tag && data.removed && data.removed[lc(cleanName(bs.name))]) return null;
     var m = findMine(bs);
     if (!m) { m = { id: String(bs.id || 'base-' + lc(cleanName(bs.name))), name: bs.name, code: bs.code || '', teacher: bs.teacher || '', materials: [], tests: [], notes: '', base: tag || true }; if (getSubject(m.id)) m.id = uid(); data.subjects.push(m); }
     else { if (!m.teacher && bs.teacher) m.teacher = bs.teacher; if (!m.code && bs.code) m.code = bs.code; }
@@ -494,6 +497,19 @@
     applyLayers: applyLayers,
     availableSources: availableSources,
     setPref: function (p) { data.pref = p; save(); applyLayers(); },
+    /* Удалить папки: свои — совсем, папки курса/Timetable — запомнить как удалённые */
+    removeSubjects: function (ids) {
+      var set = {}; ids.forEach(function (i) { set[i] = 1; });
+      data.subjects.forEach(function (s) {
+        if (!set[s.id]) return;
+        (s.materials || []).concat(s.tests || []).forEach(dropFile);
+        if (s.base) data.removed[lc(cleanName(s.name))] = 1;
+      });
+      data.subjects = data.subjects.filter(function (s) { return !set[s.id]; });
+      if (data.own) data.own.schedule = data.own.schedule.filter(function (x) { return !set[x.subjectId]; });
+      save(); applyLayers();
+    },
+    restoreRemoved: function () { data.removed = {}; save(); applyLayers(); },
     clearOwn: function () { data.own = null; if (data.pref === 'own') data.pref = 'auto'; save(); applyLayers(); },
     setOwn: function (timeSlots, schedule) { data.own = { timeSlots: timeSlots, schedule: schedule }; data.pref = 'own'; save(); applyLayers(); },
     getSubject: getSubject, findMine: findMine, cleanName: cleanName, lessonView: lessonView, kindClass: kindClass,

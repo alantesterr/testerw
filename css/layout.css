@@ -137,7 +137,7 @@
   .bn-item {
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     min-height: 3.5rem; padding: var(--sp-1) 2px; border: 0; border-radius: var(--r-md); background: transparent;
-    color: var(--text-3); font-size: 0.6875rem; font-weight: var(--fw-medium); text-decoration: none;
+    color: var(--text-3); font-size: 0.75rem; font-weight: var(--fw-medium); text-decoration: none;
     -webkit-tap-highlight-color: transparent; line-height: 1.15; text-align: center;
   }
   .bn-item .ic { width: 1.4rem; height: 1.4rem; }

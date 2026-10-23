@@ -28,7 +28,7 @@
 
     /* 1. Внешний вид */
     var themes = [['light', 'sun'], ['dark', 'moon'], ['system', 'monitor']];
-    var fonts = [['s', '14px'], ['ms', '15px'], ['m', '16px'], ['l', '18px']];
+    var fonts = [['s', '14px'], ['ms', '15px'], ['m', '16px'], ['l', '18px'], ['xl', '20px'], ['xxl', '22px']];
     html += section('appearance', 'type',
       '<div class="stack-sm"><div class="label">' + esc(SP.t('settings.theme')) + '</div><div class="choice-grid" role="radiogroup" aria-label="' + esc(SP.t('settings.theme')) + '">' +
       themes.map(function (t) { return choice('theme', t[0], s.theme, SP.icon(t[1]), SP.t('settings.theme.' + t[0])); }).join('') + '</div></div>' +
@@ -45,15 +45,13 @@
     var acc = '<div class="profile-strip"><span class="avatar">' + SP.icon('user') + '</span><div class="grow"><b>' + esc(nm) + '</b><div class="small muted">' + esc(u.group || SP.t('auth.noGroup')) + '</div></div></div>';
     acc += '<div class="alert alert-info">' + SP.icon('info') + '<div class="alert-body"><span>' + esc(SP.t('settings.localText')) + '</span><div class="alert-actions"><button type="button" class="btn btn-ghost btn-sm" id="sHow">' + SP.icon('shield-check') + '<span>' + esc(SP.t('auth.how')) + '</span></button></div></div></div>';
     acc += '<div class="field"><label class="label" for="sName">' + esc(SP.t('auth.yourName')) + '</label><input class="input" id="sName" value="' + esc(u.name || '') + '" placeholder="' + esc(SP.t('auth.yourNamePh')) + '"></div>';
-    acc += '<div class="field"><label class="label" for="sGroup">' + esc(SP.t('auth.group')) + '</label><div class="row row-nowrap"><input class="input" id="sGroup" list="sGroupList" value="' + esc(u.group || '') + '" placeholder="' + esc(SP.t('auth.groupPh')) + '"><datalist id="sGroupList">' + SP.groups.list().map(function (g) { return '<option value="' + esc(g.name) + '">'; }).join('') + '</datalist><button type="button" class="btn" id="sProfileSave">' + esc(SP.t('common.save')) + '</button></div><span class="hint">' + esc(SP.t('settings.groupHint', { dir: window.SP_GROUP_DIR || '—' })) + '</span></div>';
+    acc += '<div class="field"><label class="label" for="sGroup">' + esc(SP.t('auth.group')) + '</label><div class="row row-nowrap"><div class="ac grow"><input class="input" id="sGroup" value="' + esc(u.group || '') + '" placeholder="' + esc(SP.t('auth.groupPh')) + '" autocomplete="off"></div><button type="button" class="btn" id="sProfileSave">' + esc(SP.t('common.save')) + '</button></div><span class="error-text" id="sGroupErr" role="alert"></span><span class="hint">' + esc(SP.t('settings.groupHint', { dir: window.SP_GROUP_DIR || '—' })) + '</span></div>';
     acc += '<div class="row"><button type="button" class="btn btn-danger" id="sLogout">' + SP.icon('log-out') + '<span>' + esc(SP.t('auth.reset')) + '</span></button></div>';
     html += section('account', 'user', acc);
 
     /* 4. Данные */
     var d = SP.hub.data(), base = SP.hub.base();
     html += section('data', 'database',
-      '<div class="set-group"><div class="section-title">' + esc(SP.t('nav.grades')) + '</div>' +
-      setRow(SP.t('settings.importGrades'), esc(SP.t('settings.importGradesHint')), '<button type="button" class="btn btn-primary" id="sGrades">' + SP.icon('upload') + '<span>' + esc(SP.t('grades.import')) + '</span></button>') + '</div>' +
       '<div class="set-group"><div class="section-title">' + esc(SP.t('nav.schedule')) + '</div>' +
       setRow(SP.t('settings.uploadSchedule'), esc(SP.t('settings.uploadScheduleHint')), '<button type="button" class="btn" id="sUp">' + SP.icon('upload') + '<span>' + esc(SP.t('common.upload')) + '</span></button>') +
       setRow(SP.t('settings.downloadSchedule'), esc(SP.t('settings.downloadScheduleHint')), '<button type="button" class="btn" id="sDl">' + SP.icon('download') + '<span>' + esc(SP.t('common.download')) + '</span></button>') +
@@ -106,10 +104,12 @@
     var w = $('#sWarn'); if (w) w.onchange = function () { var v = SP.clamp(parseInt(w.value, 10) || 30, 5, 300); w.value = v; SP.settings.set('warnSec', v); SP.toast(SP.t('settings.saved'), 'success'); };
     var sw = $('#sSw'); if (sw) sw.onchange = function () { SP.settings.set('stopwatch', sw.checked); };
     on('#sHow', SP.auth.explain);
-    on('#sGrades', function () { SP.navigate('grades'); setTimeout(function () { if (SP.grades && SP.grades.openImport) SP.grades.openImport(); }, 50); });
+    var gi = $('#sGroup'); if (gi) SP.group.attach(gi, $('#sGroupErr'));
     on('#sLogout', function () { SP.auth.logout(); });
     on('#sProfileSave', function () {
-      SP.auth.updateProfile({ name: $('#sName').value.trim(), group: $('#sGroup').value.trim() });
+      var gv = SP.group.format($('#sGroup').value);
+      if (gv && !SP.group.valid(gv)) { $('#sGroupErr').textContent = SP.t('group.invalid'); $('#sGroup').setAttribute('aria-invalid', 'true'); $('#sGroup').focus(); return; }
+      SP.auth.updateProfile({ name: $('#sName').value.trim(), group: gv });
       SP.toast(SP.t('settings.saved'), 'success'); render();
     });
     on('#sUp', SP.schedule.upload); on('#sDl', SP.hub.exportAll); on('#sHelp', SP.schedule.help); on('#sEdit', SP.schedule.editJson);

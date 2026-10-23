@@ -197,10 +197,16 @@
   function translateFallback(q, tl) {
     window.open('https://translate.google.com/?sl=auto&tl=' + (tl || 'ru') + '&op=translate&text=' + encodeURIComponent(q.q + '\n\n' + (q.opts || []).map(function (o, j) { return (j + 1) + ') ' + o.t; }).join('\n')), '_blank', 'noopener');
   }
+  /* Запрос к ИИ: язык ответа = язык сайта (RU/KZ/EN), указан явно в начале и в конце */
+  var LANG_NAME = { ru: 'русском (Russian)', kk: 'қазақ тілінде (Kazakh)', en: 'English' };
   function aiPrompt(q) {
-    return (SP.t('tester.aiQ') + ' ' + q.q + '\n' + SP.t('tester.aiOpts') + '\n' + (q.opts || []).map(function (o, i) { return (i + 1) + ') ' + o.t; }).join('\n') + '\n' + SP.t('tester.aiAsk')).slice(0, 1500);
+    var lang = SP.lang(), head = SP.t('tester.aiLang', { lang: LANG_NAME[lang] || LANG_NAME.ru });
+    var body = SP.t('tester.aiQ') + ' ' + q.q + '\n' + SP.t('tester.aiOpts') + '\n' + (q.opts || []).map(function (o, i) { return (i + 1) + ') ' + o.t; }).join('\n');
+    var tail = SP.t('tester.aiAsk') + ' ' + head;
+    return head + '\n' + body.slice(0, 1500 - head.length - tail.length - 4) + '\n' + tail;
   }
-  function google(text, ai) { window.open('https://www.google.com/search?q=' + encodeURIComponent(text) + (ai ? '&udm=50' : ''), '_blank', 'noopener'); }
+  var HL = { ru: 'ru', kk: 'kk', en: 'en' };
+  function google(text, ai) { window.open('https://www.google.com/search?q=' + encodeURIComponent(text) + '&hl=' + (HL[SP.lang()] || 'ru') + (ai ? '&udm=50' : ''), '_blank', 'noopener'); }
 
   SP.testEngine = {
     parse: parse, normalizeQ: normalizeQ, problem: problem, serializeQ: serializeQ, isKb: isKb, isSpecial: isSpecial,

@@ -414,7 +414,7 @@
     var b = pq.batch; if (!b) { closeQuiz(true); return; }
     /* если ответ уже дан (окно закрыли до «Дальше») — не задаём вопрос повторно */
     if (b.results.length > b.qi) { b.qi = b.results.length; savePq(); }
-    if (b.qi >= b.ids.length) { renderResult(); return; }
+    if (b.qi >= b.ids.length) { renderResult(finalizeBatch()); return; }
     var q = curQ();
     if (!q) { b.qi++; savePq(); renderQ(); return; }
     var kb = E.isKb(q), multi = !kb && q.n > 1, k = b.qi, Tt = trOnP[k] && trc[k];
@@ -426,11 +426,11 @@
       (kb ? '<div class="field"><label class="label" for="pqInput">' + esc(T('quiz.typeAnswer')) + '</label><input class="input kb-input" id="pqInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + esc(T('quiz.yourAnswer')) + '"><span class="hint">' + esc(T('quiz.kbHint')) + '</span></div>'
         : '<div class="opts" id="pqOpts">' + q.opts.map(function (o, i) { return '<button type="button" class="opt" data-i="' + i + '" aria-pressed="false"><span class="opt-mark ' + (multi ? 'sq' : 'rd') + '"></span><span class="opt-key">' + (i < 9 ? i + 1 : '') + '</span><span class="opt-text">' + E.richHtml(Tt ? Tt.o[i] : o.t, true) + E.img(o.img, 'opt-img') + '</span></button>'; }).join('') + '</div>') +
       '<div id="pqVerdict"></div>' +
-      '<div class="row quiz-tools"><button type="button" class="btn btn-ghost btn-sm" id="pqLupa">' + SP.icon('search') + '<span>' + esc(T('quiz.search')) + '</span></button><button type="button" class="btn btn-ghost btn-sm" id="pqSup">' + SP.icon('scan-search') + '<span>' + esc(T('quiz.super')) + '</span></button><button type="button" class="btn btn-ghost btn-sm" id="pqAi">' + SP.icon('sparkles') + '<span>' + esc(T('quiz.ai')) + '</span></button><button type="button" class="btn btn-ghost btn-sm" id="pqTr">' + SP.icon('languages') + '<span>' + esc(T(Tt ? 'quiz.original' : 'quiz.translate')) + '</span></button></div>' +
+      '<div class="row quiz-tools"><button type="button" class="btn btn-sm btn-tool tool-super" id="pqSup">' + SP.icon('scan-search') + '<span>' + esc(T('quiz.super')) + '</span></button><button type="button" class="btn btn-sm btn-tool tool-ai" id="pqAi">' + SP.icon('sparkles') + '<span>' + esc(T('quiz.ai')) + '</span></button><button type="button" class="btn btn-sm btn-tool tool-tr" id="pqTr">' + SP.icon('languages') + '<span>' + esc(T(Tt ? 'quiz.original' : 'quiz.translate')) + '</span></button></div>' +
       '<div class="pq-foot">' + (pq.done > 0 || !requireTest ? '<button type="button" class="btn" id="pqLeave">' + SP.icon('play') + '<span>' + esc(T('player.backToVideo')) + '</span></button>' : '<span></span>') +
-      '<button type="button" class="btn btn-primary" id="pqGo" disabled>' + esc(T(kb ? 'quiz.check' : 'quiz.answer')) + '</button></div>');
+      '<div class="row"><button type="button" class="btn" id="pqRes" hidden>' + SP.icon('list-checks') + '<span>' + esc(T('player.showResult')) + '</span></button>' +
+      '<button type="button" class="btn btn-primary" id="pqGo" disabled>' + esc(T(kb ? 'quiz.check' : 'quiz.answer')) + '</button></div></div>');
     var go = $('pqGo');
-    $('pqLupa').onclick = function () { E.google(q.q + ' ' + T('quiz.answerWord')); };
     $('pqSup').onclick = function () { E.google(E.aiPrompt(q)); };
     $('pqAi').onclick = function () { E.google(E.aiPrompt(q), true); };
     $('pqTr').onclick = function () {
@@ -458,9 +458,13 @@
       };
     }
     go.onclick = function () {
-      if (!qAnswered) answer(q, kb);
-      else { pq.batch.qi++; savePq(); renderQ(); renderFeed(); }
+      if (!qAnswered) { answer(q, kb); return; }
+      pq.batch.qi++; savePq();
+      /* Последний вопрос порции: сразу возвращаемся к видео (раньше здесь открывался экран результата) */
+      if (pq.batch.qi >= pq.batch.ids.length) { finalizeBatch(); closeQuiz(true); return; }
+      renderQ(); renderFeed();
     };
+    $('pqRes').onclick = function () { pq.batch.qi++; savePq(); renderResult(finalizeBatch()); };
   }
   function answer(q, kb) {
     var b = pq.batch, id = b.ids[b.qi], ok, r = {};
@@ -478,16 +482,27 @@
     pq.history.push(Object.assign({ id: id, ok: ok, at: Date.now(), pos: Math.round(savedPos), q: q.q.slice(0, 600), right: rightText(q).slice(0, 400), kb: kb }, r));
     savePq();
     $('pqVerdict').innerHTML = '<div class="alert ' + (ok ? 'alert-success' : 'alert-danger') + '">' + SP.icon(ok ? 'circle-check' : 'circle-x') + '<div class="alert-body"><b>' + esc(T(ok ? 'quiz.right' : 'quiz.wrong')) + '</b>' + (!ok ? '<span>' + esc(T('quiz.correctIs', { a: rightText(q) })) + '</span>' : '') + '</div></div>';
-    var go = $('pqGo'); go.disabled = false; go.textContent = b.qi === b.ids.length - 1 ? T('player.showResult') : T('quiz.next');
+    var go = $('pqGo'); go.disabled = false;
+    var last = b.qi === b.ids.length - 1;
+    go.innerHTML = last ? SP.icon('play') + '<span>' + esc(T('player.resume')) + '</span>' : '<span>' + esc(T('quiz.next')) + '</span>';
+    var rs = $('pqRes'); if (rs) rs.hidden = !last;
     go.focus();
     renderFeed();
   }
-  function renderResult() {
-    var b = pq.batch, okN = b.results.filter(function (r) { return r.ok; }).length, n = b.ids.length || 1, pct = Math.round(okN / n * 100);
-    if (b.kind === 'main' || b.kind === 'redo') { pq.done++; }
+  /* Закрыть порцию вопросов: посчитать итог и сохранить его (результат можно посмотреть позже) */
+  function finalizeBatch() {
+    var b = pq.batch; if (!b) return pq.lastResult || null;
+    var okN = b.results.filter(function (r) { return r.ok; }).length, n = b.ids.length || 1;
+    var sum = { at: Date.now(), kind: b.kind, ok: okN, n: n, pct: Math.round(okN / n * 100), bad: b.results.filter(function (r) { return !r.ok; }).map(function (r) { return r.id; }) };
+    pq.done++; pq.lastResult = sum; pq.batch = null; savePq();
+    return sum;
+  }
+  function renderResult(sum) {
+    sum = sum || pq.lastResult; if (!sum) { closeQuiz(true); return; }
+    var okN = sum.ok, n = sum.n, pct = sum.pct;
     var map = bankMap(), total = Object.keys(map).length, seen = total - pq.pool.length;
-    var badList = b.results.filter(function (r) { return !r.ok; }).map(function (r) { var q = map[r.id]; return q ? '<div class="err-item">' + E.richHtml(q.q, true) + '<div class="small"><b class="text-success">' + esc(T('quiz.correct')) + ':</b> ' + esc(rightText(q)) + '</div></div>' : ''; }).join('');
-    pq.batch = null; savePq();
+    var badList = (sum.bad || []).map(function (id) { var q = map[id]; return q ? '<div class="err-item">' + E.richHtml(q.q, true) + '<div class="small"><b class="text-success">' + esc(T('quiz.correct')) + ':</b> ' + esc(rightText(q)) + '</div></div>' : ''; }).join('');
+    if (!quizOpen) { savedPos = M.time(); M.pause(); quizOpen = true; quizModal.classList.add('show'); }
     shell('<div class="result-score ' + (pct >= 90 ? 'success' : pct >= 50 ? 'warning' : 'danger') + '"><span class="result-pct">' + pct + '%</span><span class="small">' + esc(T('player.resultOf', { a: okN, n: n })) + '</span></div>' +
       '<p class="small muted">' + esc(T('player.seenOf', { a: seen, n: total })) + (pq.errs.length ? ' · ' + esc(T('player.errsN', { n: pq.errs.length })) : '') + '</p>' +
       (pq.pool.length ? '' : '<div class="alert alert-success">' + SP.icon('circle-check') + '<div class="alert-body">' + esc(T(pq.errs.length ? 'player.allSeenErrs' : 'player.allSeen')) + '</div></div>') +
@@ -536,12 +551,14 @@
       html += '<div class="card card-flat feed-detail"><div class="row-between"><span class="badge ' + (h.ok ? 'badge-success' : 'badge-danger') + '">' + SP.icon(h.ok ? 'circle-check' : 'circle-x') + esc(T(h.ok ? 'quiz.right' : 'quiz.wrong')) + '</span><span class="xsmall subtle">' + esc(T('player.atVideo', { t: fmt(h.pos || 0) })) + ' · ' + esc(SP.fmtDateTime(h.at)) + '</span></div>' +
         E.richHtml(h.q, true) + '<div class="small"><b>' + esc(T('player.yourAnswer')) + ':</b> ' + esc((h.kb ? h.typed : (h.sel || []).join('; ')) || '—') + '</div><div class="small"><b class="text-success">' + esc(T('quiz.correct')) + ':</b> ' + esc(h.right) + '</div></div>';
     }
+    if (pq && pq.lastResult) html += '<div class="row-between feed-last"><span class="small">' + esc(T('player.lastResult', { p: pq.lastResult.pct, a: pq.lastResult.ok, n: pq.lastResult.n })) + '</span><button type="button" class="btn btn-sm" id="feedResult"' + (quizOpen ? ' disabled' : '') + '>' + SP.icon('list-checks') + '<span>' + esc(T('player.showResult')) + '</span></button></div>';
     html += '<div class="row-between"><span class="xsmall subtle">' + esc(T('player.feedSaved')) + '</span><button type="button" class="btn btn-sm btn-danger-outline" id="feedReset"' + (hist.length || (pq && pq.errs.length) ? '' : ' disabled') + '>' + SP.icon('rotate-ccw') + '<span>' + esc(T('player.resetProgress')) + '</span></button></div>';
     el.innerHTML = html; wireFeed();
   }
   function wireFeed() {
     SP.$$('[data-h]', root).forEach(function (b) { b.onclick = function () { var i = +b.getAttribute('data-h'); feedSel = feedSel === i ? null : i; renderFeed(); }; });
     var r = $('feedRedo'); if (r) r.onclick = startRedo;
+    var fr = $('feedResult'); if (fr) fr.onclick = function () { renderResult(pq.lastResult); renderFeed(); };
     var nw = $('feedNow'); if (nw) nw.onclick = function () { openQuiz(); };
     var rs = $('feedReset'); if (rs) rs.onclick = function () {
       SP.confirm({ title: T('player.resetTitle'), text: T('player.resetText'), okLabel: T('player.resetProgress'), danger: true, icon: 'rotate-ccw' }).then(function (ok) {

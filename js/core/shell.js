@@ -46,6 +46,7 @@
       '  </div>' +
       '  <nav class="sb-nav" data-i18n-attr="aria-label:nav.main">' + MAIN.map(function (x) { return navItem(x); }).join('') + '</nav>' +
       '  <div class="sb-foot">' +
+      '    <div class="lang-sw" id="sbLang" role="group"></div>' +
       '    <div class="sb-user" id="sbUser"></div>' +
       '    <a class="nav-item" href="#/settings" data-route="settings" data-tip-collapsed data-tip-right data-i18n-attr="data-tip:nav.settings">' + SP.icon('settings') + '<span class="sb-label" data-i18n="nav.settings"></span></a>' +
       '    <button type="button" class="nav-item" id="sbHide" data-tip-collapsed data-tip-right data-i18n-attr="data-tip:nav.hidePanel">' + SP.icon('arrow-up') + '<span class="sb-label" data-i18n="nav.hidePanel"></span></button>' +
@@ -54,6 +55,7 @@
       '<button type="button" class="sb-restore" id="sbRestore" data-i18n-attr="aria-label:nav.showPanel;data-tip:nav.showPanel">' + SP.icon('menu') + '</button>' +
       '<main class="main" id="main">' +
       '  <header class="mobile-bar"><span class="title" id="mobileTitle"></span>' +
+      '    <div class="lang-sw" id="mbLang" role="group"></div>' +
       '    <a class="btn btn-ghost btn-icon" href="#/settings" id="mbSettings" data-i18n-attr="aria-label:nav.settings">' + SP.icon('settings') + '</a>' +
       '  </header>' +
       '  <div id="views"></div>' +
@@ -67,9 +69,22 @@
     SP.$('#sbRestore').onclick = function () { SP.settings.set('sidebar', 'expanded'); };
     paintToggle();
     renderUser();
+    paintLang();
     SP.on('settings', function (e) { if (e.key === 'sidebar') paintToggle(); });
-    SP.on('lang', function () { paintToggle(); renderUser(); setTitle(); Object.keys(mounted).forEach(function (id) { if (views[id].refresh) views[id].refresh(); }); });
+    SP.on('lang', function () { paintToggle(); renderUser(); setTitle(); paintLang(); Object.keys(mounted).forEach(function (id) { if (views[id].refresh) views[id].refresh(); }); });
     SP.on('auth', renderUser);
+  }
+
+  /* Переключатель языка RU / KZ / EN (панель и мобильная шапка), синхронизирован с Настройками */
+  function paintLang() {
+    ['#sbLang', '#mbLang'].forEach(function (sel) {
+      var box = SP.$(sel); if (!box) return;
+      box.setAttribute('aria-label', SP.t('settings.language'));
+      box.innerHTML = SP.LANGS.map(function (l) {
+        return '<button type="button" data-setlang="' + l.code + '" aria-pressed="' + (SP.lang() === l.code) + '" aria-label="' + SP.esc(l.name) + '" data-tip="' + SP.esc(l.name) + '"' + (sel === '#sbLang' ? ' data-tip-right' : '') + '>' + l.short + '</button>';
+      }).join('');
+      SP.$$('[data-setlang]', box).forEach(function (b) { b.onclick = function () { SP.settings.set('lang', b.getAttribute('data-setlang')); var n = SP.$(sel + ' [data-setlang="' + SP.lang() + '"]'); if (n) n.focus(); }; });
+    });
   }
 
   function paintToggle() {

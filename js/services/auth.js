@@ -40,14 +40,16 @@
 
     setGroup: function (g) {
       if (!state) state = { mode: 'local', user: {} };
-      state.user = state.user || {}; state.user.group = (g || '').trim();
+      state.user = state.user || {}; state.user.group = SP.group.format(g);
       save(); applyGroup(); SP.hub.reloadBase();
     },
     updateProfile: function (p) {
       if (!state) state = { mode: 'local', user: {} };
       state.user = Object.assign({}, state.user, p);
       if (p && p.name) state.user.nameSet = true;
+      if (p && 'group' in p) state.user.group = SP.group.format(p.group);
       save(); applyGroup();
+      if (p && 'group' in p && SP.hub) SP.hub.reloadBase();
     },
 
     logout: function () {
@@ -88,8 +90,8 @@
         '<div class="stack-sm"><h1 class="auth-title">' + SP.esc(SP.t('auth.welcomeTitle')) + '</h1><p class="muted small">' + SP.esc(SP.t('auth.welcomeSub')) + '</p></div>' +
         '<div class="field"><label class="label" for="suName">' + SP.esc(SP.t('auth.yourName')) + '</label><input class="input" id="suName" autocomplete="name" value="' + SP.esc(u.name || '') + '" placeholder="' + SP.esc(SP.t('auth.yourNamePh')) + '"></div>' +
         '<div class="field"><label class="label" for="suGroup">' + SP.esc(SP.t('auth.group')) + '</label>' +
-        '<input class="input" id="suGroup" list="suGroupList" value="' + SP.esc(u.group || '') + '" placeholder="' + SP.esc(SP.t('auth.groupPh')) + '" autocapitalize="characters">' +
-        '<datalist id="suGroupList">' + SP.groups.list().map(function (g) { return '<option value="' + SP.esc(g.name) + '">'; }).join('') + '</datalist>' +
+        '<div class="ac"><input class="input" id="suGroup" value="' + SP.esc(u.group || '') + '" placeholder="' + SP.esc(SP.t('auth.groupPh')) + '"></div>' +
+        '<span class="error-text" id="suGroupErr" role="alert"></span>' +
         '<span class="hint">' + SP.esc(SP.t('auth.groupHint')) + '</span></div>' +
         '<button type="submit" class="btn btn-primary btn-lg btn-block">' + SP.icon('arrow-right') + '<span>' + SP.esc(SP.t('auth.start')) + '</span></button>' +
         '<button type="button" class="link-btn small" id="suHow">' + SP.icon('shield-check', 'ic-sm') + ' ' + SP.esc(SP.t('auth.how')) + '</button>' +
@@ -97,9 +99,11 @@
         '<p class="auth-foot subtle xsmall">' + SP.esc(SP.t('auth.footer')) + '</p>';
       SP.$$('[data-lang]', root).forEach(function (b) { b.onclick = function () { SP.settings.set('lang', b.getAttribute('data-lang')); draw(); }; });
       SP.$('#suHow', root).onclick = SP.auth.explain;
+      SP.group.attach(SP.$('#suGroup', root), SP.$('#suGroupErr', root));
       SP.$('#setupForm', root).onsubmit = function (e) {
         e.preventDefault();
-        var name = SP.$('#suName', root).value.trim(), group = SP.$('#suGroup', root).value.trim();
+        var name = SP.$('#suName', root).value.trim(), gi = SP.$('#suGroup', root), group = SP.group.format(gi.value);
+        if (group && !SP.group.valid(group)) { SP.$('#suGroupErr', root).textContent = SP.t('group.invalid'); gi.setAttribute('aria-invalid', 'true'); gi.focus(); return; }
         state = { mode: 'local', user: { name: name, group: group, nameSet: !!name } };
         save(); applyGroup(); SP.hub.reloadBase();
         root.innerHTML = ''; document.body.classList.remove('auth-open');

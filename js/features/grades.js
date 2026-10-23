@@ -1,91 +1,98 @@
 /* =====================================================================
    РАЗДЕЛ «ОЦЕНКИ».
-   Вкладка «Журнал» — оценки из Platonus (через сервер-посредник).
-   Вкладка «Калькулятор» — расчёт рейтинга и нужного балла на экзамене:
-     рейтинг = текущая·60% + РК1·20% + РК2·20%
-     итог    = рейтинг·60% + экзамен·40%
-   Формат ответа Platonus официально не описан, поэтому журнал
-   разбирается «гибко»: ищутся названия предметов и баллы. Если что-то
-   отображается неверно — кнопка «Исходные данные» покажет, что пришло,
-   и это место легко поправить в функции normalize() ниже.
+   • «Журнал» — карточки предметов в стиле приложения Shokan: четыре
+     кольца «Ср. тек.», «Рейтинг», «Экзамен», «Итоговая». Доступа к
+     Platonus нет, поэтому значения вводит сам студент (прямо на
+     карточке) или переносит из калькулятора.
+   • «Калькулятор оценок» — расчёт рейтинга и нужного балла на экзамене:
+       рейтинг = текущая·60% + РК1·20% + РК2·20%
+       итог    = рейтинг·60% + экзамен·40%
    ===================================================================== */
 (function () {
   'use strict';
   var SP = window.SP, esc = SP.esc;
-  var root = null, tab = SP.store.get('sp-grades-tab', 'journal'), termIdx = null;
+  var root = null, tab = SP.store.get('sp-grades-tab', 'journal'), editing = null;
+  if (tab !== 'journal' && tab !== 'calc') tab = 'journal';
 
-  /* ---------- Разбор журнала Platonus ---------- */
-  var NAME_KEYS = /^(subjectname|subject_name|subjectnameru|subjectnamekz|subjectnameen|disciplinename|discipline|subject|name|title)$/i;
-  var METRIC = [
-    ['current', /^(current|currentmark|avg|average|avgcurrent|tekush|tk|currentprogress|attestation)$/i],
-    ['rk1', /^(rk1|rating1|rk_1|midterm1|firstrating|r1|ratingone)$/i],
-    ['rk2', /^(rk2|rating2|rk_2|midterm2|secondrating|r2|ratingtwo)$/i],
-    ['admission', /^(admission|admissionrating|rating|ratingadmission|rd|rdop|dopusk)$/i],
-    ['exam', /^(exam|exammark|examination|final|finalexam|e)$/i],
-    ['total', /^(total|totalmark|itog|result|finalmark|grade|mark|sum)$/i],
-    ['letter', /^(letter|lettermark|alphamark|lettergrade|traditional|traditionalmark)$/i]
-  ];
-  function numeric(v) { if (v == null || v === '') return null; var n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n; }
-  function findName(o) {
-    var keys = Object.keys(o);
-    for (var i = 0; i < keys.length; i++) if (NAME_KEYS.test(keys[i]) && typeof o[keys[i]] === 'string' && o[keys[i]].trim().length > 2) return o[keys[i]].trim();
-    return null;
-  }
-  function collectMarks(arr) {
-    /* массив отметок: [{ mark: 90, date: ..., type: ... }] */
-    return arr.map(function (m) {
-      if (typeof m !== 'object' || !m) return null;
-      var v = null, label = '';
-      Object.keys(m).forEach(function (k) {
-        if (v === null && /^(mark|grade|value|ball|score|point)$/i.test(k)) v = numeric(m[k]);
-        if (!label && /^(date|lessondate|markdate|day)$/i.test(k)) label = String(m[k]).slice(0, 10);
-        if (!label && /^(type|typename|lessontype|kind)$/i.test(k) && typeof m[k] === 'string') label = m[k];
-      });
-      return v === null ? null : { v: v, label: label };
-    }).filter(Boolean);
-  }
-  function normalize(data) {
-    var out = [], seen = {};
-    (function walk(node, depth) {
-      if (!node || depth > 7) return;
-      if (Array.isArray(node)) { node.forEach(function (x) { walk(x, depth + 1); }); return; }
-      if (typeof node !== 'object') return;
-      var name = findName(node);
-      if (name) {
-        var row = { name: name, metrics: {}, marks: [], teacher: '' };
-        Object.keys(node).forEach(function (k) {
-          var v = node[k];
-          if (/tutor|teacher|prepod/i.test(k) && typeof v === 'string') row.teacher = v;
-          for (var i = 0; i < METRIC.length; i++) {
-            if (METRIC[i][1].test(k)) {
-              if (METRIC[i][0] === 'letter') { if (typeof v === 'string' && v.trim()) row.metrics.letter = v.trim(); }
-              else { var n = numeric(v); if (n !== null && n >= 0 && n <= 100) row.metrics[METRIC[i][0]] = n; }
-            }
-          }
-          if (Array.isArray(v) && v.length && typeof v[0] === 'object') { var ms = collectMarks(v); if (ms.length) row.marks = row.marks.concat(ms); }
-        });
-        if (row.metrics.current == null && row.marks.length) row.metrics.current = Math.round(row.marks.reduce(function (a, m) { return a + m.v; }, 0) / row.marks.length * 10) / 10;
-        if (Object.keys(row.metrics).length || row.marks.length) {
-          var key = SP.lc(name);
-          if (!seen[key]) { seen[key] = row; out.push(row); }
-          else { Object.assign(seen[key].metrics, row.metrics); seen[key].marks = seen[key].marks.concat(row.marks); }
-          return;
-        }
-      }
-      Object.keys(node).forEach(function (k) { walk(node[k], depth + 1); });
-    })(data, 0);
-    return out;
-  }
-
-  /* цвет по баллу: 90+ зелёный, 70–89 синий, 50–69 жёлтый, ниже 50 красный */
+  /* ПОРОГИ ЦВЕТА КОЛЕЦ — меняйте только здесь.
+     0 или пусто → серое пустое кольцо; 1–49 красный; 50–69 жёлтый;
+     70–89 синий; 90–100 зелёный (как на скриншотах Shokan). */
+  var RING = [{ min: 90, cls: 'green' }, { min: 70, cls: 'blue' }, { min: 50, cls: 'yellow' }, { min: 0.01, cls: 'red' }];
+  function ringCls(v) { if (!v) return ''; for (var i = 0; i < RING.length; i++) if (v >= RING[i].min) return RING[i].cls; return ''; }
   function tone(v) { return v == null ? '' : v >= 90 ? 'success' : v >= 70 ? 'accent' : v >= 50 ? 'warning' : 'danger'; }
   function f1(v) { return (Math.round(v * 10) / 10).toString(); }
+  function num(v) { if (v === '' || v == null) return null; var n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : Math.max(0, Math.min(100, n)); }
+  function who() { return String(((SP.auth.user() || {}).login) || '').toLowerCase(); }
 
-  /* ---------- Калькулятор (как на старом сайте) ---------- */
-  function calcKey() { return 'studyplay-calc-v1:' + String(((SP.auth.user() || {}).login) || '').toLowerCase(); }
+  /* ---------- Журнал ---------- */
+  function jKey() { return 'sp-journal-v1:' + who(); }
+  function jState() { var s = SP.store.get(jKey(), null); if (!s || !Array.isArray(s.items)) s = { items: [] }; return s; }
+  function jSave(s) { SP.store.set(jKey(), s); }
+  function ring(label, v) {
+    var val = v == null ? 0 : v, c = 2 * Math.PI * 16, len = Math.max(0, Math.min(100, val)) / 100 * c;
+    return '<div class="jr-ring"><span>' + esc(label) + '</span><div class="ring ' + ringCls(val) + '" role="img" aria-label="' + esc(label + ': ' + f1(val)) + '"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="bg" cx="20" cy="20" r="16"/>' +
+      (len ? '<circle class="fg" cx="20" cy="20" r="16" stroke-dasharray="' + len.toFixed(2) + ' ' + c.toFixed(2) + '"/>' : '') + '</svg><b>' + esc(f1(val)) + '</b></div></div>';
+  }
+  function teachLabel(t) {
+    t = String(t || '').trim(); if (!t) return '';
+    return SP.t(/[,;]/.test(t) ? 'jr.teachers' : 'jr.teacher') + ': ' + t;
+  }
+  function journalHtml() {
+    var st = jState();
+    var h = '<div class="row-between"><div class="jr-legend"><span><i style="background:var(--ring-green)"></i>90–100</span><span><i style="background:var(--ring-blue)"></i>70–89</span><span><i style="background:var(--ring-yellow)"></i>50–69</span><span><i style="background:var(--ring-red)"></i>1–49</span></div>' +
+      '<div class="btn-group"><button type="button" class="btn" id="jrFromCalc">' + SP.icon('calculator') + '<span>' + esc(SP.t('jr.fromCalc')) + '</span></button>' +
+      '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div></div>';
+    if (!st.items.length) {
+      return h + '<section class="card"><div class="empty">' + SP.icon('graduation-cap', 'ic-xl') + '<h3>' + esc(SP.t('jr.emptyTitle')) + '</h3><p>' + esc(SP.t('jr.emptyText')) + '</p>' +
+        '<div class="btn-group"><button type="button" class="btn btn-primary" id="jrFromSched">' + SP.icon('calendar-days') + '<span>' + esc(SP.t('jr.fromSchedule')) + '</span></button></div></div></section>';
+    }
+    return h + '<div class="jr-grid">' + st.items.map(function (it) { return editing === it.id ? editCard(it) : card(it); }).join('') + '</div>';
+  }
+  function card(it) {
+    return '<article class="jr-card" data-id="' + esc(it.id) + '"><div class="jr-top"><div class="jr-title"><h3 class="jr-name">' + esc(it.name || '—') + '</h3>' +
+      (it.teachers ? '<div class="jr-teach">' + esc(teachLabel(it.teachers)) + '</div>' : '') + '</div>' +
+      '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-edit="' + esc(it.id) + '" aria-label="' + esc(SP.t('jr.edit')) + '" data-tip="' + esc(SP.t('jr.edit')) + '">' + SP.icon('chevron-right') + '</button></div>' +
+      '<div class="jr-rings">' + ring(SP.t('jr.cur'), it.cur) + ring(SP.t('jr.rating'), it.rating) + ring(SP.t('jr.exam'), it.exam) + ring(SP.t('jr.final'), it.final) + '</div></article>';
+  }
+  function editCard(it) {
+    var f = function (k, label, val, full, type) {
+      return '<div class="field' + (full ? ' full' : '') + '"><label class="label" for="je-' + k + '">' + esc(label) + '</label><input class="input" id="je-' + k + '" data-k="' + k + '"' + (type === 'num' ? ' inputmode="decimal" placeholder="0–100"' : '') + ' value="' + esc(val == null ? '' : val) + '"></div>';
+    };
+    return '<article class="jr-card" data-id="' + esc(it.id) + '"><div class="jr-edit">' +
+      f('name', SP.t('grades.subjectName'), it.name, true) + f('teachers', SP.t('jr.teacherField'), it.teachers, true) +
+      f('cur', SP.t('jr.cur'), it.cur, false, 'num') + f('rating', SP.t('jr.rating'), it.rating, false, 'num') +
+      f('exam', SP.t('jr.exam'), it.exam, false, 'num') + f('final', SP.t('jr.final'), it.final, false, 'num') + '</div>' +
+      '<div class="jr-actions"><button type="button" class="btn btn-danger-outline btn-sm" data-del="' + esc(it.id) + '">' + SP.icon('trash-2') + '<span>' + esc(SP.t('common.delete')) + '</span></button>' +
+      '<span class="grow"></span><button type="button" class="btn btn-sm" data-cancel>' + esc(SP.t('common.cancel')) + '</button>' +
+      '<button type="button" class="btn btn-primary btn-sm" data-save="' + esc(it.id) + '">' + SP.icon('check') + '<span>' + esc(SP.t('common.save')) + '</span></button></div></article>';
+  }
+  function upsert(st, name, patch) {
+    var it = st.items.filter(function (x) { return SP.lc(x.name) === SP.lc(name); })[0];
+    if (!it) { it = { id: SP.uid('j'), name: name, teachers: '', cur: null, rating: null, exam: null, final: null }; st.items.push(it); }
+    Object.keys(patch).forEach(function (k) { if (patch[k] != null && patch[k] !== '') it[k] = patch[k]; });
+    return it;
+  }
+  function fromCalc() {
+    var cs = calcState(), st = jState(), n = 0;
+    cs.s.forEach(function (s) {
+      if (!String(s.name || '').trim()) return;
+      var v = vals(s), R = v.c != null && v.r1 != null && v.r2 != null ? 0.6 * v.c + 0.2 * v.r1 + 0.2 * v.r2 : null, F = R != null && v.e != null ? 0.6 * R + 0.4 * v.e : null;
+      var r1 = function (x) { return x == null ? null : Math.round(x); };
+      upsert(st, s.name.trim(), { cur: r1(v.c), rating: r1(R), exam: r1(v.e), final: r1(F) }); n++;
+    });
+    jSave(st); tab = 'journal'; SP.store.set('sp-grades-tab', tab); render();
+    SP.toast(n ? SP.t('jr.moved', { n: n }) : SP.t('jr.calcEmpty'), n ? 'success' : 'warning');
+  }
+  function fromSchedule() {
+    var st = jState(), n = 0;
+    SP.hub.data().subjects.forEach(function (s) { var nm = SP.hub.cleanName(s.name); if (!nm) return; var before = st.items.length; upsert(st, nm, { teachers: s.teacher || '' }); if (st.items.length > before) n++; });
+    jSave(st); render(); SP.toast(SP.t('jr.added', { n: n }), n ? 'success' : 'info');
+  }
+
+  /* ---------- Калькулятор ---------- */
+  function calcKey() { return 'studyplay-calc-v1:' + who(); }
   function calcState() { var s = SP.store.get(calcKey(), null); if (!s || !Array.isArray(s.s)) s = { s: [] }; return s; }
   var W = { c: 0.36, r1: 0.12, r2: 0.12, e: 0.4 };
-  function num(v) { if (v === '' || v == null) return null; var n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : Math.max(0, Math.min(100, n)); }
   function cur(s) { var g = (s.grades || []).map(Number).filter(function (x) { return !isNaN(x); }); return s.mode === 'avg' ? num(s.avg) : (g.length ? g.reduce(function (a, b) { return a + b; }, 0) / g.length : null); }
   function vals(s) { return { c: cur(s), r1: num(s.rk1), r2: num(s.rk2), e: num(s.exam) }; }
   function need(v, T) {
@@ -93,67 +100,10 @@
     var K = 0; Object.keys(W).forEach(function (k) { if (v[k] != null) K += W[k] * v[k]; });
     return { un: un, x: (T - K) / un.reduce(function (a, k) { return a + W[k]; }, 0) };
   }
-
-  function render() {
-    if (!root) return;
-    var g = SP.data.grades();
-    var html = SP.pageHead({
-      title: SP.t('nav.grades'),
-      sub: (tab === 'journal' && g) ? SP.data.syncLine() : esc(SP.t('grades.subGuest')),
-      actions: tab === 'journal' ? '<button type="button" class="btn" id="grImport">' + SP.icon('upload') + '<span>' + esc(SP.t(g ? 'grades.update' : 'grades.import')) + '</span></button>' : ''
-    });
-    html += '<div class="tabs" role="tablist">' +
-      '<button type="button" class="tab" role="tab" data-tab="journal" aria-selected="' + (tab === 'journal') + '">' + SP.icon('graduation-cap', 'ic-sm') + '<span>' + esc(SP.t('grades.journal')) + '</span></button>' +
-      '<button type="button" class="tab" role="tab" data-tab="calc" aria-selected="' + (tab === 'calc') + '">' + SP.icon('calculator', 'ic-sm') + '<span>' + esc(SP.t('grades.calc')) + '</span></button></div>';
-    html += tab === 'journal' ? journalHtml() : calcHtml();
-    root.innerHTML = '<div class="page">' + html + '</div>';
-    wire();
-  }
-
-  function journalHtml() {
-    var g = SP.data.grades();
-    var h = '';
-    if (!g) {
-      return '<section class="card"><div class="empty">' + SP.icon('graduation-cap', 'ic-xl') + '<h3>' + esc(SP.t('grades.noData')) + '</h3><p>' + esc(SP.t('grades.noDataText')) + '</p>' +
-        '<div class="btn-group"><button type="button" class="btn btn-primary" id="grImport2">' + SP.icon('upload') + '<span>' + esc(SP.t('grades.import')) + '</span></button>' +
-        '<button type="button" class="btn" id="grHelp">' + SP.icon('circle-help') + '<span>' + esc(SP.t('grades.howTo')) + '</span></button>' +
-        '<button type="button" class="btn btn-ghost" data-tab-go="calc">' + SP.icon('calculator') + '<span>' + esc(SP.t('grades.openCalc')) + '</span></button></div></div></section>';
-    }
-    var p = g.profile || {};
-    h += '<section class="card card-flat profile-strip"><span class="avatar">' + SP.icon('user') + '</span><div class="grow"><b>' + esc(p.name || (SP.auth.user() || {}).name || '') + '</b><div class="small muted">' + esc([p.group, p.course ? SP.t('grades.course', { n: p.course }) : '', p.profession].filter(Boolean).join(' · ')) + '</div></div>' +
-      (p.gpa != null && p.gpa !== '' ? '<div class="gpa"><span class="xsmall subtle">GPA</span><b>' + esc(p.gpa) + '</b></div>' : '') + '</section>';
-    var journals = g.journals || [];
-    if (!journals.length) return h + '<section class="card"><div class="empty">' + SP.icon('graduation-cap', 'ic-xl') + '<p>' + esc(SP.t('grades.empty')) + '</p></div></section>';
-    if (termIdx === null || !journals[termIdx]) termIdx = journals.length - 1;
-    if (journals.length > 1) {
-      h += '<div class="segmented" role="group" aria-label="' + esc(SP.t('grades.term')) + '">' + journals.map(function (j, i) {
-        return '<button type="button" data-term="' + i + '" aria-pressed="' + (i === termIdx) + '">' + esc(j.label || SP.t('grades.termLabel', { y: j.year, t: j.term })) + '</button>';
-      }).join('') + '</div>';
-    }
-    var rows = normalize(journals[termIdx].data);
-    if (!rows.length) {
-      h += '<section class="card"><div class="empty">' + SP.icon('triangle-alert', 'ic-xl') + '<h3>' + esc(SP.t('grades.cantRead')) + '</h3><p>' + esc(SP.t('grades.cantReadText')) + '</p></div></section>';
-    } else {
-      h += '<div class="grade-grid">' + rows.map(function (r) {
-        var m = r.metrics, main = m.total != null ? m.total : m.admission != null ? m.admission : m.current;
-        var metric = function (k, label) { return m[k] == null ? '' : '<div class="gm"><span>' + esc(label) + '</span><b class="text-' + tone(m[k]) + '">' + esc(f1(m[k])) + '</b></div>'; };
-        return '<article class="card grade-card"><div class="row-between row-nowrap"><h3 class="grade-name">' + esc(r.name) + '</h3>' +
-          (main != null ? '<span class="grade-main ' + tone(main) + '">' + esc(f1(main)) + '</span>' : '') + '</div>' +
-          (r.teacher ? '<div class="small muted">' + esc(r.teacher) + '</div>' : '') +
-          '<div class="gm-row">' + metric('current', SP.t('grades.current')) + metric('rk1', SP.t('grades.rk1')) + metric('rk2', SP.t('grades.rk2')) + metric('admission', SP.t('grades.admission')) + metric('exam', SP.t('grades.exam')) + metric('total', SP.t('grades.total')) +
-          (m.letter ? '<div class="gm"><span>' + esc(SP.t('grades.letter')) + '</span><b>' + esc(m.letter) + '</b></div>' : '') + '</div>' +
-          (r.marks.length ? '<div class="marks">' + r.marks.slice(-30).map(function (x) { return '<span class="mark ' + tone(x.v) + '" title="' + esc(x.label) + '">' + esc(f1(x.v)) + '</span>'; }).join('') + '</div>' : '') +
-          '</article>';
-      }).join('') + '</div>';
-    }
-    h += '<p class="xsmall subtle">' + esc(SP.t('grades.colors')) + ' <button type="button" class="link-btn" id="grRaw">' + esc(SP.t('grades.raw')) + '</button> · <button type="button" class="link-btn" id="grHelp">' + esc(SP.t('grades.howTo')) + '</button></p>';
-    return h;
-  }
-
   function calcHtml() {
     var st = calcState();
     var h = '<section class="card card-flat"><div class="row-between"><p class="small muted">' + esc(SP.t('grades.formula')) + '</p>' +
-      '<div class="row">' + (SP.data.grades() ? '<button type="button" class="btn" id="cvFill">' + SP.icon('download') + '<span>' + esc(SP.t('grades.fromPlatonus')) + '</span></button>' : '') +
+      '<div class="btn-group"><button type="button" class="btn" id="cvToJournal"' + (st.s.length ? '' : ' disabled') + '>' + SP.icon('graduation-cap') + '<span>' + esc(SP.t('jr.toJournal')) + '</span></button>' +
       '<button type="button" class="btn btn-primary" id="cvAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div></div></section>';
     h += '<div class="stack" id="cvList">' + (st.s.length ? st.s.map(calcCard).join('') : '<section class="card"><div class="empty">' + SP.icon('calculator', 'ic-xl') + '<p>' + esc(SP.t('grades.calcEmpty')) + '</p></div></section>') + '</div>';
     return h + '<p class="xsmall subtle">' + esc(SP.t('grades.colors')) + ' ' + esc(SP.t('grades.calcHint')) + '</p>';
@@ -182,19 +132,21 @@
     else { h.className = 'small cv-hint'; h.textContent = SP.t('grades.need', { list: n70.un.map(function (k) { return NM[k]; }).join(', '), x: fmtN(n70.x), y: fmtN(n72.x) }); }
   }
 
+  /* ---------- Отрисовка и события ---------- */
+  function render() {
+    if (!root) return;
+    var html = SP.pageHead({ title: SP.t('nav.grades'), sub: esc(SP.t('jr.sub')) });
+    html += '<div class="tabs" role="tablist">' +
+      '<button type="button" class="tab" role="tab" data-tab="journal" aria-selected="' + (tab === 'journal') + '">' + SP.icon('graduation-cap', 'ic-sm') + '<span>' + esc(SP.t('grades.journal')) + '</span></button>' +
+      '<button type="button" class="tab" role="tab" data-tab="calc" aria-selected="' + (tab === 'calc') + '">' + SP.icon('calculator', 'ic-sm') + '<span>' + esc(SP.t('grades.calc')) + '</span></button></div>';
+    html += tab === 'journal' ? journalHtml() : calcHtml();
+    root.innerHTML = '<div class="page">' + html + '</div>';
+    wire();
+  }
   function wire() {
     var $ = function (s) { return SP.$(s, root); };
-    SP.$$('[data-tab]', root).forEach(function (b) { b.onclick = function () { tab = b.getAttribute('data-tab'); SP.store.set('sp-grades-tab', tab); render(); }; });
-    SP.$$('[data-tab-go]', root).forEach(function (b) { b.onclick = function () { tab = b.getAttribute('data-tab-go'); SP.store.set('sp-grades-tab', tab); render(); }; });
-    SP.$$('[data-term]', root).forEach(function (b) { b.onclick = function () { termIdx = +b.getAttribute('data-term'); render(); }; });
-    [$('#grImport'), $('#grImport2')].forEach(function (b) { if (b) b.onclick = importFlow; });
-    [$('#grHelp')].forEach(function (b) { if (b) b.onclick = howTo; });
-    var raw = $('#grRaw'); if (raw) raw.onclick = function () {
-      var g = SP.data.grades();
-      SP.modal({ title: SP.t('grades.raw'), size: 'lg', body: '<p class="small muted">' + esc(SP.t('grades.rawText')) + '</p><textarea class="textarea mono xsmall" rows="16" readonly>' + esc(JSON.stringify(g && g.journals, null, 2)) + '</textarea>',
-        actions: [{ label: SP.t('common.download'), icon: 'download', close: false, onClick: function () { SP.downloadText(JSON.stringify(g, null, 2), 'platonus-journal.json', 'application/json'); return false; } }, { label: SP.t('common.close'), kind: 'primary' }] });
-    };
-    if (tab !== 'calc') return;
+    SP.$$('[data-tab]', root).forEach(function (b) { b.onclick = function () { tab = b.getAttribute('data-tab'); editing = null; SP.store.set('sp-grades-tab', tab); render(); }; });
+    if (tab === 'journal') { wireJournal(); return; }
     var st = calcState(), sv = function () { SP.store.set(calcKey(), st); };
     var list = $('#cvList');
     SP.$$('.cv-card', root).forEach(function (c) { upd(c, st.s[+c.getAttribute('data-i')]); });
@@ -209,19 +161,7 @@
         actions: [{ label: SP.t('grades.newSubject'), icon: 'plus', kind: 'primary', onClick: function () { addSub(''); } }] });
       SP.$$('[data-pick]', m.el).forEach(function (b) { b.onclick = function () { m.close(); addSub(b.getAttribute('data-pick')); }; });
     };
-    var fill = $('#cvFill'); if (fill) fill.onclick = function () {
-      var g = SP.data.grades(), js = g && g.journals || [], rows = js.length ? normalize(js[js.length - 1].data) : [], n = 0;
-      rows.forEach(function (r) {
-        var s = st.s.filter(function (x) { return SP.lc(x.name) === SP.lc(r.name); })[0];
-        if (!s) { s = { name: r.name, mode: 'avg', grades: [], avg: '', rk1: '', rk2: '', exam: '' }; st.s.push(s); }
-        if (r.metrics.current != null) { s.mode = 'avg'; s.avg = String(r.metrics.current); }
-        if (r.metrics.rk1 != null) s.rk1 = String(r.metrics.rk1);
-        if (r.metrics.rk2 != null) s.rk2 = String(r.metrics.rk2);
-        if (r.metrics.exam != null) s.exam = String(r.metrics.exam);
-        n++;
-      });
-      sv(); render(); SP.toast(n ? SP.t('grades.filled', { n: n }) : SP.t('grades.cantRead'), n ? 'success' : 'warning');
-    };
+    var tj = $('#cvToJournal'); if (tj) tj.onclick = fromCalc;
     if (!list) return;
     list.addEventListener('input', function (e) {
       var c = e.target.closest('.cv-card'); if (!c) return; var f = e.target.getAttribute('data-f'); if (!f || f === 'newg') return;
@@ -242,62 +182,36 @@
       else if (a === 'del') SP.confirm({ title: SP.t('grades.delSubject'), text: SP.t('grades.delSubjectText', { name: s.name || '—' }), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) { if (ok) { st.s.splice(+c.getAttribute('data-i'), 1); sv(); render(); } });
     });
   }
-
-  /* ---------- Импорт журнала из файла или вставленного текста ---------- */
-  function extract(text) {
-    text = String(text || '').trim();
-    try { return JSON.parse(text); } catch (e) { /* не чистый JSON — ищем JSON внутри */ }
-    var m = text.match(/[\[{][\s\S]*[\]}]/);
-    if (m) { try { return JSON.parse(m[0]); } catch (e) { /* не нашли */ } }
-    return null;
-  }
-  function doImport(raw) {
-    var parsed = extract(raw);
-    if (!parsed) { SP.toast(SP.t('grades.importBad'), 'danger'); return false; }
-    var r = SP.data.importGrades(parsed);
-    if (!r.ok) { SP.toast(SP.t('grades.cantRead'), 'danger'); return false; }
-    tab = 'journal'; termIdx = null; SP.store.set('sp-grades-tab', tab); render();
-    SP.toast(SP.t('grades.imported', { n: r.terms }), 'success');
-    return true;
-  }
-  function importFlow() {
-    var m = SP.modal({
-      title: SP.t('grades.import'), size: 'lg',
-      body: '<div class="alert alert-info">' + SP.icon('info') + '<div class="alert-body"><span>' + esc(SP.t('grades.importIntro')) + '</span> <button type="button" class="link-btn" id="giHow">' + esc(SP.t('grades.howTo')) + '</button></div></div>' +
-        '<div class="field"><label class="label" for="giFile">' + esc(SP.t('grades.importFile')) + '</label><input class="input" type="file" id="giFile" accept=".json,.txt,.html,.htm,application/json"></div>' +
-        '<div class="field"><label class="label" for="giPaste">' + esc(SP.t('grades.importPaste')) + '</label><textarea class="textarea mono small" id="giPaste" rows="7" placeholder=\'{"journals":[ … ]}\'></textarea></div>',
-      actions: [{ label: SP.t('common.cancel') }, { label: SP.t('grades.importAdd'), kind: 'primary', icon: 'upload', onClick: function () {
-        var txt = SP.$('#giPaste', m.el).value.trim();
-        if (!txt) { SP.toast(SP.t('grades.importEmpty'), 'warning'); return false; }
-        if (!doImport(txt)) return false;
-      } }]
+  function wireJournal() {
+    var $ = function (s) { return SP.$(s, root); };
+    var on = function (s, fn) { var el = $(s); if (el) el.onclick = fn; };
+    on('#jrFromCalc', fromCalc); on('#jrFromSched', fromSchedule);
+    on('#jrAdd', function () { var st = jState(), it = { id: SP.uid('j'), name: '', teachers: '', cur: null, rating: null, exam: null, final: null }; st.items.push(it); jSave(st); editing = it.id; render(); var i = $('#je-name'); if (i) i.focus(); });
+    SP.$$('[data-edit]', root).forEach(function (b) { b.onclick = function () { editing = b.getAttribute('data-edit'); render(); var i = $('#je-cur'); if (i) i.focus(); }; });
+    SP.$$('[data-cancel]', root).forEach(function (b) {
+      b.onclick = function () { var st = jState(); st.items = st.items.filter(function (x) { return x.id !== editing || String(x.name).trim(); }); jSave(st); editing = null; render(); };
     });
-    SP.$('#giHow', m.el).onclick = howTo;
-    SP.$('#giFile', m.el).onchange = function (e) {
-      var f = e.target.files[0]; if (!f) return;
-      f.text().then(function (t) { if (doImport(t)) m.close(); });
-    };
-  }
-  function howTo() {
-    var cfg = window.SP_CONFIG || {};
-    SP.modal({
-      title: SP.t('grades.howTo'), size: 'lg',
-      body: '<p>' + esc(SP.t('grades.how1')) + '</p>' +
-        '<ol class="stack-sm"><li>' + esc(SP.t('grades.how2')) + '</li><li>' + esc(SP.t('grades.how3')) + '</li><li>' + esc(SP.t('grades.how4')) + '</li></ol>' +
-        '<div class="alert alert-warning">' + SP.icon('shield-check') + '<div class="alert-body"><span>' + esc(SP.t('grades.howSafe')) + '</span></div></div>',
-      actions: [
-        { label: SP.t('grades.openPlatonus'), icon: 'external-link', close: false, onClick: function () { window.open(cfg.PLATONUS_JOURNAL_URL || cfg.PLATONUS_URL, '_blank', 'noopener'); return false; } },
-        { label: SP.t('common.understood'), kind: 'primary' }
-      ]
+    SP.$$('[data-save]', root).forEach(function (b) {
+      b.onclick = function () {
+        var st = jState(), it = st.items.filter(function (x) { return x.id === b.getAttribute('data-save'); })[0]; if (!it) return;
+        var card = b.closest('.jr-card'), g = function (k) { return SP.$('[data-k="' + k + '"]', card).value; };
+        var name = g('name').trim(); if (!name) { var ni = SP.$('[data-k="name"]', card); ni.setAttribute('aria-invalid', 'true'); ni.focus(); return; }
+        it.name = name; it.teachers = g('teachers').trim();
+        ['cur', 'rating', 'exam', 'final'].forEach(function (k) { it[k] = num(g(k)); });
+        jSave(st); editing = null; render(); SP.toast(SP.t('settings.saved'), 'success');
+      };
     });
+    SP.$$('[data-del]', root).forEach(function (b) {
+      b.onclick = function () {
+        var id = b.getAttribute('data-del');
+        SP.confirm({ title: SP.t('grades.delSubject'), text: SP.t('jr.delText'), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) {
+          if (!ok) return; var st = jState(); st.items = st.items.filter(function (x) { return x.id !== id; }); jSave(st); editing = null; render();
+        });
+      };
+    });
+    SP.$$('.jr-edit input', root).forEach(function (i) { i.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); var s = i.closest('.jr-card').querySelector('[data-save]'); if (s) s.click(); } else if (e.key === 'Escape') { var c = i.closest('.jr-card').querySelector('[data-cancel]'); if (c) c.click(); } }); });
   }
 
-  SP.grades = { normalize: normalize, doImport: doImport, openImport: importFlow };
-  SP.views.register('grades', {
-    titleKey: 'nav.grades',
-    mount: function (el) { root = el; render(); },
-    show: render,
-    refresh: render
-  });
-  SP.on('data', function () { if (root && SP.views.current() === 'grades') render(); });
+  SP.grades = { ringCls: ringCls, RING: RING };
+  SP.views.register('grades', { titleKey: 'nav.grades', mount: function (el) { root = el; render(); }, show: render, refresh: render });
 })();

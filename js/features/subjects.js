@@ -1,26 +1,30 @@
 /* =====================================================================
    РАЗДЕЛ «ПАПКИ С ПРЕДМЕТАМИ».
-   Слева — список предметов, справа — папка выбранного предмета:
-   материалы и ссылки, тесты, личные заметки. На телефоне — сначала
-   список, затем папка (с кнопкой «Назад»).
+   Слева — список папок, справа — папка предмета: материалы и ссылки,
+   тесты, заметки. На ПК список можно спрятать кнопкой, чтобы рабочая
+   область стала шире. На телефоне — сначала список, затем папка.
+   Файлы можно двигать вверх/вниз (порядок сохраняется) и скрывать.
+   Папки можно удалять по одной или несколько сразу (режим «Выбрать»).
    ===================================================================== */
 (function () {
   'use strict';
-  var SP = window.SP;
-  var root = null, selected = null, tab = 'materials', query = '', sharedSel = null;
+  var SP = window.SP, esc = SP.esc;
+  var root = null, selected = null, tab = 'materials', query = '';
+  var sui = Object.assign({ collapsed: false }, SP.store.get('sp-subjects-ui', {}));
+  var selMode = false, selSet = {}, showHidden = false;
 
   function data() { return SP.hub.data(); }
+  function saveSui() { SP.store.set('sp-subjects-ui', sui); }
   function isPin(f) { return f.base ? !!(data().pins && data().pins[f.id]) : !!f.pinned; }
-  function viewOrder(arr) { var ix = arr.map(function (_, i) { return i; }); return ix.filter(function (i) { return isPin(arr[i]); }).concat(ix.filter(function (i) { return !isPin(arr[i]); })); }
+  function isHidden(f) { return !!(data().hidden && data().hidden[f.id]); }
+  function ordKey(s, type) { return s.id + ':' + type; }
   function listOf(s, type) { return type === 'test' ? s.tests : s.materials; }
-  function fileIcon(name) {
-    var ext = String(name || '').split('.').pop().toLowerCase();
-    if (/^(png|jpe?g|webp|gif|svg)$/.test(ext)) return ['image', 'success'];
-    if (ext === 'pdf') return ['file-text', 'danger'];
-    if (/^(docx?|rtf|odt)$/.test(ext)) return ['file-text', 'accent'];
-    if (/^(pptx?|key)$/.test(ext)) return ['file', 'warning'];
-    if (/^(json)$/.test(ext)) return ['file-json', ''];
-    return ['file', ''];
+  /* Порядок: закреплённые сверху, затем сохранённый порядок (работает и для файлов курса) */
+  function viewOrder(arr, s, type) {
+    var ord = (s && data().order && data().order[ordKey(s, type)]) || [];
+    var pos = function (i) { var p = ord.indexOf(arr[i].id); return p < 0 ? 1e6 + i : p; };
+    var ix = arr.map(function (_, i) { return i; }).sort(function (a, b) { return pos(a) - pos(b); });
+    return ix.filter(function (i) { return isPin(arr[i]); }).concat(ix.filter(function (i) { return !isPin(arr[i]); }));
   }
   function linkInfo(u) {
     var h = ''; try { h = new URL(u).hostname.replace(/^www\./, '').toLowerCase(); } catch (e) { /* ничего */ }
@@ -35,23 +39,23 @@
   /* ---------------- Отрисовка ---------------- */
   function render() {
     if (!root) return;
-    var d = data();
-    var active = sharedSel ? null : (SP.hub.getSubject(selected) || null);
+    var d = data(), active = SP.hub.getSubject(selected) || null;
     var narrow = window.innerWidth < 900;
-    var showDetail = !!(active || sharedSel);
     var html = SP.pageHead({
       title: SP.t('nav.subjects'),
-      sub: SP.esc(SP.t('subjects.count', { n: d.subjects.length })),
-      actions: '<button type="button" class="btn" id="sjShared">' + SP.icon('users') + '<span>' + SP.esc(SP.t('subjects.sharedLoad')) + '</span></button>' +
-        '<button type="button" class="btn btn-primary" id="sjAdd">' + SP.icon('plus') + '<span>' + SP.esc(SP.t('subjects.add')) + '</span></button>'
+      sub: esc(SP.t('subjects.count', { n: d.subjects.length })),
+      actions: (d.subjects.length ? '<button type="button" class="btn" id="sjSelect" aria-pressed="' + selMode + '">' + SP.icon(selMode ? 'x' : 'square-check-big') + '<span>' + esc(SP.t(selMode ? 'subjects.selDone' : 'subjects.select')) + '</span></button>' : '') +
+        (Object.keys(d.removed || {}).length ? '<button type="button" class="btn btn-ghost" id="sjRestore">' + SP.icon('undo-2') + '<span>' + esc(SP.t('subjects.restoreRemoved')) + '</span></button>' : '') +
+        '<button type="button" class="btn btn-primary" id="sjAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('subjects.add')) + '</span></button>'
     });
-    if (!d.subjects.length && !d.shared.length) {
-      html += '<section class="card"><div class="empty">' + SP.icon('folder-open', 'ic-xl') + '<h3>' + SP.esc(SP.t('subjects.emptyTitle')) + '</h3><p>' + SP.esc(SP.t('subjects.emptyText')) + '</p>' +
-        '<div class="btn-group"><button type="button" class="btn btn-primary" id="sjAdd2">' + SP.icon('plus') + '<span>' + SP.esc(SP.t('subjects.add')) + '</span></button>' +
-        '<a class="btn" href="#/schedule">' + SP.icon('calendar-days') + '<span>' + SP.esc(SP.t('nav.schedule')) + '</span></a></div></div></section>';
+    if (!d.subjects.length) {
+      html += '<section class="card"><div class="empty">' + SP.icon('folder-open', 'ic-xl') + '<h3>' + esc(SP.t('subjects.emptyTitle')) + '</h3><p>' + esc(SP.t('subjects.emptyText')) + '</p>' +
+        '<div class="btn-group"><button type="button" class="btn btn-primary" id="sjAdd2">' + SP.icon('plus') + '<span>' + esc(SP.t('subjects.add')) + '</span></button>' +
+        '<a class="btn" href="#/schedule">' + SP.icon('calendar-days') + '<span>' + esc(SP.t('nav.schedule')) + '</span></a></div></div></section>';
       root.innerHTML = '<div class="page">' + html + '</div>'; wire(null); return;
     }
-    html += '<div class="sj-layout' + (narrow && showDetail ? ' show-detail' : '') + '">' + listPane(active) + '<div class="sj-detail">' + (sharedSel ? sharedPane() : active ? detailPane(active) : pickHint()) + '</div></div>';
+    var collapsed = !narrow && active && sui.collapsed && !selMode;
+    html += '<div class="sj-layout' + (narrow && active ? ' show-detail' : '') + (collapsed ? ' list-collapsed' : '') + '">' + listPane(active) + '<div class="sj-detail">' + (active ? detailPane(active, collapsed) : pickHint()) + '</div></div>';
     root.innerHTML = '<div class="page wide">' + html + '</div>';
     wire(active);
   }
@@ -59,103 +63,109 @@
   function listPane(active) {
     var d = data(), q = SP.lc(query);
     var items = d.subjects.filter(function (s) { return !q || SP.lc(s.name + ' ' + (s.teacher || '')).indexOf(q) >= 0; });
-    var h = '<aside class="sj-list card card-flat"><div class="input-icon">' + SP.icon('search') + '<input class="input" type="search" id="sjSearch" placeholder="' + SP.esc(SP.t('subjects.search')) + '" value="' + SP.esc(query) + '" aria-label="' + SP.esc(SP.t('subjects.search')) + '"></div>';
-    h += '<nav class="sj-items" aria-label="' + SP.esc(SP.t('nav.subjects')) + '">' + (items.length ? items.map(function (s) {
-      var mats = (s.materials || []).length, tests = (s.tests || []).length, mates = SP.hub.mateOf(s).length;
-      return '<button type="button" class="sj-item" data-sub="' + SP.esc(s.id) + '"' + (active && s.id === active.id ? ' aria-current="true"' : '') + '>' +
-        '<span class="file-badge accent">' + SP.icon('folder') + '</span><span class="meta"><b>' + SP.esc(SP.hub.cleanName(s.name)) + '</b>' +
-        '<small>' + SP.esc(SP.t('subjects.itemMeta', { m: mats, t: tests })) + (mates ? ' · ' + SP.esc(SP.t('subjects.hasMate')) : '') + '</small></span>' + SP.icon('chevron-right', 'sj-chev') + '</button>';
-    }).join('') : '<p class="subtle small sj-none">' + SP.esc(SP.t('subjects.notFound')) + '</p>') + '</nav>';
-    d.shared.forEach(function (g) {
-      var un = g.subjects.filter(function (s) { return !SP.hub.findMine(s); }); if (!un.length) return;
-      h += '<div class="sj-group-label">' + SP.icon('users', 'ic-sm') + ' ' + SP.esc(SP.t('subjects.mateGroup', { name: g.name })) + '</div>' +
-        un.map(function (s) { return '<button type="button" class="sj-item mate" data-shsub="' + SP.esc(g.id + '|' + s.id) + '"' + (sharedSel && sharedSel.gid === g.id && sharedSel.sid === s.id ? ' aria-current="true"' : '') + '><span class="file-badge">' + SP.icon('users') + '</span><span class="meta"><b>' + SP.esc(SP.hub.cleanName(s.name)) + '</b><small>' + SP.esc(SP.t('subjects.testsN', { n: s.tests.length })) + '</small></span></button>'; }).join('');
-    });
+    var h = '<aside class="sj-list card card-flat"><div class="input-icon">' + SP.icon('search') + '<input class="input" type="search" id="sjSearch" placeholder="' + esc(SP.t('subjects.search')) + '" value="' + esc(query) + '" aria-label="' + esc(SP.t('subjects.search')) + '"></div>';
+    if (selMode) {
+      var nSel = Object.keys(selSet).length, allOn = items.length > 0 && items.every(function (s) { return selSet[s.id]; });
+      h += '<div class="sel-bar"><label class="check"><input type="checkbox" id="sjSelAll"' + (allOn ? ' checked' : '') + '><span>' + esc(SP.t('subjects.selectAll')) + '</span></label>' +
+        '<span class="count" aria-live="polite">' + esc(SP.t('subjects.selected', { n: nSel })) + '</span>' +
+        '<button type="button" class="btn btn-danger btn-sm" id="sjDelSel"' + (nSel ? '' : ' disabled') + '>' + SP.icon('trash-2') + '<span>' + esc(SP.t('common.delete')) + '</span></button></div>';
+    }
+    h += '<nav class="sj-items" aria-label="' + esc(SP.t('nav.subjects')) + '">' + (items.length ? items.map(function (s) {
+      var mats = (s.materials || []).length, tests = (s.tests || []).length;
+      var btn = '<button type="button" class="sj-item" data-sub="' + esc(s.id) + '"' + (active && s.id === active.id ? ' aria-current="true"' : '') + '>' +
+        '<span class="fi-folder">' + SP.icon('folder') + '</span><span class="meta"><b>' + esc(SP.hub.cleanName(s.name)) + '</b>' +
+        '<small>' + esc(SP.t('subjects.itemMeta', { m: mats, t: tests })) + '</small></span>' + SP.icon('chevron-right', 'sj-chev') + '</button>';
+      if (!selMode) return btn;
+      return '<div class="sj-item-wrap"><label class="check"><input type="checkbox" data-selsub="' + esc(s.id) + '"' + (selSet[s.id] ? ' checked' : '') + ' aria-label="' + esc(SP.t('subjects.selectOne', { name: SP.hub.cleanName(s.name) })) + '"></label>' + btn + '</div>';
+    }).join('') : '<p class="subtle small sj-none">' + esc(SP.t('subjects.notFound')) + '</p>') + '</nav>';
     return h + '</aside>';
   }
 
-  function pickHint() { return '<section class="card"><div class="empty">' + SP.icon('folder-open', 'ic-xl') + '<p>' + SP.esc(SP.t('subjects.pick')) + '</p></div></section>'; }
+  function pickHint() { return '<section class="card"><div class="empty">' + SP.icon('folder-open', 'ic-xl') + '<p>' + esc(SP.t('subjects.pick')) + '</p></div></section>'; }
 
-  function detailPane(s) {
+  function detailPane(s, collapsed) {
     var mats = s.materials || [], tests = s.tests || [];
+    var lbl = SP.t(collapsed ? 'subjects.showList' : 'subjects.hideList');
     var h = '<section class="card sj-card">' +
-      '<button type="button" class="btn btn-ghost sj-back" id="sjBack">' + SP.icon('arrow-left') + '<span>' + SP.esc(SP.t('subjects.all')) + '</span></button>' +
-      '<div class="card-head"><div class="grow"><h2 class="sj-title">' + SP.esc(s.name) + '</h2><div class="card-sub">' + SP.esc([s.code, s.teacher].filter(Boolean).join(' · ') || SP.t('subjects.noTeacher')) + '</div></div>' +
-      '<div class="row">' + (s.base && !s.notes && !mats.some(function (f) { return !f.base; }) ? '<span class="badge">' + SP.icon(s.base === 'timetable' ? 'cloud' : 'users') + SP.esc(SP.t(s.base === 'timetable' ? 'subjects.fromTt' : 'subjects.fromCourse')) + '</span>' : '') +
-      '<button type="button" class="btn btn-ghost btn-icon" id="sjEdit" aria-label="' + SP.esc(SP.t('subjects.edit')) + '" data-tip="' + SP.esc(SP.t('subjects.edit')) + '">' + SP.icon('pencil') + '</button></div></div>' +
+      '<button type="button" class="btn btn-ghost sj-back" id="sjBack">' + SP.icon('arrow-left') + '<span>' + esc(SP.t('subjects.all')) + '</span></button>' +
+      '<div class="card-head"><div class="row row-nowrap grow">' +
+      '<button type="button" class="btn ' + (collapsed ? 'btn-soft' : 'btn-ghost') + ' btn-sm sj-toggle-list" id="sjToggleList" aria-pressed="' + !!collapsed + '" aria-label="' + esc(lbl) + '" data-tip="' + esc(lbl) + '">' + SP.icon(collapsed ? 'panel-left-open' : 'panel-left-close') + '<span>' + esc(collapsed ? SP.t('subjects.foldersBtn') : '') + '</span></button>' +
+      '<div class="grow"><h2 class="sj-title">' + esc(s.name) + '</h2><div class="card-sub">' + esc([s.code, s.teacher].filter(Boolean).join(' · ') || SP.t('subjects.noTeacher')) + '</div></div></div>' +
+      '<div class="row">' + (s.base ? '<span class="badge">' + SP.icon(s.base === 'timetable' ? 'cloud' : 'users') + esc(SP.t(s.base === 'timetable' ? 'subjects.fromTt' : 'subjects.fromCourse')) + '</span>' : '') +
+      '<button type="button" class="btn btn-ghost btn-icon" id="sjEdit" aria-label="' + esc(SP.t('subjects.edit')) + '" data-tip="' + esc(SP.t('subjects.edit')) + '">' + SP.icon('pencil') + '</button></div></div>' +
       '<div class="tabs" role="tablist">' +
       tabBtn('materials', 'folder-open', SP.t('subjects.materials'), mats.length) +
       tabBtn('tests', 'list-checks', SP.t('subjects.tests'), tests.length) +
       tabBtn('notes', 'square-pen', SP.t('subjects.notes'), null) + '</div>' +
       '<div class="sj-tab" role="tabpanel">';
     if (tab === 'materials') {
-      h += '<div class="row"><button type="button" class="btn btn-primary" id="sjUpMat">' + SP.icon('upload') + '<span>' + SP.esc(SP.t('subjects.uploadMat')) + '</span></button>' +
-        '<button type="button" class="btn" id="sjAddLink">' + SP.icon('link') + '<span>' + SP.esc(SP.t('subjects.addLink')) + '</span></button></div>';
-      h += mats.length ? listHtml(s, 'material') : '<p class="subtle small">' + SP.esc(SP.t('subjects.noMat')) + '</p>';
+      h += '<div class="row"><button type="button" class="btn btn-primary" id="sjUpMat">' + SP.icon('upload') + '<span>' + esc(SP.t('subjects.uploadMat')) + '</span></button>' +
+        '<button type="button" class="btn" id="sjAddLink">' + SP.icon('link') + '<span>' + esc(SP.t('subjects.addLink')) + '</span></button></div>';
+      h += mats.length ? listHtml(s, 'material') : '<p class="subtle small">' + esc(SP.t('subjects.noMat')) + '</p>';
     } else if (tab === 'tests') {
-      h += '<div class="row"><button type="button" class="btn btn-primary" id="sjUpTest">' + SP.icon('upload') + '<span>' + SP.esc(SP.t('subjects.uploadTest')) + '</span></button></div>';
-      h += tests.length ? listHtml(s, 'test') : '<p class="subtle small">' + SP.esc(SP.t('subjects.noTests')) + '</p>';
+      h += '<div class="row"><button type="button" class="btn btn-primary" id="sjUpTest">' + SP.icon('upload') + '<span>' + esc(SP.t('subjects.uploadTest')) + '</span></button></div>';
+      h += tests.length ? listHtml(s, 'test') : '<p class="subtle small">' + esc(SP.t('subjects.noTests')) + '</p>';
     } else {
-      h += '<div class="field"><label class="label" for="sjNotes">' + SP.esc(SP.t('subjects.notesLabel')) + '</label><textarea class="textarea" id="sjNotes" rows="10" placeholder="' + SP.esc(SP.t('subjects.notesPh')) + '">' + SP.esc(s.notes) + '</textarea>' +
-        '<span class="hint" id="sjNoteSt" aria-live="polite">' + SP.esc(SP.t('subjects.notesAuto')) + '</span></div>';
+      h += '<div class="field"><label class="label" for="sjNotes">' + esc(SP.t('subjects.notesLabel')) + '</label><textarea class="textarea" id="sjNotes" rows="10" placeholder="' + esc(SP.t('subjects.notesPh')) + '">' + esc(s.notes) + '</textarea>' +
+        '<span class="hint" id="sjNoteSt" aria-live="polite">' + esc(SP.t('subjects.notesAuto')) + '</span></div>';
     }
-    h += '</div>' + mateBlock(SP.hub.mateOf(s)) + '</section>';
-    return h;
+    return h + '</div></section>';
   }
   function tabBtn(id, icon, label, n) {
-    return '<button type="button" class="tab" role="tab" data-tab="' + id + '" aria-selected="' + (tab === id) + '">' + SP.icon(icon, 'ic-sm') + '<span>' + SP.esc(label) + '</span>' + (n != null ? '<span class="count">' + n + '</span>' : '') + '</button>';
+    return '<button type="button" class="tab" role="tab" data-tab="' + id + '" aria-selected="' + (tab === id) + '">' + SP.icon(icon, 'ic-sm') + '<span>' + esc(label) + '</span>' + (n != null ? '<span class="count">' + n + '</span>' : '') + '</button>';
   }
   function listHtml(s, type) {
-    var arr = listOf(s, type);
-    return '<div class="list">' + viewOrder(arr).map(function (i) { return row(arr[i], i, type); }).join('') + '</div>';
+    var arr = listOf(s, type), ord = viewOrder(arr, s, type);
+    var nHid = ord.filter(function (i) { return isHidden(arr[i]); }).length;
+    var vis = ord.filter(function (i) { return showHidden || !isHidden(arr[i]); });
+    return (nHid ? '<div class="row"><button type="button" class="btn btn-ghost btn-sm" id="sjShowHidden" aria-pressed="' + showHidden + '">' + SP.icon(showHidden ? 'eye-off' : 'eye') + '<span>' + esc(SP.t(showHidden ? 'subjects.hideHidden' : 'subjects.showHidden', { n: nHid })) + '</span></button></div>' : '') +
+      (vis.length ? '<div class="list">' + vis.map(function (i) { return row(s, arr[i], i, type, ord); }).join('') + '</div>' : '<p class="subtle small">' + esc(SP.t('subjects.allHidden')) + '</p>');
   }
-  function row(f, i, type) {
-    var link = f.kind === 'link', li = link ? linkInfo(f.url) : null, fi = fileIcon(f.name);
-    var icon = link ? li.icon : (type === 'test' ? 'list-checks' : fi[0]);
-    var tone = link ? 'accent' : (type === 'test' ? 'success' : fi[1]);
+  function row(s, f, i, type, ord) {
+    var link = f.kind === 'link', li = link ? linkInfo(f.url) : null, hid = isHidden(f);
     var meta = link ? li.label + (f.note ? ' · ' + f.note : '') : (f.size ? SP.formatSize(f.size) : '');
-    var inner = '<span class="file-badge ' + tone + '">' + SP.icon(icon) + '</span><span class="meta"><b>' + (isPin(f) ? SP.icon('pin', 'ic-sm pin-ic') + ' ' : '') + SP.esc(f.name) + '</b><small>' + SP.esc(meta) + '</small></span>';
-    var main = link ? '<a class="list-row-main" href="' + SP.esc(f.url) + '" target="_blank" rel="noopener noreferrer">' + inner + SP.icon('external-link', 'ic-sm subtle') + '</a>'
+    var badge = link ? '<span class="file-badge accent">' + SP.icon(li.icon) + '</span>' : SP.fileIcon(f.name);
+    var inner = badge + '<span class="meta"><b>' + (isPin(f) ? SP.icon('pin', 'ic-sm pin-ic') + ' ' : '') + esc(f.name) + '</b><small>' + esc(meta) + '</small></span>';
+    var main = link ? '<a class="list-row-main" href="' + esc(f.url) + '" target="_blank" rel="noopener noreferrer">' + inner + SP.icon('external-link', 'ic-sm subtle') + '</a>'
       : '<button type="button" class="list-row-main" data-open="' + type + ':' + i + '">' + inner + '</button>';
-    return '<div class="list-row' + (isPin(f) ? ' pinned' : '') + '">' + main +
-      (f.base ? '<span class="badge" title="' + SP.esc(SP.t('subjects.courseFileTip')) + '">' + SP.esc(SP.t('subjects.courseFile')) + '</span>' : '') +
-      (type === 'test' ? '<button type="button" class="btn btn-soft btn-sm" data-run="' + i + '">' + SP.icon('play') + '<span>' + SP.esc(SP.t('subjects.runTest')) + '</span></button>' : '') +
-      '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-more="' + type + ':' + i + '" aria-label="' + SP.esc(SP.t('common.actions')) + '" data-tip="' + SP.esc(SP.t('common.actions')) + '">' + SP.icon('ellipsis') + '</button></div>';
-  }
-
-  var mateFiles = [];
-  function mateBlock(items) {
-    mateFiles = [];
-    if (!items.length) return '';
-    return '<div class="mate-block"><div class="alert alert-info">' + SP.icon('users') + '<div class="alert-body"><b>' + SP.esc(SP.t('subjects.mateTitle')) + '</b><span>' + SP.esc(SP.t('subjects.mateText')) + '</span>' +
-      '<div class="alert-actions"><button type="button" class="btn btn-primary btn-sm" id="mateSave">' + SP.icon('save') + '<span>' + SP.esc(SP.t('subjects.mateSave')) + '</span></button></div></div></div>' +
-      items.map(function (x) {
-        return '<div class="stack-sm"><div class="row"><span class="badge badge-accent">' + SP.icon('users') + SP.esc(x.g.name) + '</span></div>' +
-          (x.sj.tests.length ? '<div class="list">' + x.sj.tests.map(function (f) { var n = mateFiles.push(f) - 1; return '<div class="list-row"><span class="file-badge success">' + SP.icon('list-checks') + '</span><span class="meta grow"><b>' + SP.esc(f.name) + '</b><small>' + SP.esc(f.size ? SP.formatSize(f.size) : '') + '</small></span><button type="button" class="btn btn-soft btn-sm" data-mate="' + n + '">' + SP.icon('play') + '<span>' + SP.esc(SP.t('subjects.runTest')) + '</span></button></div>'; }).join('') + '</div>' : '') +
-          (x.sj.notes ? '<div class="card card-flat mate-notes"><div class="label">' + SP.esc(SP.t('subjects.mateNotes')) + '</div><pre class="small">' + SP.esc(x.sj.notes) + '</pre></div>' : '') + '</div>';
-      }).join('') + '</div>';
-  }
-  function sharedPane() {
-    var g = data().shared.filter(function (x) { return x.id === sharedSel.gid; })[0];
-    var sj = g && g.subjects.filter(function (x) { return x.id === sharedSel.sid; })[0];
-    if (!sj) { sharedSel = null; return pickHint(); }
-    return '<section class="card sj-card"><button type="button" class="btn btn-ghost sj-back" id="sjBack">' + SP.icon('arrow-left') + '<span>' + SP.esc(SP.t('subjects.all')) + '</span></button>' +
-      '<div class="card-head"><div><h2 class="sj-title">' + SP.esc(SP.hub.cleanName(sj.name)) + '</h2><div class="card-sub">' + SP.esc(sj.teacher || '') + '</div></div></div>' + mateBlock([{ g: g, sj: sj }]) + '</section>';
+    var pos = ord.indexOf(i), same = function (j) { return j !== undefined && isPin(listOf(s, type)[j]) === isPin(f); };
+    return '<div class="list-row' + (isPin(f) ? ' pinned' : '') + (hid ? ' is-hidden' : '') + '">' + main +
+      (hid ? '<span class="badge">' + SP.icon('eye-off') + esc(SP.t('subjects.hiddenBadge')) + '</span>' : f.base ? '<span class="badge" title="' + esc(SP.t('subjects.courseFileTip')) + '">' + esc(SP.t('subjects.courseFile')) + '</span>' : '') +
+      (type === 'test' ? '<button type="button" class="btn btn-soft btn-sm" data-run="' + i + '">' + SP.icon('play') + '<span>' + esc(SP.t('subjects.runTest')) + '</span></button>' : '') +
+      '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-mv="' + type + ':' + i + ':-1"' + (same(ord[pos - 1]) ? '' : ' disabled') + ' aria-label="' + esc(SP.t('subjects.moveUp')) + '" data-tip="' + esc(SP.t('subjects.moveUp')) + '">' + SP.icon('arrow-up') + '</button>' +
+      '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-mv="' + type + ':' + i + ':1"' + (same(ord[pos + 1]) ? '' : ' disabled') + ' aria-label="' + esc(SP.t('subjects.moveDown')) + '" data-tip="' + esc(SP.t('subjects.moveDown')) + '">' + SP.icon('arrow-down') + '</button>' +
+      '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-more="' + type + ':' + i + '" aria-label="' + esc(SP.t('common.actions')) + '" data-tip="' + esc(SP.t('common.actions')) + '">' + SP.icon('ellipsis') + '</button></div>';
   }
 
   /* ---------------- Действия ---------------- */
   function wire(s) {
     var q = function (x) { return SP.$(x, root); };
     [q('#sjAdd'), q('#sjAdd2')].forEach(function (b) { if (b) b.onclick = function () { editor(null); }; });
-    var sh = q('#sjShared'); if (sh) sh.onclick = pickShared;
+    var sl = q('#sjSelect'); if (sl) sl.onclick = function () { selMode = !selMode; selSet = {}; render(); var n = SP.$('#sjSelect', root); if (n) n.focus(); };
+    var rs = q('#sjRestore'); if (rs) rs.onclick = function () { SP.hub.restoreRemoved(); SP.toast(SP.t('subjects.restored'), 'success'); };
+    SP.$$('[data-selsub]', root).forEach(function (cb) {
+      cb.onchange = function () { var id = cb.getAttribute('data-selsub'); if (cb.checked) selSet[id] = 1; else delete selSet[id]; render(); var n = SP.$('[data-selsub="' + id + '"]', root); if (n) n.focus(); };
+    });
+    var sa = q('#sjSelAll'); if (sa) sa.onchange = function () {
+      var on = sa.checked; SP.$$('[data-selsub]', root).forEach(function (cb) { var id = cb.getAttribute('data-selsub'); if (on) selSet[id] = 1; else delete selSet[id]; });
+      render(); var n = SP.$('#sjSelAll', root); if (n) n.focus();
+    };
+    var ds = q('#sjDelSel'); if (ds) ds.onclick = function () {
+      var ids = Object.keys(selSet); if (!ids.length) return;
+      SP.confirm({ title: SP.t('subjects.delFoldersTitle', { n: ids.length }), text: SP.t('subjects.delFoldersText'), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) {
+        if (!ok) return;
+        if (selSet[selected]) selected = null;
+        SP.hub.removeSubjects(ids); selSet = {}; selMode = false;
+        SP.toast(SP.t('subjects.delFoldersDone', { n: ids.length }), 'success'); SP.navigate('subjects'); render();
+      });
+    };
     var se = q('#sjSearch'); if (se) se.oninput = SP.debounce(function () { query = se.value; render(); var n = SP.$('#sjSearch', root); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 150);
-    SP.$$('[data-sub]', root).forEach(function (b) { b.onclick = function () { sharedSel = null; SP.navigate('subjects', [b.getAttribute('data-sub')]); }; });
-    SP.$$('[data-shsub]', root).forEach(function (b) { b.onclick = function () { var p = b.getAttribute('data-shsub').split('|'); sharedSel = { gid: p[0], sid: p[1] }; selected = null; render(); }; });
-    var bk = q('#sjBack'); if (bk) bk.onclick = function () { sharedSel = null; selected = null; SP.navigate('subjects'); };
-    SP.$$('[data-mate]', root).forEach(function (b) { b.onclick = function () { runTest(mateFiles[+b.getAttribute('data-mate')]); }; });
-    var ms = q('#mateSave'); if (ms) ms.onclick = function () { SP.hub.mergeAllShared().then(function (r) { if (r) SP.toast(SP.t('subjects.mateSaved', { t: r.nt, n: r.nn }), 'success'); sharedSel = null; render(); }); };
+    SP.$$('[data-sub]', root).forEach(function (b) { b.onclick = function () { SP.navigate('subjects', [b.getAttribute('data-sub')]); }; });
+    var bk = q('#sjBack'); if (bk) bk.onclick = function () { selected = null; SP.navigate('subjects'); };
     if (!s) return;
     q('#sjEdit').onclick = function () { editor(s); };
+    var tl = q('#sjToggleList'); if (tl) tl.onclick = function () { sui.collapsed = !sui.collapsed; saveSui(); render(); var n = SP.$('#sjToggleList', root); if (n) n.focus(); };
+    var shh = q('#sjShowHidden'); if (shh) shh.onclick = function () { showHidden = !showHidden; render(); };
     SP.$$('[data-tab]', root).forEach(function (b) { b.onclick = function () { tab = b.getAttribute('data-tab'); render(); var t = SP.$('[data-tab="' + tab + '"]', root); if (t) t.focus(); }; });
     var um = q('#sjUpMat'); if (um) um.onclick = function () { pickFiles(s, 'materials'); };
     var ut = q('#sjUpTest'); if (ut) ut.onclick = function () { pickFiles(s, 'tests'); };
@@ -168,29 +178,39 @@
     }
     SP.$$('[data-open]', root).forEach(function (b) { b.onclick = function () { var p = b.getAttribute('data-open').split(':'); openItem(s, p[0], +p[1]); }; });
     SP.$$('[data-run]', root).forEach(function (b) { b.onclick = function () { openItem(s, 'test', +b.getAttribute('data-run')); }; });
+    SP.$$('[data-mv]', root).forEach(function (b) { b.onclick = function () { var p = b.getAttribute('data-mv').split(':'); move(s, p[0], +p[1], +p[2]); var n = SP.$('[data-mv="' + p[0] + ':' + p[1] + ':' + p[2] + '"]', root); if (n && !n.disabled) n.focus(); }; });
     SP.$$('[data-more]', root).forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); var p = b.getAttribute('data-more').split(':'); moreMenu(b, s, p[0], +p[1]); }; });
   }
 
+  function move(s, type, i, dlt) {
+    var arr = listOf(s, type), ord = viewOrder(arr, s, type), pos = ord.indexOf(i), j = pos + dlt;
+    if (j < 0 || j >= ord.length || isPin(arr[ord[j]]) !== isPin(arr[i])) return;
+    var ids = ord.map(function (k) { return arr[k].id; }), t = ids[pos]; ids[pos] = ids[j]; ids[j] = t;
+    var o = data().order = data().order || {}; o[ordKey(s, type)] = ids; SP.hub.save(); render();
+  }
+  function toggleHide(f) {
+    var h = data().hidden = data().hidden || {};
+    if (h[f.id]) delete h[f.id]; else { h[f.id] = 1; SP.toast(SP.t('subjects.hiddenToast'), 'info'); }
+    SP.hub.save(); render();
+  }
+
   function moreMenu(btn, s, type, i) {
-    var arr = listOf(s, type), f = arr[i], ord = viewOrder(arr), pos = ord.indexOf(i);
-    var nb = function (dlt) { var j = ord[pos + dlt]; return (j !== undefined && isPin(arr[j]) === isPin(f) && !arr[j].base) ? j : -1; };
+    var arr = listOf(s, type), f = arr[i];
     var items = [{ label: SP.t(type === 'test' ? 'subjects.runTest' : 'common.open'), icon: type === 'test' ? 'play' : 'external-link', onClick: function () { openItem(s, type, i); } }];
     if (f.kind !== 'link') items.push({ label: SP.t('common.download'), icon: 'download', onClick: function () { if (f.base) openSite(f.path, true, f.name); else downloadFile(f); } });
     items.push({ label: SP.t(isPin(f) ? 'subjects.unpin' : 'subjects.pin'), icon: isPin(f) ? 'pin-off' : 'pin', onClick: function () {
       if (f.base) { var p = data().pins = data().pins || {}; if (p[f.id]) delete p[f.id]; else p[f.id] = 1; } else f.pinned = !f.pinned;
       SP.hub.save(); render();
     } });
-    items.push({ label: SP.t('subjects.moveUp'), icon: 'arrow-up', disabled: f.base || nb(-1) < 0, onClick: function () { swap(arr, i, nb(-1)); } });
-    items.push({ label: SP.t('subjects.moveDown'), icon: 'arrow-down', disabled: f.base || nb(1) < 0, onClick: function () { swap(arr, i, nb(1)); } });
+    items.push({ label: SP.t(isHidden(f) ? 'subjects.unhide' : 'subjects.hide'), icon: isHidden(f) ? 'eye' : 'eye-off', onClick: function () { toggleHide(f); } });
     items.push('-');
-    items.push({ label: SP.t('common.delete'), icon: 'trash-2', danger: true, disabled: !!f.base, onClick: function () {
+    items.push({ label: SP.t(f.base ? 'subjects.cantDelete' : 'common.delete'), icon: 'trash-2', danger: true, disabled: !!f.base, onClick: function () {
       SP.confirm({ title: SP.t('common.deleteQ'), text: SP.t('subjects.deleteFile', { name: f.name }), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) {
         if (!ok) return; SP.hub.dropFile(f); arr.splice(i, 1); SP.hub.save(); render();
       });
     } });
     SP.menu(btn, items);
   }
-  function swap(arr, i, j) { if (j < 0) return; var t = arr[i]; arr[i] = arr[j]; arr[j] = t; SP.hub.save(); render(); }
 
   function pickFiles(s, key) {
     var inp = SP.el('<input type="file" multiple hidden' + (key === 'tests' ? ' accept=".txt,.doc,.docx,.json"' : '') + '>');
@@ -217,28 +237,17 @@
     inp.click();
   }
 
-  function pickShared() {
-    var inp = SP.el('<input type="file" accept=".json,.studyplay,application/json" multiple hidden>');
-    document.body.appendChild(inp);
-    inp.onchange = function () { var fs = Array.prototype.slice.call(inp.files); inp.remove(); if (fs.length) SP.hub.importShared(fs).then(render); };
-    inp.click();
-  }
-
   function editor(s) {
     var edit = !!s;
-    var m = SP.modal({
+    return SP.modal({
       title: SP.t(edit ? 'subjects.editTitle' : 'subjects.newTitle'),
-      body: '<div class="field"><label class="label" for="seName">' + SP.esc(SP.t('subjects.name')) + ' *</label><input class="input" id="seName" required value="' + SP.esc(edit ? s.name : '') + '" placeholder="' + SP.esc(SP.t('subjects.namePh')) + '"></div>' +
-        '<div class="field"><label class="label" for="seCode">' + SP.esc(SP.t('subjects.code')) + '</label><input class="input" id="seCode" value="' + SP.esc(edit ? s.code || '' : '') + '"></div>' +
-        '<div class="field"><label class="label" for="seTeacher">' + SP.esc(SP.t('subjects.teacher')) + '</label><input class="input" id="seTeacher" value="' + SP.esc(edit ? s.teacher || '' : '') + '"></div>' +
+      body: '<div class="field"><label class="label" for="seName">' + esc(SP.t('subjects.name')) + ' *</label><input class="input" id="seName" required value="' + esc(edit ? s.name : '') + '" placeholder="' + esc(SP.t('subjects.namePh')) + '"></div>' +
+        '<div class="field"><label class="label" for="seCode">' + esc(SP.t('subjects.code')) + '</label><input class="input" id="seCode" value="' + esc(edit ? s.code || '' : '') + '"></div>' +
+        '<div class="field"><label class="label" for="seTeacher">' + esc(SP.t('subjects.teacher')) + '</label><input class="input" id="seTeacher" value="' + esc(edit ? s.teacher || '' : '') + '"></div>' +
         '<div class="error-text" id="seErr" role="alert"></div>',
-      actions: (edit ? [{ label: SP.t('subjects.deleteSubject'), kind: 'danger-outline', icon: 'trash-2', close: false, onClick: function (api) {
+      actions: (edit ? [{ label: SP.t('subjects.deleteSubject'), kind: 'danger', icon: 'trash-2', close: false, onClick: function (api) {
         SP.confirm({ title: SP.t('common.deleteQ'), text: SP.t('subjects.deleteSubjectText'), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) {
-          if (!ok) return;
-          (s.materials || []).concat(s.tests || []).forEach(SP.hub.dropFile);
-          var d = data(); d.subjects = d.subjects.filter(function (x) { return x.id !== s.id; });
-          if (d.own) d.own.schedule = d.own.schedule.filter(function (x) { return x.subjectId !== s.id; });
-          SP.hub.save(); SP.hub.applyLayers(); api.close(); selected = null; SP.navigate('subjects');
+          if (!ok) return; SP.hub.removeSubjects([s.id]); api.close(); selected = null; SP.navigate('subjects');
         });
         return false;
       } }] : []).concat([
@@ -253,15 +262,14 @@
         } }
       ])
     });
-    return m;
   }
 
   function linkEditor(s) {
     SP.modal({
       title: SP.t('subjects.addLink'),
-      body: '<div class="field"><label class="label" for="lkName">' + SP.esc(SP.t('subjects.linkName')) + ' *</label><input class="input" id="lkName" maxlength="120" placeholder="' + SP.esc(SP.t('subjects.linkNamePh')) + '"></div>' +
+      body: '<div class="field"><label class="label" for="lkName">' + esc(SP.t('subjects.linkName')) + ' *</label><input class="input" id="lkName" maxlength="120" placeholder="' + esc(SP.t('subjects.linkNamePh')) + '"></div>' +
         '<div class="field"><label class="label" for="lkUrl">URL *</label><input class="input" id="lkUrl" inputmode="url" autocapitalize="off" placeholder="https://t.me/…"></div>' +
-        '<div class="field"><label class="label" for="lkNote">' + SP.esc(SP.t('subjects.linkNote')) + '</label><input class="input" id="lkNote" maxlength="200"></div>' +
+        '<div class="field"><label class="label" for="lkNote">' + esc(SP.t('subjects.linkNote')) + '</label><input class="input" id="lkNote" maxlength="200"></div>' +
         '<div class="error-text" id="lkErr" role="alert"></div>',
       actions: [{ label: SP.t('common.cancel') }, { label: SP.t('common.add'), kind: 'primary', icon: 'plus', onClick: function () {
         var name = SP.$('#lkName').value.trim(), url = SP.hub.normUrl(SP.$('#lkUrl').value), err = SP.$('#lkErr');
@@ -325,9 +333,9 @@
       var blob = SP.dataURLtoBlob(x.content, x.type);
       if (!blob) { body.innerHTML = fallback(); return; }
       var ext = (x.name.split('.').pop() || '').toLowerCase(); url = URL.createObjectURL(blob);
-      if (ext === 'pdf') body.innerHTML = '<iframe class="pv-frame" title="' + SP.esc(x.name) + '" src="' + url + '"></iframe>';
-      else if (/^(png|jpe?g|webp|gif|svg)$/.test(ext)) body.innerHTML = '<img class="pv-img" src="' + url + '" alt="' + SP.esc(x.name) + '">';
-      else if (/^(txt|md|rtf|csv)$/.test(ext)) blob.text().then(function (t) { body.innerHTML = '<pre class="pv-text">' + SP.esc(t) + '</pre>'; });
+      if (ext === 'pdf') body.innerHTML = '<iframe class="pv-frame" title="' + esc(x.name) + '" src="' + url + '"></iframe>';
+      else if (/^(png|jpe?g|webp|gif|svg)$/.test(ext)) body.innerHTML = '<img class="pv-img" src="' + url + '" alt="' + esc(x.name) + '">';
+      else if (/^(txt|md|rtf|csv|json)$/.test(ext)) blob.text().then(function (t) { body.innerHTML = '<pre class="pv-text">' + esc(t) + '</pre>'; });
       else if (ext === 'docx' && window.mammoth) {
         body.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
         blob.arrayBuffer().then(function (ab) { return window.mammoth.convertToHtml({ arrayBuffer: ab }); }).then(function (r) { body.innerHTML = '<article class="pv-doc">' + r.value + '</article>'; }).catch(function () { body.innerHTML = fallback(); });
@@ -336,14 +344,14 @@
         pptxText(blob).then(function (slides) {
           var si = 0;
           var paint = function () {
-            body.innerHTML = '<div class="pv-slides"><article class="pv-slide">' + SP.esc(slides[si]) + '</article><div class="row"><button type="button" class="btn btn-sm" id="psPrev"' + (si === 0 ? ' disabled' : '') + '>' + SP.icon('chevron-left') + '</button><span class="small muted">' + SP.esc(SP.t('subjects.slide', { i: si + 1, n: slides.length })) + '</span><button type="button" class="btn btn-sm" id="psNext"' + (si === slides.length - 1 ? ' disabled' : '') + '>' + SP.icon('chevron-right') + '</button><span class="subtle xsmall">' + SP.esc(SP.t('subjects.pptxNote')) + '</span></div></div>';
+            body.innerHTML = '<div class="pv-slides"><article class="pv-slide">' + esc(slides[si]) + '</article><div class="row"><button type="button" class="btn btn-sm" id="psPrev"' + (si === 0 ? ' disabled' : '') + '>' + SP.icon('chevron-left') + '</button><span class="small muted">' + esc(SP.t('subjects.slide', { i: si + 1, n: slides.length })) + '</span><button type="button" class="btn btn-sm" id="psNext"' + (si === slides.length - 1 ? ' disabled' : '') + '>' + SP.icon('chevron-right') + '</button><span class="subtle xsmall">' + esc(SP.t('subjects.pptxNote')) + '</span></div></div>';
             SP.$('#psPrev', body).onclick = function () { si--; paint(); }; SP.$('#psNext', body).onclick = function () { si++; paint(); };
           };
           paint();
         }).catch(function () { body.innerHTML = fallback(); });
       } else body.innerHTML = fallback();
     }
-    function fallback() { return '<div class="empty">' + SP.icon('file', 'ic-xl') + '<h3>' + SP.esc(SP.t('subjects.noPreview')) + '</h3><p>' + SP.esc(SP.t('subjects.noPreviewText')) + '</p></div>'; }
+    function fallback() { return '<div class="empty">' + SP.icon('file', 'ic-xl') + '<h3>' + esc(SP.t('subjects.noPreview')) + '</h3><p>' + esc(SP.t('subjects.noPreviewText')) + '</p></div>'; }
     show(index);
   }
   function pptxText(blob) {
@@ -364,10 +372,25 @@
     });
   }
 
+  /* ---------------- Иконка файла по формату (SVG, свой цвет у каждого типа) ---------------- */
+  var FT = [
+    [/^(docx?|rtf|odt)$/, 'word', 'DOC'], [/^(xlsx?|csv|ods)$/, 'excel', 'XLS'], [/^(pptx?|odp|key)$/, 'ppt', 'PPT'],
+    [/^pdf$/, 'pdf', 'PDF'], [/^json$/, 'json', 'JSON'], [/^(png|jpe?g|webp|gif|svg|bmp|heic)$/, 'img', 'IMG'],
+    [/^(mp4|webm|mov|mkv|avi)$/, 'video', 'VID'], [/^(mp3|wav|ogg|m4a|aac|flac)$/, 'audio', 'AUD'],
+    [/^(zip|rar|7z|tar|gz)$/, 'zip', 'ZIP'], [/^(txt|md)$/, 'txt', 'TXT']
+  ];
+  SP.fileIcon = function (name) {
+    var ext = String(name || '').split('.').pop().toLowerCase(), t = ['other', ext ? ext.slice(0, 4).toUpperCase() : 'FILE'];
+    for (var i = 0; i < FT.length; i++) if (FT[i][0].test(ext)) { t = [FT[i][1], FT[i][2]]; break; }
+    return '<svg class="fi ' + t[0] + '" viewBox="0 0 32 36" style="--fi-c:var(--ft-' + t[0] + ')" aria-hidden="true">' +
+      '<path class="fi-page" d="M5 1.5h15l7.5 7.5v24a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-29.5a2 2 0 0 1 2-2z"/><path class="fi-fold" d="M20 1.5v7.5h7.5z"/>' +
+      '<rect class="fi-band" x="1" y="18" width="' + (t[1].length > 3 ? 26 : 22) + '" height="10" rx="2"/><text x="' + (t[1].length > 3 ? 14 : 12) + '" y="25.5" text-anchor="middle">' + esc(t[1]) + '</text></svg>';
+  };
+
   SP.views.register('subjects', {
     titleKey: 'nav.subjects',
     mount: function (el, params) { root = el; if (params && params[0]) selected = params[0]; render(); },
-    show: function (params) { if (params && params[0]) { if (selected !== params[0]) tab = 'materials'; selected = params[0]; sharedSel = null; } else if (window.innerWidth < 900) selected = null; render(); },
+    show: function (params) { if (params && params[0]) { if (selected !== params[0]) { tab = 'materials'; showHidden = false; } selected = params[0]; } else if (window.innerWidth < 900) selected = null; render(); },
     refresh: render
   });
   SP.on('hub', function () { if (root && SP.views.current() === 'subjects') render(); });

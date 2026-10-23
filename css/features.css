@@ -248,3 +248,42 @@
 .player-main, .player-side { min-width: 0; }
 .controls .bar { min-width: 0; overflow: hidden; }
 .controls .time { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* ===== Timetable v2: цвета сайта, карточки как в прежней версии ===== */
+.tt-wrap { background: var(--surface); color: var(--text); border-color: var(--border); text-align: left; font-family: var(--font); border-radius: var(--r-lg); }
+.tt-form select, .tt-btn { background: var(--surface-2); color: var(--text); border-color: var(--border-strong); border-radius: var(--r-sm); }
+.tt-btn:hover, .tt-form select:hover { background: var(--hover); }
+.tt-btn:active { background: var(--press); color: var(--text); }
+.tt-btn:focus-visible, .tt-form select:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.tt-table { font-size: 0.875rem; }
+.tt-table td { background: transparent; color: var(--text); border-color: var(--border); text-align: left; vertical-align: top; padding: 0.35rem; }
+.tt-table tr:first-child td { background: var(--surface-2); padding: 0.5rem 0.6rem; vertical-align: bottom; }
+.tt-head { color: var(--text-3); font-size: 0.875rem; }
+.tt-head b { display: block; color: var(--text); font-size: 0.9375rem; }
+.tt-head.tt-today { box-shadow: inset 0 -3px 0 var(--accent); }
+.tt-head.tt-today b { text-decoration: none; color: var(--accent-text); }
+.tt-table td.tt-time { vertical-align: middle; color: var(--text-2); font-size: 0.875rem; background: var(--surface-2); }
+.tt-cell { height: 5.5rem; }
+.tt-cell.tt-today { background: color-mix(in srgb, var(--accent-soft) 35%, transparent); }
+.tt-l {
+  --kc: var(--text-3);
+  display: flex; flex-direction: column; gap: 2px; text-align: left; color: var(--text);
+  padding: 0.45rem 0.55rem; border: 1px solid color-mix(in srgb, var(--kc) 45%, var(--border)); border-left: 3px solid var(--kc);
+  background: color-mix(in srgb, var(--kc) 10%, var(--surface)); border-radius: var(--r-sm); font-size: 0.875rem; line-height: 1.3;
+}
+.tt-l + .tt-l { border-top: 1px solid color-mix(in srgb, var(--kc) 45%, var(--border)); margin-top: 0.3rem; padding-top: 0.45rem; }
+.tt-l b { font-weight: 700; overflow-wrap: anywhere; }
+.tt-ab { color: var(--kc); font-weight: 600; }
+.tt-line { color: var(--text-2); overflow-wrap: anywhere; }
+.tt-l:hover { background: color-mix(in srgb, var(--kc) 18%, var(--surface)); }
+.tt-l:active { background: color-mix(in srgb, var(--kc) 26%, var(--surface)); }
+.tt-l:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.tt-l.k-lec { --kc: var(--k-lecture-b); }
+.tt-l.k-lab { --kc: var(--k-practice-b); }
+.tt-l.k-pr { --kc: var(--k-lab-b); }
+.tt-l.k-sem { --kc: var(--k-seminar-b); }
+
+/* Папка: занятия и кабинеты */
+.sj-lessons { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--border); }
+.sj-lessons ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+.sj-lessons li { display: flex; flex-direction: column; font-size: var(--fs-sm); }
+.sj-lessons li span { color: var(--text-2); }

@@ -66,6 +66,7 @@
     var k = { 'Л': 'lec', 'ЛЗ': 'lab', 'ЛР': 'lab', 'П': 'pr', 'ПЗ': 'pr', 'С': 'sem', 'СПЗ': 'prsem', 'СРО': 'sro', 'СРОП': 'srop' }[ab];
     return k ? SP.t('shk.kind.' + k) : '';
   }
+  function kindCls(ab) { return ({ 'Л': 'k-lec', 'ЛЗ': 'k-lab', 'ЛР': 'k-lab', 'П': 'k-pr', 'ПЗ': 'k-pr', 'С': 'k-sem', 'СПЗ': 'k-sem' })[ab] || 'k-oth'; }
   function fmtDM(d) { return p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear(); }
 
   /* ---------- Переключатели ---------- */
@@ -113,13 +114,14 @@
     for (var i = 0; i < 6; i++) h += '<td class="tt-head' + (i === td ? ' tt-today' : '') + '"><b>' + esc(SP.t(DAY_KEYS[i])) + '</b><br>' + fmtDM(addDays(mon, i)) + '</td>';
     h += '</tr>';
     slots.forEach(function (s) {
-      h += '<tr><td class="tt-time">' + esc(String(s.start).slice(0, 8)) + '<br>' + esc(String(s.end).slice(0, 8)) + '</td>';
+      h += '<tr><td class="tt-time">' + esc(String(s.start).slice(0, 5)) + '<br>' + esc(String(s.end).slice(0, 5)) + '</td>';
       for (var dd = 0; dd < 6; dd++) {
-        h += '<td class="tt-cell">' + lessonsAt(dd, s.id).map(function (l) {
+        h += '<td class="tt-cell' + (dd === td ? ' tt-today' : '') + '">' + lessonsAt(dd, s.id).map(function (l) {
           var x = info(l);
-          return '<button type="button" class="tt-l" data-sid="' + esc(x.sid) + '" title="' + esc(SP.t('schedule.openFolder')) + '">' +
-            (x.code ? esc(x.code) + ') ' : '') + '<b>' + esc(x.name) + '</b>' + (x.ab ? ' ' + esc(x.ab) : '') + ' <br>' +
-            esc(x.room) + (x.building ? ' (' + esc(x.building) + ')' : '') + (x.teacher || x.hours ? '<br>' + esc(x.teacher) + (x.hours ? ' <span class="tt-hours">' + esc(x.hours) + '</span>' : '') : '') + '</button>';
+          return '<button type="button" class="tt-l ' + kindCls(x.ab) + '" data-sid="' + esc(x.sid) + '" title="' + esc(SP.t('schedule.openFolder')) + '">' +
+            '<b>' + esc(x.name) + '</b>' + (x.ab ? ' <span class="tt-ab">' + esc(x.ab) + '</span>' : '') +
+            (x.room || x.building ? '<span class="tt-line">' + esc(x.room) + (x.building ? ' (' + esc(x.building) + ')' : '') + '</span>' : '') +
+            (x.teacher ? '<span class="tt-line">' + esc(x.teacher) + '</span>' : '') + '</button>';
         }).join('') + '</td>';
       }
       h += '</tr>';
@@ -167,8 +169,8 @@
       var ls = lessonsAt(dayIdx, s.id);
       h += '<li class="shk-row' + (ls.length ? ' has' : '') + '"><div class="shk-time"><b>' + esc(String(s.start).slice(0, 5)) + '</b><span>' + esc(String(s.end).slice(0, 5)) + '</span></div><div class="shk-slot">';
       if (ls.length) h += ls.map(function (l) {
-        var x = info(l), det = [x.building, x.room, x.short].filter(Boolean).join(', ');
-        return '<button type="button" class="shk-card" data-sid="' + esc(x.sid) + '"><span class="shk-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</span><span class="shk-name">' + esc(x.name) + '</span>' + (det ? '<span class="shk-det">' + esc(det) + '</span>' : '') + '</button>';
+        var x = info(l);
+        return '<button type="button" class="shk-card" data-sid="' + esc(x.sid) + '" title="' + esc(SP.t('schedule.roomInFolder')) + '"><span class="shk-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</span><span class="shk-name">' + esc(x.name) + '</span></button>';
       }).join('');
       else if (i > first && i < last) h += '<span class="shk-gap">' + esc(SP.t('schedule.gap', { m: toMin(s.end) - toMin(s.start) })) + '</span>';
       h += '</div></li>';
@@ -214,6 +216,13 @@
 
   /* ---------- Загрузка / помощь / ручная правка (используются и из Настроек) ---------- */
   SP.schedule = {
+    /* Занятия предмета (для папки): день, время, тип, кабинет, преподаватель */
+    lessonsOf: function (sid) {
+      var slots = {}; allSlots().forEach(function (s) { slots[s.id] = s; });
+      return SP.hub.data().schedule.filter(function (l) { return l.subjectId === sid; })
+        .sort(function (a, b) { return a.day - b.day || toMin((slots[a.slotId] || {}).start) - toMin((slots[b.slotId] || {}).start); })
+        .map(function (l) { var x = info(l), s = slots[l.slotId] || {}; return { day: SP.t(DAY_KEYS[l.day] || 'day.mon'), time: String(s.start || '').slice(0, 5) + '–' + String(s.end || '').slice(0, 5), kind: kindLong(x.ab) || x.ab, room: [x.room, x.building].filter(Boolean).join(', '), teacher: x.teacher }; });
+    },
     upload: function () {
       var inp = SP.el('<input type="file" accept=".json,.studyplay,.html,.htm,application/json,text/html" multiple hidden>');
       document.body.appendChild(inp);

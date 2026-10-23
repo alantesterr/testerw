@@ -395,3 +395,4 @@ Object.assign(SP.I18N.en, {
   'subjects.cantDelete': 'Can’t delete (course file) — you can hide it',
   'settings.font.xl': 'Very large', 'settings.font.xxl': 'Huge'
 });
+Object.assign(SP.I18N.en, { 'schedule.roomInFolder': 'Room and teacher are in the subject folder', 'subjects.lessons': 'Classes and rooms' });

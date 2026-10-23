@@ -1,302 +1,292 @@
 {
-  "version": "2026-10-23.7",
-  "updatedAt": "2026-10-23T10:39:28.640Z",
+  "version": "2026-10-24.1",
+  "updatedAt": "2026-10-22T16:21:56.732Z",
   "timeSlots": [
     {
-      "id": "slot1",
-      "start": "08:30:00",
-      "end": "09:20:00"
+      "id": "p1",
+      "start": "08:30",
+      "end": "09:20"
     },
     {
-      "id": "slot2",
-      "start": "09:30:00",
-      "end": "10:20:00"
+      "id": "p2",
+      "start": "09:30",
+      "end": "10:20"
     },
     {
-      "id": "slot3",
-      "start": "10:30:00",
-      "end": "11:20:00"
+      "id": "p3",
+      "start": "10:30",
+      "end": "11:20"
     },
     {
-      "id": "slot4",
-      "start": "11:30:00",
-      "end": "12:20:00"
+      "id": "p4",
+      "start": "11:30",
+      "end": "12:20"
     },
     {
-      "id": "slot5",
-      "start": "12:30:00",
-      "end": "13:20:00"
+      "id": "p5",
+      "start": "12:30",
+      "end": "13:20"
     },
     {
-      "id": "slot6",
-      "start": "13:40:00",
-      "end": "14:30:00"
-    },
-    {
-      "id": "slot7",
-      "start": "14:40:00",
-      "end": "15:30:00"
-    },
-    {
-      "id": "slot8",
-      "start": "15:40:00",
-      "end": "16:30:00"
+      "id": "p6",
+      "start": "13:40",
+      "end": "14:30"
     }
   ],
   "subjects": [
     {
+      "id": "s43334",
+      "code": "",
+      "name": "Архитектура компьютера",
+      "teacher": "Жак Ирина Николаевна"
+    },
+    {
       "id": "s48108",
       "code": "",
       "name": "Философия",
-      "teacher": ""
+      "teacher": "Абдукаликова Гульнара Копеевна"
     },
     {
-      "id": "subject-1",
+      "id": "s43381",
       "code": "",
-      "name": "Ақпараттық-коммуникациялық технологиялар",
-      "teacher": ""
+      "name": "Информационно-коммуникационные технологии",
+      "teacher": "Жак Ирина Николаевна"
     },
     {
-      "id": "subject-2",
+      "id": "s43423",
       "code": "",
-      "name": "Операциялық жүйелер",
-      "teacher": ""
+      "name": "Исследование операций",
+      "teacher": "Ильяшева Гулжамал Ирановна"
     },
     {
-      "id": "subject-4",
+      "id": "s43515",
       "code": "",
-      "name": "Объектіге бағытталған бағдарламалау",
-      "teacher": ""
+      "name": "Object-Oriented Programming (Borland C ++ Builder)",
+      "teacher": "Атаев Ержан Курманович"
     },
     {
-      "id": "subject-5",
+      "id": "s44169",
       "code": "",
-      "name": "Дене шынықтыру",
-      "teacher": ""
-    },
-    {
-      "id": "subject-6",
-      "code": "",
-      "name": "Компьютерлік желілер",
-      "teacher": ""
+      "name": "Физическая культура",
+      "teacher": "Исмаилова Светлана Ивановна"
     }
   ],
   "schedule": [
     {
       "id": "lesson-1",
       "day": 0,
-      "slotId": "slot1",
-      "subjectId": "subject-1",
+      "slotId": "p1",
+      "subjectId": "s43334",
       "code": "",
-      "name": "Ақпараттық-коммуникациялық технологиялар",
-      "kind": "Зертханалық жұмыс",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Архитектура компьютера",
+      "kind": "Лекция",
+      "room": "218",
+      "building": "Главный корпус",
+      "teacher": "Жак Ирина Николаевна"
     },
     {
       "id": "lesson-2",
-      "day": 0,
-      "slotId": "slot2",
-      "subjectId": "subject-1",
-      "code": "",
-      "name": "Ақпараттық-коммуникациялық технологиялар",
-      "kind": "Зертханалық жұмыс",
-      "room": "",
-      "building": "",
-      "teacher": ""
-    },
-    {
-      "id": "lesson-3",
-      "day": 0,
-      "slotId": "slot6",
-      "subjectId": "subject-2",
-      "code": "",
-      "name": "Операциялық жүйелер",
-      "kind": "Дәрістер",
-      "room": "",
-      "building": "",
-      "teacher": ""
-    },
-    {
-      "id": "lesson-4",
-      "day": 0,
-      "slotId": "slot8",
+      "day": 2,
+      "slotId": "p1",
       "subjectId": "s48108",
       "code": "",
       "name": "Философия",
-      "kind": "Практика",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "kind": "Лабораторная",
+      "room": "306",
+      "building": "Корпус №4",
+      "teacher": "Абдукаликова Гульнара Копеевна"
+    },
+    {
+      "id": "lesson-3",
+      "day": 3,
+      "slotId": "p1",
+      "subjectId": "s43381",
+      "code": "",
+      "name": "Информационно-коммуникационные технологии",
+      "kind": "Лекция",
+      "room": "512",
+      "building": "Главный корпус",
+      "teacher": "Жак Ирина Николаевна"
+    },
+    {
+      "id": "lesson-4",
+      "day": 4,
+      "slotId": "p1",
+      "subjectId": "s48108",
+      "code": "",
+      "name": "Философия",
+      "kind": "Лекция",
+      "room": "Актовый зал (302)",
+      "building": "Корпус №4",
+      "teacher": "Абдукаликова Гульнара Копеевна"
     },
     {
       "id": "lesson-5",
       "day": 1,
-      "slotId": "slot2",
-      "subjectId": "subject-4",
+      "slotId": "p2",
+      "subjectId": "s43515",
       "code": "",
-      "name": "Объектіге бағытталған бағдарламалау",
-      "kind": "Зертханалық жұмыс",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "Лабораторная",
+      "room": "502",
+      "building": "Главный корпус",
+      "teacher": "Атаев Ержан Курманович"
     },
     {
       "id": "lesson-6",
-      "day": 1,
-      "slotId": "slot3",
-      "subjectId": "subject-4",
+      "day": 2,
+      "slotId": "p2",
+      "subjectId": "s43423",
       "code": "",
-      "name": "Объектіге бағытталған бағдарламалау",
-      "kind": "Зертханалық жұмыс",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Исследование операций",
+      "kind": "Лабораторная",
+      "room": "504",
+      "building": "Главный корпус",
+      "teacher": "Ильяшева Гулжамал Ирановна"
     },
     {
       "id": "lesson-7",
-      "day": 1,
-      "slotId": "slot5",
-      "subjectId": "subject-5",
+      "day": 3,
+      "slotId": "p2",
+      "subjectId": "s43381",
       "code": "",
-      "name": "Дене шынықтыру",
-      "kind": "Практика",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Информационно-коммуникационные технологии",
+      "kind": "Лабораторная",
+      "room": "222",
+      "building": "Главный корпус",
+      "teacher": "Бозаева Камила Еркеновна"
     },
     {
       "id": "lesson-8",
-      "day": 1,
-      "slotId": "slot6",
-      "subjectId": "subject-5",
+      "day": 4,
+      "slotId": "p2",
+      "subjectId": "s48108",
       "code": "",
-      "name": "Дене шынықтыру",
-      "kind": "Практика",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Философия",
+      "kind": "Лекция",
+      "room": "Актовый зал (302)",
+      "building": "Корпус №4",
+      "teacher": "Абдукаликова Гульнара Копеевна"
     },
     {
       "id": "lesson-9",
-      "day": 2,
-      "slotId": "slot2",
-      "subjectId": "s48108",
+      "day": 0,
+      "slotId": "p3",
+      "subjectId": "s43423",
       "code": "",
-      "name": "Философия",
-      "kind": "Дәрістер",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Исследование операций",
+      "kind": "Лекция",
+      "room": "523",
+      "building": "Главный корпус",
+      "teacher": "Ильяшева Гулжамал Ирановна"
     },
     {
       "id": "lesson-10",
-      "day": 2,
-      "slotId": "slot3",
-      "subjectId": "s48108",
+      "day": 1,
+      "slotId": "p3",
+      "subjectId": "s43515",
       "code": "",
-      "name": "Философия",
-      "kind": "Дәрістер",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "Лабораторная",
+      "room": "502",
+      "building": "Главный корпус",
+      "teacher": "Атаев Ержан Курманович"
     },
     {
       "id": "lesson-11",
       "day": 2,
-      "slotId": "slot5",
-      "subjectId": "subject-2",
+      "slotId": "p3",
+      "subjectId": "s43423",
       "code": "",
-      "name": "Операциялық жүйелер",
-      "kind": "Зертханалық жұмыс",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Исследование операций",
+      "kind": "Лабораторная",
+      "room": "504",
+      "building": "Главный корпус",
+      "teacher": "Ильяшева Гулжамал Ирановна"
     },
     {
       "id": "lesson-12",
-      "day": 2,
-      "slotId": "slot6",
-      "subjectId": "subject-2",
+      "day": 3,
+      "slotId": "p3",
+      "subjectId": "s43381",
       "code": "",
-      "name": "Операциялық жүйелер",
-      "kind": "Зертханалық жұмыс",
-      "room": "",
-      "building": "",
-      "teacher": ""
-    },
-    {
-      "id": "lesson-13",
-      "day": 4,
-      "slotId": "slot2",
-      "subjectId": "subject-6",
-      "code": "",
-      "name": "Компьютерлік желілер",
-      "kind": "Дәрістер",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Информационно-коммуникационные технологии",
+      "kind": "Лабораторная",
+      "room": "222",
+      "building": "Главный корпус",
+      "teacher": "Бозаева Камила Еркеновна"
     },
     {
       "id": "lesson-14",
-      "day": 4,
-      "slotId": "slot3",
-      "subjectId": "subject-1",
+      "day": 2,
+      "slotId": "p4",
+      "subjectId": "s43334",
       "code": "",
-      "name": "Ақпараттық-коммуникациялық технологиялар",
-      "kind": "Дәрістер",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Архитектура компьютера",
+      "kind": "Лабораторная",
+      "room": "611",
+      "building": "Главный корпус",
+      "teacher": "Жак Ирина Николаевна"
     },
     {
       "id": "lesson-15",
       "day": 4,
-      "slotId": "slot4",
-      "subjectId": "subject-4",
+      "slotId": "p4",
+      "subjectId": "s43515",
       "code": "",
-      "name": "Объектіге бағытталған бағдарламалау",
-      "kind": "Дәрістер",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "Лекция",
+      "room": "501",
+      "building": "Главный корпус",
+      "teacher": "Жак Ирина Николаевна"
     },
     {
       "id": "lesson-16",
-      "day": 4,
-      "slotId": "slot5",
-      "subjectId": "subject-4",
+      "day": 2,
+      "slotId": "p5",
+      "subjectId": "s43334",
       "code": "",
-      "name": "Объектіге бағытталған бағдарламалау",
-      "kind": "Дәрістер",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Архитектура компьютера",
+      "kind": "Лабораторная",
+      "room": "611",
+      "building": "Главный корпус",
+      "teacher": "Жак Ирина Николаевна"
     },
     {
       "id": "lesson-17",
       "day": 4,
-      "slotId": "slot7",
-      "subjectId": "subject-6",
+      "slotId": "p5",
+      "subjectId": "s43515",
       "code": "",
-      "name": "Компьютерлік желілер",
-      "kind": "Зертханалық жұмыс",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "Лекция",
+      "room": "501",
+      "building": "Главный корпус",
+      "teacher": "Жак Ирина Николаевна"
     },
     {
       "id": "lesson-18",
-      "day": 4,
-      "slotId": "slot8",
-      "subjectId": "subject-6",
+      "day": 0,
+      "slotId": "p5",
+      "subjectId": "s44169",
       "code": "",
-      "name": "Компьютерлік желілер",
-      "kind": "Зертханалық жұмыс",
-      "room": "",
-      "building": "",
-      "teacher": ""
+      "name": "Физическая культура",
+      "kind": "СПЗ",
+      "room": "223 (спортзал)",
+      "building": "Корпус №4",
+      "teacher": "Исмаилова Светлана Ивановна"
+    },
+    {
+      "id": "lesson-19",
+      "day": 0,
+      "slotId": "p6",
+      "subjectId": "s44169",
+      "code": "",
+      "name": "Физическая культура",
+      "kind": "СПЗ",
+      "room": "223 (спортзал)",
+      "building": "Корпус №4",
+      "teacher": "Исмаилова Светлана Ивановна"
     }
   ]
 }

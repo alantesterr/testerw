@@ -11,8 +11,8 @@
 (function () {
   'use strict';
   var SP = window.SP, esc = SP.esc;
-  var root = null, tab = SP.store.get('sp-grades-tab', 'journal'), editing = null;
-  if (tab !== 'journal' && tab !== 'calc') tab = 'journal';
+  var root = null, tab = SP.store.get('sp-grades-tab2', 'calc'), editing = null;
+  if (tab !== 'journal' && tab !== 'calc') tab = 'calc';
 
   /* ПОРОГИ ЦВЕТА КОЛЕЦ — меняйте только здесь.
      0 или пусто → серое пустое кольцо; 1–49 красный; 50–69 жёлтый;
@@ -80,7 +80,7 @@
       var r1 = function (x) { return x == null ? null : Math.round(x); };
       upsert(st, s.name.trim(), { cur: r1(v.c), rating: r1(R), exam: r1(v.e), final: r1(F) }); n++;
     });
-    jSave(st); tab = 'journal'; SP.store.set('sp-grades-tab', tab); render();
+    jSave(st); tab = 'journal'; SP.store.set('sp-grades-tab2', tab); render();
     SP.toast(n ? SP.t('jr.moved', { n: n }) : SP.t('jr.calcEmpty'), n ? 'success' : 'warning');
   }
   function fromSchedule() {
@@ -137,15 +137,15 @@
     if (!root) return;
     var html = SP.pageHead({ title: SP.t('nav.grades'), sub: esc(SP.t('jr.sub')) });
     html += '<div class="tabs" role="tablist">' +
-      '<button type="button" class="tab" role="tab" data-tab="journal" aria-selected="' + (tab === 'journal') + '">' + SP.icon('graduation-cap', 'ic-sm') + '<span>' + esc(SP.t('grades.journal')) + '</span></button>' +
-      '<button type="button" class="tab" role="tab" data-tab="calc" aria-selected="' + (tab === 'calc') + '">' + SP.icon('calculator', 'ic-sm') + '<span>' + esc(SP.t('grades.calc')) + '</span></button></div>';
+      '<button type="button" class="tab" role="tab" data-tab="calc" aria-selected="' + (tab === 'calc') + '">' + SP.icon('calculator', 'ic-sm') + '<span>' + esc(SP.t('grades.calc')) + '</span></button>' +
+      '<button type="button" class="tab" role="tab" data-tab="journal" aria-selected="' + (tab === 'journal') + '">' + SP.icon('graduation-cap', 'ic-sm') + '<span>' + esc(SP.t('grades.journal')) + '</span></button></div>';
     html += tab === 'journal' ? journalHtml() : calcHtml();
     root.innerHTML = '<div class="page">' + html + '</div>';
     wire();
   }
   function wire() {
     var $ = function (s) { return SP.$(s, root); };
-    SP.$$('[data-tab]', root).forEach(function (b) { b.onclick = function () { tab = b.getAttribute('data-tab'); editing = null; SP.store.set('sp-grades-tab', tab); render(); }; });
+    SP.$$('[data-tab]', root).forEach(function (b) { b.onclick = function () { tab = b.getAttribute('data-tab'); editing = null; SP.store.set('sp-grades-tab2', tab); render(); }; });
     if (tab === 'journal') { wireJournal(); return; }
     var st = calcState(), sv = function () { SP.store.set(calcKey(), st); };
     var list = $('#cvList');

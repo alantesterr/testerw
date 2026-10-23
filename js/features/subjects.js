@@ -93,6 +93,7 @@
       '<div class="grow"><h2 class="sj-title">' + esc(s.name) + '</h2><div class="card-sub">' + esc([s.code, s.teacher].filter(Boolean).join(' · ') || SP.t('subjects.noTeacher')) + '</div></div></div>' +
       '<div class="row">' + (s.base ? '<span class="badge">' + SP.icon(s.base === 'timetable' ? 'cloud' : 'users') + esc(SP.t(s.base === 'timetable' ? 'subjects.fromTt' : 'subjects.fromCourse')) + '</span>' : '') +
       '<button type="button" class="btn btn-ghost btn-icon" id="sjEdit" aria-label="' + esc(SP.t('subjects.edit')) + '" data-tip="' + esc(SP.t('subjects.edit')) + '">' + SP.icon('pencil') + '</button></div></div>' +
+      lessonsBlock(s) +
       '<div class="tabs" role="tablist">' +
       tabBtn('materials', 'folder-open', SP.t('subjects.materials'), mats.length) +
       tabBtn('tests', 'list-checks', SP.t('subjects.tests'), tests.length) +
@@ -110,6 +111,14 @@
         '<span class="hint" id="sjNoteSt" aria-live="polite">' + esc(SP.t('subjects.notesAuto')) + '</span></div>';
     }
     return h + '</div></section>';
+  }
+  function lessonsBlock(s) {
+    var ls = SP.schedule && SP.schedule.lessonsOf ? SP.schedule.lessonsOf(s.id) : [];
+    if (!ls.length) return '';
+    return '<div class="sj-lessons"><div class="section-title">' + esc(SP.t('subjects.lessons')) + '</div><ul>' + ls.map(function (x) {
+      return '<li><b>' + esc(x.day) + ', ' + esc(x.time) + '</b>' + (x.kind ? ' · ' + esc(x.kind) : '') +
+        '<span>' + SP.icon('house', 'ic-sm') + ' ' + esc(x.room || '—') + (x.teacher ? ' · ' + esc(x.teacher) : '') + '</span></li>';
+    }).join('') + '</ul></div>';
   }
   function tabBtn(id, icon, label, n) {
     return '<button type="button" class="tab" role="tab" data-tab="' + id + '" aria-selected="' + (tab === id) + '">' + SP.icon(icon, 'ic-sm') + '<span>' + esc(label) + '</span>' + (n != null ? '<span class="count">' + n + '</span>' : '') + '</button>';

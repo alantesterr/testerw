@@ -828,3 +828,4 @@ Object.assign(SP.I18N.ru, {
   'subjects.cantDelete': 'Удалить нельзя (файл курса) — можно скрыть',
   'settings.font.xl': 'Очень большой', 'settings.font.xxl': 'Огромный'
 });
+Object.assign(SP.I18N.ru, { 'schedule.roomInFolder': 'Кабинет и преподаватель — в папке предмета', 'subjects.lessons': 'Занятия и кабинеты' });

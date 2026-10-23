@@ -1,1 +1,1452 @@
+<question> What is an identifier?
+<variantright> the name of an object in a program
+<variant> dynamic memory
+<variant> an array made up of a set of elements
+<variant> the way a program is passed
+<variant> words intended for the compiler
+
+<question> What is an array?
+<variantright> a sequence of values of the same type under one name
+<variant> data located in cells
+<variant> a type that defines the size
+<variant> a pointer that uses dynamic memory
+<variant> a set of types that defines a reference
+
+<question> In C, which function does the execution of any program start from?
+<variantright> main()
+<variant> random
+<variant> randomize()
+<variant> clrscr()
+<variant> It is different in each program
+
+<question> Where are library functions located?
+<variantright> in library files
+<variant> on a CD
+<variant> on the Internet
+<variant> in the computer's RAM
+<variant> No correct answer
+
+<question> A sequence of characters made up of Latin letters and digits, which must begin with a letter, is called ...
+<variantright> identifier
+<variant> constant
+<variant> function
+<variant> comment
+<variant> No correct answer
+
+<question> Which keyword is used to declare constants in C?
+<variantright> const
+<variant> var
+<variant> int
+<variant> procedure
+<variant> All of the above are correct
+
+<question> What is the purpose of the return (expression) operation?
+<variantright> returns the value of the expression to the operator that called the function
+<variant> there is no such operator in C
+<variant> it is used when a function returns no value
+<variant> it adds beauty to the program
+<variant> its purpose is undefined; by law it must be at the end of the program
+
+<question> Which header file contains the prototype of the rand() function?
+<variantright> #include <stdlib.h>
+<variant> #include <conio.h>
+<variant> #include <math.h>
+<variant> #include <iostream.h>
+<variant> #include <stdio.h>
+
+<question> What is a variable called that is known only inside a function and is defined within it?
+<variantright> local variable
+<variant> global variable
+<variant> unknown variable
+<variant> known variable
+<variant> recursive variable
+
+<question> If float and double types are mixed, what is the result?
+<variantright> double
+<variant> float;
+<variant> long;
+<variant> int;
+<variant> short;
+
+<question> What is a variable called that is declared outside any block or function?
+<variantright> global variable
+<variant> local variable
+<variant> base variable
+<variant> known variable
+<variant> unary variable
+
+<question> What is the void keyword used for in a function header?
+<variantright> to show that the function returns no value
+<variant> to show that the function returns a value
+<variant> the void keyword is not used in a function header
+<variant> to show that the function stores a value
+<variant> No correct answer
+
+<question> What is a variable?
+<variantright> a memory area with a certain name, in which data of a defined type is stored
+<variant> storing data of an undefined type in memory
+<variant> dividing memory classes into several parts
+<variant> an expression made of an operand, an operation sign and brackets, expressing a value of a defined type
+<variant> No correct answer
+
+<question> What is the #define directive used for?
+<variantright> to set the value of a constant
+<variant> for macros
+<variant> for a symbol that controls conditional compilation
+<variant> an expression made of an operand, an operation sign and brackets, expressing a value of a defined type
+<variant> No correct answer
+
+<question> What is the extension of source (header) files that contain functions or defined data, and what are these files called?
+<variantright> ".h", ".h files"
+<variant> ".htp", ".htp files"
+<variant> ".c", ".c files"
+<variant> ".f", ".f files"
+<variant> No correct answer
+
+<question> Which option correctly declares an array of 10 real numbers?
+<variantright> float a[10];
+<variant> int a[10];
+<variant> float a(10);
+<variant> float a[1..10];
+<variant> int a[1..10];
+
+<question> What is a variable?
+<variantright> a quantity that takes different values while the program is running
+<variant> dividing a memory class into several areas
+<variant> a sequence of programs
+<variant> the fulfillment of a certain condition of an algorithm
+<variant> No correct answer
+
+<question> Which word is used to write the selection (choice) operator?
+<variantright> switch
+<variant> return
+<variant> for
+<variant> if
+<variant> class
+
+<question> If long and float types are mixed, what is the result?
+<variantright> float
+<variant> char
+<variant> int
+<variant> double
+<variant> No correct answer
+
+<question> How is the remainder (modulo) operation written?
+<variantright> %
+<variant> /
+<variant> \
+<variant> &
+<variant> <<
+
+<question> The correct declaration of an integer variable a:
+<variantright> int a;
+<variant> a int;
+<variant> integer a;
+<variant> float a;
+<variant> char a;
+
+<question> In which option is sizeof written correctly?
+<variantright> sizeof (type)
+<variant> sizeof type
+<variant> sizeof [type]
+<variant> sizeof: type
+<variant> sizeof_ type
+
+<question> Which option correctly shows logical negation?
+<variantright> ! (exclamation mark)
+<variant> = (equals sign)
+<variant> \ (backslash)
+<variant> & (ampersand)
+<variant> ? (question mark)
+
+<question> The correct declaration of an array a of 12 integers:
+<variantright> int a[12];
+<variant> float a[12];
+<variant> char a[12];
+<variant> int a(12);
+<variant> float a[10];
+
+<question> What characters is the body of a function enclosed in?
+<variantright> { }
+<variant> / /
+<variant> ( )
+<variant> * *
+<variant> /* */
+
+<question> What characters is a comment written inside in C?
+<variantright> /* */
+<variant> < >
+<variant> (* *)
+<variant> * *
+<variant> { }
+
+<question> If short and int types are mixed, the result is ...
+<variantright> int
+<variant> short
+<variant> char
+<variant> float
+<variant> double
+
+<question> What does `float a[10];` mean?
+<variantright> declaring an array a of 10 real numbers
+<variant> declaring a sequence of integers from 1 to 10
+<variant> declaring a 10x10 matrix a
+<variant> declaring a sequence of real numbers from 1 to 10
+<variant> No correct answer
+
+<question> Which statement is used to exit a switch?
+<variantright> break
+<variant> do
+<variant> case
+<variant> return
+<variant> default
+
+<question> What does the *= operation mean?
+<variantright> multiply and assign
+<variant> assignment
+<variant> multiplication
+<variant> comment
+<variant> multiply each element
+
+<question> What is a lexeme?
+<variantright> the smallest meaningful unit of a language
+<variant> phrases
+<variant> sentences
+<variant> the body of a program
+<variant> a page change
+
+<question> What does the statement "int n;" mean?
+<variantright> variable n takes integer values
+<variant> that the specifier n is given
+<variant> variable n takes real values
+<variant> the body of a program
+<variant> No correct answer
+
+<question> In C, uppercase and lowercase letters denoted by the same character ...
+<variantright> are considered different
+<variant> are considered the same
+<variant> change depending on the compiler
+<variant> change depending on the language version
+<variant> All of the above are correct
+
+<question> Names given to variables, constants, data types and functions are called ...
+<variantright> identifiers
+<variant> keywords
+<variant> directives
+<variant> pointers
+<variant> No correct answer is given
+
+<question> What is the printf() format for printing a real number?
+<variantright> %f
+<variant> %u
+<variant> %o
+<variant> %x
+<variant> No correct answer
+
+<question> How is the single-precision real data type declared?
+<variantright> float
+<variant> double
+<variant> char
+<variant> int
+<variant> No correct answer
+
+<question> How is the double-precision real data type declared?
+<variantright> double
+<variant> float
+<variant> char
+<variant> int
+<variant> No correct answer
+
+<question> How is the character data type declared?
+<variantright> char
+<variant> double
+<variant> float
+<variant> int
+<variant> No correct answer
+
+<question> What are keywords?
+<variantright> words entered into a special reserved set
+<variant> ordinary identifiers
+<variant> operations
+<variant> functions
+<variant> No correct answer
+
+<question> The first system software product written in C?
+<variantright> UNIX
+<variant> MS-DOS
+<variant> NC
+<variant> Windows XP
+<variant> No correct answer
+
+<question> Which is the correct condition for checking that an array index is odd in C?
+<variantright> if (i%2==1)
+<variant> if (i%2=1)
+<variant> if (i%2==0)
+<variant> if (i%2!=1)
+<variant> No correct answer
+
+<question> Which fragment declaring variables in C is correct?
+<variantright> main () { int x, y; float a, b; char c;}
+<variant> main ()  int x, y; {float a, b; char c;}
+<variant> {main ();  int x, y; float, a, b;  char c;}
+<variant> main ()  int x, y;  float a, b; char x;
+<variant> No correct answer
+
+<question> How is the logical type defined in C?
+<variantright> bool
+<variant> The logical type is not defined in C
+<variant> char
+<variant> string
+<variant> No correct answer
+
+<question> What values can a logical quantity take in C?
+<variantright> true, false
+<variant> + and -
+<variant> 0 and 1
+<variant> 0, 255
+<variant> No correct answer
+
+<question> In C, what is the value of the expression 5/2?
+<variantright> 2
+<variant> 2.5
+<variant> 1
+<variant> 5
+<variant> No correct answer
+
+<question> In C, what is the value of the expression 7/2?
+<variantright> 3
+<variant> 2
+<variant> 3.5
+<variant> 5
+<variant> No correct answer
+
+<question> In C, what is the value of the expression 7/3?
+<variantright> 2
+<variant> 2.5
+<variant> 3
+<variant> 3.3
+<variant> No correct answer
+
+<question> In C, what is the value of the expression 5%2?
+<variantright> 1
+<variant> 2
+<variant> 2.5
+<variant> 3
+<variant> No correct answer
+
+<question> In C, what is the value of the expression 7%2?
+<variantright> 1
+<variant> 3
+<variant> 3.5
+<variant> 4
+<variant> No correct answer
+
+<question> In C, which operation finds the quotient of dividing an integer by an integer (like the div function in Pascal)?
+<variantright> /
+<variant> %
+<variant> \
+<variant> &
+<variant> No correct answer
+
+<question> In C, which expression does NOT increase a variable's value by 1?
+<variantright> x*=1
+<variant> x++
+<variant> x=x+1
+<variant> x+=1
+<variant> No correct answer
+
+<question> In C, how is the statement that produces a random integer in the range [-20, 50] written?
+<variantright> random(70)-20;
+<variant> random(50)-20;
+<variant> random(30)+20;
+<variant> random(50);
+<variant> No correct answer
+
+<question> In C, as a result of x= random(20)-5, what range is the value of x in?
+<variantright> [-5,15]
+<variant> [5,20]
+<variant> [-5,20]
+<variant> [5,15]
+<variant> No correct answer
+
+<question> In Borland C++ Builder, which statement starts the random number generator so that different random numbers are produced on every run of the program?
+<variantright> randomize();
+<variant> time();
+<variant> getch();
+<variant> main();
+<variant> No correct answer
+
+<question> In C, after `x=0; x++; x=x+1; x=x*x;` what is the value of x?
+<variantright> 4
+<variant> 2
+<variant> 0
+<variant> 3
+<variant> No correct answer
+
+<question> In C, after `x=0; x++; x=x*1; x=x*x;` what is the value of x?
+<variantright> 1
+<variant> 2
+<variant> 0
+<variant> 4
+<variant> No correct answer
+
+<question> In C, which statement is n%=3 equivalent to?
+<variantright> n=n%3
+<variant> n=n/3
+<variant> n=n*3
+<variant> n=n\3
+<variant> No correct answer
+
+<question> In C, show the correct program for calculating the volume of a cube with a given side:
+<variantright> v=pow (a,3);
+<variant> v=pow (a,4);
+<variant> v=pow (a,2);
+<variant> v=a*a;
+<variant> No correct answer
+
+<question> In C, the correct condition for checking that an array index is even:
+<variantright> if (i%2==0)
+<variant> if (a[i]%2==0)
+<variant> if (i%2==1)
+<variant> if (i%2=0)
+<variant> No correct answer
+
+<question> In C, what does the program `{ float x=60, y; y=atan(x*3.14/180); cout<< y;}` calculate?
+<variantright> arctangent
+<variant> arccotangent
+<variant> tangent
+<variant> cotangent
+<variant> No correct answer
+
+<question> In C, which file defines the standard function `pow(x,y);`?
+<variantright> math.h
+<variant> iostream.h
+<variant> stdlib.h
+<variant> conio.h
+<variant> No correct answer
+
+<question> In C, what is the result of `cout<<sqrt(pow(5,4));`?
+<variantright> 25
+<variant> 625
+<variant> 5
+<variant> 15
+<variant> No correct answer
+
+<question> In C, show the unary increment operation:
+<variantright> ++
+<variant> --
+<variant> //
+<variant> /*
+<variant> No correct answer
+
+<question> In C, show the unary decrement operation:
+<variantright> --
+<variant> ++
+<variant> */
+<variant> //
+<variant> No correct answer
+
+<question> How is the decimal logarithm lg x written in C?
+<variantright> log10(x)
+<variant> ln (x)
+<variant> log (10x)
+<variant> lg(x)
+<variant> No correct answer
+
+<question> In C, if x=2 initially, what is the value of x after x*=(x+1)?
+<variantright> 6
+<variant> 5
+<variant> 4
+<variant> 3
+<variant> No correct answer
+
+<question> In C, which function returns the absolute value of a real-type argument?
+<variantright> fabs (x)
+<variant> labs (x)
+<variant> absx (x)
+<variant> fabc (x)
+<variant> No correct answer
+
+<question> In C. Which directive is included to use input-output commands?
+<variantright> # include <iostream.h>
+<variant> # include <conio.h>
+<variant> # include <stdio.h>
+<variant> # include <math.h>
+<variant> No correct answer
+
+<question> In C. The function of the output operator:
+<variantright> cout<<
+<variant> cin>>
+<variant> getch()
+<variant> scanf()
+<variant> No correct answer
+
+<question> The input operator in C++:
+<variantright> cin>>
+<variant> cout<<
+<variant> printf()
+<variant> getch()
+<variant> No correct answer
+
+<question> In C. What does the getch(); statement do?
+<variantright> waits for any key to be pressed, but does not display it on the screen
+<variant> clears the screen
+<variant> returns the value of a function
+<variant> marks the end of the program
+<variant> No correct answer
+
+<question> In C. How many times does the loop repeat in the program below?
+```cpp
+for (x=1; x <= 10; x=x+2)
+```
+<variantright> 5
+<variant> 10
+<variant> 15
+<variant> 20
+<variant> No correct answer
+
+<question> In C. How many times does the loop repeat in the program below?
+```cpp
+x=2; while (x<10) {y=x*x; x=x+2;}
+```
+<variantright> 4
+<variant> 5
+<variant> 10
+<variant> 3
+<variant> No correct answer
+
+<question> In C. How many times does the loop repeat in the program below?
+```cpp
+x=7; while (x <=10) { cout<<x; x++; }
+```
+<variantright> 4
+<variant> 5
+<variant> 6
+<variant> 7
+<variant> No correct answer
+
+<question> In C. How many times does the loop repeat in the program below?
+```cpp
+x=7; while (x <10) { cout<<x; x++; }
+```
+<variantright> 3
+<variant> 4
+<variant> 5
+<variant> 6
+<variant> No correct answer
+
+<question> In C. What is the value of k as a result of running the program?
+```cpp
+k=0; for (x=1;x <=10; x++) if (x % 3==0) k++;
+```
+<variantright> 3
+<variant> 4
+<variant> 5
+<variant> 2
+<variant> No correct answer
+
+<question> In C. What is the value of k as a result of running the program?
+```cpp
+k=0; for (x=1;x <=10; x++) if (x % 5==0) k++;
+```
+<variantright> 2
+<variant> 3
+<variant> 4
+<variant> 5
+<variant> No correct answer
+
+<question> In C. What is the value of k as a result of running the program?
+```cpp
+k=0; for (x=1;x <=10; x++) if (x % 9==0) k++;
+```
+<variantright> 1
+<variant> 2
+<variant> 3
+<variant> 4
+<variant> No correct answer
+
+<question> In C. The notation of the pre-condition loop:
+<variantright> while (condition) {loop body}
+<variant> do {loop body}while (condition)
+<variant> for (initial value; final value; step)
+<variant> for (final value; initial value; step)
+<variant> No correct answer
+
+<question> In C. The notation of the post-condition loop:
+<variantright> do {loop body}while (condition)
+<variant> while (condition) {loop body}
+<variant> for (initial value; final value; step)
+<variant> for (final value; initial value; step)
+<variant> No correct answer
+
+<question> In C. The notation of the loop with a parameter:
+<variantright> for (initial value; final value; step)
+<variant> while (condition) {loop body}
+<variant> do {loop body}while (condition)
+<variant> switch () {}
+<variant> No correct answer
+
+<question> How many types of loop operators are there in C?
+<variantright> 3
+<variant> 2
+<variant> 1
+<variant> 4
+<variant> No correct answer
+
+<question> In C. Which header file defines the getch() function?
+<variantright> conio.h
+<variant> stdio.h
+<variant> iostream.h
+<variant> stdlib.h
+<variant> No correct answer
+
+<question> In C. An array is
+<variantright> a set of elements of the same type
+<variant> a set of elements of different types
+<variant> a sequence of variables
+<variant> a set of any elements
+<variant> No correct answer
+
+<question> The screen-clearing function in C:
+<variantright> clrscr();
+<variant> clear screen();
+<variant> cls();
+<variant> clean();
+<variant> No correct answer
+
+<question> In C. Which header file is included to use the screen-clearing function?
+<variantright> conio.h
+<variant> stdio.h
+<variant> iostream.h
+<variant> stdlib.h
+<variant> No correct answer
+
+<question> In C. Which header file is included to use the random number function?
+<variantright> stdlib.h
+<variant> iostream.h
+<variant> stdio.h
+<variant> conio.h
+<variant> No correct answer
+
+<question> In C, which number does «false» correspond to?
+<variantright> 0
+<variant> 1
+<variant> it is not equated to any number
+<variant> -1
+<variant> No correct answer
+
+<question> In C, which number does «true» correspond to?
+<variantright> 1
+<variant> 0
+<variant> -1
+<variant> it is not equated to any number
+<variant> No correct answer
+
+<question> In C. What does 1 as the result of evaluating a condition mean?
+<variantright> true
+<variant> false
+<variant> the result of correct compilation of the program
+<variant> boolean
+<variant> No correct answer
+
+<question> In C. What does 0 as the result of evaluating a condition mean?
+<variantright> false
+<variant> true
+<variant> the result of correct compilation of the program
+<variant> boolean
+<variant> No correct answer
+
+<question> In C, is the expression (1 != 1) true or false?
+<variantright> false
+<variant> meaningless
+<variant> true
+<variant> unknown
+<variant> No correct answer
+
+<question> Who founded the C language?
+<variantright> Dennis Ritchie
+<variant> Bill Gates
+<variant> J. Neumann
+<variant> Bjarne Stroustrup
+<variant> No correct answer
+
+<question> In C. The control character “\n”
+<variantright> move to a new line
+<variant> move to the next page
+<variant> write the \ symbol n times
+<variant> a blank space
+<variant> No correct answer
+
+<question> In C. The control character “\t”
+<variantright> horizontal tab
+<variant> move to a new line
+<variant> move to the next page
+<variant> write the \ symbol t times
+<variant> No correct answer
+
+<question> In C. An expression equivalent to s=s+x
+<variantright> s+=x
+<variant> s=x++
+<variant> s=s++
+<variant> s=+x
+<variant> No correct answer
+
+<question> Which of these is NOT part of the C alphabet?
+<variantright> Uppercase letters of the Russian alphabet
+<variant> Special symbols
+<variant> Lowercase and uppercase letters of the Latin alphabet
+<variant> Arabic digits 0-9
+<variant> No correct answer
+
+<question> In C. The range of values of the char type
+<variantright> -128…127
+<variant> 0…65365
+<variant> -65365…65365
+<variant> -256…255
+<variant> No correct answer
+
+<question> How is the arccos(x) function written in C?
+<variantright> acos(x)
+<variant> cosa(x)
+<variant> acos[x]
+<variant> acos{x}
+<variant> No correct answer
+
+<question> What is the quoted phrase in the cout<< operator used for?
+<variantright> for clarity; it can also be left out;
+<variant> so as not to move to the next line
+<variant> to move to the next line;
+<variant> to print a question mark;
+<variant> No correct answer
+
+<question> Which logical operation is called “logical multiplication” (AND)?
+<variantright> &&
+<variant> ||
+<variant> !
+<variant> :
+<variant> No correct answer
+
+<question> Which logical operation is called “logical sum” (OR)?
+<variantright> ||
+<variant> &&
+<variant> :
+<variant> !
+<variant> No correct answer
+
+<question> What is the value of the expression k=(3/2)*(3%2)?
+<variantright> 1
+<variant> 2
+<variant> 0.5
+<variant> 3
+<variant> No correct answer
+
+<question> Given the declarations:
+```cpp
+int a,b,c,n; float d,e;
+```
+What is the type of the value of the expression d+1?
+<variantright> float
+<variant> int
+<variant> char
+<variant> bool
+<variant> No correct answer
+
+<question> The operator for entering the values of variables into the computer:
+<variantright> cin>>
+<variant> cout<<
+<variant> printf()
+<variant> getch()
+<variant> No correct answer
+
+<question> In which loop operator do we exit the loop when the condition is true?
+<variantright> do {} while(condition)
+<variant> while (condition) { }
+<variant> for
+<variant> switch
+<variant> No correct answer
+
+<question> In which loop operator do we exit the loop when the condition is not true?
+<variantright> while (condition) { }
+<variant> do {} while(condition)
+<variant> for
+<variant> switch
+<variant> No correct answer
+
+<question> What is the value of the variable k in `k=ceil(3.226);`?
+<variantright> 4
+<variant> 3
+<variant> 2
+<variant> 3.5
+<variant> No correct answer
+
+<question> What is the value of the variable k in `k=floor(3.63);`?
+<variantright> 3
+<variant> 4
+<variant> 2
+<variant> 3.5
+<variant> No correct answer
+
+<question> Which is the conditional operator?
+<variantright> if
+<variant> for
+<variant> while
+<variant> switch
+<variant> No correct answer
+
+<question> Which one is called the selection operator?
+<variantright> switch
+<variant> for
+<variant> if
+<variant> while
+<variant> No correct answer
+
+<question> Which function is used to find the square root of a value?
+<variantright> sqrt()
+<variant> sqr()
+<variant> pov()
+<variant> sgrt()
+<variant> No correct answer
+
+<question> How do we write x to the power of y in C?
+<variantright> pow(x,y)
+<variant> povv(x,y)
+<variant> sqr(x,y)
+<variant> sqrt(x,y)
+<variant> No correct answer
+
+<question> How do we write the 5th root of x?
+<variantright> pow(x,1/5.)
+<variant> sqrt(x,1/5)
+<variant> sqrt(x,5)
+<variant> pow(x,1/5)
+<variant> No correct answer
+
+<question> What is the printf() format for printing a string?
+<variantright> %s
+<variant> %f
+<variant> %u
+<variant> %o
+<variant> No correct answer
+
+<question> What is the printf() format for printing a real number?
+<variantright> %f
+<variant> %o
+<variant> %u
+<variant> %s
+<variant> No correct answer
+
+<question> The printf() format for printing an unsigned decimal integer:
+<variantright> %u
+<variant> %s
+<variant> %o
+<variant> %f
+<variant> No correct answer
+
+<question> The printf() format for printing an unsigned octal integer:
+<variantright> %o
+<variant> %f
+<variant> %s
+<variant> %u
+<variant> No correct answer
+
+<question> What is the printf() format for printing an unsigned hexadecimal integer?
+<variantright> %x
+<variant> %u
+<variant> %s
+<variant> %f
+<variant> No correct answer
+
+<question> What is the printf() format for printing a real number in exponential form?
+<variantright> %e
+<variant> %f
+<variant> %s
+<variant> %x
+<variant> No correct answer
+
+<question> A defined sequence of operations and descriptions that performs some sequence of actions is called ....?
+<variantright> function
+<variant> procedure
+<variant> recursion
+<variant> code
+<variant> No correct answer
+
+<question> What are the parameters at the beginning of a function description called?
+<variantright> formal
+<variant> actual
+<variant> argument
+<variant> global
+<variant> No correct answer
+
+<question> In C, which function does the execution of any program start from?
+<variantright> main()
+<variant> random
+<variant> randomize()
+<variant> clrscr()
+<variant> No correct answer
+
+<question> What do we call a function that calls itself?
+<variantright> recursion
+<variant> procedure
+<variant> function
+<variant> operator
+<variant> No correct answer
+
+<question> What is the purpose of the return (expression) operation?
+<variantright> returns the value of the expression to the operator that called the function
+<variant> there is no such operator in C
+<variant> it is used when a function returns no value
+<variant> its purpose is undefined; by law it must be at the end of the program
+<variant> No correct answer
+
+<question> ..... helps the compiler determine the number and type of arguments passed to a function.
+<variantright> function prototype
+<variant> function identifier
+<variant> file prototype
+<variant> local prototype
+<variant> No correct answer
+
+<question> What is the void keyword used for in a function header?
+<variantright> to show that the function returns no value
+<variant> to show that the function returns a value
+<variant> the void keyword is not used in a function header
+<variant> to show that the function stores a value
+<variant> No correct answer
+
+<question> What is a branching operator?
+<variantright> a division of an algorithm into several paths, branching depending on whether a certain condition is met or not
+<variant> an operator that checks the fulfillment of only one condition
+<variant> an operator that checks that conditions are not met
+<variant> an operator responsible for the execution of any program in C
+<variant> No correct answer
+
+<question> Which function is used to determine the length of a string?
+<variantright> strlen
+<variant> strcpy
+<variant> strcat
+<variant> strcmp
+<variant> No correct answer
+
+<question> What characters is the body of a function enclosed in?
+<variantright> {}
+<variant> ()
+<variant> []
+<variant> <>
+<variant> No correct answer
+
+<question> Which header file contains the prototype of the strlen() function?
+<variantright> <string.h>
+<variant> <conio.h>
+<variant> <iostream.h>
+<variant> <stdlib.h>
+<variant> No correct answer
+
+<question> string.h is a library of the following functions:
+<variantright> string functions
+<variant> basic input / output library
+<variant> graphics functions
+<variant> mathematical functions
+<variant> No correct answer
+
+<question> What answer do we get?
+```cpp
+int i=10;
+cout <<  i++;
+cout  << ++i;
+```
+<variantright> 10, 12
+<variant> 11, 12
+<variant> 10, 11
+<variant> 10, 10
+<variant> No correct answer
+
+<question> In C, in which part of the program are variables declared?
+<variantright> anywhere, only before the variable is used
+<variant> at the end
+<variant> only at the beginning
+<variant> nowhere
+<variant> No correct answer
+
+<question> Which of the following functions reads a string from a file?
+<variantright> fgets()
+<variant> fgetc()
+<variant> fputs()
+<variant> fread()
+<variant> No correct answer
+
+<question> Which of the following functions writes a string to a file?
+<variantright> fputs()
+<variant> fread()
+<variant> fgets()
+<variant> fwrite()
+<variant> No correct answer
+
+<question> Array indexes start from which number:
+<variantright> 0
+<variant> 1
+<variant> 2
+<variant> -1
+<variant> No correct answer
+
+<question> If `return ;` is written at the end of the program, what type does the function return?
+<variantright> void
+<variant> int
+<variant> float
+<variant> char
+<variant> No correct answer
+
+<question> What result does the program below give?
+```cpp
+int a[3][3];
+for(int i=0;i<3;i++)
+for(int j=0;j<3;j++)
+cin>>a[i][j];
+int m=a[1][1],s=0;
+for(int i=0;i<3;i++)
+s+=a[i][i];
+cout<<s;
+```
+<variantright> the sum of the elements of the main diagonal of the matrix
+<variant> the sum of the even elements of the array
+<variant> the sum of all elements of the matrix
+<variant> the sum of the odd elements of the array
+<variant> No correct answer
+
+<question> What values does i take in the statement `for(i=1;i<10;i+=2)`
+<variantright> 1 3 5 7 9
+<variant> 2 4 6 8 10
+<variant> 1 2 3 4 5
+<variant> 1 3 5 7 9 10
+<variant> No correct answer
+
+<question> Show the correct way to calculate x to the power of 4.
+<variantright> pow(x,4);
+<variant> pow(x/4);
+<variant> pow(x*4);
+<variant> pow(x;4);
+<variant> No correct answer
+
+<question> Which of the following functions writes data to a file?
+<variantright> fprintf ()
+<variant> fread ()
+<variant> fscanf ()
+<variant> fgets ()
+<variant> No correct answer
+
+<question> Which of the following functions reads data from a file?
+<variantright> fscanf()
+<variant> fprintf ()
+<variant> fgets ()
+<variant> fwrite ()
+<variant> No correct answer
+
+<question> What does the strcat(stroka1, stroka2) function do?
+<variantright> It joins the strings stroka1 and stroka2 and assigns the result to the variable stroka1
+<variant> It compares the strings stroka1 and stroka2
+<variant> It searches the first string for any character of the second string
+<variant> It searches for the second given string inside the first string
+<variant> No correct answer
+
+<question> What does the strcmp(stroka1,stroka2) function do?
+<variantright> it is used to compare two strings
+<variant> it searches the first string for any character of the second string
+<variant> it joins two strings
+<variant> it searches for the second given string inside the first string
+<variant> No correct answer
+
+<question> What is the result of this code?
+```cpp
+main() { printf("%d\n",strcmp("Salem","Salem")); getch(); }
+```
+<variantright> 0
+<variant> 1
+<variant> 2
+<variant> 7
+<variant> No correct answer
+
+<question> What does the strcpy(str1,str2) function do?
+<variantright> it is used to make a copy of a string; here the string in variable str2 is copied to variable str1
+<variant> it is used to compare two strings
+<variant> it joins two strings
+<variant> it searches for the second given string inside the first string
+<variant> No correct answer
+
+<question> What does the strstr(str1, str2) function do?
+<variantright> it searches for the second given string inside the first string
+<variant> it joins two strings
+<variant> it is used to compare two strings
+<variant> it is used to make a copy of a string
+<variant> No correct answer
+
+<question> What does the strrev(str) function do?
+<variantright> reverses all characters of the given string
+<variant> it is used to make a copy of a string
+<variant> it is used to compare strings
+<variant> it is used to delete a string
+<variant> No correct answer
+
+<question> The strncpy(S1,CS2,k) function:
+<variantright> copies the first k characters of string CS2 to S1
+<variant> deletes the first k characters of string CS2 from S1
+<variant> deletes k characters from strings S1 and CS2
+<variant> copies the last k characters of string CS2 to S1
+<variant> No correct answer
+
+<question> The strnset(S,ch,k) function:
+<variantright> repeats the character ch k times in string S
+<variant> deletes the character ch k times in string S
+<variant> replaces the character ch in string S with character k
+<variant> removes the characters ch and k from string S
+<variant> No correct answer
+
+<question> The strncat(S1,CS2,k) function:
+<variantright> appends the first k characters of string CS2 to string S1
+<variant> appends the last k characters of string CS2 to string S1
+<variant> appends k characters to strings CS2 and S1
+<variant> repeats the character CS2 k times in string S1
+<variant> No correct answer
+
+<question> The strlwr(S) function:
+<variantright> converts the characters of string S to lowercase letters
+<variant> converts the characters of string S to uppercase letters
+<variant> converts the characters of string S to Roman numerals
+<variant> converts the characters of string S to Arabic numerals
+<variant> No correct answer
+
+<question> The strupr(S) function:
+<variantright> converts the characters of string S to uppercase letters
+<variant> converts the characters of string S to lowercase letters
+<variant> converts the characters of string S to Roman numerals
+<variant> converts the characters of string S to Arabic numerals
+<variant> No correct answer
+
+<question> What is the strncmp(CS1,CS2,k) function intended for?
+<variantright> compares only the first k characters of strings CS1 and CS2
+<variant> compares only the last k characters of strings CS1 and CS2
+<variant> appends the first k characters of string CS1 to string CS2
+<variant> appends the last k characters of string CS1 to string CS2
+<variant> No correct answer
+
+<question> The stricmp(CS1,CS2) function:
+<variantright> ignores the difference between uppercase and lowercase letter codes when comparing
+<variant> takes into account the difference between uppercase and lowercase letter codes when comparing
+<variant> it is used to compare two strings
+<variant> it joins two strings
+<variant> No correct answer
+
+<question> The strchr(CS,ch) function:
+<variantright> scans string CS from left to right until the character ch is found
+<variant> scans string CS from the end to the beginning until the character ch is found
+<variant> it is used to compare two strings
+<variant> it joins two strings
+<variant> No correct answer
+
+<question> The strrchr(CS,ch) function:
+<variantright> scans string CS from the end to the beginning until the character ch is found
+<variant> scans string CS from left to right until the character ch is found
+<variant> it is used to compare two strings
+<variant> it joins two strings
+<variant> No correct answer
+
+<question> What does the program below calculate?
+```cpp
+s=0;
+for(i=0; i<3; i++)
+for(j=0; j<3; j++)
+if (j<i) s+=a[i][j];
+printf("\ns=%i",s);
+getch();
+```
+<variantright> the sum of the elements located below the main diagonal of the given array
+<variant> the sum of the elements located above the main diagonal of the given array
+<variant> the sum of the elements of the main diagonal of the given array
+<variant> the sum of the elements of the secondary diagonal of the given array
+<variant> No correct answer
+
+<question> What does the function below determine?
+```cpp
+int m(int x, int y)
+{ int t;
+if (x<y) t=x;
+else t=y;
+return t;}
+```
+<variantright> a function that determines the smaller of two integers
+<variant> a function that determines the larger of two integers
+<variant> a function that determines the equality of two integers
+<variant> a function that determines the smaller of two real numbers
+<variant> No correct answer
+
+<question> What does the function below determine?
+```cpp
+int m(int x, int y)
+{ if (x>y)
+return (x);
+else return (y);}
+```
+<variantright> a function that determines the larger of two integers
+<variant> a function that determines the smaller of two integers
+<variant> a function that determines the equality of two integers
+<variant> a function that determines the smaller of two real numbers
+<variant> No correct answer
+
+<question> To close a file after you have finished working with it, the following function is used:
+<variantright> fclose()
+<variant> fexit()
+<variant> fgets()
+<variant> fgetc()
+<variant> No correct answer
+
+<question> Show the function for opening a file in C.
+<variantright> fopen()
+<variant> fclose()
+<variant> fexit()
+<variant> fnew()
+<variant> No correct answer
+
+<question> What values does i take?
+```cpp
+for (int i=100; i>0; i-=10)
+```
+<variantright> 100,90,80,70,60,50,40,30,20,10
+<variant> 50,40,30,20,10
+<variant> 100,80,60,40,20
+<variant> 90,70,50,30,10
+<variant> No correct answer
+
+<question> What is the mathematical library for calculating standard arithmetic functions called?
+<variantright> math.h
+<variant> match.h
+<variant> matem.h
+<variant> stdlib.h
+<variant> No correct answer
+
+<question> What values does i take?
+```cpp
+for (int i=100; i<=150; i+=10)
+```
+<variantright> 100,110,120,130,140,150
+<variant> 110,120,130,140,150
+<variant> 100,110,120,130,140
+<variant> 110,110,120,130,140,160
+<variant> No correct answer
+
+<question> What does the program fragment calculate?
+```cpp
+for (i=0; i<=n; i++)
+cin>>a[i];
+s2=0;
+for (i=0; i<=n; i++)
+if (i %2== 0) s2=s2+a[i];
+cout<<s2;
+```
+<variantright> finds the sum of only the even-numbered elements
+<variant> finds the sum of only the odd-numbered elements
+<variant> the sum of all elements
+<variant> determines the number of all elements equal to 0
+<variant> No correct answer
+
+<question> What does the program fragment calculate?
+```cpp
+for (i=0; i<=n; i++)
+cin>>a[i];
+s2=0;
+for (i=0; i<=n; i++)
+if (i %2!= 0) s2=s2+a[i];
+cout<<s2;
+```
+<variantright> finds the sum of only the odd-numbered elements
+<variant> finds the sum of only the even-numbered elements
+<variant> determines the number of all elements not equal to 0
+<variant> the sum of all elements
+<variant> No correct answer
+
+<question> What is the value of the variable a after the function is called?
+```cpp
+int inc2(int vv)
+{
+vv++;
+return vv;
+}
+void main()
+{int a,b=5;
+a=inc2(b);
+}
+```
+<variantright> 6
+<variant> 5
+<variant> 7
+<variant> 8
+<variant> No correct answer
+
+<question> What will the code below print to the screen?
+```cpp
+int const a = 5; a++; cout << a;
+```
+<variantright> the code shows an error
+<variant> 6
+<variant> 5
+<variant> 0
+<variant> No correct answer
+
+<question> Which of the following data types does NOT belong to C++?
+<variantright> real
+<variant> int
+<variant> float
+<variant> double
+<variant> No correct answer
+
+<question> After the code below is executed, what is the final value of the variable a?
+```cpp
+int a; for(a = 0; a < 10; a++) cout<<a;
+```
+<variantright> 9
+<variant> 10
+<variant> 0
+<variant> 1
+<variant> No correct answer
+
+<question> Which of the operators below is NOT a loop operator of C++?
+<variantright> repeat until
+<variant> while
+<variant> do while
+<variant> for
+<variant> No correct answer
+
+<question> The function that finds the absolute value of integers:
+<variantright> abs(x)
+<variant> abc(x)
+<variant> fabs(x)
+<variant> fabc(x)
+<variant> No correct answer
+
+<question> How is arccosine written in C++?
+<variantright> acos(x)
+<variant> asin[x]
+<variant> atan(x)
+<variant> acos{x}
+<variant> No correct answer
+
+<question> The function that rounds a number up:
+<variantright> ceil(x)
+<variant> floor(x)
+<variant> fabs(x)
+<variant> log(x)
+<variant> No correct answer
+
+<question> The function that rounds a number down:
+<variantright> floor(x)
+<variant> ceil(x)
+<variant> exp(x)
+<variant> fabs(x)
+<variant> No correct answer
+
+<question> What is the result of the code below?
+```cpp
+char s1[ 50 ] = "jack";
+char s2[ 50 ] = "jill";
+char s3[ 50 ] , *sptr;
+cout << strlen( s1 ) + strlen( s2 ) << endl;
+```
+<variantright> 8
+<variant> 7
+<variant> 9
+<variant> 10
+<variant> No correct answer
+
+<question> Which of the following is NOT a comparison sign?
+<variantright> =
+<variant> ==
+<variant> <
+<variant> !=
+<variant> No correct answer
+
+<question> What else do we call an array that uses two indexes?
+<variantright> matrix
+<variant> one-dimensional array
+<variant> dynamic array
+<variant> heterogeneous array
+<variant> No correct answer
+
+<question> If int n=3, what will the result be?
+```cpp
+switch(n) {
+case 2: cout << "aaa"; break;
+case 3: cout << "bbb"; break;
+default: cout << "vvv"; break; }
+```
+<variantright> bbb
+<variant> aaa
+<variant> vvv
+<variant> the code will not run
+<variant> No correct answer
+
+<question> If int n=45, what will the result be?
+```cpp
+switch(n) {
+case 23: cout << "aaa";
+case 45: cout << "bbb";
+default: cout << "vvv";
+break; }
+```
+<variantright> bbbvvv
+<variant> bbb
+<variant> vvv
+<variant> aaa
+<variant> No correct answer
+
+<question> The number used to work with a single element of an array is called ....
+<variantright> index
+<variant> type
+<variant> matrix
+<variant> arithmetic mean
+<variant> No correct answer
+
+<question> Array elements are related by the fact that their ... are the same.
+<variantright> types
+<variant> sizes
+<variant> names
+<variant> values
+<variant> No correct answer
+
+<question> The process of arranging array elements in order is called ....
+<variantright> sorting
+<variant> searching
+<variant> checking
+<variant> changing
+<variant> No correct answer
+
+<question> The increment operation is applied:
+<variantright> to variables
+<variant> to constants
+<variant> to expressions
+<variant> to strings
+<variant> No correct answer
+
+<question> Which numbers is the % operation applied to?
+<variantright> integer
+<variant> real
+<variant> fractional
+<variant> integer and real
+<variant> No correct answer
+
+<question> Logical “and” is denoted as follows:
+<variantright> &&
+<variant> &
+<variant> |
+<variant> ||
+<variant> No correct answer
+
+<question> Logical “or” is denoted as follows:
+<variantright> ||
+<variant> &&
+<variant> &
+<variant> |
+<variant> No correct answer
+
+<question> Logical “not equal” is denoted as follows:
+<variantright> !=
+<variant> |=
+<variant> =!
+<variant> =|
+<variant> No correct answer
 

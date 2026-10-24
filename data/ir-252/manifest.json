@@ -1,5 +1,5 @@
 {
-    "version":  "2026-10-24.2",
+    "version":  "2026-10-24.3",
     "files":  [
                   {
                       "subject":  "Философия",
@@ -7,6 +7,13 @@
                       "name":  "Философия ТГ",
                       "url":  "https://t.me/+fJjFpTkfN7Y1ODY6",
                       "note":  ""
+                  },
+                  {
+                      "subject": "Философия",
+                      "kind": "material",
+                      "name": "Filosofiya_RK1_lekcii_1-7.pdf",
+                      "path": "data/ir-252/files/Философия/Filosofiya_RK1_lekcii_1-7.pdf",
+                      "size": 401348
                   },
                   {
                       "subject":  "Философия",

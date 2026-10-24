@@ -357,3 +357,6 @@ html[data-sch-shk="xs"] { --sch-k-shk: 0.77; }
 .tt-box::-webkit-scrollbar-track { background: transparent; }
 .tt-box .tt-l + .tt-l { margin-top: 0; }
 .tt-box .tt-l { flex: none; }
+/* Журнал: подсказка «сколько нужно для 70 / 72» */
+.jr-hint { display: flex; gap: 6px; align-items: flex-start; margin: var(--sp-3) 0 0; color: var(--text-2); }
+.jr-hint .ic { flex: none; margin-top: 2px; }

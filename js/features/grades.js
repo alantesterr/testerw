@@ -51,19 +51,30 @@
   /* Ср. тек. — из оценок по одной (или введённое среднее); рейтинг и итоговая только считаются */
   function jCalc(it) {
     var g = (it.grades || []).map(Number).filter(function (x) { return !isNaN(x); });
-    var c = it.mode !== 'avg' && g.length ? g.reduce(function (a, b) { return a + b; }, 0) / g.length : num(it.cur);
-    var r1 = num(it.rk1), r2 = num(it.rk2), e = num(it.exam);
+    /* 0 или пусто = «ещё нет оценки» (как пустое кольцо) */
+    var nz = function (x) { var n = num(x); return n ? n : null; };
+    var c = it.mode !== 'avg' && g.length ? g.reduce(function (a, b) { return a + b; }, 0) / g.length : nz(it.cur);
+    var r1 = nz(it.rk1), r2 = nz(it.rk2), e = nz(it.exam);
     var R = c != null && r1 != null && r2 != null ? 0.6 * c + 0.2 * r1 + 0.2 * r2 : null;
     var F = R != null && e != null ? 0.6 * R + 0.4 * e : null;
     return { c: c, r1: r1, r2: r2, e: e, R: R, F: F };
   }
+  /* Подсказка: сколько нужно набрать для 70+ и с запасом для 72 (как в калькуляторе) */
+  function jHint(v) {
+    var w = { c: v.c, r1: v.r1, r2: v.r2, e: v.e }, n70 = need(w, 70), n72 = need(w, 72);
+    if (!n70) return { text: v.F >= 70 ? SP.t('grades.ok70') : SP.t('grades.below70'), cls: v.F >= 70 ? 'text-success' : 'text-danger', n72: null };
+    var NM = { c: SP.t('jr.cur'), r1: SP.t('jr.rk1'), r2: SP.t('jr.rk2'), e: SP.t('jr.exam') };
+    var fmtN = function (x) { return x <= 0 ? SP.t('grades.enough') : x > 100 ? SP.t('grades.notEnough') : '≥ ' + Math.ceil(x); };
+    return { text: SP.t('grades.need', { list: n70.un.map(function (k) { return NM[k]; }).join(', '), x: fmtN(n70.x), y: fmtN(n72.x) }), cls: n72.x > 100 ? 'text-danger' : '', n72: n72 };
+  }
   function card(it) {
-    var v = jCalc(it);
+    var v = jCalc(it), hn = jHint(v);
     return '<article class="jr-card" data-id="' + esc(it.id) + '"><div class="jr-top"><div class="jr-title"><h3 class="jr-name">' + esc(it.name || '—') + '</h3>' +
       (it.teachers ? '<div class="jr-teach">' + esc(teachLabel(it.teachers)) + '</div>' : '') + '</div>' +
       '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-edit="' + esc(it.id) + '" aria-label="' + esc(SP.t('jr.edit')) + '" data-tip="' + esc(SP.t('jr.edit')) + '">' + SP.icon('chevron-right') + '</button></div>' +
       '<div class="jr-rings">' + ring(SP.t('jr.cur'), v.c) + ring(SP.t('jr.rating'), v.R) + ring(SP.t('jr.exam'), v.e) + ring(SP.t('jr.final'), v.F) +
-      ring(SP.t('jr.rk1'), v.r1) + ring(SP.t('jr.rk2'), v.r2) + '</div></article>';
+      ring(SP.t('jr.rk1'), v.r1) + ring(SP.t('jr.rk2'), v.r2) + '</div>' +
+      '<p class="small jr-hint ' + hn.cls + '">' + SP.icon('info', 'ic-sm') + '<span>' + esc(hn.text) + '</span></p></article>';
   }
   function editCard(it) {
     var f = function (k, label, val, full, type) {
@@ -78,6 +89,7 @@
         : (chips ? '<div class="marks">' + chips + '</div>' : '') + '<div class="row row-nowrap"><input class="input" id="je-newg" inputmode="decimal" placeholder="' + esc(SP.t('grades.newMark')) + '" aria-label="' + esc(SP.t('grades.newMark')) + '"><button type="button" class="btn btn-icon" data-jadd aria-label="' + esc(SP.t('grades.addMark')) + '" data-tip="' + esc(SP.t('grades.addMark')) + '">' + SP.icon('plus') + '</button></div>') + '</div>' +
       f('rk1', SP.t('jr.rk1'), it.rk1, false, 'num') + f('rk2', SP.t('jr.rk2'), it.rk2, false, 'num') + f('exam', SP.t('jr.exam'), it.exam, false, 'num') + '</div>' +
       '<div class="cv-res jr-res">' + out('c', SP.t('jr.cur'), v.c) + out('r', SP.t('jr.rating'), v.R) + out('f', SP.t('jr.final'), v.F) + '</div>' +
+      '<p class="small cv-hint" data-jhint></p>' +
       '<p class="xsmall subtle">' + esc(SP.t('jr.autoCalc')) + '</p>' +
       '<div class="jr-actions"><button type="button" class="btn btn-danger-outline btn-sm" data-del="' + esc(it.id) + '">' + SP.icon('trash-2') + '<span>' + esc(SP.t('common.delete')) + '</span></button>' +
       '<span class="grow"></span><button type="button" class="btn btn-sm" data-cancel>' + esc(SP.t('common.cancel')) + '</button>' +
@@ -208,7 +220,12 @@
     var ec = SP.$('.jr-edit', root) && SP.$('.jr-edit', root).closest('.jr-card');
     if (ec) {
       var getIt = function (st) { return st.items.filter(function (x) { return x.id === editing; })[0]; };
-      var refresh = function (it) { var v = jCalc(it); [['c', v.c], ['r', v.R], ['f', v.F]].forEach(function (p) { var e = SP.$('[data-jr="' + p[0] + '"]', ec); e.className = p[1] == null ? '' : 'text-' + tone(p[1]); e.textContent = p[1] == null ? '—' : f1(p[1]); }); };
+      var refresh = function (it) { var v = jCalc(it); [['c', v.c], ['r', v.R], ['f', v.F]].forEach(function (p) { var e = SP.$('[data-jr="' + p[0] + '"]', ec); e.className = p[1] == null ? '' : 'text-' + tone(p[1]); e.textContent = p[1] == null ? '—' : f1(p[1]); });
+        var hn = jHint(v), hp = SP.$('[data-jhint]', ec); hp.textContent = hn.text; hp.className = 'small cv-hint ' + hn.cls;
+        /* В пустых полях — примерный балл для 72 */
+        [['rk1', 'r1'], ['rk2', 'r2'], ['exam', 'e']].forEach(function (p) { var i = SP.$('[data-k="' + p[0] + '"]', ec); if (i) i.placeholder = hn.n72 && hn.n72.un.indexOf(p[1]) >= 0 && hn.n72.x > 0 && hn.n72.x <= 100 ? '≈' + Math.ceil(hn.n72.x) : '0–100'; });
+      };
+      if (getIt(jState())) refresh(getIt(jState()));
       var again = function (focusSel) { render(); var n = SP.$(focusSel, root); if (n) n.focus(); };
       ec.addEventListener('input', function (e) {
         var k = e.target.getAttribute('data-k'); if (!k) return;

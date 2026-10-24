@@ -360,3 +360,4 @@ html[data-sch-shk="xs"] { --sch-k-shk: 0.77; }
 /* Журнал: подсказка «сколько нужно для 70 / 72» */
 .jr-hint { display: flex; gap: 6px; align-items: flex-start; margin: var(--sp-3) 0 0; color: var(--text-2); }
 .jr-hint .ic { flex: none; margin-top: 2px; }
+.jr-bar { justify-content: flex-end; }

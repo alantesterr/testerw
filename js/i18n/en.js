@@ -405,4 +405,11 @@ Object.assign(SP.I18N.en, { 'jr.rk1': 'Midterm 1', 'jr.rk2': 'Midterm 2', 'jr.au
 
 Object.assign(SP.I18N.en, { 'jr.sub': 'Grade journal: all subjects from the schedule, rating and final are calculated automatically', 'jr.emptyText': 'Subjects appear automatically once the schedule is loaded. You can add one with the Subject button.', 'designer.mobileTitle': 'The test editor is for computers', 'designer.mobileText': 'The editor is heavy and may lag or crash on a phone. Open it on a PC or laptop. You can take tests on your phone in the Tester.', 'designer.mobileAnyway': 'Open anyway' });
 
+Object.assign(SP.I18N.en, { 'jr.how': 'How are grades calculated?', 'jr.restoreText': 'Bring back a deleted subject or create a new one.', 'jr.restored': 'Subject “{name}” restored',
+  'jr.howHtml': '<p><b>What you enter.</b> Tap the arrow on a subject card and fill in: current grades one by one (or the average at once), Midterm 1, Midterm 2 and the exam. 0 or empty means no grade yet.</p>' +
+    '<p><b>Current average</b> — the average of all current grades.</p><p><b>Rating</b> = Current avg × 60% + Midterm 1 × 20% + Midterm 2 × 20%.</p><p><b>Final</b> = Rating × 60% + Exam × 40%.</p>' +
+    '<p><b>Example.</b> Current 85, Midterm 1 80, Midterm 2 90 → rating 85 × 0.6 + 80 × 0.2 + 90 × 0.2 = 85. Exam 75 → final 85 × 0.6 + 75 × 0.4 = 81.</p>' +
+    '<p><b>What you need for 70+.</b> Under the rings you see how much you need on what is left. It already includes a margin up to 71, because exactly 70 does not count. No hint until something is entered.</p>' +
+    '<p><b>Ring colors.</b> <span class="jr-legend"><span><i style="background:var(--ring-green)"></i>90–100</span><span><i style="background:var(--ring-blue)"></i>70–89</span><span><i style="background:var(--ring-yellow)"></i>50–69</span><span><i style="background:var(--ring-red)"></i>1–49</span></span></p>' +
+    '<p>Rating and final are calculated automatically. All data stays on this device.</p>' });
 Object.assign(SP.I18N.en, { 'jr.need': 'To reach 70+ ({list}): {x}.', 'settings.exportHint': 'Settings, tests, player progress, grade journal. Passwords are not included.' });

@@ -60,9 +60,8 @@
   function journalHtml() {
     syncJournal();
     var st = jState();
-    var h = '<div class="row-between"><div class="jr-legend"><span><i style="background:var(--ring-green)"></i>90–100</span><span><i style="background:var(--ring-blue)"></i>70–89</span><span><i style="background:var(--ring-yellow)"></i>50–69</span><span><i style="background:var(--ring-red)"></i>1–49</span></div>' +
-      '<div class="btn-group"><button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div></div>' +
-      '<p class="xsmall subtle">' + esc(SP.t('jr.autoCalc')) + '</p>';
+    var h = '<div class="btn-group jr-bar"><button type="button" class="btn" id="jrHow">' + SP.icon('circle-help') + '<span>' + esc(SP.t('jr.how')) + '</span></button>' +
+      '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div>';
     if (!st.items.length) {
       return h + '<section class="card"><div class="empty">' + SP.icon('graduation-cap', 'ic-xl') + '<h3>' + esc(SP.t('jr.emptyTitle')) + '</h3><p>' + esc(SP.t('jr.emptyText')) + '</p></div></section>';
     }
@@ -79,8 +78,10 @@
     var F = R != null && e != null ? 0.6 * R + 0.4 * e : null;
     return { c: c, r1: r1, r2: r2, e: e, R: R, F: F };
   }
-  /* Подсказка: сколько нужно набрать для 70+ и с запасом для 72 (как в калькуляторе) */
+  /* Подсказка: сколько нужно набрать для 70+ (считается до 71).
+     Если ещё ничего не введено — подсказки нет. */
   function jHint(v) {
+    if (v.c == null && v.r1 == null && v.r2 == null && v.e == null) return { text: '', cls: '', n72: null };
     /* Цель — 71: ровно 70 на деле не засчитывается, поэтому запас учтён сразу */
     var w = { c: v.c, r1: v.r1, r2: v.r2, e: v.e }, n70 = need(w, 71), n72 = n70;
     if (!n70) return { text: v.F >= 71 ? SP.t('grades.ok70') : SP.t('grades.below70'), cls: v.F >= 71 ? 'text-success' : 'text-danger', n72: null };
@@ -95,7 +96,7 @@
       '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-edit="' + esc(it.id) + '" aria-label="' + esc(SP.t('jr.edit')) + '" data-tip="' + esc(SP.t('jr.edit')) + '">' + SP.icon('chevron-right') + '</button></div>' +
       '<div class="jr-rings">' + ring(SP.t('jr.cur'), v.c) + ring(SP.t('jr.rating'), v.R) + ring(SP.t('jr.exam'), v.e) + ring(SP.t('jr.final'), v.F) +
       ring(SP.t('jr.rk1'), v.r1) + ring(SP.t('jr.rk2'), v.r2) + '</div>' +
-      '<p class="small jr-hint ' + hn.cls + '">' + SP.icon('info', 'ic-sm') + '<span>' + esc(hn.text) + '</span></p></article>';
+      (hn.text ? '<p class="small jr-hint ' + hn.cls + '">' + SP.icon('info', 'ic-sm') + '<span>' + esc(hn.text) + '</span></p>' : '') + '</article>';
   }
   function editCard(it) {
     var f = function (k, label, val, full, type) {
@@ -133,7 +134,7 @@
   /* ---------- Отрисовка и события ---------- */
   function render() {
     if (!root) return;
-    var html = SP.pageHead({ title: SP.t('nav.grades'), sub: esc(SP.t('jr.sub')) });
+    var html = SP.pageHead({ title: SP.t('nav.grades') });
     html += journalHtml();
     root.innerHTML = '<div class="page">' + html + '</div>';
     wire();
@@ -142,7 +143,20 @@
   function wireJournal() {
     var $ = function (s) { return SP.$(s, root); };
     var on = function (s, fn) { var el = $(s); if (el) el.onclick = fn; };
-    on('#jrAdd', function () { var st = jState(), it = { id: SP.uid('j'), name: '', teachers: '', mode: 'list', grades: [], cur: null, rk1: null, rk2: null, exam: null }; st.items.push(it); jSave(st); editing = it.id; render(); var i = $('#je-name'); if (i) i.focus(); });
+    var addNew = function () { var st = jState(), it = { id: SP.uid('j'), name: '', teachers: '', mode: 'list', grades: [], cur: null, rk1: null, rk2: null, exam: null }; st.items.push(it); jSave(st); editing = it.id; render(); var i = $('#je-name'); if (i) i.focus(); };
+    /* «+ Предмет»: если что-то удалено — предлагаем вернуть (на выбор) или создать новый */
+    on('#jrAdd', function () {
+      var hidden = jState().hidden || [];
+      if (!hidden.length) return addNew();
+      var m = SP.modal({ title: SP.t('grades.addSubject'), body: '<p class="small muted">' + esc(SP.t('jr.restoreText')) + '</p><div class="stack-sm">' + hidden.map(function (n, i) { return '<button type="button" class="btn btn-block wrap" data-restore="' + i + '">' + SP.icon('undo-2') + '<span>' + esc(n) + '</span></button>'; }).join('') + '</div>',
+        actions: [{ label: SP.t('grades.newSubject'), icon: 'plus', kind: 'primary', onClick: addNew }] });
+      SP.$$('[data-restore]', m.el).forEach(function (b) { b.onclick = function () {
+        var st = jState(), nm = st.hidden[+b.getAttribute('data-restore')]; st.hidden.splice(+b.getAttribute('data-restore'), 1);
+        var sj = SP.hub.data().subjects.filter(function (s) { return SP.lc(SP.hub.cleanName(s.name)) === SP.lc(nm); })[0];
+        upsert(st, nm, { teachers: sj ? sj.teacher || '' : '' }); jSave(st); m.close(); render(); SP.toast(SP.t('jr.restored', { name: nm }), 'success');
+      }; });
+    });
+    on('#jrHow', function () { SP.modal({ title: SP.t('jr.how'), size: 'lg', body: SP.t('jr.howHtml') }); });
     SP.$$('[data-edit]', root).forEach(function (b) { b.onclick = function () { editing = b.getAttribute('data-edit'); render(); var i = $('#je-newg') || $('#je-cur'); if (i) i.focus(); }; });
     /* Правка на месте: каждое поле сохраняется сразу, расчёт обновляется */
     var ec = SP.$('.jr-edit', root) && SP.$('.jr-edit', root).closest('.jr-card');

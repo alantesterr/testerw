@@ -9,6 +9,15 @@
   'use strict';
   var SP = window.SP, E = SP.testEngine, esc = SP.esc;
 
+  /* Кнопки «Сверхпоиск», «Режим ИИ», «Перевести» для нижней панели теста (тестер и плеер) */
+  SP.quizTools = function (p, translated) {
+    var auto = !!SP.settings.get('autoTr'), on = auto && translated;
+    var tl = on ? SP.t('quiz.autoTrOn') : translated ? SP.t('quiz.original') : SP.t('quiz.translate');
+    return '<button type="button" class="btn btn-sm btn-tool tool-super" id="' + p + 'Super" data-tip="' + esc(SP.t('quiz.superTip')) + '">' + SP.icon('scan-search') + '<span>' + esc(SP.t('quiz.super')) + '</span></button>' +
+      '<button type="button" class="btn btn-sm btn-tool tool-ai" id="' + p + 'Ai" data-tip="' + esc(SP.t('quiz.aiTip')) + '">' + SP.icon('sparkles') + '<span>' + esc(SP.t('quiz.ai')) + '</span></button>' +
+      '<button type="button" class="btn btn-sm btn-tool tool-tr' + (on ? ' is-auto' : '') + '" id="' + p + 'Tr" aria-pressed="' + !!translated + '"' + (on ? ' data-tip="' + esc(SP.t('quiz.autoTrTip')) + '"' : '') + '>' + SP.icon(on ? 'check' : 'languages') + '<span>' + esc(tl) + '</span></button>';
+  };
+
   SP.Quiz = function (host, questions, opts) {
     opts = opts || {};
     var fresh = function (arr) { return SP.shuffle(arr).map(function (x) { return Object.assign({}, x, { opts: SP.shuffle(x.opts || []) }); }); };
@@ -55,17 +64,14 @@
         '<button type="button" class="btn btn-ghost" id="qExit">' + SP.icon('x') + '<span>' + esc(SP.t('quiz.exit')) + '</span></button></div>' +
         '<div class="progress"><i style="width:' + Math.round(done / quiz.length * 100) + '%"></i></div>' +
         '<nav class="qn-list" aria-label="' + esc(SP.t('quiz.nav')) + '">' + navHtml() + '</nav></section>' +
-        '<section class="card quiz-card"><div class="row-between"><span class="badge">' + esc(typeLabel) + '</span>' +
-        '<div class="row quiz-tools">' +
-        '<button type="button" class="btn btn-sm btn-tool tool-super" id="qSuper" data-tip="' + esc(SP.t('quiz.superTip')) + '">' + SP.icon('scan-search') + '<span>' + esc(SP.t('quiz.super')) + '</span></button>' +
-        '<button type="button" class="btn btn-sm btn-tool tool-ai" id="qAi" data-tip="' + esc(SP.t('quiz.aiTip')) + '">' + SP.icon('sparkles') + '<span>' + esc(SP.t('quiz.ai')) + '</span></button>' +
-        '<button type="button" class="btn btn-sm btn-tool tool-tr" id="qTr">' + SP.icon('languages') + '<span>' + esc(T ? SP.t('quiz.original') : SP.t('quiz.translate')) + '</span></button>' +
-        '</div></div>' +
+        '<section class="card quiz-card"><div class="row-between"><span class="badge">' + esc(typeLabel) + '</span></div>' +
         '<div class="q-text"><span class="q-num">' + (cur + 1) + '.</span>' + E.richHtml(T ? T.q : q.q) + '</div>' + E.img(q.img) +
         (T ? '<div class="q-orig small subtle">' + E.richHtml(q.q, true) + '</div>' : '') +
         (kb ? kbHtml : '<div class="opts" role="group">' + optsHtml + '</div>') + verdict + '</section>' +
-        '<div class="quiz-foot"><button type="button" class="btn" id="qBack"' + (cur === 0 ? ' disabled' : '') + '>' + SP.icon('arrow-left') + '<span>' + esc(SP.t('common.back')) + '</span></button>' +
-        '<div class="row">' + primary + nextBtn + '</div></div></div>';
+        '<div class="quiz-foot"><div class="quiz-tools" role="group" aria-label="' + esc(SP.t('quiz.tools')) + '">' + SP.quizTools('q', !!T) + '</div>' +
+        '<div class="quiz-nav">' + (SP.settings.get('hotkeys') !== false ? '<span class="kbd-hint" aria-hidden="true" title="' + esc(SP.t('quiz.keysTip')) + '"><kbd>&larr;</kbd><kbd>&rarr;</kbd><kbd>1-9</kbd><kbd>Enter</kbd></span>' : '') +
+        '<button type="button" class="btn" id="qBack"' + (cur === 0 ? ' disabled' : '') + '>' + SP.icon('arrow-left') + '<span>' + esc(SP.t('common.back')) + '</span></button>' +
+        primary + nextBtn + '</div></div></div>';
       wire(q, a, kb, multi);
     }
 
@@ -84,6 +90,8 @@
       $('#qSuper').onclick = function () { E.google(E.aiPrompt(q)); };
       $('#qAi').onclick = function () { E.google(E.aiPrompt(q), true); };
       $('#qTr').onclick = function () { toggleTr(this); };
+      /* Автоперевод: переводим вопрос сразу, если пользователь сам не вернул оригинал */
+      if (SP.settings.get('autoTr') && trOn[cur] === undefined) { trOn[cur] = false; toggleTr($('#qTr')); }
     }
 
     function pick(i) {
@@ -144,13 +152,20 @@
       var first = rd || $('#rAgain'); if (first) first.focus();
     }
 
-    /* Клавиши 1–9 и Enter, пока тест на экране */
+    /* Горячие клавиши, пока тест на экране: ← → вопросы, 1–9 вариант, Enter ответ/дальше, Esc снять фокус.
+       В полях ввода не работают; при Ctrl/Alt/Meta и в чужих модальных окнах — тоже. */
     function onKey(e) {
       if (!host.isConnected || host.offsetParent === null || finished) return;
+      if (SP.settings.get('hotkeys') === false) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      var t = e.target; if (t && t.closest && t.closest('input,textarea,select,[contenteditable="true"]')) return;
+      var t = e.target; if (t && t.closest && t.closest('input,textarea,select,[contenteditable],[contenteditable="true"]')) return;
       if (document.querySelector('.modal-backdrop') && !host.closest('.modal-backdrop')) return;
-      if (/^[1-9]$/.test(e.key)) { var o = SP.$('.opt[data-o="' + (+e.key - 1) + '"]', host); if (o && !o.disabled) { e.preventDefault(); o.click(); } }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        var nb = e.key === 'ArrowLeft' ? SP.$('#qBack:not([disabled])', host) : SP.$('#qNext', host);
+        if (nb) { e.preventDefault(); nb.click(); }
+      }
+      else if (e.key === 'Escape') { if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); }
+      else if (/^[1-9]$/.test(e.key)) { var o = SP.$('.opt[data-o="' + (+e.key - 1) + '"]', host); if (o && !o.disabled) { e.preventDefault(); o.click(); } }
       else if (e.key === 'Enter' && (!t || t === document.body)) {
         var b = SP.$('#qOk:not([disabled])', host) || SP.$('#qNext', host) || SP.$('#qFin', host); if (b) { e.preventDefault(); b.click(); }
       }

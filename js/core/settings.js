@@ -14,7 +14,11 @@
     trLang: 'ru',        // язык перевода вопросов: ru | kk
     warnSec: 30,         // за сколько секунд плеер предупреждает о вопросах
     sidebar: 'expanded', // expanded | collapsed | hidden
-    stopwatch: false     // показывать плавающий секундомер
+    stopwatch: false,    // показывать плавающий секундомер
+    schShk: 'std',       // размер расписания Shokan: std | sm | xs (от общего размера)
+    schTt: 'std',        // размер расписания Timetable: std | sm | xs
+    autoTr: false,       // автоперевод вопросов в тесте
+    hotkeys: true        // горячие клавиши в тесте
   };
   var s = Object.assign({}, DEFAULTS, SP.store.get(KEY, {}) || {});
 
@@ -32,6 +36,8 @@
     html.setAttribute('data-theme', resolvedTheme());
     html.setAttribute('data-font', s.font);
     html.setAttribute('data-sidebar', s.sidebar);
+    html.setAttribute('data-sch-shk', s.schShk);
+    html.setAttribute('data-sch-tt', s.schTt);
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', resolvedTheme() === 'dark' ? '#161a21' : '#ffffff');
   }

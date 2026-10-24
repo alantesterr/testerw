@@ -160,7 +160,7 @@ SP.I18N.en = {
   'tester.helpHtml': '<p>Upload a test file or create one in the <b>Test designer</b> (Settings → For the author). You can mark one or several correct answers, add images and keyboard-answer questions.</p>' +
     '<p><b>File format.</b> A question starts with <code>&lt;question&gt;</code>, the correct option with <code>&lt;variantright&gt;</code>, others with <code>&lt;variant&gt;</code>, a typed answer with <code>&lt;variant_keyboard&gt;</code>. If no option is marked correct, the first one counts as correct.</p>' +
     '<p><b>Checking.</b> With several correct answers you must select all correct ones and nothing else. Typed answers ignore letter case and surrounding spaces.</p>' +
-    '<p><b>Keys.</b> 1–9 — choose an option, Enter — answer / next question.</p>',
+    '<p><b>Bottom bar.</b> On the left: Super search, AI mode and Translate; on the right: Back and Next. With auto-translate on in Settings, questions are translated automatically.</p><p><b>Keys</b> (when not typing in a field): ← → — previous / next question, 1–9 — choose an option, Enter — answer / next, Esc — remove focus. In a typed-answer field, Enter submits. Turn them off in Settings → Tester and player.</p>',
   'tester.exMulti': 'Choose the colours of the flag of Kazakhstan', 'tester.exKb': 'Type the number 100',
   'tester.promptDocx': 'AI prompt (DOCX)', 'tester.promptCopy': 'Copy prompt', 'tester.aiQ': 'Question:', 'tester.aiOpts': 'Options:',
   'tester.aiAsk': 'Answer in English. Explain the correct answer and each option.',
@@ -398,3 +398,5 @@ Object.assign(SP.I18N.en, {
 Object.assign(SP.I18N.en, { 'schedule.roomInFolder': 'Room and teacher are in the subject folder', 'subjects.lessons': 'Classes and rooms' });
 
 Object.assign(SP.I18N.en, { 'schedule.custom': 'Block size', 'schedule.blockW': 'Width', 'schedule.blockH': 'Height', 'schedule.auto': 'auto', 'schedule.reset': 'Reset' });
+
+Object.assign(SP.I18N.en, { 'quiz.tools': 'AI tools', 'quiz.keysTip': 'Keys: ← → questions, 1–9 option, Enter answer / next, Esc remove focus', 'quiz.autoTrOn': 'Auto-translate on', 'quiz.autoTrTip': 'The question was translated automatically. Click to show the original.', 'settings.schSize': 'Schedule size ({m})', 'settings.sch.std': 'Standard', 'settings.sch.sm': 'Smaller', 'settings.sch.xs': 'Even smaller', 'settings.schHint': 'Relative to the site font size; changes only the schedule in its mode. The rest of the site stays the same.', 'settings.autoTr': 'Auto-translate', 'settings.autoTrHint': 'Translate test questions right away, without pressing Translate.', 'settings.hotkeys': 'Keyboard shortcuts in tests', 'settings.hotkeysHint': '← → questions, 1–9 option, Enter answer / next, Esc remove focus. Disabled in input fields.' });

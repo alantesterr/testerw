@@ -314,3 +314,33 @@
 .shk-det { box-sizing: border-box; width: 100%; max-width: 40rem; min-width: 0; padding: 0 1.5rem var(--sp-5) 1.75rem; overflow-wrap: anywhere; }
 .shk-det-list li { overflow-wrap: anywhere; }
 .shk-det-go { max-width: 100%; white-space: normal; }
+
+/* ===== Размер расписания: множитель от общего размера шрифта ===== */
+:root { --sch-k-tt: 1; --sch-k-shk: 1; }
+html[data-sch-tt="sm"] { --sch-k-tt: 0.87; }
+html[data-sch-tt="xs"] { --sch-k-tt: 0.77; }
+html[data-sch-shk="sm"] { --sch-k-shk: 0.87; }
+html[data-sch-shk="xs"] { --sch-k-shk: 0.77; }
+.sch-page.mode-timetable .tt-wrap { zoom: var(--sch-k-tt); }
+.sch-page.mode-shokan .shk { zoom: var(--sch-k-shk); }
+/* Карточка пары в Timetable — на ступень мельче дней, дат и времени */
+.tt-l { font-size: 0.75rem; }
+.choice-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* ===== Нижняя панель теста: слева ИИ-инструменты, справа навигация ===== */
+.quiz-foot { align-items: center; }
+.quiz-foot .quiz-tools { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.quiz-nav { display: flex; align-items: center; gap: var(--sp-2); margin-left: auto; flex-wrap: wrap; }
+.quiz-nav .btn { min-height: 2.75rem; }
+.tool-tr.is-auto { box-shadow: inset 0 0 0 1px currentColor; }
+.kbd-hint { display: inline-flex; gap: 3px; margin-right: var(--sp-2); color: var(--text-3); }
+.kbd-hint kbd { font: inherit; font-size: 0.6875rem; line-height: 1; padding: 3px 5px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; background: var(--surface); }
+@media (hover: none), (pointer: coarse) { .kbd-hint { display: none; } }
+@media (max-width: 767px) {
+  .quiz-foot { flex-direction: column; align-items: stretch; gap: var(--sp-2); }
+  .quiz-foot .quiz-tools, .pq-tools-m { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-1, 4px); }
+  .quiz-tools .btn-tool { justify-content: center; padding-inline: 4px; font-size: 0.75rem; gap: 4px; min-width: 0; }
+  .quiz-tools .btn-tool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .quiz-nav { margin-left: 0; flex-wrap: nowrap; }
+  .quiz-nav .btn { flex: 1; justify-content: center; }
+}

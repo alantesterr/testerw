@@ -34,6 +34,11 @@
       themes.map(function (t) { return choice('theme', t[0], s.theme, SP.icon(t[1]), SP.t('settings.theme.' + t[0])); }).join('') + '</div></div>' +
       '<div class="stack-sm"><div class="label">' + esc(SP.t('settings.fontSize')) + '</div><div class="choice-grid" role="radiogroup" aria-label="' + esc(SP.t('settings.fontSize')) + '">' +
       fonts.map(function (f) { return choice('font', f[0], s.font, '<span class="sample" style="font-size:' + (parseInt(f[1], 10) * 1.6) + 'px">' + esc(SP.t('settings.sample')) + '</span>', SP.t('settings.font.' + f[0])); }).join('') + '</div></div>' +
+      [['schShk', 'Shokan'], ['schTt', 'Timetable']].map(function (g) {
+        return '<div class="stack-sm"><div class="label">' + esc(SP.t('settings.schSize', { m: g[1] })) + '</div><div class="choice-grid choice-grid-3" role="radiogroup" aria-label="' + esc(SP.t('settings.schSize', { m: g[1] })) + '">' +
+          [['std', 1], ['sm', 0.87], ['xs', 0.77]].map(function (v) { return '<button type="button" class="choice" role="radio" data-sch="' + g[0] + '" data-v="' + v[0] + '" aria-checked="' + (s[g[0]] === v[0]) + '"><span class="sample" style="font-size:' + (1.6 * v[1]) + 'rem">Аа</span><span>' + esc(SP.t('settings.sch.' + v[0])) + '</span></button>'; }).join('') + '</div></div>';
+      }).join('') +
+      '<p class="xsmall subtle">' + esc(SP.t('settings.schHint')) + '</p>' +
       setRow(SP.t('settings.sidebar'), esc(SP.t('settings.sidebarHint')), '<div class="segmented" role="group" aria-label="' + esc(SP.t('settings.sidebar')) + '">' + ['expanded', 'collapsed', 'hidden'].map(function (v) { return '<button type="button" data-sidebar="' + v + '" aria-pressed="' + (s.sidebar === v) + '">' + esc(SP.t('settings.sb.' + v)) + '</button>'; }).join('') + '</div>'));
 
     /* 2. Язык */
@@ -70,6 +75,8 @@
     /* 5. Тестер и плеер */
     html += section('testerPlayer', 'list-checks',
       setRow(SP.t('settings.trLang'), esc(SP.t('settings.trLangHint')), '<div class="segmented" role="group" aria-label="' + esc(SP.t('settings.trLang')) + '">' + [['ru', 'Русский'], ['kk', 'Қазақша']].map(function (x) { return '<button type="button" data-trlang="' + x[0] + '" aria-pressed="' + (s.trLang === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>') +
+      setRow(SP.t('settings.autoTr'), esc(SP.t('settings.autoTrHint')), '<label class="switch"><input type="checkbox" id="sAutoTr"' + (s.autoTr ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.autoTr')) + '</span></label>') +
+      setRow(SP.t('settings.hotkeys'), esc(SP.t('settings.hotkeysHint')), '<label class="switch"><input type="checkbox" id="sHotkeys"' + (s.hotkeys !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.hotkeys')) + '</span></label>') +
       setRow(SP.t('player.warnLabel'), esc(SP.t('player.warnHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sWarn" min="5" max="300" value="' + esc(s.warnSec) + '" aria-label="' + esc(SP.t('player.warnLabel')) + '"><span class="small muted">' + esc(SP.t('player.sec')) + '</span></div>') +
       setRow(SP.t('settings.playerMore'), esc(SP.t('settings.playerMoreHint')), '<a class="btn btn-ghost" href="#/player">' + SP.icon('circle-play') + '<span>' + esc(SP.t('nav.player')) + '</span></a>'));
 
@@ -102,6 +109,9 @@
     SP.$$('[data-lang]', root).forEach(function (b) { b.onclick = function () { SP.settings.set('lang', b.getAttribute('data-lang')); }; });
     SP.$$('[data-trlang]', root).forEach(function (b) { b.onclick = function () { SP.settings.set('trLang', b.getAttribute('data-trlang')); render(); }; });
     var w = $('#sWarn'); if (w) w.onchange = function () { var v = SP.clamp(parseInt(w.value, 10) || 30, 5, 300); w.value = v; SP.settings.set('warnSec', v); SP.toast(SP.t('settings.saved'), 'success'); };
+    SP.$$('[data-sch]', root).forEach(function (b) { b.onclick = function () { var g = b.getAttribute('data-sch'), v = b.getAttribute('data-v'); SP.settings.set(g, v); render(); SP.$('[data-sch="' + g + '"][data-v="' + v + '"]', root).focus(); }; });
+    var at = $('#sAutoTr'); if (at) at.onchange = function () { SP.settings.set('autoTr', at.checked); };
+    var hk = $('#sHotkeys'); if (hk) hk.onchange = function () { SP.settings.set('hotkeys', hk.checked); };
     var sw = $('#sSw'); if (sw) sw.onchange = function () { SP.settings.set('stopwatch', sw.checked); };
     on('#sHow', SP.auth.explain);
     var gi = $('#sGroup'); if (gi) SP.group.attach(gi, $('#sGroupErr'));

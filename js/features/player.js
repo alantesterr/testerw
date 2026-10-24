@@ -426,18 +426,19 @@
       (kb ? '<div class="field"><label class="label" for="pqInput">' + esc(T('quiz.typeAnswer')) + '</label><input class="input kb-input" id="pqInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + esc(T('quiz.yourAnswer')) + '"><span class="hint">' + esc(T('quiz.kbHint')) + '</span></div>'
         : '<div class="opts" id="pqOpts">' + q.opts.map(function (o, i) { return '<button type="button" class="opt" data-i="' + i + '" aria-pressed="false"><span class="opt-mark ' + (multi ? 'sq' : 'rd') + '"></span><span class="opt-key">' + (i < 9 ? i + 1 : '') + '</span><span class="opt-text">' + E.richHtml(Tt ? Tt.o[i] : o.t, true) + E.img(o.img, 'opt-img') + '</span></button>'; }).join('') + '</div>') +
       '<div id="pqVerdict"></div>' +
-      '<div class="row quiz-tools"><button type="button" class="btn btn-sm btn-tool tool-super" id="pqSup">' + SP.icon('scan-search') + '<span>' + esc(T('quiz.super')) + '</span></button><button type="button" class="btn btn-sm btn-tool tool-ai" id="pqAi">' + SP.icon('sparkles') + '<span>' + esc(T('quiz.ai')) + '</span></button><button type="button" class="btn btn-sm btn-tool tool-tr" id="pqTr">' + SP.icon('languages') + '<span>' + esc(T(Tt ? 'quiz.original' : 'quiz.translate')) + '</span></button></div>' +
+      '<div class="row quiz-tools" role="group" aria-label="' + esc(T('quiz.tools')) + '">' + SP.quizTools('pq', !!Tt) + '</div>' +
       '<div class="pq-foot">' + (pq.done > 0 || !requireTest ? '<button type="button" class="btn" id="pqLeave">' + SP.icon('play') + '<span>' + esc(T('player.backToVideo')) + '</span></button>' : '<span></span>') +
       '<div class="row"><button type="button" class="btn" id="pqRes" hidden>' + SP.icon('list-checks') + '<span>' + esc(T('player.showResult')) + '</span></button>' +
       '<button type="button" class="btn btn-primary" id="pqGo" disabled>' + esc(T(kb ? 'quiz.check' : 'quiz.answer')) + '</button></div></div>');
     var go = $('pqGo');
-    $('pqSup').onclick = function () { E.google(E.aiPrompt(q)); };
+    $('pqSuper').onclick = function () { E.google(E.aiPrompt(q)); };
     $('pqAi').onclick = function () { E.google(E.aiPrompt(q), true); };
     $('pqTr').onclick = function () {
       var btn = this; if (trOnP[k]) { trOnP[k] = false; return renderQ(); } if (trc[k]) { trOnP[k] = true; return renderQ(); }
       var tl = SP.settings.get('trLang') || 'ru'; SP.busy(btn, true);
       E.translateQ(q, tl).then(function (r) { trc[k] = r; trOnP[k] = true; }, function () { E.translateFallback(q, tl); }).then(function () { if (quizOpen && pq.batch && pq.batch.qi === k && !qAnswered) renderQ(); else SP.busy(btn, false); });
     };
+    if (SP.settings.get('autoTr') && trOnP[k] === undefined) { trOnP[k] = false; $('pqTr').click(); }
     var lv = $('pqLeave'); if (lv) lv.onclick = function () { closeQuiz(true); };
     if (kb) {
       var inp = $('pqInput');

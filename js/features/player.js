@@ -690,7 +690,9 @@
     });
     gearBtn.onclick = function () { menuPage = null; renderMenu(); menu.classList.toggle('open'); showControls(); };
     applyFit();
-    document.addEventListener('click', function (e) { if (menu.classList.contains('open') && !menu.contains(e.target) && !gearBtn.contains(e.target)) closeMenu(); });
+    /* Клик мимо меню закрывает его. Кнопка внутри меню после перерисовки уже не в документе —
+       такой клик считаем кликом по меню, а не мимо. */
+    document.addEventListener('click', function (e) { if (menu.classList.contains('open') && e.target.isConnected && !menu.contains(e.target) && !gearBtn.contains(e.target)) closeMenu(); });
     clickLayer.addEventListener('click', function () {
       if (suppressClick) { suppressClick = false; return; }
       if (menu.classList.contains('open')) { closeMenu(); return; }

@@ -13,8 +13,19 @@
   function counts() { var s = st().dz.filter(function (q) { return !E.isSpecial(q); }).length; return [s, st().dz.length - s]; }
   function statusHtml(q) { var p = E.problem(q); return p ? '<span class="badge badge-danger">' + SP.icon('triangle-alert') + esc(p) + '</span>' : '<span class="badge badge-success">' + SP.icon('check') + esc(SP.t('designer.ready')) + '</span>'; }
 
+  /* Телефон: редактор тяжёлый, поэтому сначала предупреждаем (можно открыть всё равно) */
+  var mobileOk = false;
+  function isPhone() { return window.matchMedia('(max-width: 767px)').matches || window.matchMedia('(pointer: coarse) and (max-width: 1024px)').matches; }
+  function mobileWarn() {
+    root.innerHTML = '<div class="page"><section class="card"><div class="empty">' + SP.icon('monitor', 'ic-xl') +
+      '<h3>' + esc(SP.t('designer.mobileTitle')) + '</h3><p>' + esc(SP.t('designer.mobileText')) + '</p>' +
+      '<div class="btn-group"><a class="btn btn-primary" href="#/tester">' + SP.icon('list-checks') + '<span>' + esc(SP.t('nav.tester')) + '</span></a>' +
+      '<button type="button" class="btn btn-ghost" id="dAnyway">' + esc(SP.t('designer.mobileAnyway')) + '</button></div></div></section></div>';
+    SP.$('#dAnyway', root).onclick = function () { mobileOk = true; render(); };
+  }
   function render() {
     if (!root) return;
+    if (isPhone() && !mobileOk) return mobileWarn();
     var c = counts();
     var html = SP.pageHead({
       title: SP.t('designer.title'),

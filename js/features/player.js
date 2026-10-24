@@ -438,6 +438,7 @@
       var tl = SP.settings.get('trLang') || 'ru'; SP.busy(btn, true);
       E.translateQ(q, tl).then(function (r) { trc[k] = r; trOnP[k] = true; }, function () { E.translateFallback(q, tl); }).then(function () { if (quizOpen && pq.batch && pq.batch.qi === k && !qAnswered) renderQ(); else SP.busy(btn, false); });
     };
+    var pat = quizCard.querySelector('[data-autotr]'); if (pat) pat.onchange = function () { SP.settings.set('autoTr', pat.checked); if (!pat.checked) trOnP[k] = false; else delete trOnP[k]; renderQ(); };
     if (SP.settings.get('autoTr') && trOnP[k] === undefined) { trOnP[k] = false; $('pqTr').click(); }
     var lv = $('pqLeave'); if (lv) lv.onclick = function () { closeQuiz(true); };
     if (kb) {

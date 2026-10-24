@@ -50,6 +50,7 @@
       close: function (val) {
         if (!back.isConnected) return;
         back.remove(); openModals = openModals.filter(function (m) { return m !== api; });
+        if (!openModals.length) document.documentElement.classList.remove('modal-open');
         document.removeEventListener('keydown', onKey, true);
         if (last && last.focus) try { last.focus(); } catch (e) { /* ничего */ }
         if (o.onClose) o.onClose(val);
@@ -71,6 +72,7 @@
     }
     document.addEventListener('keydown', onKey, true);
     document.body.appendChild(back); openModals.push(api);
+    document.documentElement.classList.add('modal-open'); /* фон под окном не листается */
     SP.applyI18n(back);
     setTimeout(function () {
       var f = dlg.querySelector('[autofocus]') || dlg.querySelector('.modal-body input, .modal-body textarea, .modal-body select') || foot.querySelector('.btn-primary') || dlg.querySelector('[data-close]');

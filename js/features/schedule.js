@@ -122,13 +122,13 @@
     slots.forEach(function (s) {
       h += '<tr><td class="tt-time">' + esc(String(s.start).slice(0, 5)) + '<br>' + esc(String(s.end).slice(0, 5)) + '</td>';
       for (var dd = 0; dd < 6; dd++) {
-        h += '<td class="tt-cell' + (dd === td ? ' tt-today' : '') + '">' + lessonsAt(dd, s.id).map(function (l) {
+        h += '<td class="tt-cell' + (dd === td ? ' tt-today' : '') + '"><div class="tt-box">' + lessonsAt(dd, s.id).map(function (l) {
           var x = info(l);
           return '<button type="button" class="tt-l ' + kindCls(x.ab) + '" data-sid="' + esc(x.sid) + '" title="' + esc(SP.t('schedule.openFolder')) + '">' +
             '<b>' + esc(x.name) + '</b>' + (x.ab ? ' <span class="tt-ab">' + esc(x.ab) + '</span>' : '') +
             (x.room || x.building ? '<span class="tt-line">' + esc(ttRoom(x.room)) + (x.building ? ' (' + esc(ttBld(x.building)) + ')' : '') + '</span>' : '') +
             (x.teacher ? '<span class="tt-line">' + esc(x.teacher) + '</span>' : '') + '</button>';
-        }).join('') + '</td>';
+        }).join('') + '</div></td>';
       }
       h += '</tr>';
     });

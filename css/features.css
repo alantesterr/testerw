@@ -344,3 +344,16 @@ html[data-sch-shk="xs"] { --sch-k-shk: 0.77; }
   .quiz-nav { margin-left: 0; flex-wrap: nowrap; }
   .quiz-nav .btn { flex: 1; justify-content: center; }
 }
+/* Переключатель «Автоперевод» под кнопкой «Перевести» */
+.tool-tr-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tr-auto { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-2); cursor: pointer; padding-left: 2px; }
+.switch-sm { min-height: 0; transform: scale(0.75); transform-origin: left center; margin-right: -0.6rem; }
+@media (max-width: 767px) { .tool-tr-wrap .btn-tool { width: 100%; } .tr-auto { font-size: 0.6875rem; } }
+/* Timetable: блоки почти одной высоты, длинное содержимое — со своей прокруткой */
+.tt-zoom .tt-cell { height: var(--tt-ch, 5.5rem); padding: 0.3rem; }
+.tt-box { height: var(--tt-ch, 5.5rem); max-height: var(--tt-ch, 5.5rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; display: flex; flex-direction: column; gap: 0.3rem; padding-right: 2px; }
+.tt-box::-webkit-scrollbar { width: 8px; }
+.tt-box::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+.tt-box::-webkit-scrollbar-track { background: transparent; }
+.tt-box .tt-l + .tt-l { margin-top: 0; }
+.tt-box .tt-l { flex: none; }

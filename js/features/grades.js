@@ -48,27 +48,44 @@
     }
     return h + '<div class="jr-grid">' + st.items.map(function (it) { return editing === it.id ? editCard(it) : card(it); }).join('') + '</div>';
   }
+  /* Ср. тек. — из оценок по одной (или введённое среднее); рейтинг и итоговая только считаются */
+  function jCalc(it) {
+    var g = (it.grades || []).map(Number).filter(function (x) { return !isNaN(x); });
+    var c = it.mode !== 'avg' && g.length ? g.reduce(function (a, b) { return a + b; }, 0) / g.length : num(it.cur);
+    var r1 = num(it.rk1), r2 = num(it.rk2), e = num(it.exam);
+    var R = c != null && r1 != null && r2 != null ? 0.6 * c + 0.2 * r1 + 0.2 * r2 : null;
+    var F = R != null && e != null ? 0.6 * R + 0.4 * e : null;
+    return { c: c, r1: r1, r2: r2, e: e, R: R, F: F };
+  }
   function card(it) {
+    var v = jCalc(it);
     return '<article class="jr-card" data-id="' + esc(it.id) + '"><div class="jr-top"><div class="jr-title"><h3 class="jr-name">' + esc(it.name || '—') + '</h3>' +
       (it.teachers ? '<div class="jr-teach">' + esc(teachLabel(it.teachers)) + '</div>' : '') + '</div>' +
       '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-edit="' + esc(it.id) + '" aria-label="' + esc(SP.t('jr.edit')) + '" data-tip="' + esc(SP.t('jr.edit')) + '">' + SP.icon('chevron-right') + '</button></div>' +
-      '<div class="jr-rings">' + ring(SP.t('jr.cur'), it.cur) + ring(SP.t('jr.rating'), it.rating) + ring(SP.t('jr.exam'), it.exam) + ring(SP.t('jr.final'), it.final) + '</div></article>';
+      '<div class="jr-rings">' + ring(SP.t('jr.cur'), v.c) + ring(SP.t('jr.rating'), v.R) + ring(SP.t('jr.exam'), v.e) + ring(SP.t('jr.final'), v.F) +
+      ring(SP.t('jr.rk1'), v.r1) + ring(SP.t('jr.rk2'), v.r2) + '</div></article>';
   }
   function editCard(it) {
     var f = function (k, label, val, full, type) {
       return '<div class="field' + (full ? ' full' : '') + '"><label class="label" for="je-' + k + '">' + esc(label) + '</label><input class="input" id="je-' + k + '" data-k="' + k + '"' + (type === 'num' ? ' inputmode="decimal" placeholder="0–100"' : '') + ' value="' + esc(val == null ? '' : val) + '"></div>';
     };
+    var avg = it.mode === 'avg', chips = (it.grades || []).map(function (x, j) { return '<button type="button" class="mark ' + tone(+x) + '" data-jdel="' + j + '" aria-label="' + esc(SP.t('grades.delMark', { v: x })) + '" data-tip="' + esc(SP.t('grades.delMarkTip')) + '">' + esc(x) + SP.icon('x', 'ic-sm') + '</button>'; }).join('');
+    var v = jCalc(it), out = function (k, label, val) { return '<div><span>' + esc(label) + '</span><b data-jr="' + k + '" class="' + (val == null ? '' : 'text-' + tone(val)) + '">' + (val == null ? '—' : f1(val)) + '</b></div>'; };
     return '<article class="jr-card" data-id="' + esc(it.id) + '"><div class="jr-edit">' +
       f('name', SP.t('grades.subjectName'), it.name, true) + f('teachers', SP.t('jr.teacherField'), it.teachers, true) +
-      f('cur', SP.t('jr.cur'), it.cur, false, 'num') + f('rating', SP.t('jr.rating'), it.rating, false, 'num') +
-      f('exam', SP.t('jr.exam'), it.exam, false, 'num') + f('final', SP.t('jr.final'), it.final, false, 'num') + '</div>' +
+      '<div class="field full"><span class="label">' + esc(SP.t('jr.cur')) + '</span><div class="segmented"><button type="button" data-jm="list" aria-pressed="' + !avg + '">' + esc(SP.t('grades.oneByOne')) + '</button><button type="button" data-jm="avg" aria-pressed="' + avg + '">' + esc(SP.t('grades.avgAtOnce')) + '</button></div>' +
+      (avg ? '<input class="input input-num" id="je-cur" data-k="cur" inputmode="decimal" placeholder="0–100" aria-label="' + esc(SP.t('grades.currentAvg')) + '" value="' + esc(it.cur == null ? '' : it.cur) + '">'
+        : (chips ? '<div class="marks">' + chips + '</div>' : '') + '<div class="row row-nowrap"><input class="input" id="je-newg" inputmode="decimal" placeholder="' + esc(SP.t('grades.newMark')) + '" aria-label="' + esc(SP.t('grades.newMark')) + '"><button type="button" class="btn btn-icon" data-jadd aria-label="' + esc(SP.t('grades.addMark')) + '" data-tip="' + esc(SP.t('grades.addMark')) + '">' + SP.icon('plus') + '</button></div>') + '</div>' +
+      f('rk1', SP.t('jr.rk1'), it.rk1, false, 'num') + f('rk2', SP.t('jr.rk2'), it.rk2, false, 'num') + f('exam', SP.t('jr.exam'), it.exam, false, 'num') + '</div>' +
+      '<div class="cv-res jr-res">' + out('c', SP.t('jr.cur'), v.c) + out('r', SP.t('jr.rating'), v.R) + out('f', SP.t('jr.final'), v.F) + '</div>' +
+      '<p class="xsmall subtle">' + esc(SP.t('jr.autoCalc')) + '</p>' +
       '<div class="jr-actions"><button type="button" class="btn btn-danger-outline btn-sm" data-del="' + esc(it.id) + '">' + SP.icon('trash-2') + '<span>' + esc(SP.t('common.delete')) + '</span></button>' +
       '<span class="grow"></span><button type="button" class="btn btn-sm" data-cancel>' + esc(SP.t('common.cancel')) + '</button>' +
       '<button type="button" class="btn btn-primary btn-sm" data-save="' + esc(it.id) + '">' + SP.icon('check') + '<span>' + esc(SP.t('common.save')) + '</span></button></div></article>';
   }
   function upsert(st, name, patch) {
     var it = st.items.filter(function (x) { return SP.lc(x.name) === SP.lc(name); })[0];
-    if (!it) { it = { id: SP.uid('j'), name: name, teachers: '', cur: null, rating: null, exam: null, final: null }; st.items.push(it); }
+    if (!it) { it = { id: SP.uid('j'), name: name, teachers: '', mode: 'list', grades: [], cur: null, rk1: null, rk2: null, exam: null }; st.items.push(it); }
     Object.keys(patch).forEach(function (k) { if (patch[k] != null && patch[k] !== '') it[k] = patch[k]; });
     return it;
   }
@@ -76,9 +93,8 @@
     var cs = calcState(), st = jState(), n = 0;
     cs.s.forEach(function (s) {
       if (!String(s.name || '').trim()) return;
-      var v = vals(s), R = v.c != null && v.r1 != null && v.r2 != null ? 0.6 * v.c + 0.2 * v.r1 + 0.2 * v.r2 : null, F = R != null && v.e != null ? 0.6 * R + 0.4 * v.e : null;
-      var r1 = function (x) { return x == null ? null : Math.round(x); };
-      upsert(st, s.name.trim(), { cur: r1(v.c), rating: r1(R), exam: r1(v.e), final: r1(F) }); n++;
+      var it = upsert(st, s.name.trim(), { cur: num(s.avg), rk1: num(s.rk1), rk2: num(s.rk2), exam: num(s.exam) });
+      it.mode = s.mode === 'avg' ? 'avg' : 'list'; if (it.mode === 'list') it.grades = (s.grades || []).slice(); n++;
     });
     jSave(st); tab = 'journal'; SP.store.set('sp-grades-tab2', tab); render();
     SP.toast(n ? SP.t('jr.moved', { n: n }) : SP.t('jr.calcEmpty'), n ? 'success' : 'warning');
@@ -186,8 +202,33 @@
     var $ = function (s) { return SP.$(s, root); };
     var on = function (s, fn) { var el = $(s); if (el) el.onclick = fn; };
     on('#jrFromCalc', fromCalc); on('#jrFromSched', fromSchedule);
-    on('#jrAdd', function () { var st = jState(), it = { id: SP.uid('j'), name: '', teachers: '', cur: null, rating: null, exam: null, final: null }; st.items.push(it); jSave(st); editing = it.id; render(); var i = $('#je-name'); if (i) i.focus(); });
-    SP.$$('[data-edit]', root).forEach(function (b) { b.onclick = function () { editing = b.getAttribute('data-edit'); render(); var i = $('#je-cur'); if (i) i.focus(); }; });
+    on('#jrAdd', function () { var st = jState(), it = { id: SP.uid('j'), name: '', teachers: '', mode: 'list', grades: [], cur: null, rk1: null, rk2: null, exam: null }; st.items.push(it); jSave(st); editing = it.id; render(); var i = $('#je-name'); if (i) i.focus(); });
+    SP.$$('[data-edit]', root).forEach(function (b) { b.onclick = function () { editing = b.getAttribute('data-edit'); render(); var i = $('#je-newg') || $('#je-cur'); if (i) i.focus(); }; });
+    /* Правка на месте: каждое поле сохраняется сразу, расчёт обновляется */
+    var ec = SP.$('.jr-edit', root) && SP.$('.jr-edit', root).closest('.jr-card');
+    if (ec) {
+      var getIt = function (st) { return st.items.filter(function (x) { return x.id === editing; })[0]; };
+      var refresh = function (it) { var v = jCalc(it); [['c', v.c], ['r', v.R], ['f', v.F]].forEach(function (p) { var e = SP.$('[data-jr="' + p[0] + '"]', ec); e.className = p[1] == null ? '' : 'text-' + tone(p[1]); e.textContent = p[1] == null ? '—' : f1(p[1]); }); };
+      var again = function (focusSel) { render(); var n = SP.$(focusSel, root); if (n) n.focus(); };
+      ec.addEventListener('input', function (e) {
+        var k = e.target.getAttribute('data-k'); if (!k) return;
+        var st = jState(), it = getIt(st); if (!it) return;
+        it[k] = (k === 'name' || k === 'teachers') ? e.target.value : e.target.value.trim() === '' ? null : num(e.target.value);
+        jSave(st); refresh(it);
+      });
+      var addG = function () {
+        var inp = SP.$('#je-newg', ec), v = num(inp.value); if (v == null) { inp.setAttribute('aria-invalid', 'true'); inp.focus(); return; }
+        var st = jState(), it = getIt(st); (it.grades = it.grades || []).push(v); jSave(st); again('#je-newg');
+      };
+      ec.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-jadd],[data-jdel],[data-jm]'); if (!b) return;
+        var st = jState(), it = getIt(st); if (!it) return;
+        if (b.hasAttribute('data-jadd')) return addG();
+        if (b.hasAttribute('data-jdel')) { it.grades.splice(+b.getAttribute('data-jdel'), 1); jSave(st); return again('#je-newg'); }
+        it.mode = b.getAttribute('data-jm'); jSave(st); again('[data-jm="' + it.mode + '"]');
+      });
+      var ng = SP.$('#je-newg', ec); if (ng) ng.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); addG(); } });
+    }
     SP.$$('[data-cancel]', root).forEach(function (b) {
       b.onclick = function () { var st = jState(); st.items = st.items.filter(function (x) { return x.id !== editing || String(x.name).trim(); }); jSave(st); editing = null; render(); };
     });
@@ -197,7 +238,6 @@
         var card = b.closest('.jr-card'), g = function (k) { return SP.$('[data-k="' + k + '"]', card).value; };
         var name = g('name').trim(); if (!name) { var ni = SP.$('[data-k="name"]', card); ni.setAttribute('aria-invalid', 'true'); ni.focus(); return; }
         it.name = name; it.teachers = g('teachers').trim();
-        ['cur', 'rating', 'exam', 'final'].forEach(function (k) { it[k] = num(g(k)); });
         jSave(st); editing = null; render(); SP.toast(SP.t('settings.saved'), 'success');
       };
     });

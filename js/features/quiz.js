@@ -15,7 +15,8 @@
     var tl = on ? SP.t('quiz.autoTrOn') : translated ? SP.t('quiz.original') : SP.t('quiz.translate');
     return '<button type="button" class="btn btn-sm btn-tool tool-super" id="' + p + 'Super" data-tip="' + esc(SP.t('quiz.superTip')) + '">' + SP.icon('scan-search') + '<span>' + esc(SP.t('quiz.super')) + '</span></button>' +
       '<button type="button" class="btn btn-sm btn-tool tool-ai" id="' + p + 'Ai" data-tip="' + esc(SP.t('quiz.aiTip')) + '">' + SP.icon('sparkles') + '<span>' + esc(SP.t('quiz.ai')) + '</span></button>' +
-      '<button type="button" class="btn btn-sm btn-tool tool-tr' + (on ? ' is-auto' : '') + '" id="' + p + 'Tr" aria-pressed="' + !!translated + '"' + (on ? ' data-tip="' + esc(SP.t('quiz.autoTrTip')) + '"' : '') + '>' + SP.icon(on ? 'check' : 'languages') + '<span>' + esc(tl) + '</span></button>';
+      '<div class="tool-tr-wrap"><button type="button" class="btn btn-sm btn-tool tool-tr' + (on ? ' is-auto' : '') + '" id="' + p + 'Tr" aria-pressed="' + !!translated + '"' + (on ? ' data-tip="' + esc(SP.t('quiz.autoTrTip')) + '"' : '') + '>' + SP.icon(on ? 'check' : 'languages') + '<span>' + esc(tl) + '</span></button>' +
+      '<label class="tr-auto"><span class="switch switch-sm"><input type="checkbox" data-autotr' + (auto ? ' checked' : '') + '><span class="track"></span></span><span>' + esc(SP.t('settings.autoTr')) + '</span></label></div>';
   };
 
   SP.Quiz = function (host, questions, opts) {
@@ -90,6 +91,7 @@
       $('#qSuper').onclick = function () { E.google(E.aiPrompt(q)); };
       $('#qAi').onclick = function () { E.google(E.aiPrompt(q), true); };
       $('#qTr').onclick = function () { toggleTr(this); };
+      var at = SP.$('[data-autotr]', host); if (at) at.onchange = function () { SP.settings.set('autoTr', at.checked); if (!at.checked) trOn[cur] = false; else delete trOn[cur]; show(); var n = SP.$('[data-autotr]', host); if (n) n.focus(); };
       /* Автоперевод: переводим вопрос сразу, если пользователь сам не вернул оригинал */
       if (SP.settings.get('autoTr') && trOn[cur] === undefined) { trOn[cur] = false; toggleTr($('#qTr')); }
     }

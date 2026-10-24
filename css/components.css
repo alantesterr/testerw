@@ -391,3 +391,12 @@ code.inline { background: var(--surface-3); padding: 0.1em 0.35em; border-radius
 .hl-nu { color: var(--hl-nu); } .hl-cm { color: var(--hl-cm); font-style: italic; } .hl-fn { color: var(--hl-fn); }
 .hl-pp { color: var(--hl-pp); } .hl-ct { color: var(--hl-ct); font-weight: 600; }
 .rich .tx { white-space: pre-wrap; word-break: break-word; }
+
+/* Окно: прокручивается само окно, фон под ним заблокирован (важно для тестов из папки на телефоне) */
+html.modal-open, html.modal-open body { overflow: hidden; }
+.modal-backdrop { overscroll-behavior: contain; }
+.modal-body { flex: 1 1 auto; min-height: 0; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+@media (max-width: 767px) {
+  .modal, .modal-lg, .modal-xl { max-height: 92dvh; }
+  .modal .quiz-foot { bottom: 0; padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom)); background: var(--surface); }
+}

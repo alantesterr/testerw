@@ -81,11 +81,12 @@
   }
   /* Подсказка: сколько нужно набрать для 70+ и с запасом для 72 (как в калькуляторе) */
   function jHint(v) {
-    var w = { c: v.c, r1: v.r1, r2: v.r2, e: v.e }, n70 = need(w, 70), n72 = need(w, 72);
-    if (!n70) return { text: v.F >= 70 ? SP.t('grades.ok70') : SP.t('grades.below70'), cls: v.F >= 70 ? 'text-success' : 'text-danger', n72: null };
+    /* Цель — 71: ровно 70 на деле не засчитывается, поэтому запас учтён сразу */
+    var w = { c: v.c, r1: v.r1, r2: v.r2, e: v.e }, n70 = need(w, 71), n72 = n70;
+    if (!n70) return { text: v.F >= 71 ? SP.t('grades.ok70') : SP.t('grades.below70'), cls: v.F >= 71 ? 'text-success' : 'text-danger', n72: null };
     var NM = { c: SP.t('jr.cur'), r1: SP.t('jr.rk1'), r2: SP.t('jr.rk2'), e: SP.t('jr.exam') };
     var fmtN = function (x) { return x <= 0 ? SP.t('grades.enough') : x > 100 ? SP.t('grades.notEnough') : '≥ ' + Math.ceil(x); };
-    return { text: SP.t('grades.need', { list: n70.un.map(function (k) { return NM[k]; }).join(', '), x: fmtN(n70.x), y: fmtN(n72.x) }), cls: n72.x > 100 ? 'text-danger' : '', n72: n72 };
+    return { text: SP.t('jr.need', { list: n70.un.map(function (k) { return NM[k]; }).join(', '), x: fmtN(n70.x), y: fmtN(n72.x) }), cls: n72.x > 100 ? 'text-danger' : '', n72: n72 };
   }
   function card(it) {
     var v = jCalc(it), hn = jHint(v);

@@ -1,14 +1,14 @@
 /* =====================================================================
    РАЗДЕЛ «НАСТРОЙКИ»: всё второстепенное собрано здесь по группам.
-   Внешний вид · Язык · Аккаунт · Данные · Тестер и плеер ·
-   Инструменты · Для автора · О сайте
+   Внешний вид · Язык · Аккаунт · Тестер и плеер ·
+   Инструменты · Данные · Для автора · О сайте
    ===================================================================== */
 (function () {
   'use strict';
   var SP = window.SP, esc = SP.esc;
   var root = null;
   var VERSION = '3.0.0';
-  var SECTIONS = [['appearance', 'type'], ['language', 'languages'], ['account', 'user'], ['data', 'database'], ['testerPlayer', 'list-checks'], ['tools', 'timer'], ['author', 'square-pen'], ['about', 'info']];
+  var SECTIONS = [['appearance', 'type'], ['language', 'languages'], ['account', 'user'], ['testerPlayer', 'list-checks'], ['tools', 'timer'], ['data', 'database'], ['author', 'square-pen'], ['about', 'info']];
 
   function choice(group, val, cur, inner, label) {
     return '<button type="button" class="choice" role="radio" data-' + group + '="' + val + '" aria-checked="' + (cur === val) + '" aria-label="' + esc(label) + '">' + inner + '<span>' + esc(label) + '</span></button>';
@@ -54,6 +54,18 @@
     acc += '<div class="row"><button type="button" class="btn btn-danger" id="sLogout">' + SP.icon('log-out') + '<span>' + esc(SP.t('auth.reset')) + '</span></button></div>';
     html += section('account', 'user', acc);
 
+    /* 5. Тестер и плеер */
+    html += section('testerPlayer', 'list-checks',
+      setRow(SP.t('settings.trLang'), esc(SP.t('settings.trLangHint')), '<div class="segmented" role="group" aria-label="' + esc(SP.t('settings.trLang')) + '">' + [['ru', 'Русский'], ['kk', 'Қазақша']].map(function (x) { return '<button type="button" data-trlang="' + x[0] + '" aria-pressed="' + (s.trLang === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>') +
+      setRow(SP.t('settings.autoTr'), esc(SP.t('settings.autoTrHint')), '<label class="switch"><input type="checkbox" id="sAutoTr"' + (s.autoTr ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.autoTr')) + '</span></label>') +
+      setRow(SP.t('settings.hotkeys'), esc(SP.t('settings.hotkeysHint')), '<label class="switch"><input type="checkbox" id="sHotkeys"' + (s.hotkeys !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.hotkeys')) + '</span></label>') +
+      setRow(SP.t('player.warnLabel'), esc(SP.t('player.warnHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sWarn" min="5" max="300" value="' + esc(s.warnSec) + '" aria-label="' + esc(SP.t('player.warnLabel')) + '"><span class="small muted">' + esc(SP.t('player.sec')) + '</span></div>') +
+      setRow(SP.t('settings.playerMore'), esc(SP.t('settings.playerMoreHint')), '<a class="btn btn-ghost" href="#/player">' + SP.icon('circle-play') + '<span>' + esc(SP.t('nav.player')) + '</span></a>'));
+
+    /* 6. Инструменты */
+    html += section('tools', 'timer',
+      setRow(SP.t('stopwatch.title'), esc(SP.t('settings.stopwatchHint')), '<label class="switch"><input type="checkbox" id="sSw"' + (s.stopwatch ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('stopwatch.title')) + '</span></label>'));
+
     /* 4. Данные */
     var d = SP.hub.data(), base = SP.hub.base();
     html += section('data', 'database',
@@ -71,18 +83,6 @@
       setRow(SP.t('settings.export'), esc(SP.t('settings.exportHint')), '<button type="button" class="btn" id="sExport">' + SP.icon('download') + '<span>' + esc(SP.t('settings.exportBtn')) + '</span></button>') +
       setRow(SP.t('settings.import'), esc(SP.t('settings.importHint')), '<button type="button" class="btn" id="sImport">' + SP.icon('upload') + '<span>' + esc(SP.t('settings.importBtn')) + '</span></button>') +
       setRow(SP.t('settings.wipe'), esc(SP.t('settings.wipeHint')), '<button type="button" class="btn btn-danger" id="sWipe">' + SP.icon('trash-2') + '<span>' + esc(SP.t('settings.wipeBtn')) + '</span></button>') + '</div>');
-
-    /* 5. Тестер и плеер */
-    html += section('testerPlayer', 'list-checks',
-      setRow(SP.t('settings.trLang'), esc(SP.t('settings.trLangHint')), '<div class="segmented" role="group" aria-label="' + esc(SP.t('settings.trLang')) + '">' + [['ru', 'Русский'], ['kk', 'Қазақша']].map(function (x) { return '<button type="button" data-trlang="' + x[0] + '" aria-pressed="' + (s.trLang === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>') +
-      setRow(SP.t('settings.autoTr'), esc(SP.t('settings.autoTrHint')), '<label class="switch"><input type="checkbox" id="sAutoTr"' + (s.autoTr ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.autoTr')) + '</span></label>') +
-      setRow(SP.t('settings.hotkeys'), esc(SP.t('settings.hotkeysHint')), '<label class="switch"><input type="checkbox" id="sHotkeys"' + (s.hotkeys !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.hotkeys')) + '</span></label>') +
-      setRow(SP.t('player.warnLabel'), esc(SP.t('player.warnHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sWarn" min="5" max="300" value="' + esc(s.warnSec) + '" aria-label="' + esc(SP.t('player.warnLabel')) + '"><span class="small muted">' + esc(SP.t('player.sec')) + '</span></div>') +
-      setRow(SP.t('settings.playerMore'), esc(SP.t('settings.playerMoreHint')), '<a class="btn btn-ghost" href="#/player">' + SP.icon('circle-play') + '<span>' + esc(SP.t('nav.player')) + '</span></a>'));
-
-    /* 6. Инструменты */
-    html += section('tools', 'timer',
-      setRow(SP.t('stopwatch.title'), esc(SP.t('settings.stopwatchHint')), '<label class="switch"><input type="checkbox" id="sSw"' + (s.stopwatch ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('stopwatch.title')) + '</span></label>'));
 
     /* 7. Для автора */
     html += section('author', 'square-pen',

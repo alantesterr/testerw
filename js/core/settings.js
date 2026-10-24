@@ -20,7 +20,15 @@
     autoTr: false,       // автоперевод вопросов в тесте
     hotkeys: true        // горячие клавиши в тесте
   };
+  /* Размеры по умолчанию зависят от устройства:
+     телефон — шрифт «меньше среднего», Shokan «меньше», Timetable «стандарт»;
+     ПК — шрифт «средний», Shokan «стандарт», Timetable «меньше». */
+  var phone = window.matchMedia && (window.matchMedia('(max-width: 767px)').matches || window.matchMedia('(pointer: coarse) and (max-width: 1024px)').matches);
+  var SIZES = phone ? { font: 'ms', schShk: 'sm', schTt: 'std' } : { font: 'm', schShk: 'std', schTt: 'sm' };
+  Object.assign(DEFAULTS, SIZES);
   var s = Object.assign({}, DEFAULTS, SP.store.get(KEY, {}) || {});
+  /* Один раз применяем эти размеры у всех, кто уже пользовался сайтом */
+  if (!s.sizesV2) { Object.assign(s, SIZES); s.sizesV2 = true; SP.store.set(KEY, s); }
 
   /* Перенос старой настройки темы со старого сайта */
   if (!SP.store.get(KEY)) {

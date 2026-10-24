@@ -404,3 +404,5 @@ Object.assign(SP.I18N.en, { 'quiz.tools': 'AI tools', 'quiz.keysTip': 'Keys: ←
 Object.assign(SP.I18N.en, { 'jr.rk1': 'Midterm 1', 'jr.rk2': 'Midterm 2', 'jr.autoCalc': 'Rating = Current avg·60% + Midterm 1·20% + Midterm 2·20%. Final = Rating·60% + Exam·40%. Calculated automatically.' });
 
 Object.assign(SP.I18N.en, { 'jr.sub': 'Grade journal: all subjects from the schedule, rating and final are calculated automatically', 'jr.emptyText': 'Subjects appear automatically once the schedule is loaded. You can add one with the Subject button.', 'designer.mobileTitle': 'The test editor is for computers', 'designer.mobileText': 'The editor is heavy and may lag or crash on a phone. Open it on a PC or laptop. You can take tests on your phone in the Tester.', 'designer.mobileAnyway': 'Open anyway' });
+
+Object.assign(SP.I18N.en, { 'jr.need': 'To reach 70+ ({list}): {x}.', 'settings.exportHint': 'Settings, tests, player progress, grade journal. Passwords are not included.' });

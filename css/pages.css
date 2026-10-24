@@ -424,3 +424,24 @@ button.mark:focus-visible { box-shadow: var(--focus-ring); }
 
 /* Печать: только содержимое */
 @media print { .sidebar, .sb-restore, .bottom-nav, .mobile-bar, .page-actions, .stopwatch { display: none !important; } .main { margin: 0 !important; } }
+
+/* Плеер: курсор прячется вместе с панелью (и над кнопками/слоем клика) */
+.player.idle, .player.idle * { cursor: none !important; }
+/* «Заполнить»: видео растягивается без чёрных полос — только в полном экране */
+.player.fs.fill .stage video { object-fit: cover; }
+/* Меню настроек плеера: строки и списки вариантов */
+.pmenu { padding: var(--sp-2); }
+.pm-row, .pm-opt, .pm-back { display: flex; align-items: center; gap: var(--sp-3); width: 100%; min-height: 2.75rem; padding: var(--sp-2) var(--sp-3); border: 0; border-radius: var(--r-md); background: transparent; color: #fff; text-align: left; cursor: pointer; font: inherit; }
+.pm-row { justify-content: space-between; }
+.pm-row span { display: flex; flex-direction: column; min-width: 0; }
+.pm-row small { margin: 0; color: #9aa3b2; font-size: var(--fs-sm); }
+.pm-row b { font-weight: 600; }
+.pm-back { font-weight: 600; border-bottom: 1px solid #3a4352; border-radius: var(--r-md) var(--r-md) 0 0; margin-bottom: var(--sp-1); }
+.pm-opt i { width: 1rem; flex: none; }
+.pm-opt.on { color: #8ab4ff; }
+.pm-opt.dim { opacity: .55; }
+.pm-row:hover, .pm-opt:hover, .pm-back:hover { background: #2d3542; }
+.pm-row:active, .pm-opt:active, .pm-back:active { background: #3a4352; }
+.pm-row:focus-visible, .pm-opt:focus-visible, .pm-back:focus-visible { outline: 2px solid #8ab4ff; outline-offset: -2px; }
+.pm-custom { padding: var(--sp-2) var(--sp-3); }
+.pmenu > small { padding: 0 var(--sp-3); }

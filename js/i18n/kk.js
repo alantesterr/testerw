@@ -413,3 +413,5 @@ Object.assign(SP.I18N.kk, { 'jr.how': 'Баға қалай есептеледі?
     '<p><b>Сақина түстері.</b> <span class="jr-legend"><span><i style="background:var(--ring-green)"></i>90–100</span><span><i style="background:var(--ring-blue)"></i>70–89</span><span><i style="background:var(--ring-yellow)"></i>50–69</span><span><i style="background:var(--ring-red)"></i>1–49</span></span></p>' +
     '<p>Рейтинг пен қорытынды өздігінен есептеледі. Барлық деректер тек осы құрылғыда сақталады.</p>' });
 Object.assign(SP.I18N.kk, { 'jr.need': '70+ шығу үшін ({list}): {x}.', 'settings.exportHint': 'Баптаулар, тесттер, ойнатқыш прогресі, бағалар журналы. Құпиясөздер файлға кірмейді.' });
+
+Object.assign(SP.I18N.kk, { 'player.normal': 'Қалыпты', 'player.fit': 'Масштаб', 'player.fit.contain': 'Сыйдыру', 'player.fit.cover': 'Толтыру', 'player.fitHint': 'Толық экранда жұмыс істейді: «Толтыру» қара жолақтарды алып тастайды, видео шеттері кесілуі мүмкін.' });

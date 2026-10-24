@@ -20,7 +20,7 @@
   /* ---------------- Состояние ---------------- */
   var queue = [], current = -1, activeKind = null;
   var ytPlayer = null, ytOK = false, pendingYT = null;
-  var vol = 1, muted = false, rate = 1, quality = 'auto', ytNative = false, autoMini = true, qSeen = false;
+  var vol = 1, muted = false, rate = 1, fit = 'contain', quality = 'auto', ytNative = false, autoMini = true, qSeen = false;
   var watch = 0, nextAt = 1200, intervalSec = 1200, qPerTest = 5, requireTest = true;
   var quizOpen = false, savedPos = 0, lastWall = performance.now(), lastMT = null, warned = false, saveTick = 0;
   var scrubbing = false, scrubPct = 0, hideT = null, touchMode = false, lastIcon = '', snackT = null;
@@ -200,21 +200,38 @@
   function syncNative() { player.classList.toggle('ytn', activeKind === 'youtube' && ytNative); }
   function toggleNative() { ytNative = !ytNative; persistPrefs(); syncNative(); if (isYT() && current >= 0) { var was = M.playing(); menu.classList.remove('open'); loadItem(current, was); } else renderMenu(); }
 
+  /* Меню настроек как в обычных плеерах: строки «Скорость», «Масштаб», «Качество», «Мини-плеер»
+     → нажатие открывает список вариантов, «‹» возвращает назад. */
+  var menuPage = null;
   function renderMenu() {
     var speeds = [0.5, 0.75, 1, 1.1, 1.2, 1.25, 1.35, 1.5, 1.75, 2];
     var QL = [['auto', T('player.auto')], ['1080', '1080p'], ['720', '720p'], ['480', '480p'], ['360', '360p'], ['240', '240p'], ['144', '144p']];
-    var h = '<h4>' + esc(T('player.speed')) + '</h4><div class="chips">' + speeds.map(function (s) { return '<button type="button" class="chip' + (Math.abs(s - rate) < 0.001 ? ' on' : '') + '" data-rate="' + s + '">' + s + '×</button>'; }).join('') + '</div>' +
-      '<div class="row row-nowrap"><input class="input input-num" id="customRate" type="number" min="0.25" max="4" step="0.05" value="' + rate + '" aria-label="' + esc(T('player.speed')) + '"><button type="button" class="btn btn-sm" id="applyCustomRate">' + esc(T('common.apply')) + '</button></div>';
-    h += '<h4>' + esc(T('player.quality')) + '</h4>';
-    if (isYT()) {
-      var av = ytAvail(), now = ytNow();
-      h += '<div class="chips">' + QL.map(function (x) { var dim = x[0] !== 'auto' && av.length && av.indexOf(YTQ[x[0]]) < 0; return '<button type="button" class="chip' + (x[0] === quality ? ' on' : '') + (dim ? ' dim' : '') + '" data-q="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
-        '<small>' + esc(T('player.nowPlaying', { q: YTN[now] || '…' })) + '</small><div class="chips"><button type="button" class="chip' + (ytNative ? ' on' : '') + '" data-nat="1">' + esc(T('player.ytNative')) + '</button></div><small>' + esc(T('player.ytNativeHint')) + '</small>';
-    } else h += '<small>' + esc(T(activeKind ? 'player.qualityLocal' : 'player.qualityNone')) + '</small>';
-    h += '<h4>' + esc(T('player.mini')) + '</h4><div class="chips"><button type="button" class="chip' + (autoMini ? ' on' : '') + '" data-am="1">' + esc(T(autoMini ? 'player.autoMiniOn' : 'player.autoMiniOff')) + '</button></div>';
+    var isVid = activeKind && !isYT() && !/audio$/.test(activeKind);
+    var row = function (page, label, val) { return '<button type="button" class="pm-row" data-page="' + page + '"><span><small>' + esc(label) + '</small><b>' + esc(val) + '</b></span>' + SP.icon('chevron-right', 'ic-sm') + '</button>'; };
+    var opt = function (attr, v, label, on) { return '<button type="button" class="pm-opt' + (on ? ' on' : '') + '" ' + attr + '="' + v + '">' + (on ? SP.icon('check', 'ic-sm') : '<i></i>') + '<span>' + esc(label) + '</span></button>'; };
+    var back = function (label) { return '<button type="button" class="pm-back" data-page="">' + SP.icon('chevron-left', 'ic-sm') + '<span>' + esc(label) + '</span></button>'; };
+    var h = '';
+    if (menuPage === 'speed') {
+      h = back(T('player.speed')) + speeds.map(function (s) { return opt('data-rate', s, s === 1 ? T('player.normal') : String(s), Math.abs(s - rate) < 0.001); }).join('') +
+        '<div class="row row-nowrap pm-custom"><input class="input input-num" id="customRate" type="number" min="0.25" max="4" step="0.05" value="' + rate + '" aria-label="' + esc(T('player.speed')) + '"><button type="button" class="btn btn-sm" id="applyCustomRate">' + esc(T('common.apply')) + '</button></div>';
+    } else if (menuPage === 'fit') {
+      h = back(T('player.fit')) + opt('data-fit', 'contain', T('player.fit.contain'), fit !== 'cover') + opt('data-fit', 'cover', T('player.fit.cover'), fit === 'cover') + '<small>' + esc(T('player.fitHint')) + '</small>';
+    } else if (menuPage === 'quality') {
+      h = back(T('player.quality'));
+      if (isYT()) {
+        var av = ytAvail(), now = ytNow();
+        h += QL.map(function (x) { var dim = x[0] !== 'auto' && av.length && av.indexOf(YTQ[x[0]]) < 0; return opt('data-q', x[0], x[1], x[0] === quality).replace('class="pm-opt', 'class="pm-opt' + (dim ? ' dim' : '')); }).join('') +
+          '<small>' + esc(T('player.nowPlaying', { q: YTN[now] || '…' })) + '</small>' + opt('data-nat', 1, T('player.ytNative'), ytNative) + '<small>' + esc(T('player.ytNativeHint')) + '</small>';
+      } else h += '<small>' + esc(T(activeKind ? 'player.qualityLocal' : 'player.qualityNone')) + '</small>';
+    } else {
+      h = row('speed', T('player.speed'), rate === 1 ? T('player.normal') : rate + '×') +
+        (isVid ? row('fit', T('player.fit'), T(fit === 'cover' ? 'player.fit.cover' : 'player.fit.contain')) : '') +
+        (isYT() ? row('quality', T('player.quality'), quality === 'auto' ? T('player.auto') : quality + 'p') : '') +
+        '<button type="button" class="pm-row" data-am="1"><span><small>' + esc(T('player.mini')) + '</small><b>' + esc(T(autoMini ? 'player.autoMiniOn' : 'player.autoMiniOff')) + '</b></span></button>';
+    }
     menu.innerHTML = h;
   }
-  function closeMenu() { menu.classList.remove('open'); showControls(); }
+  function applyFit() { player.classList.toggle('fill', fit === 'cover'); }  function closeMenu() { menu.classList.remove('open'); showControls(); }
 
   /* ----- Очередь ----- */
   function kindText(k) { return k === 'youtube' ? 'YouTube' : /audio$/.test(k) ? T('player.audio') : T('player.video'); }
@@ -237,7 +254,7 @@
     else if (current > i) current--;
     renderQueue(); persistQueue();
   }
-  function persistPrefs() { SP.store.set('studyplay-prefs', { vol: vol, muted: muted, rate: rate, quality: quality, ytNative: ytNative, autoMini: autoMini }); }
+  function persistPrefs() { SP.store.set('studyplay-prefs', { vol: vol, muted: muted, rate: rate, fit: fit, quality: quality, ytNative: ytNative, autoMini: autoMini }); }
   function persistQueue() {
     SP.store.set('studyplay-queue', { currentId: queue[current] ? queue[current].id : null, items: queue.map(function (x) { return { id: x.id, name: x.name, kind: x.kind, src: /^local/.test(x.kind) ? '' : x.src, videoId: x.videoId, position: x.position, duration: x.duration, stored: x.stored }; }) });
   }
@@ -580,7 +597,7 @@
     nextAt = intervalSec;
     var t = SP.store.get('studyplay-timer', null); if (t && isFinite(t.watch) && isFinite(t.nextAt)) { watch = t.watch; nextAt = t.nextAt; }
     var p = SP.store.get('studyplay-prefs', {}) || {};
-    if (typeof p.vol === 'number') vol = p.vol; if (typeof p.muted === 'boolean') muted = p.muted; if (p.rate) rate = p.rate;
+    if (typeof p.vol === 'number') vol = p.vol; if (typeof p.muted === 'boolean') muted = p.muted; if (p.rate) rate = p.rate; if (p.fit === 'cover') fit = 'cover';
     if (p.quality && YTQ[String(p.quality)]) quality = String(p.quality);
     if (typeof p.ytNative === 'boolean') ytNative = p.ytNative; if (typeof p.autoMini === 'boolean') autoMini = p.autoMini;
     syncSettingsUI();
@@ -663,13 +680,16 @@
 
     menu.addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-page')) { menuPage = b.getAttribute('data-page') || null; renderMenu(); var f = menu.querySelector('button'); if (f) f.focus(); return; }
+      if (b.dataset.fit) { fit = b.dataset.fit; persistPrefs(); applyFit(); renderMenu(); }
       if (b.dataset.rate) setRate(Number(b.dataset.rate));
       if (b.dataset.q) setQuality(b.dataset.q);
       if (b.dataset.nat) toggleNative();
       if (b.dataset.am) { autoMini = !autoMini; persistPrefs(); renderMenu(); if (!autoMini && miniOn && miniAuto) setMini(false); }
       if (b.id === 'applyCustomRate') { var v = clamp(Number($('customRate').value) || 1, 0.25, 4); setRate(Math.round(v * 100) / 100); }
     });
-    gearBtn.onclick = function () { renderMenu(); menu.classList.toggle('open'); showControls(); };
+    gearBtn.onclick = function () { menuPage = null; renderMenu(); menu.classList.toggle('open'); showControls(); };
+    applyFit();
     document.addEventListener('click', function (e) { if (menu.classList.contains('open') && !menu.contains(e.target) && !gearBtn.contains(e.target)) closeMenu(); });
     clickLayer.addEventListener('click', function () {
       if (suppressClick) { suppressClick = false; return; }

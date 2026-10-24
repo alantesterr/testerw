@@ -846,3 +846,5 @@ Object.assign(SP.I18N.ru, { 'jr.how': 'Как считать оценку?', 'jr
     '<p><b>Цвета колец.</b> <span class="jr-legend"><span><i style="background:var(--ring-green)"></i>90–100</span><span><i style="background:var(--ring-blue)"></i>70–89</span><span><i style="background:var(--ring-yellow)"></i>50–69</span><span><i style="background:var(--ring-red)"></i>1–49</span></span></p>' +
     '<p>Рейтинг и итоговая не вводятся — считаются сами. Все данные хранятся только на этом устройстве.</p>' });
 Object.assign(SP.I18N.ru, { 'jr.need': 'Чтобы выйти на 70+ ({list}): {x}.', 'settings.exportHint': 'Настройки, тесты, прогресс плеера, журнал оценок. Пароли в файл не попадают.' });
+
+Object.assign(SP.I18N.ru, { 'player.normal': 'Обычная', 'player.fit': 'Масштаб', 'player.fit.contain': 'Вписать', 'player.fit.cover': 'Заполнить', 'player.fitHint': 'Работает в полном экране: «Заполнить» убирает чёрные полосы, края видео могут обрезаться.' });

@@ -413,3 +413,5 @@ Object.assign(SP.I18N.en, { 'jr.how': 'How are grades calculated?', 'jr.restoreT
     '<p><b>Ring colors.</b> <span class="jr-legend"><span><i style="background:var(--ring-green)"></i>90–100</span><span><i style="background:var(--ring-blue)"></i>70–89</span><span><i style="background:var(--ring-yellow)"></i>50–69</span><span><i style="background:var(--ring-red)"></i>1–49</span></span></p>' +
     '<p>Rating and final are calculated automatically. All data stays on this device.</p>' });
 Object.assign(SP.I18N.en, { 'jr.need': 'To reach 70+ ({list}): {x}.', 'settings.exportHint': 'Settings, tests, player progress, grade journal. Passwords are not included.' });
+
+Object.assign(SP.I18N.en, { 'player.normal': 'Normal', 'player.fit': 'Scale', 'player.fit.contain': 'Fit', 'player.fit.cover': 'Fill', 'player.fitHint': 'Works in full screen: Fill removes black bars, the edges of the video may be cropped.' });

@@ -83,6 +83,11 @@
           tl.style.setProperty('--scale-factor', css); tl.style.top = (-(H - t) * css) + 'px'; tl.style.left = (-x0 * css) + 'px';
           el.appendChild(tl);
           return page.getTextContent().then(function (tc) {
+            /* только текст внутри вырезки — иначе через выделение/поиск можно достать скрытые ответы */
+            tc.items = tc.items.filter(function (it) {
+              var x = it.transform[4], y = it.transform[5];
+              return y >= b - 1 && y <= t + 1 && x >= x0 - 1 && x + (it.width || 0) <= x1 + 2;
+            });
             try { lib.renderTextLayer({ textContentSource: tc, container: tl, viewport: page.getViewport({ scale: css }) }); } catch (e) { /* без слоя текста */ }
           });
         });
@@ -373,10 +378,10 @@
         if (Math.abs(dx) > 60 && Math.abs(dy) < 50) carGo(sec, dx < 0 ? 1 : -1);
       }, { passive: true });
     });
-    /* «К заданиям»: каждое нажатие — к следующему ниже разделу с вопросами, задачами или тестом */
+    /* «К заданиям»: по темам — к заданиям (первому разделу с задачами/вопросами/тестом) следующей лекции ниже */
     $('#ntJump').onclick = function () {
       var bar = SP.$('.nt-bar', root).getBoundingClientRect().bottom + 12;
-      var secs = SP.$$('.nt-sec.nk-qa, .nt-sec.nk-tasks:not(.is-pdf), .nt-sec.nk-test', root);
+      var secs = SP.$$('.nt-lec', root).map(function (lec) { return SP.$('.nt-sec.nk-qa, .nt-sec.nk-tasks:not(.is-pdf), .nt-sec.nk-test', lec); }).filter(Boolean);
       if (!secs.length) return;
       var next = secs.filter(function (s) { return s.getBoundingClientRect().top > bar + 4; })[0] || secs[0];
       scrollToId(next.id, false);

@@ -437,3 +437,4 @@ Object.assign(SP.I18N.kk, {
   'notes.pdfError': 'PDF бетін көрсету мүмкін болмады. Интернетті тексеріңіз немесе «Мәтінмен» режиміне ауысыңыз.',
   'notes.plain': 'Қарапайым тілмен: не істеу керек', 'notes.plainEx': 'Мысал: не шығуы керек'
 });
+Object.assign(SP.I18N.kk, { 'notes.qstyle': 'Тест көрінісі', 'notes.qstyle.paper': 'Ақ, PDF сияқты', 'notes.qstyle.site': 'Сайттағыдай' });

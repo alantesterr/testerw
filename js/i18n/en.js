@@ -437,3 +437,4 @@ Object.assign(SP.I18N.en, {
   'notes.pdfError': 'Could not show the PDF page. Check the internet or switch to “As text”.',
   'notes.plain': 'In plain words: what to do', 'notes.plainEx': 'Example: what you should get'
 });
+Object.assign(SP.I18N.en, { 'notes.qstyle': 'Test style', 'notes.qstyle.paper': 'White, like PDF', 'notes.qstyle.site': 'Like the site' });

@@ -870,3 +870,4 @@ Object.assign(SP.I18N.ru, {
   'notes.pdfError': 'Не удалось показать страницу PDF. Проверьте интернет или переключитесь на «Текстом».',
   'notes.plain': 'Простыми словами: что нужно сделать', 'notes.plainEx': 'Пример: что должно получиться'
 });
+Object.assign(SP.I18N.ru, { 'notes.qstyle': 'Оформление теста', 'notes.qstyle.paper': 'Белое, как PDF', 'notes.qstyle.site': 'Как на сайте' });

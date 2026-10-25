@@ -76,7 +76,7 @@
 
 /* =========================== СВЕТЛАЯ ТЕМА =========================== */
 :root,
-:root[data-theme="light"] {
+:root[data-theme="light"], .theme-paper {
   color-scheme: light;
   --bg: #f4f6f9;
   --surface: #ffffff;
@@ -136,7 +136,7 @@
 }
 
 /* ============================ ТЁМНАЯ ТЕМА ============================ */
-:root[data-theme="dark"] {
+:root[data-theme="dark"], .theme-dark {
   color-scheme: dark;
   --bg: #0e1116;
   --surface: #161a21;
@@ -216,7 +216,7 @@
    РАСШИРЕННАЯ ПАЛИТРА (обе темы): типы файлов, инструменты ИИ,
    режимы расписания Shokan и Timetable, подсказки в полях.
    ===================================================================== */
-:root, :root[data-theme="light"] {
+:root, :root[data-theme="light"], .theme-paper {
   --placeholder: #7d8594;
   --info: #0e6fb8; --info-text: #0b5c99;
   /* Типы файлов */
@@ -235,7 +235,7 @@
   /* Режим Timetable (монохром, светлая) */
   --tt-bg: #ffffff; --tt-text: #000000; --tt-sub: #555555; --tt-line: #8c8c8c; --tt-head: #ffffff; --tt-hover: #f0f0f0;
 }
-:root[data-theme="dark"] {
+:root[data-theme="dark"], .theme-dark {
   --placeholder: #8a93a3;
   --info: #4ea1e8; --info-text: #8cc4f2;
   --ft-word: #6b9cf0; --ft-excel: #4cc07a; --ft-ppt: #f08a5d; --ft-pdf: #ff6b66;

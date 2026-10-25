@@ -183,11 +183,27 @@
     return '<div class="nt-plain">' + SP.icon('circle-help', 'ic-sm') + '<div><div class="nt-plain-t">' + esc(SP.t('notes.plain')) + '</div><div class="nt-plain-b">' + b.plain + '</div>' +
       (ex ? '<div class="nt-plain-ex"><div class="nt-plain-t">' + esc(SP.t('notes.plainEx')) + '</div><pre>' + esc(ex.text) + '</pre></div>' : '') + '</div></div>';
   }
+  /* Оформление тестов: «Белое» (как PDF) или «Как на сайте». По умолчанию — по виду конспекта. */
+  var QS_KEY = 'sp-notes-quizstyle';
+  function quizStyle() { var v = SP.store.get(QS_KEY, null); return v === 'paper' || v === 'site' ? v : (mode() === 'pdf' ? 'paper' : 'site'); }
+  function quizStyleCls(v) { return v === 'paper' ? 'theme-paper qs-paper' : ('qs-site' + (SP.settings.resolvedTheme() === 'dark' ? ' theme-dark' : '')); }
+  function applyQuizStyle(v) {
+    SP.store.set(QS_KEY, v);
+    SP.$$('.nt-quiz', root).forEach(function (c) {
+      c.classList.remove('theme-paper', 'qs-paper', 'qs-site', 'theme-dark');
+      quizStyleCls(v).split(' ').forEach(function (k) { c.classList.add(k); });
+      SP.$$('[data-qstyle]', c).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-qstyle') === v)); });
+    });
+  }
   function quizCard(b, ctx) {
     var key = ctx.lec.id + ':' + ctx.sec;
     var best = (SP.store.get(bestKey(openId), {}) || {})[key];
     ctx.quizzes[key] = { qs: b.questions, title: ctx.lec.label + ' · ' + SP.t('notes.test') };
-    return '<div class="nt-quiz card" data-quiz="' + esc(key) + '"><div class="nt-quiz-start"><span class="nt-quiz-ic">' + SP.icon('list-checks') + '</span>' +
+    var qs = quizStyle();
+    return '<div class="nt-quiz card ' + quizStyleCls(qs) + '" data-quiz="' + esc(key) + '">' +
+      '<div class="nt-qstyle"><span class="xsmall subtle">' + esc(SP.t('notes.qstyle')) + '</span><div class="segmented" role="group" aria-label="' + esc(SP.t('notes.qstyle')) + '">' +
+      ['paper', 'site'].map(function (v) { return '<button type="button" data-qstyle="' + v + '" aria-pressed="' + (qs === v) + '">' + esc(SP.t('notes.qstyle.' + v)) + '</button>'; }).join('') + '</div></div>' +
+      '<div class="nt-quiz-start"><span class="nt-quiz-ic">' + SP.icon('list-checks') + '</span>' +
       '<div class="grow"><b>' + esc(SP.t('notes.testTitle', { l: ctx.lec.label })) + '</b><div class="small muted">' + esc(SP.t('notes.testN', { n: b.questions.length })) +
       (best != null ? ' · <span class="text-' + (best >= 90 ? 'success' : best >= 50 ? 'warning' : 'danger') + '">' + esc(SP.t('notes.best', { p: best })) + '</span>' : '') + '</div></div>' +
       '<button type="button" class="btn btn-primary" data-qstart="' + esc(key) + '">' + SP.icon('play') + '<span>' + esc(SP.t(best != null ? 'notes.testAgain' : 'notes.testStart')) + '</span></button></div>' +
@@ -248,7 +264,7 @@
       '<div class="nt-bar-a"><button type="button" class="btn btn-ghost btn-sm nt-toc-btn" id="ntToc">' + SP.icon('list') + '<span>' + esc(SP.t('notes.toc')) + '</span></button>' +
       (meta.pdf ? '<a class="btn btn-ghost btn-sm" href="' + esc(encodeURI(meta.pdf)) + '" target="_blank" rel="noopener">' + SP.icon('file-text') + '<span>' + esc(SP.t('notes.pdf')) + '</span></a>' : '') +
       '<button type="button" class="btn btn-sm" id="ntFocus" aria-pressed="' + focus + '">' + SP.icon(focus ? 'minimize' : 'maximize') + '<span>' + esc(SP.t(focus ? 'notes.focusExit' : 'notes.focus')) + '</span></button></div></header>' +
-      '<div class="nt-layout"><nav class="nt-toc" aria-label="' + esc(SP.t('notes.toc')) + '">' + tocHtml + '</nav><article class="nt-doc">' + body + '</article></div></div>';
+      '<div class="nt-layout"><nav class="nt-toc" aria-label="' + esc(SP.t('notes.toc')) + '">' + tocHtml + '</nav><article class="nt-doc' + (asPdf ? ' nt-paper theme-paper subj-' + esc(meta.id) : '') + '">' + body + '</article></div></div>';
     wireDoc(meta, ctx, refMap, tocHtml);
     if (asPdf) wirePdf(encodeURI(meta.pdf));
     SP.$$('[data-ntmode]', root).forEach(function (bt) {
@@ -302,6 +318,8 @@
         if (target) scrollToId(target, true);
         return;
       }
+      var qst = e.target.closest('[data-qstyle]');
+      if (qst) { applyQuizStyle(qst.getAttribute('data-qstyle')); return; }
       var qs = e.target.closest('[data-qstart]');
       if (qs) {
         var key = qs.getAttribute('data-qstart'), info = ctx.quizzes[key], card = qs.closest('.nt-quiz');

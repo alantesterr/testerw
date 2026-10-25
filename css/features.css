@@ -513,3 +513,38 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
   .nt-bar { gap: var(--sp-1); }
   .nt-back span { display: none; }
 }
+/* ---------- «Как в PDF»: один сплошной белый лист, без разрезов ---------- */
+.nt-paper { --pdf-pad: 8.1%; background: #fff; color: var(--text); border-radius: var(--r-sm); box-shadow: var(--shadow-md); overflow-x: clip; padding-bottom: var(--sp-6); }
+.nt-paper .nt-pdf { gap: 0; }
+.nt-paper .nt-pg { border: 0; border-radius: 0; box-shadow: none; }
+.nt-paper .nt-lec, .nt-paper .nt-intro-pdf { margin: 0; }
+.nt-paper .nt-sec { margin: 0; }
+.nt-paper .nt-sec:not(.is-pdf) { padding: var(--sp-3) var(--pdf-pad) var(--sp-4); font-size: 0.9375rem; }
+/* шрифт — как в исходных PDF */
+
+
+/* заголовки разделов: C++ — тёмно-синий текст, философия — цветные плашки как в PDF */
+.nt-paper .nt-sec-t, .nt-paper .nt-sec-id { color: #1e3a5f; }
+.nt-paper .nt-sec-head { margin-bottom: var(--sp-3); }
+.nt-paper.subj-philosophy .nt-sec-head { padding: 6px 10px; border-radius: 3px; background: #0f8a6a; }
+.nt-paper.subj-philosophy .nk-test > .nt-sec-head { background: #b4531d; }
+.nt-paper.subj-philosophy .nt-sec-head .nt-sec-t, .nt-paper.subj-philosophy .nt-sec-head .nt-sec-id { color: #fff; font-size: 1.0625rem; }
+.nt-paper.subj-philosophy .nt-sec-head .btn { --btn-fg: #fff; --btn-bg-hover: rgba(255, 255, 255, 0.16); --btn-bg-press: rgba(255, 255, 255, 0.26); color: #fff; }
+/* карточки вопросов и задач — как рамки в PDF */
+.nt-paper .nt-qa { background: #fff; border: 1px solid #d4dce6; border-radius: 4px; box-shadow: none; }
+.nt-paper .nt-qn, .nt-paper .nt-qa.is-task .nt-qn { color: #1e3a5f; }
+.nt-paper.subj-philosophy .nt-qn { color: #0f8a6a; }
+.nt-paper .nt-plain { background: #e8f1fb; border-left-color: #2d5bd6; }
+.nt-paper .nt-plain-t, .nt-paper .nt-plain > .ic { color: #1e4fa8; }
+.nt-paper .nt-a { border-top-color: #d4dce6; }
+.nt-paper .nt-quiz { margin: var(--sp-3) 0; border-color: #d4dce6; box-shadow: none; }
+.nt-qstyle { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-3); }
+.nt-qstyle .segmented button { min-height: 2rem; padding: 2px 10px; font-size: var(--fs-xs); }
+.nt-quiz.qs-paper { background: #fff; color: var(--text); }
+@media (max-width: 767px) { .nt-paper { --pdf-pad: 4%; border-radius: 0; } }
+.nt-paper .nt-sec-t { font-size: 1.25rem; }
+.nt-paper .nt-refs .chip { background: #eef2f7; color: #1e3a5f; border: 1px solid #d4dce6; }
+.nt-paper .nt-refs .chip:hover { background: #e2e8f0; }
+.nt-paper .nt-refs .chip:active { background: #d6dee9; }
+/* блок со своей темой пересчитывает цвет текста по своим цветам (а не наследует от листа) */
+.theme-paper, .theme-dark { color: var(--text); }

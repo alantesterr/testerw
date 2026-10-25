@@ -432,3 +432,8 @@ Object.assign(SP.I18N.en, {
   'notes.test': 'test', 'notes.testTitle': 'Test: {l}', 'notes.testN': '{n} questions', 'notes.testStart': 'Start test', 'notes.testAgain': 'Take again', 'notes.best': 'best result {p}%',
   'notes.sec.text': 'Summary'
 });
+Object.assign(SP.I18N.en, {
+  'notes.view': 'Notes view', 'notes.view.pdf': 'As in PDF', 'notes.view.text': 'As text',
+  'notes.pdfError': 'Could not show the PDF page. Check the internet or switch to “As text”.',
+  'notes.plain': 'In plain words: what to do', 'notes.plainEx': 'Example: what you should get'
+});

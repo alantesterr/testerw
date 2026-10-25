@@ -183,26 +183,28 @@ export function parseFilo(pages) {
   const doc = { subject: 'Философия', title: '', sub: '', intro: [], lectures: [] };
   // делим на лекции и разделы
   const chunks = []; let cur = { kind: 'intro', lines: [] }; chunks.push(cur);
-  let lec = null;
+  let lec = null; const introRaw = [];
   for (let i = 0; i < L.length; i++) {
     const l = L[i];
     if (near(l.s, 12, 0.3) && /^(Лекция \d+|Финиш)/.test(l.text) && l.y > 770) {
-      const parts = [l.text]; while (L[i + 1] && near(L[i + 1].s, 19, 0.5)) parts.push(L[++i].text);
+      const hdr = [l];
+      const parts = [l.text]; while (L[i + 1] && near(L[i + 1].s, 19, 0.5)) { hdr.push(L[i + 1]); parts.push(L[++i].text); }
       const t = parts.join(' ');
       const m = t.match(/^Лекция (\d+)\s*(.*)$/);
-      lec = { id: m ? 'l' + m[1] : 'finish', n: m ? m[1] : '', title: m ? m[2] : t.replace(/^Финиш\s*/, ''), label: m ? 'Лекция ' + m[1] : 'Финиш', source: '', sections: [] };
+      lec = { id: m ? 'l' + m[1] : 'finish', n: m ? m[1] : '', title: m ? m[2] : t.replace(/^Финиш\s*/, ''), label: m ? 'Лекция ' + m[1] : 'Финиш', source: '', sections: [], _hdr: hdr };
       doc.lectures.push(lec); cur = { kind: 'text', title: '', lines: [], lec }; lec._chunks = [cur]; continue;
     }
     if (lec && near(l.s, 9.6, 0.3) && (/^Источник/.test(l.text) || lec._src)) {
-      lec.source += (lec.source ? ' ' : '') + l.html.replace(/^<b>Источник:<\/b>\s*/, ''); lec._src = true; continue;
+      lec.source += (lec.source ? ' ' : '') + l.html.replace(/^<b>Источник:<\/b>\s*/, ''); lec._src = true; lec._hdr.push(l); continue;
     }
     if (lec) lec._src = false;
     if (lec && near(l.s, 13, 0.3) && l.bold0) {
       const t = l.text;
       const kind = /^1\. Конспект/.test(t) ? 'text' : /^2\. Вопросы/.test(t) ? 'qa' : /^Блиц/.test(t) ? 'blitz' : /^3\. Тесты/.test(t) ? 'test' : 'text';
-      cur = { kind, title: t.replace(/^\d+\.\s*/, ''), lines: [], lec }; lec._chunks.push(cur); continue;
+      cur = { kind, title: t.replace(/^\d+\.\s*/, ''), lines: [], lec, head: l }; lec._chunks.push(cur); continue;
     }
     if (!lec) {
+      introRaw.push(l);
       if (near(l.s, 28, 1)) { doc.title = l.text; continue; }
       if (near(l.s, 13, 0.3)) { doc.sub = l.text; continue; }
       if (near(l.s, 11.5, 0.3)) continue; // оглавление на 1-й странице — делаем своё
@@ -226,19 +228,35 @@ export function parseFilo(pages) {
   };
   // разделы
   for (const lec2 of doc.lectures) {
+    let hdrUsed = false;
     for (const ch of lec2._chunks) {
       if (!ch.lines.length && ch.kind === 'text' && !ch.title) continue;
       let sec;
-      if (ch.kind === 'text') sec = { kind: 'text', title: ch.title || '', blocks: proseBlocks(ch.lines, cfg) };
+      if (ch.kind === 'text') {
+        sec = { kind: 'text', title: ch.title || '', blocks: proseBlocks(ch.lines, cfg), pdf: regionsOf([].concat(hdrUsed ? [] : lec2._hdr, ch.head ? [ch.head] : [], ch.lines)) };
+        if (!hdrUsed) { sec.withHeader = true; hdrUsed = true; }
+      }
       else if (ch.kind === 'qa') sec = { kind: 'qa', title: ch.title, blocks: filoQA(ch.lines) };
       else if (ch.kind === 'blitz') sec = { kind: 'qa', title: ch.title, blitz: true, blocks: filoBlitz(ch.lines) };
       else if (ch.kind === 'test') sec = { kind: 'test', title: ch.title, blocks: filoTest(ch.lines) };
       lec2.sections.push(sec);
     }
-    delete lec2._chunks; delete lec2._src;
+    delete lec2._chunks; delete lec2._src; delete lec2._hdr;
   }
   doc.intro = proseBlocks(chunks[0].lines, cfg);
+  doc.introPdf = regionsOf(introRaw);
   return doc;
+}
+/* Где раздел лежит на страницах PDF: по странице — верх и низ (в пунктах, от низа страницы) */
+function regionsOf(lines) {
+  const by = {};
+  lines.filter(Boolean).forEach(l => { (by[l.page] = by[l.page] || []).push(l); });
+  return Object.keys(by).map(Number).sort((a, b) => a - b).map(p => {
+    const ls = by[p];
+    const t = Math.max.apply(null, ls.map(l => l.y + (l.s || 9) * 1.05)) + 8;
+    const b = Math.min.apply(null, ls.map(l => l.y - (l.s || 9) * 0.3)) - 8;
+    return { p, t: +t.toFixed(1), b: +b.toFixed(1) };
+  });
 }
 function filoQA(lines) {
   const out = []; let cur = null; let ans = [];
@@ -309,40 +327,50 @@ export function parseCpp(pages) {
   for (let i = 0; i < L.length; i++) {
     const l = L[i];
     if (near(l.s, 20, 0.5) && l.bold0 && /^(Лекция|Приложения)/.test(l.text)) {
-      const parts = [l.text]; while (L[i + 1] && near(L[i + 1].s, 20, 0.5)) parts.push(L[++i].text);
+      const hdr = [l];
+      const parts = [l.text]; while (L[i + 1] && near(L[i + 1].s, 20, 0.5)) { hdr.push(L[i + 1]); parts.push(L[++i].text); }
       const t = parts.join(' ');
       const m = t.match(/^Лекция ([\dА-Я]+)\.\s*(.*)$/);
-      lec = { id: m ? 'l' + m[1] : 'app', n: m ? m[1] : 'П', title: m ? m[2] : t.replace(/^Приложения\.\s*/, ''), label: m ? 'Лекция ' + m[1] : 'Приложения', sections: [] };
-      doc.lectures.push(lec); cur = { kind: 'text', id: '', title: '', lines: [] }; lec._chunks = [cur]; continue;
+      lec = { id: m ? 'l' + m[1] : 'app', n: m ? m[1] : 'П', title: m ? m[2] : t.replace(/^Приложения\.\s*/, ''), label: m ? 'Лекция ' + m[1] : 'Приложения', sections: [], _hdr: hdr };
+      doc.lectures.push(lec); cur = { kind: 'text', id: '', title: '', lines: [], head: [] }; lec._chunks = [cur]; continue;
     }
     if (lec && near(l.s, 13.2, 0.3) && l.bold0) {
       const m = l.text.match(/^([\dА-Я]+\.\d+)\s+(.*)$/) || [null, '', l.text];
-      let t = m[2];
+      let t = m[2]; const head = [l];
       // заголовок раздела в две строки
-      while (L[i + 1] && near(L[i + 1].s, 13.2, 0.3) && L[i + 1].gap < 22 && !/^[\dА-Я]+\.\d+\s/.test(L[i + 1].text)) t += ' ' + L[++i].text;
+      while (L[i + 1] && near(L[i + 1].s, 13.2, 0.3) && L[i + 1].gap < 22 && !/^[\dА-Я]+\.\d+\s/.test(L[i + 1].text)) { head.push(L[i + 1]); t += ' ' + L[++i].text; }
       const kind = /^Задачи/.test(t) ? 'tasks' : /^Тест по теме/.test(t) ? 'test' : /^Контрольные вопросы/.test(t) ? 'control' : /Итоговый тест|^Тест/.test(t) ? 'test' : 'text';
-      cur = { kind, id: m[1], title: t, lines: [] }; lec._chunks.push(cur); continue;
+      cur = { kind, id: m[1], title: t, lines: [], head }; lec._chunks.push(cur); continue;
     }
     if (!lec) { intro.push(l); continue; }
     cur.lines.push(l);
   }
   const cfg = cppCfg();
   for (const lec2 of doc.lectures) {
+    let hdrUsed = false;
+    const pdfOf = lines => { const r = regionsOf([].concat(hdrUsed ? [] : lec2._hdr, lines)); return r; };
     for (const ch of lec2._chunks) {
       if (!ch.lines.length && !ch.title) continue;
       let sec = { kind: ch.kind, id: ch.id, title: ch.title };
-      if (ch.kind === 'tasks') sec.blocks = cppTasks(ch.lines, cfg);
+      if (ch.kind === 'tasks') {
+        sec.blocks = cppTasks(ch.lines, cfg);
+        // задачи без решений (только условия) показываем как обычный текст PDF
+        if (!sec.blocks.some(b => b.t === 'qa')) sec.pdf = pdfOf((ch.head || []).concat(ch.lines));
+      }
       else if (ch.kind === 'test') sec.blocks = cppTest(ch.lines);
       else if (ch.kind === 'control') { sec.kind = 'qa'; sec.control = true; sec.blocks = cppControl(ch.lines); }
       else {
         // внутри приложения тоже может быть «Тест по теме — лекция П»
         const k = ch.lines.findIndex(l => near(l.s, 10.6, 0.3) && /^Тест по теме/.test(l.text));
-        if (k >= 0) { sec.blocks = proseBlocks(ch.lines.slice(0, k), cfg); lec2.sections.push(sec); sec = { kind: 'test', id: ch.id + 't', title: ch.lines[k].text, blocks: cppTest(ch.lines.slice(k)) }; }
-        else sec.blocks = proseBlocks(ch.lines, cfg);
+        const textLines = k >= 0 ? ch.lines.slice(0, k) : ch.lines;
+        sec.blocks = proseBlocks(textLines, cfg);
+        sec.pdf = pdfOf((ch.head || []).concat(textLines));
+        if (!hdrUsed) { sec.withHeader = true; hdrUsed = true; }
+        if (k >= 0) { lec2.sections.push(sec); sec = { kind: 'test', id: ch.id + 't', title: ch.lines[k].text, blocks: cppTest(ch.lines.slice(k)) }; }
       }
       lec2.sections.push(sec);
     }
-    delete lec2._chunks;
+    delete lec2._chunks; delete lec2._hdr;
   }
   doc.intro = proseBlocks(intro, cfg);
   return doc;

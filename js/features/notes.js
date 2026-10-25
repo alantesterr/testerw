@@ -22,6 +22,95 @@
     if (docs[meta.id]) return Promise.resolve(docs[meta.id]);
     return getJson(dir() + 'notes/' + meta.file).then(function (d) { docs[meta.id] = d; return d; });
   }
+  /* ---------- Вид «Как в PDF»: куски настоящих страниц PDF ---------- */
+  var PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/';
+  var pdfLib = null, pdfDocs = {}, pdfObsNear = null, pdfObsFar = null, pdfWidth = 0, pdfResizeT = 0;
+  var MODE_KEY = 'sp-notes-mode';
+  function isPhone() { return window.matchMedia('(max-width: 767px)').matches; }
+  function mode() { var m = SP.store.get(MODE_KEY, null); return m === 'pdf' || m === 'text' ? m : (isPhone() ? 'text' : 'pdf'); }
+  function loadPdfLib() {
+    if (pdfLib) return pdfLib;
+    pdfLib = import(PDFJS + 'pdf.min.mjs').then(function (lib) {
+      try { // воркер с другого сайта запускаем через «обёртку», иначе браузер его не пустит
+        var blob = new Blob(['import "' + PDFJS + 'pdf.worker.min.mjs";'], { type: 'text/javascript' });
+        lib.GlobalWorkerOptions.workerPort = new Worker(URL.createObjectURL(blob), { type: 'module' });
+      } catch (e) { lib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.mjs'; }
+      return lib;
+    });
+    pdfLib.catch(function () { pdfLib = null; });
+    return pdfLib;
+  }
+  function pdfDoc(url) {
+    if (!pdfDocs[url]) pdfDocs[url] = loadPdfLib().then(function (lib) { return lib.getDocument({ url: url }).promise; });
+    pdfDocs[url].catch(function () { delete pdfDocs[url]; });
+    return pdfDocs[url];
+  }
+  function pdfRegionsHtml(regs, d) {
+    var W = (d.page && d.page.w) || 595.3;
+    return '<div class="nt-pdf">' + regs.map(function (r) {
+      return '<div class="nt-pg" data-p="' + r.p + '" data-t="' + r.t + '" data-b="' + r.b + '" style="aspect-ratio:' + W + ' / ' + Math.max(1, r.t - r.b).toFixed(1) + '"></div>';
+    }).join('') + '</div>';
+  }
+  function unloadPg(el) { el.innerHTML = ''; el.removeAttribute('data-done'); }
+  function renderPg(el, url) {
+    if (el.getAttribute('data-done') || el.getAttribute('data-busy')) return;
+    el.setAttribute('data-busy', '1');
+    var p = +el.getAttribute('data-p'), t = +el.getAttribute('data-t'), b = +el.getAttribute('data-b');
+    Promise.all([loadPdfLib(), pdfDoc(url)]).then(function (r) {
+      var lib = r[0];
+      return r[1].getPage(p).then(function (page) {
+        var w = el.clientWidth || 600, W = page.view[2], H = page.view[3];
+        var css = w / W, dpr = Math.min(window.devicePixelRatio || 1, 2), sc = css * dpr;
+        var vp = page.getViewport({ scale: sc, offsetY: -(H - t) * sc });
+        var c = document.createElement('canvas');
+        c.width = Math.round(W * sc); c.height = Math.round((t - b) * sc);
+        el.innerHTML = ''; el.appendChild(c);
+        return page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function () {
+          // невидимый текст поверх картинки: можно выделять, копировать и искать (Ctrl+F)
+          var tl = document.createElement('div'); tl.className = 'textLayer';
+          tl.style.setProperty('--scale-factor', css); tl.style.top = (-(H - t) * css) + 'px';
+          el.appendChild(tl);
+          return page.getTextContent().then(function (tc) {
+            try { lib.renderTextLayer({ textContentSource: tc, container: tl, viewport: page.getViewport({ scale: css }) }); } catch (e) { /* без слоя текста */ }
+          });
+        });
+      });
+    }).then(function () { el.setAttribute('data-done', '1'); el.removeAttribute('data-busy'); }, function () {
+      el.removeAttribute('data-busy');
+      el.innerHTML = '<p class="small muted nt-pg-err">' + esc(SP.t('notes.pdfError')) + '</p>';
+    });
+  }
+  function wirePdf(url) {
+    if (pdfObsNear) pdfObsNear.disconnect(); if (pdfObsFar) pdfObsFar.disconnect();
+    var pgs = SP.$$('.nt-pg', root); if (!pgs.length) return;
+    pdfWidth = pgs[0].clientWidth;
+    pdfObsNear = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) renderPg(e.target, url); }); }, { rootMargin: '1200px 0px' });
+    pdfObsFar = new IntersectionObserver(function (es) { es.forEach(function (e) { if (!e.isIntersecting && e.target.getAttribute('data-done')) unloadPg(e.target); }); }, { rootMargin: '4000px 0px' });
+    pgs.forEach(function (el) { pdfObsNear.observe(el); pdfObsFar.observe(el); });
+    kickPdf();
+  }
+  /* запасной путь: рисуем страницы рядом с экраном и при прокрутке (если наблюдатель видимости запаздывает) */
+  function kickPdf() {
+    if (!root || !root.isConnected) return;
+    var nt = SP.$('.nt.is-pdfmode', root); if (!nt) return;
+    var url = nt.getAttribute('data-pdf'), h = window.innerHeight;
+    SP.$$('.nt-pg:not([data-done]):not([data-busy])', root).forEach(function (el) {
+      var r = el.getBoundingClientRect(); if (r.bottom > -1200 && r.top < h + 1200) renderPg(el, url);
+    });
+  }
+  var kickT = 0;
+  window.addEventListener('scroll', function () { if (kickT) return; kickT = setTimeout(function () { kickT = 0; kickPdf(); }, 250); }, { passive: true });
+  window.addEventListener('resize', function () {
+    clearTimeout(pdfResizeT);
+    pdfResizeT = setTimeout(function () {
+      var pgs = root ? SP.$$('.nt-pg', root) : []; if (!pgs.length) return;
+      var w = pgs[0].clientWidth; if (Math.abs(w - pdfWidth) < 40) return;
+      pdfWidth = w; var url = pgs[0].closest('.nt').getAttribute('data-pdf');
+      pgs.forEach(function (el) { if (el.getAttribute('data-done')) unloadPg(el); });
+      wirePdf(url);
+    }, 300);
+  });
+
   var posKey = function (id) { return 'sp-notes-pos:' + (window.SP_GROUP_DIR || '') + ':' + id; };
   var bestKey = function (id) { return 'sp-notes-best:' + (window.SP_GROUP_DIR || '') + ':' + id; };
 
@@ -79,13 +168,20 @@
   function qaHtml(b, ctx) {
     var id = 'nta-' + (ctx.n++);
     var task = !!b.task, refs = (b.refs || []).filter(Boolean);
-    var q = task ? '<div class="nt-q"><span class="nt-qn">' + esc(SP.t('notes.task', { n: b.num })) + '</span><b>' + esc(b.title) + '</b></div>' + blocksHtml(b.q, ctx)
+    var q = task ? '<div class="nt-q"><span class="nt-qn">' + esc(SP.t('notes.task', { n: b.num })) + '</span><b>' + esc(b.title) + '</b></div>' + blocksHtml(b.q, ctx) + plainHtml(b)
       : '<div class="nt-q">' + (b.num ? '<span class="nt-qn">' + esc(b.num) + '</span>' : '') + '<span>' + b.q + '</span></div>';
     var refHtml = refs.length ? '<div class="nt-refs">' + refs.map(function (r) { return '<button type="button" class="chip" data-ref="' + esc(r) + '">' + SP.icon('arrow-up', 'ic-sm') + '<span>' + esc(SP.t('notes.toRef', { r: r })) + '</span></button>'; }).join('') + '</div>' : '';
     var hasA = b.a && b.a.length;
     return '<div class="nt-qa' + (task ? ' is-task' : '') + (ctx.blitz ? ' is-blitz' : '') + '">' + q + refHtml +
       (hasA ? '<button type="button" class="btn btn-sm nt-reveal" aria-expanded="false" aria-controls="' + id + '" data-task="' + (task ? 1 : 0) + '">' + SP.icon('eye', 'ic-sm') + '<span>' + esc(SP.t(task ? 'notes.showSol' : 'notes.show')) + '</span></button>' +
         '<div class="nt-a" id="' + id + '" hidden>' + blocksHtml(b.a, ctx) + (b.own ? '<p class="xsmall subtle nt-own">' + SP.icon('info', 'ic-sm') + esc(SP.t('notes.ownAnswer')) + '</p>' : '') + '</div>' : '') + '</div>';
+  }
+  /* «Простыми словами» к задаче + пример работы программы (из решения в PDF; сам код не показываем) */
+  function plainHtml(b) {
+    if (!b.plain) return '';
+    var ex = (b.a || []).filter(function (x) { return x.t === 'out'; })[0];
+    return '<div class="nt-plain">' + SP.icon('circle-help', 'ic-sm') + '<div><div class="nt-plain-t">' + esc(SP.t('notes.plain')) + '</div><div class="nt-plain-b">' + b.plain + '</div>' +
+      (ex ? '<div class="nt-plain-ex"><div class="nt-plain-t">' + esc(SP.t('notes.plainEx')) + '</div><pre>' + esc(ex.text) + '</pre></div>' : '') + '</div></div>';
   }
   function quizCard(b, ctx) {
     var key = ctx.lec.id + ':' + ctx.sec;
@@ -105,8 +201,11 @@
   /* ---------- Режим чтения ---------- */
   function renderDoc(meta, d) {
     var ctx = { n: 0, quizzes: {} }, toc = [], refMap = {};
+    var asPdf = mode() === 'pdf' && !!meta.pdf && !!d.page;
     var body = '';
-    if ((d.intro || []).length) {
+    if (asPdf && (d.introPdf || []).length) {
+      body += '<section class="nt-intro nt-intro-pdf" id="nt-intro">' + pdfRegionsHtml(d.introPdf, d) + '</section>';
+    } else if ((d.intro || []).length) {
       body += '<section class="card nt-intro" id="nt-intro"><h2 class="nt-intro-t">' + esc(d.title || meta.title) + '</h2>' + (d.sub ? '<p class="muted small">' + esc(d.sub) + '</p>' : '') +
         blocksHtml(d.intro.filter(function (b) { return !(b.t === 'p' && /^(Философия: подготовка|Подготовка к РК1|Программирование I)/.test((b.html || '').replace(/<[^>]+>/g, ''))); }), ctx) + '</section>';
     }
@@ -114,18 +213,21 @@
       var lid = 'nt-' + li;
       refMap[lec.n] = lid;
       var items = [];
-      body += '<section class="nt-lec" id="' + lid + '" data-label="' + esc(lec.label) + '"><h2 class="nt-lec-t"><span class="nt-lec-n">' + esc(lec.label) + '</span>' + esc(lec.title) + '</h2>';
-      if (lec.source) body += noteHtml('Источник', lec.source);
+      var pdfHead = asPdf && lec.sections.some(function (s) { return s.withHeader && s.pdf && s.pdf.length; });
+      /* в виде PDF заголовок лекции и «Источник» уже есть на картинке — свои прячем (для чтения с экрана оставляем) */
+      body += '<section class="nt-lec' + (pdfHead ? ' is-pdfhead' : '') + '" id="' + lid + '" data-label="' + esc(lec.label) + '"><h2 class="nt-lec-t"><span class="nt-lec-n">' + esc(lec.label) + '</span>' + esc(lec.title) + '</h2>';
+      if (lec.source) body += '<div class="nt-src">' + noteHtml('Источник', lec.source) + '</div>';
       lec.sections.forEach(function (s, si) {
         var sid = lid + '-' + si;
         if (s.id) refMap[s.id] = sid;
         ctx.lec = lec; ctx.sec = si; ctx.blitz = !!s.blitz;
         var isQ = s.kind === 'qa' || s.kind === 'tasks';
+        var pdfSec = asPdf && s.pdf && s.pdf.length;
         var title = s.title ? (s.id ? '<span class="nt-sec-id">' + esc(s.id) + '</span>' : '') + esc(s.title) : '';
         var nQa = (s.blocks || []).filter(function (b) { return b.t === 'qa' && b.a && b.a.length; }).length;
-        body += '<section class="nt-sec nk-' + s.kind + '" id="' + sid + '" data-label="' + esc(lec.label + (s.title ? ' · ' + (s.id ? s.id + ' ' : '') + s.title : '')) + '">' +
+        body += '<section class="nt-sec nk-' + s.kind + (pdfSec ? ' is-pdf' : '') + '" id="' + sid + '" data-label="' + esc(lec.label + (s.title ? ' · ' + (s.id ? s.id + ' ' : '') + s.title : '')) + '">' +
           (title ? '<div class="nt-sec-head"><h3 class="nt-sec-t">' + title + '</h3>' + (isQ && nQa > 1 ? '<button type="button" class="btn btn-ghost btn-sm" data-allans="' + sid + '" aria-pressed="false">' + SP.icon('eye', 'ic-sm') + '<span>' + esc(SP.t('notes.showAll')) + '</span></button>' : '') + '</div>' : '') +
-          blocksHtml(s.blocks, ctx) + '</section>';
+          (pdfSec ? pdfRegionsHtml(s.pdf, d) : blocksHtml(s.blocks, ctx)) + '</section>';
         if (s.title) items.push({ id: sid, label: (s.id ? s.id + ' ' : '') + s.title, kind: s.kind });
       });
       body += '</section>';
@@ -137,14 +239,28 @@
       }).join('') + '</ol></li>';
     }).join('') + '</ol>';
     var focus = document.documentElement.classList.contains('nt-focus');
-    root.innerHTML = '<div class="nt">' +
+    var canPdf = !!meta.pdf && !!d.page;
+    root.innerHTML = '<div class="nt' + (asPdf ? ' is-pdfmode' : '') + '" data-pdf="' + esc(meta.pdf ? encodeURI(meta.pdf) : '') + '">' +
       '<header class="nt-bar"><a class="btn btn-ghost btn-sm nt-back" href="#/notes">' + SP.icon('chevron-left') + '<span>' + esc(SP.t('nav.notes')) + '</span></a>' +
       '<b class="nt-bar-t">' + esc(meta.short || meta.subject) + '</b>' +
+      (canPdf ? '<div class="segmented nt-mode" role="group" aria-label="' + esc(SP.t('notes.view')) + '">' +
+        [['pdf', 'file-text'], ['text', 'type']].map(function (m) { return '<button type="button" data-ntmode="' + m[0] + '" aria-pressed="' + (mode() === m[0]) + '" data-tip="' + esc(SP.t('notes.view.' + m[0])) + '">' + SP.icon(m[1], 'ic-sm') + '<span>' + esc(SP.t('notes.view.' + m[0])) + '</span></button>'; }).join('') + '</div>' : '') +
       '<div class="nt-bar-a"><button type="button" class="btn btn-ghost btn-sm nt-toc-btn" id="ntToc">' + SP.icon('list') + '<span>' + esc(SP.t('notes.toc')) + '</span></button>' +
       (meta.pdf ? '<a class="btn btn-ghost btn-sm" href="' + esc(encodeURI(meta.pdf)) + '" target="_blank" rel="noopener">' + SP.icon('file-text') + '<span>' + esc(SP.t('notes.pdf')) + '</span></a>' : '') +
       '<button type="button" class="btn btn-sm" id="ntFocus" aria-pressed="' + focus + '">' + SP.icon(focus ? 'minimize' : 'maximize') + '<span>' + esc(SP.t(focus ? 'notes.focusExit' : 'notes.focus')) + '</span></button></div></header>' +
       '<div class="nt-layout"><nav class="nt-toc" aria-label="' + esc(SP.t('notes.toc')) + '">' + tocHtml + '</nav><article class="nt-doc">' + body + '</article></div></div>';
     wireDoc(meta, ctx, refMap, tocHtml);
+    if (asPdf) wirePdf(encodeURI(meta.pdf));
+    SP.$$('[data-ntmode]', root).forEach(function (bt) {
+      bt.onclick = function () {
+        var m = bt.getAttribute('data-ntmode'); if (m === mode()) return;
+        var pos = SP.store.get(posKey(meta.id), null);
+        SP.store.set(MODE_KEY, m); stopQuiz();
+        renderDoc(meta, d);
+        if (pos && pos.id && document.getElementById(pos.id)) scrollToId(pos.id, false);
+        var nb = SP.$('[data-ntmode="' + m + '"]', root); if (nb) nb.focus();
+      };
+    });
   }
 
   function scrollToId(id, smooth) {

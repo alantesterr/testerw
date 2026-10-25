@@ -432,3 +432,8 @@ Object.assign(SP.I18N.kk, {
   'notes.test': 'тест', 'notes.testTitle': 'Тест: {l}', 'notes.testN': '{n} сұрақ', 'notes.testStart': 'Тестті бастау', 'notes.testAgain': 'Қайта тапсыру', 'notes.best': 'ең жақсы нәтиже {p}%',
   'notes.sec.text': 'Конспект'
 });
+Object.assign(SP.I18N.kk, {
+  'notes.view': 'Конспект көрінісі', 'notes.view.pdf': 'PDF сияқты', 'notes.view.text': 'Мәтінмен',
+  'notes.pdfError': 'PDF бетін көрсету мүмкін болмады. Интернетті тексеріңіз немесе «Мәтінмен» режиміне ауысыңыз.',
+  'notes.plain': 'Қарапайым тілмен: не істеу керек', 'notes.plainEx': 'Мысал: не шығуы керек'
+});

@@ -865,3 +865,8 @@ Object.assign(SP.I18N.ru, {
   'notes.test': 'тест', 'notes.testTitle': 'Тест: {l}', 'notes.testN': '{n} вопросов', 'notes.testStart': 'Начать тест', 'notes.testAgain': 'Пройти ещё раз', 'notes.best': 'лучший результат {p}%',
   'notes.sec.text': 'Конспект'
 });
+Object.assign(SP.I18N.ru, {
+  'notes.view': 'Вид конспекта', 'notes.view.pdf': 'Как в PDF', 'notes.view.text': 'Текстом',
+  'notes.pdfError': 'Не удалось показать страницу PDF. Проверьте интернет или переключитесь на «Текстом».',
+  'notes.plain': 'Простыми словами: что нужно сделать', 'notes.plainEx': 'Пример: что должно получиться'
+});

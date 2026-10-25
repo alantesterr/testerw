@@ -482,3 +482,34 @@ html[data-sch-shk="xs"] { --sch-k-shk: 0.77; }
 code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
 .nt-quiz { scroll-margin-top: calc(var(--nt-bar) + var(--sp-3)); }
 @media (max-width: 767px) { .nt-quiz { scroll-margin-top: calc(3.5rem + var(--nt-bar) + var(--sp-3)); } :root.nt-focus .nt-quiz { scroll-margin-top: calc(var(--nt-bar) + var(--sp-3)); } }@media (max-width: 420px) { .bn-item { font-size: 0.625rem; letter-spacing: -0.01em; } .bn-item .bn-pill { height: 1.75rem; } }
+/* ---------- Конспекты: вид «Как в PDF» ---------- */
+.nt.is-pdfmode .nt-doc { max-width: 56rem; }
+.nt-pdf { display: flex; flex-direction: column; gap: var(--sp-2); }
+.nt-pg { position: relative; width: 100%; overflow: hidden; background: #fff; border-radius: var(--r-sm); box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
+.nt-pg canvas { display: block; width: 100%; height: 100%; }
+.nt-pg:not([data-done]) { background: #fff; }
+.nt-pg-err { padding: var(--sp-4); color: #555; }
+.nt-sec.is-pdf { margin: var(--sp-3) 0; }
+.nt-sec.is-pdf > .nt-sec-head { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.nt-lec.is-pdfhead > .nt-lec-t, .nt-lec.is-pdfhead > .nt-src { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.nt-intro-pdf { margin-bottom: var(--sp-6); }
+/* невидимый слой текста поверх картинки (выделение, копирование, поиск) */
+.nt-pg .textLayer { position: absolute; left: 0; text-align: initial; overflow: visible; line-height: 1; text-size-adjust: none; -webkit-text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; z-index: 1; }
+.nt-pg .textLayer span, .nt-pg .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; }
+.nt-pg .textLayer span.markedContent { top: 0; height: 0; }
+.nt-pg .textLayer ::selection { background: rgba(37, 99, 235, 0.3); }
+.nt-mode { flex: none; }
+.nt-mode button { display: inline-flex; align-items: center; gap: 4px; }
+
+/* «Простыми словами» к задаче */
+.nt-plain { display: flex; gap: var(--sp-3); margin: var(--sp-2) 0 var(--sp-3); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--info-soft); border-left: 4px solid var(--info); font-size: var(--fs-sm); line-height: 1.55; }
+.nt-plain > .ic { flex: none; margin-top: 3px; color: var(--info-text); }
+.nt-plain-t { font-weight: var(--fw-semibold); color: var(--info-text); margin-bottom: 2px; }
+.nt-plain-ex { margin-top: var(--sp-2); }
+.nt-plain-ex pre { margin: 4px 0 0; padding: var(--sp-2) var(--sp-3); border-radius: var(--r-sm); background: #0f1218; color: #d7dde8; font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 1.5; overflow-x: auto; white-space: pre; }
+@media (max-width: 767px) {
+  .nt-mode button span { display: none; }
+  .nt-mode button { padding-inline: var(--sp-2); }
+  .nt-bar { gap: var(--sp-1); }
+  .nt-back span { display: none; }
+}

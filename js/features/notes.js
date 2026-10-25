@@ -271,7 +271,7 @@
         var title = s.title ? (s.id ? '<span class="nt-sec-id">' + esc(s.id) + '</span>' : '') + esc(s.title) : '';
         var nQa = (s.blocks || []).filter(function (b) { return b.t === 'qa' && b.a && b.a.length; }).length;
         var car = isQ && !pdfSec && nQa > 1, one = car; // вопросы и задачи всегда «по одному» (листать ← →)
-        body += '<section class="nt-sec nk-' + s.kind + (pdfSec ? ' is-pdf' : '') + (car ? ' has-car' : '') + (one ? ' is-one' : '') + '" id="' + sid + '" data-label="' + esc(lec.label + (s.title ? ' · ' + (s.id ? s.id + ' ' : '') + s.title : '')) + '">' +
+        body += '<section class="nt-sec nk-' + s.kind + (pdfSec ? ' is-pdf' : '') + (car ? ' has-car' : '') + (one ? ' is-one' : '') + '" id="' + sid + '" data-label="' + esc(s.title && s.title.indexOf(lec.label) === 0 ? s.title : lec.label + (s.title ? ' · ' + (s.id ? s.id + ' ' : '') + s.title : '')) + '">' +
           (title ? '<div class="nt-sec-head"><h3 class="nt-sec-t">' + title + '</h3><div class="nt-sec-tools">' +
             (isQ && nQa > 1 && !car ? '<button type="button" class="btn btn-ghost btn-sm" data-allans="' + sid + '" aria-pressed="false">' + SP.icon('eye', 'ic-sm') + '<span>' + esc(SP.t('notes.showAll')) + '</span></button>' : '') + '</div></div>' : '') +
           (pdfSec ? pdfRegionsHtml(s.pdf, d) : blocksHtml(s.blocks, ctx)) +

@@ -25,6 +25,24 @@ export async function build() {
   // Философия 2.0 и архитектура
   const f2 = await (await fetch('/out/filo2.raw.json')).json(); const d2 = P.parseFilo2(f2); d2.page = { w: f2[0].w, h: f2[0].h };
   const ar = await (await fetch('/out/arch.raw.json')).json(); const da = P.parseArch(ar); da.page = { w: ar[0].w, h: ar[0].h };
+  // задачи тренировки — под своими темами (в конце каждой темы), а не все в «Теме 9»
+  const t9 = da.lectures.find(l => l.n === '9');
+  if (t9) {
+    const themeOf = (letter, num) => ({ A: '1', B: '1', C: '2', D: '3', E: '4', F: '5' })[letter] || (+num <= 48 ? '6' : '7');
+    t9.sections.filter(s => s.kind === 'tasks').forEach(s => {
+      const m = s.title.match(/·\s*([A-G])\.\s*(.*)$/), letter = m ? m[1] : 'G', name = m ? m[2] : s.title;
+      const parts = {};
+      s.blocks.forEach(b => { const n = themeOf(letter, b.num); (parts[n] = parts[n] || []).push(b); });
+      Object.keys(parts).forEach(n => {
+        const lec = da.lectures.find(l => l.n === n); if (!lec) return;
+        const nm = letter === 'G' ? (n === '6' ? 'Триггеры' : 'Счётчики') : name;
+        let sec = lec.sections.find(x => x.kind === 'tasks' && x.title === lec.label + ' · Задачи: ' + nm);
+        if (!sec) { sec = { kind: 'tasks', id: '', title: lec.label + ' · Задачи: ' + nm, blocks: [] }; lec.sections.push(sec); }
+        sec.blocks = sec.blocks.concat(parts[n]);
+      });
+    });
+    da.lectures = da.lectures.filter(l => l !== t9);
+  }
   await fetch('/save/filo2.final.json', { method: 'POST', body: JSON.stringify(d2) });
   await fetch('/save/arch.final.json', { method: 'POST', body: JSON.stringify(da) });
   await fetch('/save/cpp.final.json', { method: 'POST', body: JSON.stringify(dc) });

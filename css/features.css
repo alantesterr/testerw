@@ -632,3 +632,5 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
   .nt.is-pdfmode .nt-layout { padding-inline: 0; }
   .nt-paper .nt-sec.has-car { padding-inline: 2cqw; }
 }
+.nt-jump { --btn-bg: var(--accent-soft); --btn-fg: var(--accent-text); --btn-border: transparent; }
+@media (max-width: 767px) { .nt-jump span { display: none; } }

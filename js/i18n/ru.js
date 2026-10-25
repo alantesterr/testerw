@@ -872,3 +872,4 @@ Object.assign(SP.I18N.ru, {
 });
 Object.assign(SP.I18N.ru, { 'notes.qstyle': 'Оформление теста', 'notes.qstyle.paper': 'Белое, как PDF', 'notes.qstyle.site': 'Как на сайте' });
 Object.assign(SP.I18N.ru, { 'notes.qview': 'Как показывать вопросы', 'notes.qview.list': 'Списком', 'notes.qview.one': 'По одному', 'notes.carN': '{i} из {n}', 'notes.tocHide': 'Скрыть оглавление', 'notes.tocShow': 'Показать оглавление', 'notes.plainEx': 'Твоя программа должна работать так' });
+Object.assign(SP.I18N.ru, { 'notes.jump': 'К заданиям', 'notes.jumpTip': 'Перейти к следующим вопросам, задачам или тесту ниже' });

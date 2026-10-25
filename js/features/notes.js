@@ -194,10 +194,9 @@
   }
   /* «Простыми словами» к задаче + пример работы программы (из решения в PDF; сам код не показываем) */
   function plainHtml(b) {
-    if (!b.plain) return '';
-    /* пояснение — просто продолжение условия обычным текстом; ниже пример, как должна работать программа */
     var ex = (b.a || []).filter(function (x) { return x.t === 'out'; })[0];
-    return '<p class="nt-p nt-task-more">' + b.plain + '</p>' + (ex ? blockHtml({ t: 'out', cap: SP.t('notes.plainEx'), text: ex.text }, {}) : '');
+    /* пояснение словами не показываем (слишком подсказывает решение) — только пример работы программы */
+    return ex ? blockHtml({ t: 'out', cap: SP.t('notes.plainEx'), text: ex.text }, {}) : '';
   }
   /* Вопросы и задачи показываются «по одному»: одна карточка, листать кнопками, ← → или свайпом */
   function carItems(sec) { return SP.$$(':scope > .nt-qa', sec); }
@@ -283,7 +282,8 @@
       '<b class="nt-bar-t">' + esc(meta.short || meta.subject) + '</b>' +
       (canPdf ? '<div class="segmented nt-mode" role="group" aria-label="' + esc(SP.t('notes.view')) + '">' +
         [['pdf', 'file-text'], ['text', 'type']].map(function (m) { return '<button type="button" data-ntmode="' + m[0] + '" aria-pressed="' + (mode() === m[0]) + '" data-tip="' + esc(SP.t('notes.view.' + m[0])) + '">' + SP.icon(m[1], 'ic-sm') + '<span>' + esc(SP.t('notes.view.' + m[0])) + '</span></button>'; }).join('') + '</div>' : '') +
-      '<div class="nt-bar-a"><button type="button" class="btn btn-ghost btn-sm nt-toc-btn" id="ntToc">' + SP.icon('list') + '<span>' + esc(SP.t('notes.toc')) + '</span></button>' +
+      '<div class="nt-bar-a"><button type="button" class="btn btn-sm nt-jump" id="ntJump" data-tip="' + esc(SP.t('notes.jumpTip')) + '">' + SP.icon('arrow-down') + '<span>' + esc(SP.t('notes.jump')) + '</span></button>' +
+      '<button type="button" class="btn btn-ghost btn-sm nt-toc-btn" id="ntToc">' + SP.icon('list') + '<span>' + esc(SP.t('notes.toc')) + '</span></button>' +
       (meta.pdf ? '<a class="btn btn-ghost btn-sm" href="' + esc(encodeURI(meta.pdf)) + '" target="_blank" rel="noopener">' + SP.icon('file-text') + '<span>' + esc(SP.t('notes.pdf')) + '</span></a>' : '') +
       '<button type="button" class="btn btn-sm" id="ntFocus" aria-pressed="' + focus + '">' + SP.icon(focus ? 'minimize' : 'maximize') + '<span>' + esc(SP.t(focus ? 'notes.focusExit' : 'notes.focus')) + '</span></button></div></header>' +
       '<div class="nt-layout"><nav class="nt-toc" aria-label="' + esc(SP.t('notes.toc')) + '">' + tocHtml + '</nav><article class="nt-doc' + (asPdf ? ' nt-paper theme-paper subj-' + esc(meta.id) : '') + '">' + body + '</article></div></div>';
@@ -373,6 +373,15 @@
         if (Math.abs(dx) > 60 && Math.abs(dy) < 50) carGo(sec, dx < 0 ? 1 : -1);
       }, { passive: true });
     });
+    /* «К заданиям»: каждое нажатие — к следующему ниже разделу с вопросами, задачами или тестом */
+    $('#ntJump').onclick = function () {
+      var bar = SP.$('.nt-bar', root).getBoundingClientRect().bottom + 12;
+      var secs = SP.$$('.nt-sec.nk-qa, .nt-sec.nk-tasks:not(.is-pdf), .nt-sec.nk-test', root);
+      if (!secs.length) return;
+      var next = secs.filter(function (s) { return s.getBoundingClientRect().top > bar + 4; })[0] || secs[0];
+      scrollToId(next.id, false);
+      SP.toast(next.getAttribute('data-label') || '', 'info');
+    };
     /* оглавление: на ПК кнопка прячет/показывает левую колонку, на узком экране — открывает окно */
     var tocOff = !!SP.store.get('sp-notes-toc-off', false), ntEl = SP.$('.nt', root);
     var wide = function () { return window.matchMedia('(min-width: 1100px)').matches; };

@@ -129,7 +129,7 @@
 
   .bottom-nav {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-header);
-    display: grid; grid-template-columns: repeat(5, 1fr);
+    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
     padding: var(--sp-1) var(--sp-1) calc(var(--sp-1) + env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--surface) 95%, transparent); backdrop-filter: blur(10px);
     border-top: 1px solid var(--border);
@@ -141,7 +141,7 @@
     -webkit-tap-highlight-color: transparent; line-height: 1.15; text-align: center;
   }
   .bn-item .ic { width: 1.4rem; height: 1.4rem; }
-  .bn-item .bn-pill { display: grid; place-items: center; width: 3.5rem; height: 1.9rem; border-radius: var(--r-full); transition: background-color var(--dur) var(--ease); }
+  .bn-item .bn-pill { display: grid; place-items: center; width: min(3.5rem, 100%); height: 1.9rem; border-radius: var(--r-full); transition: background-color var(--dur) var(--ease); }
   .bn-item:active .bn-pill { background: var(--press); }
   .bn-item:focus-visible { box-shadow: var(--focus-ring); }
   .bn-item[aria-current="page"] { color: var(--accent-text); }

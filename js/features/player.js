@@ -434,7 +434,7 @@
     if (b.qi >= b.ids.length) { renderResult(finalizeBatch()); return; }
     var q = curQ();
     if (!q) { b.qi++; savePq(); renderQ(); return; }
-    var kb = E.isKb(q), multi = !kb && q.n > 1, k = b.qi, Tt = trOnP[k] && trc[k];
+    var kb = E.isKb(q), multi = !kb && q.n > 1, k = b.qi, tk = 'q' + b.ids[b.qi], Tt = trOnP[tk] && trc[tk]; /* перевод хранится по самому вопросу, а не по его месту в волне */
     qsel = new Set(); qAnswered = null;
     var note = pq.done === 0 ? T('player.noteFirst', { t: fmt(savedPos) }) : T('player.noteNext', { t: fmt(savedPos) });
     shell('<p class="xsmall muted">' + esc(note) + '</p>' +
@@ -451,12 +451,12 @@
     $('pqSuper').onclick = function () { E.google(E.aiPrompt(q)); };
     $('pqAi').onclick = function () { E.google(E.aiPrompt(q), true); };
     $('pqTr').onclick = function () {
-      var btn = this; if (trOnP[k]) { trOnP[k] = false; return renderQ(); } if (trc[k]) { trOnP[k] = true; return renderQ(); }
+      var btn = this; if (trOnP[tk]) { trOnP[tk] = false; return renderQ(); } if (trc[tk]) { trOnP[tk] = true; return renderQ(); }
       var tl = SP.settings.get('trLang') || 'ru'; SP.busy(btn, true);
-      E.translateQ(q, tl).then(function (r) { trc[k] = r; trOnP[k] = true; }, function () { E.translateFallback(q, tl); }).then(function () { if (quizOpen && pq.batch && pq.batch.qi === k && !qAnswered) renderQ(); else SP.busy(btn, false); });
+      E.translateQ(q, tl).then(function (r) { trc[tk] = r; trOnP[tk] = true; }, function () { E.translateFallback(q, tl); }).then(function () { if (quizOpen && pq.batch && pq.batch.qi === k && !qAnswered) renderQ(); else SP.busy(btn, false); });
     };
-    var pat = quizCard.querySelector('[data-autotr]'); if (pat) pat.onchange = function () { SP.settings.set('autoTr', pat.checked); if (!pat.checked) trOnP[k] = false; else delete trOnP[k]; renderQ(); };
-    if (SP.settings.get('autoTr') && trOnP[k] === undefined) { trOnP[k] = false; $('pqTr').click(); }
+    var pat = quizCard.querySelector('[data-autotr]'); if (pat) pat.onchange = function () { SP.settings.set('autoTr', pat.checked); if (!pat.checked) trOnP[tk] = false; else delete trOnP[tk]; renderQ(); };
+    if (SP.settings.get('autoTr') && trOnP[tk] === undefined) { trOnP[tk] = false; $('pqTr').click(); }
     var lv = $('pqLeave'); if (lv) lv.onclick = function () { closeQuiz(true); };
     if (kb) {
       var inp = $('pqInput');

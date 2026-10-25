@@ -848,3 +848,20 @@ Object.assign(SP.I18N.ru, { 'jr.how': 'Как считать оценку?', 'jr
 Object.assign(SP.I18N.ru, { 'jr.need': 'Чтобы выйти на 70+ ({list}): {x}.', 'settings.exportHint': 'Настройки, тесты, прогресс плеера, журнал оценок. Пароли в файл не попадают.' });
 
 Object.assign(SP.I18N.ru, { 'player.normal': 'Обычная', 'player.fit': 'Масштаб', 'player.fit.contain': 'Вписать', 'player.fit.cover': 'Заполнить', 'player.fitHint': 'Работает в полном экране: «Заполнить» убирает чёрные полосы, края видео могут обрезаться.' });
+
+/* Раздел «Конспекты» */
+Object.assign(SP.I18N.ru, {
+  'nav.notes': 'Конспекты', 'nav.notesShort': 'Конспекты',
+  'notes.sub': 'Лекции по предметам: конспект, вопросы с ответами и тесты',
+  'notes.emptyTitle': 'Конспектов пока нет', 'notes.emptyText': 'Для вашей группы автор ещё не добавил конспекты. Проверьте группу в Настройках → Аккаунт.',
+  'notes.continue': 'Продолжить: {where}', 'notes.start': 'Начать читать', 'notes.testsDone': 'тестов пройдено: {n}',
+  'notes.ruOnly': 'Текст конспектов — на русском, как в исходных PDF.',
+  'notes.loading': 'Загружаем конспект…', 'notes.loadError': 'Не удалось загрузить конспект. Проверьте интернет и обновите страницу.',
+  'notes.toc': 'Оглавление', 'notes.pdf': 'Открыть PDF', 'notes.focus': 'На весь экран', 'notes.focusExit': 'Выйти из полного экрана',
+  'notes.intro': 'О конспекте', 'notes.out': 'Пример работы программы',
+  'notes.show': 'Показать ответ', 'notes.hide': 'Скрыть ответ', 'notes.showSol': 'Показать решение', 'notes.hideSol': 'Скрыть решение',
+  'notes.showAll': 'Показать все ответы', 'notes.hideAll': 'Скрыть все ответы',
+  'notes.task': 'Задача {n}', 'notes.toRef': 'К разделу {r}', 'notes.ownAnswer': 'В PDF ответа нет — он составлен по тексту этой лекции.',
+  'notes.test': 'тест', 'notes.testTitle': 'Тест: {l}', 'notes.testN': '{n} вопросов', 'notes.testStart': 'Начать тест', 'notes.testAgain': 'Пройти ещё раз', 'notes.best': 'лучший результат {p}%',
+  'notes.sec.text': 'Конспект'
+});

@@ -1,0 +1,21 @@
+{
+  "version": "2026-10-25.1",
+  "notes": [
+    {
+      "id": "philosophy",
+      "subject": "Философия",
+      "short": "Философия",
+      "title": "Философия: подготовка к РК1",
+      "file": "philosophy.json",
+      "pdf": "data/ir-252/files/Философия/Filosofiya_RK1_lekcii_1-7.pdf"
+    },
+    {
+      "id": "cpp",
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "short": "C++",
+      "title": "Программирование I (C++): подготовка к РК1",
+      "file": "cpp.json",
+      "pdf": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/RK1_Cpp_konspekt.pdf"
+    }
+  ]
+}

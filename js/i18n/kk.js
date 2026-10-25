@@ -415,3 +415,20 @@ Object.assign(SP.I18N.kk, { 'jr.how': 'Баға қалай есептеледі?
 Object.assign(SP.I18N.kk, { 'jr.need': '70+ шығу үшін ({list}): {x}.', 'settings.exportHint': 'Баптаулар, тесттер, ойнатқыш прогресі, бағалар журналы. Құпиясөздер файлға кірмейді.' });
 
 Object.assign(SP.I18N.kk, { 'player.normal': 'Қалыпты', 'player.fit': 'Масштаб', 'player.fit.contain': 'Сыйдыру', 'player.fit.cover': 'Толтыру', 'player.fitHint': 'Толық экранда жұмыс істейді: «Толтыру» қара жолақтарды алып тастайды, видео шеттері кесілуі мүмкін.' });
+
+/* «Конспектілер» бөлімі */
+Object.assign(SP.I18N.kk, {
+  'nav.notes': 'Конспектілер', 'nav.notesShort': 'Конспект',
+  'notes.sub': 'Пәндер бойынша дәрістер: конспект, жауабы бар сұрақтар және тесттер',
+  'notes.emptyTitle': 'Әзірге конспект жоқ', 'notes.emptyText': 'Сіздің тобыңызға автор әлі конспект қоспаған. Топты Баптаулар → Аккаунт бөлімінде тексеріңіз.',
+  'notes.continue': 'Жалғастыру: {where}', 'notes.start': 'Оқуды бастау', 'notes.testsDone': 'тапсырылған тест: {n}',
+  'notes.ruOnly': 'Конспект мәтіні бастапқы PDF сияқты орыс тілінде.',
+  'notes.loading': 'Конспект жүктелуде…', 'notes.loadError': 'Конспектті жүктеу мүмкін болмады. Интернетті тексеріп, бетті жаңартыңыз.',
+  'notes.toc': 'Мазмұны', 'notes.pdf': 'PDF ашу', 'notes.focus': 'Толық экран', 'notes.focusExit': 'Толық экраннан шығу',
+  'notes.intro': 'Конспект туралы', 'notes.out': 'Бағдарлама нәтижесі',
+  'notes.show': 'Жауапты көрсету', 'notes.hide': 'Жауапты жасыру', 'notes.showSol': 'Шешімін көрсету', 'notes.hideSol': 'Шешімін жасыру',
+  'notes.showAll': 'Барлық жауапты көрсету', 'notes.hideAll': 'Барлық жауапты жасыру',
+  'notes.task': '{n}-есеп', 'notes.toRef': '{r} бөліміне өту', 'notes.ownAnswer': 'PDF-те жауап жоқ — ол осы дәріс мәтіні бойынша құрастырылған.',
+  'notes.test': 'тест', 'notes.testTitle': 'Тест: {l}', 'notes.testN': '{n} сұрақ', 'notes.testStart': 'Тестті бастау', 'notes.testAgain': 'Қайта тапсыру', 'notes.best': 'ең жақсы нәтиже {p}%',
+  'notes.sec.text': 'Конспект'
+});

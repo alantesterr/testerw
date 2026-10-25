@@ -415,3 +415,20 @@ Object.assign(SP.I18N.en, { 'jr.how': 'How are grades calculated?', 'jr.restoreT
 Object.assign(SP.I18N.en, { 'jr.need': 'To reach 70+ ({list}): {x}.', 'settings.exportHint': 'Settings, tests, player progress, grade journal. Passwords are not included.' });
 
 Object.assign(SP.I18N.en, { 'player.normal': 'Normal', 'player.fit': 'Scale', 'player.fit.contain': 'Fit', 'player.fit.cover': 'Fill', 'player.fitHint': 'Works in full screen: Fill removes black bars, the edges of the video may be cropped.' });
+
+/* Notes section */
+Object.assign(SP.I18N.en, {
+  'nav.notes': 'Notes', 'nav.notesShort': 'Notes',
+  'notes.sub': 'Lectures by subject: summary, questions with answers and tests',
+  'notes.emptyTitle': 'No notes yet', 'notes.emptyText': 'The author has not added notes for your group yet. Check your group in Settings → Account.',
+  'notes.continue': 'Continue: {where}', 'notes.start': 'Start reading', 'notes.testsDone': 'tests done: {n}',
+  'notes.ruOnly': 'The notes are in Russian, as in the original PDFs.',
+  'notes.loading': 'Loading notes…', 'notes.loadError': 'Could not load the notes. Check the internet and reload the page.',
+  'notes.toc': 'Contents', 'notes.pdf': 'Open PDF', 'notes.focus': 'Full screen', 'notes.focusExit': 'Exit full screen',
+  'notes.intro': 'About these notes', 'notes.out': 'Program output',
+  'notes.show': 'Show answer', 'notes.hide': 'Hide answer', 'notes.showSol': 'Show solution', 'notes.hideSol': 'Hide solution',
+  'notes.showAll': 'Show all answers', 'notes.hideAll': 'Hide all answers',
+  'notes.task': 'Task {n}', 'notes.toRef': 'Go to section {r}', 'notes.ownAnswer': 'The PDF has no answer here; it was written from this lecture.',
+  'notes.test': 'test', 'notes.testTitle': 'Test: {l}', 'notes.testN': '{n} questions', 'notes.testStart': 'Start test', 'notes.testAgain': 'Take again', 'notes.best': 'best result {p}%',
+  'notes.sec.text': 'Summary'
+});

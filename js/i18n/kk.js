@@ -438,3 +438,4 @@ Object.assign(SP.I18N.kk, {
   'notes.plain': 'Қарапайым тілмен: не істеу керек', 'notes.plainEx': 'Мысал: не шығуы керек'
 });
 Object.assign(SP.I18N.kk, { 'notes.qstyle': 'Тест көрінісі', 'notes.qstyle.paper': 'Ақ, PDF сияқты', 'notes.qstyle.site': 'Сайттағыдай' });
+Object.assign(SP.I18N.kk, { 'notes.qview': 'Сұрақтарды көрсету', 'notes.qview.list': 'Тізіммен', 'notes.qview.one': 'Бір-бірден', 'notes.carN': '{n} ішінен {i}', 'notes.tocHide': 'Мазмұнды жасыру', 'notes.tocShow': 'Мазмұнды көрсету', 'notes.plainEx': 'Бағдарламаң осылай жұмыс істеуі керек' });

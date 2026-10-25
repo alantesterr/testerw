@@ -179,10 +179,36 @@
   /* «Простыми словами» к задаче + пример работы программы (из решения в PDF; сам код не показываем) */
   function plainHtml(b) {
     if (!b.plain) return '';
+    /* пояснение — просто продолжение условия обычным текстом; ниже пример, как должна работать программа */
     var ex = (b.a || []).filter(function (x) { return x.t === 'out'; })[0];
-    return '<div class="nt-plain">' + SP.icon('circle-help', 'ic-sm') + '<div><div class="nt-plain-t">' + esc(SP.t('notes.plain')) + '</div><div class="nt-plain-b">' + b.plain + '</div>' +
-      (ex ? '<div class="nt-plain-ex"><div class="nt-plain-t">' + esc(SP.t('notes.plainEx')) + '</div><pre>' + esc(ex.text) + '</pre></div>' : '') + '</div></div>';
+    return '<p class="nt-p nt-task-more">' + b.plain + '</p>' + (ex ? blockHtml({ t: 'out', cap: SP.t('notes.plainEx'), text: ex.text }, {}) : '');
   }
+  /* Вопросы и задачи: «Списком» (подряд) или «По одному» (одна карточка, листать ← →). Выбор общий. */
+  var QV_KEY = 'sp-notes-qview';
+  function qView() { return SP.store.get(QV_KEY, 'list') === 'one' ? 'one' : 'list'; }
+  function carItems(sec) { return SP.$$(':scope > .nt-qa', sec); }
+  function carShow(sec, i, focus) {
+    var items = carItems(sec); if (!items.length) return;
+    i = Math.max(0, Math.min(items.length - 1, i));
+    items.forEach(function (q, k) {
+      var on = k === i; q.classList.toggle('is-cur', on);
+      if (!on) SP.$$('.nt-reveal[aria-expanded="true"]', q).forEach(function (b) { setReveal(b, false); }); // ответ закрываем, чтобы не подсматривать
+    });
+    sec.setAttribute('data-cur', i);
+    var n = SP.$('.nt-car-n', sec); if (n) n.textContent = SP.t('notes.carN', { i: i + 1, n: items.length });
+    var pv = SP.$('[data-car="-1"]', sec), nx = SP.$('[data-car="1"]', sec);
+    if (pv) pv.disabled = i === 0; if (nx) nx.disabled = i === items.length - 1;
+    if (focus) { var r = sec.getBoundingClientRect(); if (r.top < 0 || r.top > window.innerHeight * 0.6) sec.scrollIntoView({ block: 'start' }); items[i].setAttribute('tabindex', '-1'); items[i].focus({ preventScroll: true }); }
+  }
+  function carGo(sec, d) { carShow(sec, (+sec.getAttribute('data-cur') || 0) + d, true); }
+  function setQView(v) {
+    SP.store.set(QV_KEY, v);
+    SP.$$('.nt-sec.has-car', root).forEach(function (sec) {
+      sec.classList.toggle('is-one', v === 'one');
+      SP.$$('[data-qview]', sec).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-qview') === v)); });
+    });
+  }
+
   /* Оформление тестов: «Белое» (как PDF) или «Как на сайте». По умолчанию — по виду конспекта. */
   var QS_KEY = 'sp-notes-quizstyle';
   function quizStyle() { var v = SP.store.get(QS_KEY, null); return v === 'paper' || v === 'site' ? v : (mode() === 'pdf' ? 'paper' : 'site'); }
@@ -241,9 +267,13 @@
         var pdfSec = asPdf && s.pdf && s.pdf.length;
         var title = s.title ? (s.id ? '<span class="nt-sec-id">' + esc(s.id) + '</span>' : '') + esc(s.title) : '';
         var nQa = (s.blocks || []).filter(function (b) { return b.t === 'qa' && b.a && b.a.length; }).length;
-        body += '<section class="nt-sec nk-' + s.kind + (pdfSec ? ' is-pdf' : '') + '" id="' + sid + '" data-label="' + esc(lec.label + (s.title ? ' · ' + (s.id ? s.id + ' ' : '') + s.title : '')) + '">' +
-          (title ? '<div class="nt-sec-head"><h3 class="nt-sec-t">' + title + '</h3>' + (isQ && nQa > 1 ? '<button type="button" class="btn btn-ghost btn-sm" data-allans="' + sid + '" aria-pressed="false">' + SP.icon('eye', 'ic-sm') + '<span>' + esc(SP.t('notes.showAll')) + '</span></button>' : '') + '</div>' : '') +
-          (pdfSec ? pdfRegionsHtml(s.pdf, d) : blocksHtml(s.blocks, ctx)) + '</section>';
+        var car = isQ && !pdfSec && nQa > 1, one = car && qView() === 'one';
+        body += '<section class="nt-sec nk-' + s.kind + (pdfSec ? ' is-pdf' : '') + (car ? ' has-car' : '') + (one ? ' is-one' : '') + '" id="' + sid + '" data-label="' + esc(lec.label + (s.title ? ' · ' + (s.id ? s.id + ' ' : '') + s.title : '')) + '">' +
+          (title ? '<div class="nt-sec-head"><h3 class="nt-sec-t">' + title + '</h3><div class="nt-sec-tools">' +
+            (car ? '<div class="segmented nt-qview" role="group" aria-label="' + esc(SP.t('notes.qview')) + '">' + ['list', 'one'].map(function (v) { return '<button type="button" data-qview="' + v + '" aria-pressed="' + (qView() === v) + '">' + SP.icon(v === 'list' ? 'list' : 'square', 'ic-sm') + '<span>' + esc(SP.t('notes.qview.' + v)) + '</span></button>'; }).join('') + '</div>' : '') +
+            (isQ && nQa > 1 ? '<button type="button" class="btn btn-ghost btn-sm" data-allans="' + sid + '" aria-pressed="false">' + SP.icon('eye', 'ic-sm') + '<span>' + esc(SP.t('notes.showAll')) + '</span></button>' : '') + '</div></div>' : '') +
+          (pdfSec ? pdfRegionsHtml(s.pdf, d) : blocksHtml(s.blocks, ctx)) +
+          (car ? '<div class="nt-car"><button type="button" class="btn" data-car="-1">' + SP.icon('chevron-left') + '<span>' + esc(SP.t('common.back')) + '</span></button><span class="nt-car-n" aria-live="polite"></span><button type="button" class="btn btn-primary" data-car="1"><span>' + esc(SP.t('quiz.next')) + '</span>' + SP.icon('chevron-right') + '</button></div>' : '') + '</section>';
         if (s.title) items.push({ id: sid, label: (s.id ? s.id + ' ' : '') + s.title, kind: s.kind });
       });
       body += '</section>';
@@ -318,6 +348,10 @@
         if (target) scrollToId(target, true);
         return;
       }
+      var qv = e.target.closest('[data-qview]');
+      if (qv) { var sec0 = qv.closest('.nt-sec'); setQView(qv.getAttribute('data-qview')); var nb = SP.$('[data-qview="' + qv.getAttribute('data-qview') + '"]', sec0); if (nb) nb.focus(); return; }
+      var cb = e.target.closest('[data-car]');
+      if (cb) { carGo(cb.closest('.nt-sec'), +cb.getAttribute('data-car')); return; }
       var qst = e.target.closest('[data-qstyle]');
       if (qst) { applyQuizStyle(qst.getAttribute('data-qstyle')); return; }
       var qs = e.target.closest('[data-qstart]');
@@ -335,7 +369,33 @@
         card.scrollIntoView({ block: 'start', behavior: 'smooth' });
       }
     };
+    /* карточки «По одному»: начальное состояние, стрелки ← → (когда фокус в разделе) и свайп на телефоне */
+    SP.$$('.nt-sec.has-car', root).forEach(function (sec) {
+      carShow(sec, 0, false);
+      sec.addEventListener('keydown', function (e) {
+        if (!sec.classList.contains('is-one') || e.ctrlKey || e.altKey || e.metaKey) return;
+        if (e.target.closest('input, textarea, select, [contenteditable]')) return;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); carGo(sec, e.key === 'ArrowRight' ? 1 : -1); }
+      });
+      var sx = null, sy = 0;
+      sec.addEventListener('touchstart', function (e) { if (sec.classList.contains('is-one') && e.touches.length === 1 && !e.target.closest('pre, .code, .nt-table')) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; } else sx = null; }, { passive: true });
+      sec.addEventListener('touchend', function (e) {
+        if (sx == null) return; var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; sx = null;
+        if (Math.abs(dx) > 60 && Math.abs(dy) < 50) carGo(sec, dx < 0 ? 1 : -1);
+      }, { passive: true });
+    });
+    /* оглавление: на ПК кнопка прячет/показывает левую колонку, на узком экране — открывает окно */
+    var tocOff = !!SP.store.get('sp-notes-toc-off', false), ntEl = SP.$('.nt', root);
+    var wide = function () { return window.matchMedia('(min-width: 1100px)').matches; };
+    ntEl.classList.toggle('toc-off', tocOff);
+    $('#ntToc').setAttribute('aria-pressed', String(wide() && !tocOff));
     $('#ntToc').onclick = function () {
+      if (wide()) {
+        tocOff = !ntEl.classList.contains('toc-off'); ntEl.classList.toggle('toc-off', tocOff); SP.store.set('sp-notes-toc-off', tocOff);
+        this.setAttribute('aria-pressed', String(!tocOff)); this.setAttribute('data-tip', SP.t(tocOff ? 'notes.tocShow' : 'notes.tocHide'));
+        if (SP.$('.nt-pg', root)) setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 50); // перерисовать PDF под новую ширину
+        return;
+      }
       var m = SP.modal({ title: SP.t('notes.toc'), body: '<nav class="nt-toc nt-toc-m">' + tocHtml + '</nav>' });
       m.el.addEventListener('click', function (e) { var g = e.target.closest('[data-goto]'); if (!g) return; e.preventDefault(); m.close(); setTimeout(function () { scrollToId(g.getAttribute('data-goto'), false); }, 30); });
     };

@@ -438,3 +438,4 @@ Object.assign(SP.I18N.en, {
   'notes.plain': 'In plain words: what to do', 'notes.plainEx': 'Example: what you should get'
 });
 Object.assign(SP.I18N.en, { 'notes.qstyle': 'Test style', 'notes.qstyle.paper': 'White, like PDF', 'notes.qstyle.site': 'Like the site' });
+Object.assign(SP.I18N.en, { 'notes.qview': 'How to show questions', 'notes.qview.list': 'As a list', 'notes.qview.one': 'One by one', 'notes.carN': '{i} of {n}', 'notes.tocHide': 'Hide contents', 'notes.tocShow': 'Show contents', 'notes.plainEx': 'Your program should work like this' });

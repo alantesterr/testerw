@@ -381,7 +381,6 @@ html[data-sch-shk="xs"] { --sch-k-shk: 0.77; }
 @media (min-width: 1100px) {
   .nt-layout { grid-template-columns: 17rem minmax(0, 1fr); }
   .nt-layout > .nt-toc { display: block; position: sticky; top: calc(var(--nt-bar) + var(--sp-4)); align-self: start; max-height: calc(100vh - var(--nt-bar) - var(--sp-8)); overflow: auto; padding-right: var(--sp-2); }
-  .nt-toc-btn { display: none; }
 }
 .nt-toc-list, .nt-toc-list ol { list-style: none; margin: 0; padding: 0; }
 .nt-toc-list > li { margin-bottom: var(--sp-2); }
@@ -548,3 +547,28 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 .nt-paper .nt-refs .chip:active { background: #d6dee9; }
 /* блок со своей темой пересчитывает цвет текста по своим цветам (а не наследует от листа) */
 .theme-paper, .theme-dark { color: var(--text); }
+/* Вопросы крупнее и с большим расстоянием, чтобы не сливались */
+.nt-q { font-size: 1.15em; line-height: 1.45; }
+.nt-qa { margin-bottom: var(--sp-5); padding: var(--sp-5); }
+.nt-qa.is-blitz { padding: var(--sp-4) var(--sp-5); }
+.nt-task-more { margin-top: var(--sp-2); }
+/* «По одному»: видна одна карточка, внизу листание */
+.nt-sec-tools { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.nt-qview button { display: inline-flex; align-items: center; gap: 4px; }
+.nt-car { display: none; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-top: var(--sp-2); }
+.nt-sec.is-one > .nt-car { display: flex; }
+.nt-sec.is-one > .nt-qa:not(.is-cur) { display: none; }
+.nt-sec.is-one > .nt-qa.is-cur { min-height: 12rem; }
+.nt-sec.is-one > .nt-qa:focus { outline: none; }
+.nt-sec.is-one > .nt-qa:focus-visible { box-shadow: var(--focus-ring); }
+.nt-car-n { color: var(--text-2); font-variant-numeric: tabular-nums; font-size: var(--fs-sm); }
+/* Оглавление можно спрятать на ПК — текст/PDF во всю ширину */
+.nt.toc-off .nt-layout { grid-template-columns: minmax(0, 1fr); max-width: 90rem; }
+.nt.toc-off .nt-layout > .nt-toc { display: none; }
+.nt.toc-off .nt-doc { margin-inline: auto; width: 100%; max-width: 72rem; }
+.nt-toc-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); }
+@media (max-width: 767px) {
+  .nt-qview button span { display: none; }
+  .nt-qa { padding: var(--sp-4); margin-bottom: var(--sp-4); }
+  .nt-car .btn span { display: none; }
+}

@@ -159,7 +159,11 @@
     return '<aside class="nt-note nk-' + k + '">' + SP.icon(icon, 'ic-sm') + '<div>' + (kind ? '<b>' + esc(kind) + '.</b> ' : '') + html + '</div></aside>';
   }
   function blocksHtml(blocks, ctx) {
-    return (blocks || []).map(function (b) { return blockHtml(b, ctx); }).join('');
+    // место блока в PDF (страница, высота) — по нему «Где ответ в конспекте» находит блок в виде «Текстом»
+    return (blocks || []).map(function (b) {
+      var h = blockHtml(b, ctx);
+      return b.src && b.t !== 'qa' ? h.replace(/^<(\w+)/, '<$1 data-sp="' + b.src.p + '" data-sy="' + b.src.y + '"') : h;
+    }).join('');
   }
   function blockHtml(b, ctx) {
     switch (b.t) {
@@ -191,7 +195,8 @@
       : task ? '<div class="nt-q"><span class="nt-qn">' + esc(SP.t('notes.task', { n: b.num })) + '</span><b>' + esc(b.title) + '</b></div>' + blocksHtml(b.q, ctx) + plainHtml(b)
       : '<div class="nt-q">' + (b.num ? '<span class="nt-qn">' + esc(b.num) + '</span>' : '') + '<span>' + b.q + '</span></div>';
     var aHtml = crop && b.ar && b.ar.length ? cropHtml(b.ar, ctx.d) : blocksHtml(b.a, ctx);
-    var refHtml = refs.length ? '<div class="nt-refs">' + refs.map(function (r) { return '<button type="button" class="chip" data-ref="' + esc(r) + '">' + SP.icon('arrow-up', 'ic-sm') + '<span>' + esc(SP.t('notes.toRef', { r: r })) + '</span></button>'; }).join('') + '</div>' : '';
+    var where = b.t === 'qa' && b.src && !task ? '<button type="button" class="chip nt-where" data-wp="' + b.src.p + '" data-wy="' + b.src.y + '">' + SP.icon('arrow-up', 'ic-sm') + '<span>' + esc(SP.t('notes.where')) + '</span></button>' : '';
+    var refHtml = refs.length || where ? '<div class="nt-refs">' + where + refs.map(function (r) { return '<button type="button" class="chip" data-ref="' + esc(r) + '">' + SP.icon('arrow-up', 'ic-sm') + '<span>' + esc(SP.t('notes.toRef', { r: r })) + '</span></button>'; }).join('') + '</div>' : '';
     var hasA = b.a && b.a.length;
     var lecTag = b.lec ? '<div class="nt-qlec">' + esc(b.lec) + '</div>' : ''; // общий блок контрольных вопросов: к какой лекции вопрос
     return '<div class="nt-qa' + (task ? ' is-task' : '') + (b.blitz ? ' is-blitz' : '') + (crop ? ' has-crop' : '') + '">' + lecTag + q + refHtml +
@@ -240,7 +245,7 @@
 
   /* ---------- Режим чтения ---------- */
   function renderDoc(meta, d) {
-    var asPdf = mode() === 'pdf' && !!meta.pdf && !!d.page;
+    var asPdf = (mode() === 'pdf' || !!d.pdfOnly) && !!meta.pdf && !!d.page; // pdfOnly (архитектура): только вид PDF — схемы и формулы
     var ctx = { n: 0, quizzes: {}, asPdf: asPdf, d: d }, toc = [], refMap = {};
     var body = '';
     if (asPdf && (d.introPdf || []).length) {
@@ -282,7 +287,7 @@
       }).join('') + '</ol></li>';
     }).join('') + '</ol>';
     var focus = document.documentElement.classList.contains('nt-focus');
-    var canPdf = !!meta.pdf && !!d.page;
+    var canPdf = !!meta.pdf && !!d.page && !d.pdfOnly;
     root.innerHTML = '<div class="nt' + (asPdf ? ' is-pdfmode' : '') + '" data-pdf="' + esc(meta.pdf ? encodeURI(meta.pdf) : '') + '">' +
       '<header class="nt-bar"><a class="btn btn-ghost btn-sm nt-back" href="#/notes">' + SP.icon('chevron-left') + '<span>' + esc(SP.t('nav.notes')) + '</span></a>' +
       '<b class="nt-bar-t">' + esc(meta.short || meta.subject) + '</b>' +
@@ -311,6 +316,31 @@
     var el = document.getElementById(id); if (!el) return;
     el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
     var h = el.querySelector('h2, h3'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+  }
+  /* «Где ответ в конспекте»: прокрутка к месту в конспекте этой же лекции, подсветка и кнопка «← К вопросу» */
+  function goWhere(btn) {
+    var p = +btn.getAttribute('data-wp'), y = +btn.getAttribute('data-wy'), lec = btn.closest('.nt-lec'), card = btn.closest('.nt-qa');
+    var target = null, off = 0, lineH = 0;
+    SP.$$('.nt-sec.nk-text .nt-pdf .nt-pg', lec).some(function (el) {
+      var t = +el.getAttribute('data-t'), b = +el.getAttribute('data-b');
+      if (+el.getAttribute('data-p') === p && y <= t && y >= b) { target = el; off = (t - y - 11) / (t - b) * el.offsetHeight; lineH = 40 / (t - b) * el.offsetHeight; return true; }
+      return false;
+    });
+    if (!target) { // вид «Текстом»: блок, в котором начинается это место
+      SP.$$('.nt-sec.nk-text [data-sp]', lec).forEach(function (el) { var sp = +el.getAttribute('data-sp'), sy = +el.getAttribute('data-sy'); if (sp < p || (sp === p && sy >= y - 1)) target = el; });
+    }
+    if (!target) { SP.toast(SP.t('notes.whereNone'), 'info'); return; }
+    var bar = SP.$('.nt-bar', root).getBoundingClientRect().bottom;
+    window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY + Math.max(0, off) - bar - 40, behavior: 'smooth' });
+    var fl = document.createElement('div'); fl.className = 'nt-flash';
+    if (target.classList.contains('nt-pg')) { fl.style.top = Math.max(0, off - 4) + 'px'; fl.style.height = Math.max(28, lineH) + 'px'; target.appendChild(fl); }
+    else { target.classList.add('nt-flash-blk'); }
+    setTimeout(function () { fl.remove(); target.classList.remove('nt-flash-blk'); }, 2600);
+    setTimeout(kickPdf, 400);
+    var old = SP.$('.nt-backq'); if (old) old.remove();
+    var bk = SP.el('<button type="button" class="btn btn-primary nt-backq">' + SP.icon('arrow-down') + '<span>' + esc(SP.t('notes.backToQ')) + '</span></button>');
+    bk.onclick = function () { bk.remove(); card.scrollIntoView({ block: 'center', behavior: 'smooth' }); card.setAttribute('tabindex', '-1'); card.focus({ preventScroll: true }); };
+    root.appendChild(bk); setTimeout(function () { if (bk.isConnected) bk.remove(); }, 30000);
   }
   function setReveal(btn, open) {
     var a = document.getElementById(btn.getAttribute('aria-controls')); if (!a) return;
@@ -347,6 +377,8 @@
         if (target) scrollToId(target, true);
         return;
       }
+      var wb = e.target.closest('[data-wp]');
+      if (wb) { goWhere(wb); return; }
       var cb = e.target.closest('[data-car]');
       if (cb) { carGo(cb.closest('.nt-sec'), +cb.getAttribute('data-car')); return; }
       var qs = e.target.closest('[data-qstart]');

@@ -637,3 +637,22 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 
 .nt-qlec { display: inline-block; margin: 0 0 var(--sp-2); padding: 2px 10px; border-radius: var(--r-full); background: var(--accent-soft); color: var(--accent-text); font-family: var(--font); font-size: var(--fs-xs); font-weight: var(--fw-semibold); }
 .nt-paper .nt-qa.has-crop > .nt-qlec { margin-inline: 2.4%; }
+
+/* «Где ответ в конспекте»: подсветка места и кнопка возврата к вопросу */
+.nt-where { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; }
+.nt-paper .nt-refs .chip.nt-where { background: #e6eefb; color: #1a4fa0; border-color: #c9d8f3; }
+.nt-flash { position: absolute; left: 4%; right: 4%; z-index: 2; border-radius: 4px; background: rgba(255, 213, 79, 0.45); box-shadow: 0 0 0 2px rgba(240, 180, 0, 0.7); pointer-events: none; animation: nt-flash 2.6s ease-out forwards; }
+.nt-flash-blk { animation: nt-flash-blk 2.6s ease-out; border-radius: 6px; }
+@keyframes nt-flash { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes nt-flash-blk { 0%, 60% { box-shadow: 0 0 0 3px var(--warning-solid); background: var(--warning-soft); } 100% { box-shadow: none; } }
+@media (prefers-reduced-motion: reduce) { .nt-flash, .nt-flash-blk { animation-duration: 0.01s; } }
+.nt-backq { position: fixed; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: calc(var(--z-header) + 1); box-shadow: var(--shadow-lg); }
+@media (max-width: 767px) { .nt-backq { right: 12px; bottom: calc(5rem + env(safe-area-inset-bottom)); } }
+/* Философия 2.0 и архитектура: шрифт Carlito и кегль, как в их PDF; плашки разделов — как у философии */
+.nt-paper.subj-philosophy2 { --pdf-fs: calc(100cqw * 10.3 / 596); --pdf-font: Carlito, Calibri, "Segoe UI", sans-serif; }
+.nt-paper.subj-arch { --pdf-fs: calc(100cqw * 10.4 / 596); --pdf-font: Carlito, Calibri, "Segoe UI", sans-serif; }
+.nt-paper.subj-philosophy2 .nt-sec-head { padding: 6px 10px; border-radius: 3px; background: #0f8a6a; }
+.nt-paper.subj-philosophy2 .nk-test > .nt-sec-head { background: #b4531d; }
+.nt-paper.subj-philosophy2 .nt-sec-head .nt-sec-t, .nt-paper.subj-philosophy2 .nt-sec-head .nt-sec-id { color: #fff; font-size: 1.0625rem; }
+.nt-paper.subj-philosophy2 .nt-qn { color: #0f8a6a; }
+.nt-paper.subj-arch .nt-sec-t, .nt-paper.subj-arch .nt-sec-id { color: #1e3a5f; }

@@ -22,6 +22,11 @@ export async function build() {
   // раздел вопросов: «Лекция N — Вопросы», чтобы было видно, к какой лекции он относится
   df.lectures.forEach(l => l.sections.forEach(s => { if (s.kind === 'qa') s.title = l.label + ' — Вопросы (с ответами)'; }));
   df.page = { w: f[0].w, h: f[0].h };
+  // Философия 2.0 и архитектура
+  const f2 = await (await fetch('/out/filo2.raw.json')).json(); const d2 = P.parseFilo2(f2); d2.page = { w: f2[0].w, h: f2[0].h };
+  const ar = await (await fetch('/out/arch.raw.json')).json(); const da = P.parseArch(ar); da.page = { w: ar[0].w, h: ar[0].h };
+  await fetch('/save/filo2.final.json', { method: 'POST', body: JSON.stringify(d2) });
+  await fetch('/save/arch.final.json', { method: 'POST', body: JSON.stringify(da) });
   await fetch('/save/cpp.final.json', { method: 'POST', body: JSON.stringify(dc) });
   await fetch('/save/filo.final.json', { method: 'POST', body: JSON.stringify(df) });
   const regs = d => d.lectures.reduce((a, l) => a + l.sections.reduce((b, s) => b + (s.pdf ? s.pdf.length : 0), 0), 0);

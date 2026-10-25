@@ -1,5 +1,5 @@
 {
-    "version":  "2026-10-24.3",
+    "version":  "2026-10-26.1",
     "files":  [
                   {
                       "subject":  "Философия",
@@ -9,11 +9,11 @@
                       "note":  ""
                   },
                   {
-                      "subject": "Философия",
-                      "kind": "material",
-                      "name": "Filosofiya_RK1_lekcii_1-7.pdf",
-                      "path": "data/ir-252/files/Философия/Filosofiya_RK1_lekcii_1-7.pdf",
-                      "size": 401348
+                      "subject":  "Философия",
+                      "kind":  "material",
+                      "name":  "Filosofiya_RK1_lekcii_1-7.pdf",
+                      "path":  "data/ir-252/files/Философия/Filosofiya_RK1_lekcii_1-7.pdf",
+                      "size":  401348
                   },
                   {
                       "subject":  "Философия",
@@ -51,6 +51,24 @@
                       "type":  "application/pdf",
                       "size":  588079,
                       "note":  "Лекция: конспект к РК1"
+                  },
+                  {
+                      "subject":  "Философия",
+                      "kind":  "material",
+                      "name":  "Filosofiya_RK1_ITOG.pdf",
+                      "path":  "data/ir-252/files/Философия/Filosofiya_RK1_ITOG.pdf",
+                      "type":  "application/pdf",
+                      "size":  875984,
+                      "note":  "Итоговый учебник к РК1 (новая версия)"
+                  },
+                  {
+                      "subject":  "Архитектура компьютера",
+                      "kind":  "material",
+                      "name":  "Arhitektura_RK1_podrobno.pdf",
+                      "path":  "data/ir-252/files/Архитектура компьютера/Arhitektura_RK1_podrobno.pdf",
+                      "type":  "application/pdf",
+                      "size":  1125117,
+                      "note":  "Подробный конспект к РК1"
                   }
               ]
 }

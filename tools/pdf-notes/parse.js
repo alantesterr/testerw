@@ -121,10 +121,11 @@ function table(lines, rowGap) {
 /* ---------- абзацы и прочее (общий разбор текста) ---------- */
 function proseBlocks(lines, cfg) {
   const B = [];
-  let i = 0;
-  const push = b => B.push(b);
+  let i = 0, first = null;
+  // у каждого блока — место первой строки в PDF (страница и высота): по нему «Где ответ» находит блок в виде «Текстом»
+  const push = b => { if (first && cfg.withSrc) b.src = { p: first.page, y: first.y }; B.push(b); };
   while (i < lines.length) {
-    const l = lines[i];
+    const l = lines[i]; first = l;
     // код
     if (cfg.isCodeLine(l)) {
       const grp = []; while (i < lines.length && cfg.isCodeLine(lines[i])) grp.push(lines[i++]);
@@ -302,9 +303,10 @@ function filoTest(lines) {
   // колонки: сначала левая, потом правая на каждой странице
   const byPage = {};
   for (const l of lines) {
-    if (/^Ключ ответов/.test(l.text) || (inKey && near(l.s, 9.8, 0.3))) { inKey = true; key += ' ' + l.text; continue; }
+    if (/^Ключ(,| ответов)/.test(l.text) || (inKey && (near(l.s, 9.8, 0.3) || near(l.s, 9.6, 0.3)))) { inKey = true; key += ' ' + l.text; continue; }
+    if (near(l.s, 11, 0.3) && l.bold0) continue; // подзаголовки внутри тестов (A. … / B. …)
     inKey = false;
-    if (/^Варианты перемешаны/.test(l.text)) { intro = l.text; continue; }
+    if (/^(Варианты перемешаны|Верный вариант)/.test(l.text) || /^конце раздела/.test(l.text)) { intro = intro || l.text; continue; }
     (byPage[l.page] = byPage[l.page] || []).push(l);
   }
   Object.keys(byPage).sort((a, b) => a - b).forEach(pg => {
@@ -326,7 +328,10 @@ function filoTest(lines) {
   const map = {}; key.replace(/(\d+)\s*[–-]\s*([A-E])/g, (m, n, L) => { map[+n] = L; });
   const quiz = qs.map(x => {
     const base = (x.q.match(/\[база №(\d+)\]/) || [])[1];
-    return { q: x.q.replace(/\s*\[база №\d+\]\s*/, ' ').replace(/\s+/g, ' ').trim(), base: base ? +base : undefined, n: 1, opts: x.opts.map(o => ({ t: o.t.replace(/\s+/g, ' ').trim(), right: map[x.num] === o.L })) };
+    const base2 = (x.q.match(/№\s*(\d+)/) || [])[1];
+    const twice = /★/.test(x.q);
+    const q = x.q.replace(/\s*\[база №\d+\]\s*/, ' ').replace(/\s*№\s*\d+\s*/g, ' ').replace(/★/g, '').replace(/\s+/g, ' ').trim();
+    return { q, base: base ? +base : base2 ? +base2 : undefined, twice: twice || undefined, n: 1, opts: x.opts.map(o => ({ t: o.t.replace(/★/g, '').replace(/\s+/g, ' ').trim(), right: map[x.num] === o.L })) };
   });
   const bad = quiz.filter(x => x.opts.filter(o => o.right).length !== 1).length;
   return [{ t: 'quiz', intro, questions: quiz, check: { total: quiz.length, keyed: Object.keys(map).length, bad } }];
@@ -459,4 +464,183 @@ function cppControl(lines) {
   }
   out.forEach(c => { const m = c.qh.match(/\s*\(([\dА-Я.,\s–-]+)\)\s*$/); c.refs = m ? m[1].split(/,\s*/).map(s => s.trim()) : []; c.q = m ? c.qh.slice(0, m.index).trim() : c.qh; c.qr = cropOf(c._l, 40, 556); delete c.qh; delete c._l; c.a = []; });
   return out;
+}
+
+/* ================= ФИЛОСОФИЯ 2.0 (Filosofiya_RK1_ITOG.pdf) ================= */
+const stemOf = w => w.toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]/g, '').slice(0, 6);
+const STOP = new Set('этот этого этом этой такое такой какие какой какая каких который которая которые почему зачем назови назовите перечисли перечислите объясни объясните сравни чем что такое кто когда где сколько между более менее также тоже чтобы если только очень можно нужно является являются философии философия философский философского главное основные основной своими'.split(' ').map(stemOf));
+const stemsOf = t => String(t).replace(/<[^>]+>/g, ' ').split(/\s+/).map(stemOf).filter(s => s.length >= 4 && !STOP.has(s));
+/* где в конспекте лекции написан ответ: окно из 3 строк с наибольшим совпадением «редких» слов */
+function locate(qText, aText, kon, short) {
+  if (!kon.length) return null;
+  const wins = kon.map((l, i) => new Set(stemsOf(kon.slice(i, i + 3).map(x => x.text).join(' '))));
+  const df = {}; wins.forEach(w => w.forEach(s => { df[s] = (df[s] || 0) + 1; }));
+  const N = wins.length, idf = s => Math.max(0, Math.log((N + 1) / ((df[s] || 0) + 0.5)));
+  const qs = new Set(stemsOf(qText)), as = new Set(stemsOf(aText));
+  const wq = short ? 1 : 1.3, wa = short ? 2.5 : 1.6; // у коротких (блиц) главное — слова ответа
+  let best = -1, bi = 0, hitA = 0;
+  wins.forEach((w, i) => {
+    let sc = 0, ha = 0; w.forEach(s => { const q = qs.has(s), a = as.has(s); if (q || a) sc += (a ? wa : 0) * idf(s) + (q ? wq : 0) * idf(s); if (a) ha++; });
+    if (sc > best) { best = sc; bi = i; hitA = ha; }
+  });
+  // внутри лучшего окна — строка, где совпадений больше всего (ответ часто во 2-й или 3-й строке окна)
+  const lineScore = ln => stemsOf(ln.text).reduce((sc, s) => sc + (as.has(s) ? wa * idf(s) : 0) + (qs.has(s) ? wq * idf(s) : 0), 0);
+  let l = kon[bi], ls = -1;
+  kon.slice(bi, bi + 3).forEach(ln => { const v = lineScore(ln); if (v > ls) { ls = v; l = ln; } });
+  // если совпадение слабое — кнопку не показываем, чтобы не вести мимо
+  const ok = best >= (short ? 9 : 14) && (hitA > 0 || !as.size);
+  return ok ? { p: l.page, y: +l.y.toFixed(1), score: +best.toFixed(2), line: l.text.slice(0, 90) } : null;
+}
+export function parseFilo2(pages) {
+  const L = stream(pages, l => (l.s <= 6.5 && l.y < 30) || l.page < 8);
+  const doc = { subject: 'Философия', title: 'Философия: РК1 — итоговый учебник', sub: 'Лекции 1–7: конспект → вопросы с ответами → тесты из базы 500; в конце пробный РК1', intro: [], introPdf: [], lectures: [] };
+  let lec = null, cur = null;
+  for (let i = 0; i < L.length; i++) {
+    const l = L[i];
+    if (near(l.s, 9.5, 0.3) && /^ЛЕКЦИЯ \d+/.test(l.text) && l.y > 775) {
+      const n = l.text.match(/\d+/)[0], hdr = [l], parts = [];
+      while (L[i + 1] && near(L[i + 1].s, 19, 0.5)) { hdr.push(L[i + 1]); parts.push(L[++i].text); }
+      let source = '';
+      while (L[i + 1] && near(L[i + 1].s, 9, 0.3) && L[i + 1].gap < 30) { hdr.push(L[i + 1]); source += (source ? ' ' : '') + L[++i].text; }
+      lec = { id: 'l' + n, n, label: 'Лекция ' + n, title: parts.join(' '), source: '', note: source, sections: [], _hdr: hdr };
+      cur = { kind: 'text', title: '', lines: [] }; lec._chunks = [cur]; doc.lectures.push(lec); continue;
+    }
+    if (near(l.s, 13, 0.3) && l.bold0) {
+      const t = l.text;
+      if (/^Все ключи/.test(t)) break;
+      if (/^Пробный РК1/.test(t)) {
+        lec = { id: 'trial', n: '', label: 'Пробный РК1', title: '40 вопросов на 25 минут — проверь себя в конце', source: '', sections: [], _hdr: [] };
+        cur = { kind: 'test', title: 'Пробный РК1 · 40 вопросов', lines: [], head: l }; lec._chunks = [cur]; doc.lectures.push(lec); continue;
+      }
+      const kind = /^Конспект/.test(t) ? 'text' : /^Вопросы РК1/.test(t) ? 'qa' : /^Тесты из базы/.test(t) ? 'test' : null;
+      if (kind && lec) { cur = { kind, title: kind === 'text' ? 'Конспект' : kind === 'qa' ? lec.label + ' — Вопросы (с ответами)' : 'Тесты из базы 500 · ' + lec.label, lines: [], head: l }; lec._chunks.push(cur); continue; }
+    }
+    if (lec && near(l.s, 11, 0.3) && /^Блиц/.test(l.text)) { cur = { kind: 'blitz', lines: [] }; lec._chunks.push(cur); continue; }
+    if (cur) cur.lines.push(l);
+  }
+  const cfg = {
+    withSrc: true, codeBase: 0, isCodeLine: () => false, isLabel: () => false,
+    isHeading: l => l.bold0 && (near(l.s, 13, 0.3) || near(l.s, 11, 0.3) || (near(l.s, 9.5, 0.3) && l.x > 41 && l.x < 46 && /^[А-ЯЁ\s«»—,]+$/.test(l.text))) && l.real.every(s => s.f === 'b' || s.t.trim().length <= 2),
+    isNote: l => (near(l.s, 9.6, 0.3) || near(l.s, 9.5, 0.3)) && /^(Запомни|Важно|Совет|Лайфхак)/.test(l.text),
+    isNoteStart: l => /^(Запомни|Важно|Совет)/.test(l.text),
+    isNoteCont: (l, x0) => (near(l.s, 9.6, 0.3) || near(l.s, 9.5, 0.3)) && l.x >= x0 - 3 && l.x > 46,
+    isTable: l => near(l.s, 9.5, 0.3) && l.x < 42 && !/^(Запомни|Важно)/.test(l.text),
+    rowGap: l => 14,
+    isTableCont: l => near(l.s, 9.5, 0.3) && l.x > 60 && !/^(Запомни|Важно)/.test(l.text),
+    isItem: () => false, isItemCont: () => false,
+    paraCont: (n, p, x0) => near(n.s, p.s, 0.4) && (n.gap < 16 || (n.gap === 999 && !/[.!?»]$/.test(p.text.trim()) && Math.abs(n.x - x0) < 4)) && !(n.bold0 && /[.:)»]$/.test(p.text.trim()) && n.x <= x0 + 3) && !(n.x > x0 + 8),
+    paraCls: x0 => x0 > 45 ? 'ind' : ''
+  };
+  for (const lec2 of doc.lectures) {
+    let hdrUsed = false, kon = [];
+    for (const ch of lec2._chunks) {
+      if (!ch.lines.length && ch.kind === 'text' && !ch.title) continue;
+      let sec;
+      if (ch.kind === 'text') {
+        sec = { kind: 'text', title: ch.title, blocks: proseBlocks(ch.lines, cfg), pdf: regionsOf([].concat(hdrUsed ? [] : lec2._hdr, ch.head ? [ch.head] : [], ch.lines)) };
+        if (!hdrUsed) { sec.withHeader = true; hdrUsed = true; }
+        kon = kon.concat(ch.lines);
+      } else if (ch.kind === 'qa') sec = { kind: 'qa', title: ch.title, blocks: filo2QA(ch.lines) };
+      else if (ch.kind === 'blitz') {
+        const prev = lec2.sections[lec2.sections.length - 1], bl = filo2Blitz(ch.lines);
+        if (prev && prev.kind === 'qa') { prev.blocks = prev.blocks.concat(bl); continue; }
+        sec = { kind: 'qa', title: lec2.label + ' — Вопросы (с ответами)', blocks: bl };
+      } else if (ch.kind === 'test') sec = { kind: 'test', title: ch.title, blocks: filoTest(ch.lines) };
+      lec2.sections.push(sec);
+    }
+    // «Где ответ в конспекте»: для каждого вопроса — место в конспекте этой лекции
+    lec2.sections.forEach(s => { if (s.kind === 'qa') s.blocks.forEach(b => { const txt = (b.a || []).map(x => x.html || (x.items || []).join(' ')).join(' '); b.src = locate(b.q, txt, kon, !!b.blitz); }); });
+    delete lec2._chunks; delete lec2._hdr;
+  }
+  return doc;
+}
+function filo2QA(lines) {
+  const out = []; let cur = null, ans = [];
+  const acfg = { codeBase: 0, isCodeLine: () => false, isLabel: () => false, isHeading: () => false, isNote: l => /^(Запомни|Важно)/.test(l.text), isNoteStart: l => /^(Запомни|Важно)/.test(l.text), isNoteCont: (l, x0) => near(l.s, 9.6, 0.3) && l.x >= x0 - 3, isTable: () => false, rowGap: () => 14, isItem: () => false, isItemCont: () => false, paraCont: (n, p) => n.gap < 16.5 && near(n.s, p.s, 0.4) };
+  const flush = () => { if (cur) { cur.ar = cropOf(ans); cur.a = proseBlocks(ans, acfg); out.push(cur); } };
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (near(l.real[0].s, 7.5, 0.4) && l.real[0].f === 'b' && l.real.length > 1) { // метки Т/Б/С/Сл/О, затем жирный вопрос
+      flush();
+      const tags = [], qsegs = []; l.real.forEach(s => { if (near(s.s, 7.5, 0.4) && /^(Т|Б|С|Сл|О)$/.test(s.t.trim())) tags.push(s.t.trim()); else qsegs.push(s); });
+      const ql = [l]; let q = htmlOf(toks(qsegs));
+      while (lines[i + 1] && lines[i + 1].real.every(s => s.f === 'b') && lines[i + 1].gap < 16 && !near(lines[i + 1].real[0].s, 7.5, 0.4)) { ql.push(lines[i + 1]); q += ' ' + lines[++i].html; }
+      cur = { t: 'qa', tags, q: q.replace(/<\/?b>/g, ''), qr: cropOf(ql) }; ans = []; continue;
+    }
+    if (cur) ans.push(l);
+  }
+  flush();
+  return out;
+}
+function filo2Blitz(lines) {
+  const out = []; let cur = null;
+  for (const l of lines) {
+    if (/^Блиц-вопрос/.test(l.text)) continue;
+    const Lq = sub(l, x => x < 310), R = sub(l, x => x >= 310);
+    if (Lq && (!cur || l.gap > 13.5)) { cur = { t: 'qa', blitz: true, q: Lq.html.replace(/<\/?b>/g, ''), a: [{ t: 'p', html: R ? R.html : '' }], _ql: [Lq], _al: R ? [R] : [] }; out.push(cur); continue; }
+    if (Lq && cur) { cur.q += ' ' + Lq.html.replace(/<\/?b>/g, ''); cur._ql.push(Lq); }
+    if (R && cur) { const p = cur.a[0]; p.html = (p.html + ' ' + R.html).trim(); cur._al.push(R); }
+  }
+  out.forEach(c => { c.qr = cropOf(c._ql, 34, 310); c.ar = cropOf(c._al, 308, 562); delete c._ql; delete c._al; });
+  return out;
+}
+
+/* ================= АРХИТЕКТУРА (Arhitektura_RK1_podrobno.pdf) — только вид PDF ================= */
+export function parseArch(pages) {
+  const L = stream(pages, l => l.s <= 6.5 && l.y < 30);
+  const doc = { subject: 'Архитектура компьютера', pdfOnly: true, title: 'Архитектура компьютера: подготовка к РК1', sub: 'Темы 1–8: подробный конспект; тема 9 — 51 задача с разбором; шпаргалка', intro: [], introPdf: [], lectures: [] };
+  let lec = null, cur = null; const introL = [], sol = {}; let solLec = false, solCur = null;
+  for (let i = 0; i < L.length; i++) {
+    const l = L[i];
+    if (near(l.s, 12, 0.3) && l.bold0 && /^(Тема \d+|Решения|Финиш)/.test(l.real[0].t.trim()) && l.y > 780) {
+      const head0 = l.real[0].t.trim(), hdr = [l];
+      let title = htmlOf(toks(l.segs.slice(l.segs.indexOf(l.real[0]) + 1))).replace(/<[^>]+>/g, '');
+      while (L[i + 1] && near(L[i + 1].s, 19, 0.5)) { hdr.push(L[i + 1]); title += ' ' + L[++i].text; }
+      if (/^Решения/.test(head0)) { solLec = true; continue; }
+      solLec = false;
+      const n = (head0.match(/\d+/) || [''])[0];
+      lec = { id: n ? 't' + n : 'finish', n, label: n ? 'Тема ' + n : 'Финиш', title, source: '', sections: [], _hdr: hdr };
+      cur = { kind: 'text', id: '', title: '', lines: [], head: [] }; lec._chunks = [cur]; doc.lectures.push(lec); continue;
+    }
+    if (!lec) { introL.push(l); continue; }
+    if (solLec) { // решения задач тренировки: «Задача N. …»
+      const m = l.bold0 && near(l.s, 9.8, 0.3) && l.text.match(/^Задача (\d+)\./);
+      if (m) { solCur = sol[m[1]] = [l]; continue; }
+      if (near(l.s, 11.2, 0.3) && l.bold0) { solCur = null; continue; }
+      if (solCur) solCur.push(l);
+      continue;
+    }
+    if (near(l.s, 12.6, 0.3) && l.bold0) {
+      const m = l.text.match(/^(\d+\.\d+)\.\s*(.*)$/), head = [l];
+      let t = m ? m[2] : l.text;
+      while (L[i + 1] && near(L[i + 1].s, 12.6, 0.3) && L[i + 1].gap < 20 && !/^\d+\.\d+\./.test(L[i + 1].text)) { head.push(L[i + 1]); t += ' ' + L[++i].text; }
+      cur = { kind: /^Условия/.test(t) ? 'cond' : 'text', id: m ? m[1] : '', title: t, lines: [], head }; lec._chunks.push(cur); continue;
+    }
+    cur.lines.push(l);
+  }
+  for (const lec2 of doc.lectures) {
+    let hdrUsed = false;
+    for (const ch of lec2._chunks) {
+      if (!ch.lines.length && !ch.title) continue;
+      if (ch.kind === 'cond') {
+        // задачи по группам (A. Системы счисления, B. …): условие видно, решение — под кнопкой
+        let grp = null, task = null;
+        const pushTask = () => { if (task) { const s = sol[task.num]; const b = { t: 'qa', task: true, num: task.num, title: '', q: [], qr: cropOf(task.lines, 30, 566), a: s ? [{ t: 'p', html: '' }] : [] }; if (s) b.ar = cropOf(s, 30, 566); grp.blocks.push(b); task = null; } };
+        for (const l of ch.lines) {
+          if (near(l.s, 11.2, 0.3) && l.bold0) { pushTask(); grp = { kind: 'tasks', id: '', title: lec2.label + ' · ' + l.text, blocks: [] }; lec2.sections.push(grp); continue; }
+          if (l.bold0 && /^\d+$/.test(l.real[0].t.trim()) && l.x < 45 && near(l.s, 10, 0.3)) { pushTask(); task = { num: l.real[0].t.trim(), lines: [l] }; continue; }
+          if (task) task.lines.push(l);
+        }
+        pushTask();
+        continue;
+      }
+      const sec = { kind: 'text', id: ch.id, title: ch.title, blocks: [], pdf: regionsOf([].concat(hdrUsed ? [] : lec2._hdr, ch.head || [], ch.lines)) };
+      if (!hdrUsed) { sec.withHeader = true; hdrUsed = true; }
+      lec2.sections.push(sec);
+    }
+    delete lec2._chunks; delete lec2._hdr;
+  }
+  doc.introPdf = regionsOf(introL);
+  doc.solved = Object.keys(sol).length;
+  return doc;
 }

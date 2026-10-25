@@ -237,7 +237,12 @@ export function parseFilo(pages) {
         if (!hdrUsed) { sec.withHeader = true; hdrUsed = true; }
       }
       else if (ch.kind === 'qa') sec = { kind: 'qa', title: ch.title, blocks: filoQA(ch.lines) };
-      else if (ch.kind === 'blitz') sec = { kind: 'qa', title: ch.title, blitz: true, blocks: filoBlitz(ch.lines) };
+      else if (ch.kind === 'blitz') {
+        // блиц — те же вопросы с ответами: добавляем в раздел «Вопросы» этой лекции, отдельным разделом не делаем
+        const prev = lec2.sections[lec2.sections.length - 1], bl = filoBlitz(ch.lines);
+        if (prev && prev.kind === 'qa') { prev.blocks = prev.blocks.concat(bl); continue; }
+        sec = { kind: 'qa', title: ch.title, blocks: bl };
+      }
       else if (ch.kind === 'test') sec = { kind: 'test', title: ch.title, blocks: filoTest(ch.lines) };
       lec2.sections.push(sec);
     }
@@ -248,25 +253,31 @@ export function parseFilo(pages) {
   return doc;
 }
 /* Где раздел лежит на страницах PDF: по странице — верх и низ (в пунктах, от низа страницы) */
-function regionsOf(lines) {
+function regionsOf(lines, opt) {
+  opt = opt || {}; const pad = opt.pad == null ? 8 : opt.pad, padT = opt.padT == null ? pad : opt.padT, padB = opt.padB == null ? pad : opt.padB, tf = opt.tf || 1.05;
   const by = {};
   lines.filter(Boolean).forEach(l => { (by[l.page] = by[l.page] || []).push(l); });
   return Object.keys(by).map(Number).sort((a, b) => a - b).map(p => {
     const ls = by[p];
-    const t = Math.max.apply(null, ls.map(l => l.y + (l.s || 9) * 1.05)) + 8;
-    const b = Math.min.apply(null, ls.map(l => l.y - (l.s || 9) * 0.3)) - 8;
-    return { p, t: +t.toFixed(1), b: +b.toFixed(1) };
+    const t = Math.max.apply(null, ls.map(l => l.y + (l.s || 9) * tf)) + padT;
+    const b = Math.min.apply(null, ls.map(l => l.y - (l.s || 9) * 0.3)) - padB;
+    const r = { p, t: +t.toFixed(1), b: +b.toFixed(1) };
+    if (opt.x0 != null) { r.x0 = opt.x0; r.x1 = opt.x1; }
+    return r;
   });
 }
+/* Вырезка вопроса или ответа: та же ширина текста, что у страницы, без лишних полей сверху/снизу */
+// сверху почти вплотную (чтобы не захватить соседнюю строку), снизу чуть запаса под рамки «Запомни»
+const cropOf = (lines, x0, x1) => regionsOf(lines, { tf: 0.95, padT: 0.5, padB: 2.5, x0: x0 == null ? 34 : x0, x1: x1 == null ? 562 : x1 });
 function filoQA(lines) {
   const out = []; let cur = null; let ans = [];
-  const flush = () => { if (cur) { cur.a = proseBlocks(ans, { codeBase: 0, isCodeLine: () => false, isLabel: () => false, isHeading: () => false, isNote: l => /^(Запомни|Важно)/.test(l.text), isNoteStart: l => /^(Запомни|Важно)/.test(l.text), isNoteCont: (l, x0) => near(l.s, 9.8, 0.3) && l.x >= x0 - 3, isTable: () => false, rowGap: () => 14, isItem: () => false, isItemCont: () => false, paraCont: (n, p) => n.gap < 16.5 && near(n.s, p.s, 0.4) }); out.push(cur); } };
+  const flush = () => { if (cur) { cur.ar = cropOf(ans); cur.a = proseBlocks(ans, { codeBase: 0, isCodeLine: () => false, isLabel: () => false, isHeading: () => false, isNote: l => /^(Запомни|Важно)/.test(l.text), isNoteStart: l => /^(Запомни|Важно)/.test(l.text), isNoteCont: (l, x0) => near(l.s, 9.8, 0.3) && l.x >= x0 - 3, isTable: () => false, rowGap: () => 14, isItem: () => false, isItemCont: () => false, paraCont: (n, p) => n.gap < 16.5 && near(n.s, p.s, 0.4) }); out.push(cur); } };
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
     if (l.bold0 && /^В\d+\./.test(l.text) && l.real.every(s => s.f === 'b')) {
-      flush(); const parts = [l.text]; while (lines[i + 1] && lines[i + 1].real.every(s => s.f === 'b') && lines[i + 1].gap < 16 && !/^В\d+\./.test(lines[i + 1].text) && near(lines[i + 1].s, l.s, 0.3)) parts.push(lines[++i].text);
+      flush(); const parts = [l.text], ql = [l]; while (lines[i + 1] && lines[i + 1].real.every(s => s.f === 'b') && lines[i + 1].gap < 16 && !/^В\d+\./.test(lines[i + 1].text) && near(lines[i + 1].s, l.s, 0.3)) { ql.push(lines[i + 1]); parts.push(lines[++i].text); }
       const t = parts.join(' '); const m = t.match(/^(В\d+)\.\s*(.*)$/);
-      cur = { t: 'qa', num: m[1], q: esc(m[2]) }; ans = []; continue;
+      cur = { t: 'qa', num: m[1], q: esc(m[2]), qr: cropOf(ql) }; ans = []; continue;
     }
     if (cur) ans.push(l);
   }
@@ -277,10 +288,12 @@ function filoBlitz(lines) {
   const out = []; let cur = null;
   for (const l of lines) {
     const L = sub(l, x => x < 325), R = sub(l, x => x >= 325);
-    if (L && (!cur || l.gap > 13.5)) { cur = { t: 'qa', q: L.html, a: [{ t: 'p', html: R ? R.html : '' }] }; out.push(cur); continue; }
-    if (L && cur) cur.q += ' ' + L.html;
-    if (R && cur) { const p = cur.a[0]; p.html = (p.html + ' ' + R.html).trim(); }
+    if (L && (!cur || l.gap > 13.5)) { cur = { t: 'qa', blitz: true, q: L.html, a: [{ t: 'p', html: R ? R.html : '' }], _ql: [L], _al: R ? [R] : [] }; out.push(cur); continue; }
+    if (L && cur) { cur.q += ' ' + L.html; cur._ql.push(L); }
+    if (R && cur) { const p = cur.a[0]; p.html = (p.html + ' ' + R.html).trim(); cur._al.push(R); }
   }
+  // блиц в PDF — две колонки: вопрос слева, ответ справа
+  out.forEach(c => { c.qr = cropOf(c._ql, 34, 328); c.ar = cropOf(c._al, 326, 562); delete c._ql; delete c._al; });
   return out;
 }
 function filoTest(lines) {
@@ -401,10 +414,14 @@ function cppTasks(lines, cfg) {
     const k = blocks.findIndex(b => b.t === 'code' || b.t === 'out' || b.t === 'label');
     cur.q = blocks.slice(0, k < 0 ? blocks.length : k);
     cur.a = k < 0 ? [] : blocks.slice(k);
-    delete cur.lines; out.push(cur);
+    // вырезки из PDF: условие (с заголовком задачи) и решение
+    const kl = cur.lines.findIndex(l => cfg.isCodeLine(l) || cfg.isLabel(l));
+    const qL = kl < 0 ? cur.lines : cur.lines.slice(0, kl), aL = kl < 0 ? [] : cur.lines.slice(kl);
+    cur.qr = cropOf([cur.head].concat(qL), 40, 556); if (aL.length) cur.ar = cropOf(aL, 40, 556);
+    delete cur.lines; delete cur.head; out.push(cur);
   };
   for (const l of lines) {
-    if (near(l.s, 10.6, 0.3) && l.bold0 && /^Задача/.test(l.text)) { flush(); const m = l.text.match(/^Задача\s+([\dА-Я.]+?)\.?\s+(.*)$/); cur = { t: 'qa', task: true, num: m ? m[1] : '', title: m ? m[2] : l.text, lines: [] }; continue; }
+    if (near(l.s, 10.6, 0.3) && l.bold0 && /^Задача/.test(l.text)) { flush(); const m = l.text.match(/^Задача\s+([\dА-Я.]+?)\.?\s+(.*)$/); cur = { t: 'qa', task: true, num: m ? m[1] : '', title: m ? m[2] : l.text, lines: [], head: l }; continue; }
     if (cur) cur.lines.push(l); else pre.push(l);
   }
   flush();
@@ -437,9 +454,9 @@ function cppControl(lines) {
   const out = []; let cur = null;
   for (const l of lines) {
     const t0 = l.real[0].t.trim();
-    if (near(l.s, 10, 0.25) && /^\d+\.$/.test(t0)) { cur = { t: 'qa', control: true, num: t0.slice(0, -1), qh: htmlOf(toks(l.segs.slice(l.segs.indexOf(l.real[0]) + 1))) }; out.push(cur); continue; }
-    if (cur) cur.qh += ' ' + l.html;
+    if (near(l.s, 10, 0.25) && /^\d+\.$/.test(t0)) { cur = { t: 'qa', control: true, num: t0.slice(0, -1), qh: htmlOf(toks(l.segs.slice(l.segs.indexOf(l.real[0]) + 1))), _l: [l] }; out.push(cur); continue; }
+    if (cur) { cur.qh += ' ' + l.html; cur._l.push(l); }
   }
-  out.forEach(c => { const m = c.qh.match(/\s*\(([\dА-Я.,\s–-]+)\)\s*$/); c.refs = m ? m[1].split(/,\s*/).map(s => s.trim()) : []; c.q = m ? c.qh.slice(0, m.index).trim() : c.qh; delete c.qh; c.a = []; });
+  out.forEach(c => { const m = c.qh.match(/\s*\(([\dА-Я.,\s–-]+)\)\s*$/); c.refs = m ? m[1].split(/,\s*/).map(s => s.trim()) : []; c.q = m ? c.qh.slice(0, m.index).trim() : c.qh; c.qr = cropOf(c._l, 40, 556); delete c.qh; delete c._l; c.a = []; });
   return out;
 }

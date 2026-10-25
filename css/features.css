@@ -572,3 +572,30 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
   .nt-qa { padding: var(--sp-4); margin-bottom: var(--sp-4); }
   .nt-car .btn span { display: none; }
 }
+/* ---------- «Как в PDF»: вопросы/ответы — вырезки PDF, свои тексты — шрифтом и размером PDF ---------- */
+@font-face { font-family: "DejaVu Sans PDF"; src: url("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "DejaVu Sans PDF"; src: url("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "DejaVu Sans Mono PDF"; src: url("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSansMono.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+.nt-paper { container-type: inline-size; }
+/* размер текста = как в PDF: кегль PDF / ширина страницы (596 pt) × ширина листа */
+.nt-paper.subj-philosophy { --pdf-fs: calc(100cqw * 10.6 / 596); --pdf-font: Carlito, Calibri, "Segoe UI", sans-serif; }
+.nt-paper.subj-cpp { --pdf-fs: calc(100cqw * 9.4 / 596); --pdf-font: "DejaVu Sans PDF", "DejaVu Sans", Verdana, sans-serif; }
+.nt-paper .nt-sec:not(.is-pdf) { font-family: var(--pdf-font); font-size: var(--pdf-fs); padding-inline: 4cqw; }
+.nt-paper .nt-sec:not(.is-pdf) code, .nt-paper .nt-sec:not(.is-pdf) pre { font-family: "DejaVu Sans Mono PDF", "DejaVu Sans Mono", var(--font-mono); }
+.nt-paper .nt-sec-t { font-size: calc(var(--pdf-fs) * 1.3); }
+.nt-paper .nt-q { font-size: 1em; }
+.nt-paper .btn, .nt-paper .segmented, .nt-paper .chip, .nt-paper .nt-car-n { font-family: var(--font); }
+/* карточка с вырезками: вырезки с тем же масштабом, что страницы; остальное выровнено по тексту PDF */
+.nt-paper .nt-qa.has-crop { padding: 1.2cqw 0 1.6cqw; }
+.nt-crops { display: flex; flex-direction: column; margin-inline-start: 1.5cqw; max-width: calc(100% - 1.5cqw); }
+.nt-pg.nt-crop { flex: none; max-width: 100%; border: 0; border-radius: 0; box-shadow: none; background: #fff; }
+.nt-paper .nt-qa.has-crop > :not(.nt-crops):not(.nt-a), .nt-paper .nt-qa.has-crop > .nt-a > :not(.nt-crops) { margin-inline: 3.5cqw; }
+.nt-paper .nt-qa.has-crop > .nt-a { margin-top: 1cqw; padding-top: 1cqw; }
+.nt-paper .nt-qa.has-crop .nt-reveal { margin-top: 0.8cqw; }
+/* больше воздуха между карточками и перед тестом */
+.nt-paper .nt-qa { margin-bottom: 2.6cqw; }
+.nt-paper .nt-quiz { margin: 4cqw 0; }
+.nt-paper .nt-sec:not(.is-pdf) + .nt-sec { margin-top: 2cqw; }
+.nt-paper .qs-paper, .nt-paper .qs-paper .quiz { font-family: var(--pdf-font); }/* пример под условием — как блок вывода в PDF: тот же размер шрифта и подпись */
+.nt-paper .nt-out figcaption { font-size: calc(var(--pdf-fs) * 0.83); text-transform: none; letter-spacing: 0; color: var(--text); font-weight: 700; }
+.nt-paper .nt-out pre { font-size: calc(var(--pdf-fs) * 0.86); padding: 0.8cqw 1.2cqw; border-radius: 2px; }

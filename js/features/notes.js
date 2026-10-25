@@ -51,24 +51,34 @@
       return '<div class="nt-pg" data-p="' + r.p + '" data-t="' + r.t + '" data-b="' + r.b + '" style="aspect-ratio:' + W + ' / ' + Math.max(1, r.t - r.b).toFixed(1) + '"></div>';
     }).join('') + '</div>';
   }
+  /* Вырезка вопроса/ответа из PDF: тот же масштаб, что у страниц лекции (ширина = доля ширины листа) */
+  function cropHtml(regs, d) {
+    var W = (d.page && d.page.w) || 595.3;
+    return '<div class="nt-crops">' + (regs || []).map(function (r) {
+      var x0 = r.x0 == null ? 0 : r.x0, x1 = r.x1 == null ? W : r.x1;
+      return '<div class="nt-pg nt-crop" data-p="' + r.p + '" data-t="' + r.t + '" data-b="' + r.b + '" data-x0="' + x0 + '" data-x1="' + x1 + '" style="width:calc(100cqw * ' + ((x1 - x0) / W).toFixed(4) + ');aspect-ratio:' + (x1 - x0).toFixed(1) + ' / ' + Math.max(1, r.t - r.b).toFixed(1) + '"></div>';
+    }).join('') + '</div>';
+  }
   function unloadPg(el) { el.innerHTML = ''; el.removeAttribute('data-done'); }
   function renderPg(el, url) {
     if (el.getAttribute('data-done') || el.getAttribute('data-busy')) return;
     el.setAttribute('data-busy', '1');
     var p = +el.getAttribute('data-p'), t = +el.getAttribute('data-t'), b = +el.getAttribute('data-b');
+    var hasX = el.hasAttribute('data-x0'), x0 = hasX ? +el.getAttribute('data-x0') : 0;
     Promise.all([loadPdfLib(), pdfDoc(url)]).then(function (r) {
       var lib = r[0];
       return r[1].getPage(p).then(function (page) {
-        var w = el.clientWidth || 600, W = page.view[2], H = page.view[3];
-        var css = w / W, dpr = Math.min(window.devicePixelRatio || 1, 2), sc = css * dpr;
-        var vp = page.getViewport({ scale: sc, offsetY: -(H - t) * sc });
+        var W = page.view[2], H = page.view[3], x1 = hasX ? +el.getAttribute('data-x1') : W, cw = x1 - x0;
+        var w = el.clientWidth || 600;
+        var css = w / cw, dpr = Math.min(window.devicePixelRatio || 1, 2), sc = css * dpr;
+        var vp = page.getViewport({ scale: sc, offsetX: -x0 * sc, offsetY: -(H - t) * sc });
         var c = document.createElement('canvas');
-        c.width = Math.round(W * sc); c.height = Math.round((t - b) * sc);
+        c.width = Math.round(cw * sc); c.height = Math.round((t - b) * sc);
         el.innerHTML = ''; el.appendChild(c);
         return page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function () {
           // невидимый текст поверх картинки: можно выделять, копировать и искать (Ctrl+F)
           var tl = document.createElement('div'); tl.className = 'textLayer';
-          tl.style.setProperty('--scale-factor', css); tl.style.top = (-(H - t) * css) + 'px';
+          tl.style.setProperty('--scale-factor', css); tl.style.top = (-(H - t) * css) + 'px'; tl.style.left = (-x0 * css) + 'px';
           el.appendChild(tl);
           return page.getTextContent().then(function (tc) {
             try { lib.renderTextLayer({ textContentSource: tc, container: tl, viewport: page.getViewport({ scale: css }) }); } catch (e) { /* без слоя текста */ }
@@ -95,6 +105,7 @@
     var nt = SP.$('.nt.is-pdfmode', root); if (!nt) return;
     var url = nt.getAttribute('data-pdf'), h = window.innerHeight;
     SP.$$('.nt-pg:not([data-done]):not([data-busy])', root).forEach(function (el) {
+      if (el.offsetParent === null) return; // скрытые (ответ закрыт, карточка не текущая) не рисуем
       var r = el.getBoundingClientRect(); if (r.bottom > -1200 && r.top < h + 1200) renderPg(el, url);
     });
   }
@@ -168,13 +179,16 @@
   function qaHtml(b, ctx) {
     var id = 'nta-' + (ctx.n++);
     var task = !!b.task, refs = (b.refs || []).filter(Boolean);
-    var q = task ? '<div class="nt-q"><span class="nt-qn">' + esc(SP.t('notes.task', { n: b.num })) + '</span><b>' + esc(b.title) + '</b></div>' + blocksHtml(b.q, ctx) + plainHtml(b)
+    var crop = ctx.asPdf && b.qr && b.qr.length; // вид «Как в PDF»: вопрос и ответ — вырезки из самого PDF
+    var q = crop ? cropHtml(b.qr, ctx.d) + (task ? plainHtml(b) : '')
+      : task ? '<div class="nt-q"><span class="nt-qn">' + esc(SP.t('notes.task', { n: b.num })) + '</span><b>' + esc(b.title) + '</b></div>' + blocksHtml(b.q, ctx) + plainHtml(b)
       : '<div class="nt-q">' + (b.num ? '<span class="nt-qn">' + esc(b.num) + '</span>' : '') + '<span>' + b.q + '</span></div>';
+    var aHtml = crop && b.ar && b.ar.length ? cropHtml(b.ar, ctx.d) : blocksHtml(b.a, ctx);
     var refHtml = refs.length ? '<div class="nt-refs">' + refs.map(function (r) { return '<button type="button" class="chip" data-ref="' + esc(r) + '">' + SP.icon('arrow-up', 'ic-sm') + '<span>' + esc(SP.t('notes.toRef', { r: r })) + '</span></button>'; }).join('') + '</div>' : '';
     var hasA = b.a && b.a.length;
-    return '<div class="nt-qa' + (task ? ' is-task' : '') + (ctx.blitz ? ' is-blitz' : '') + '">' + q + refHtml +
+    return '<div class="nt-qa' + (task ? ' is-task' : '') + (b.blitz ? ' is-blitz' : '') + (crop ? ' has-crop' : '') + '">' + q + refHtml +
       (hasA ? '<button type="button" class="btn btn-sm nt-reveal" aria-expanded="false" aria-controls="' + id + '" data-task="' + (task ? 1 : 0) + '">' + SP.icon('eye', 'ic-sm') + '<span>' + esc(SP.t(task ? 'notes.showSol' : 'notes.show')) + '</span></button>' +
-        '<div class="nt-a" id="' + id + '" hidden>' + blocksHtml(b.a, ctx) + (b.own ? '<p class="xsmall subtle nt-own">' + SP.icon('info', 'ic-sm') + esc(SP.t('notes.ownAnswer')) + '</p>' : '') + '</div>' : '') + '</div>';
+        '<div class="nt-a" id="' + id + '" hidden>' + aHtml + (b.own ? '<p class="xsmall subtle nt-own">' + SP.icon('info', 'ic-sm') + esc(SP.t('notes.ownAnswer')) + '</p>' : '') + '</div>' : '') + '</div>';
   }
   /* «Простыми словами» к задаче + пример работы программы (из решения в PDF; сам код не показываем) */
   function plainHtml(b) {
@@ -198,6 +212,7 @@
     var n = SP.$('.nt-car-n', sec); if (n) n.textContent = SP.t('notes.carN', { i: i + 1, n: items.length });
     var pv = SP.$('[data-car="-1"]', sec), nx = SP.$('[data-car="1"]', sec);
     if (pv) pv.disabled = i === 0; if (nx) nx.disabled = i === items.length - 1;
+    setTimeout(kickPdf, 0);
     if (focus) { var r = sec.getBoundingClientRect(); if (r.top < 0 || r.top > window.innerHeight * 0.6) sec.scrollIntoView({ block: 'start' }); items[i].setAttribute('tabindex', '-1'); items[i].focus({ preventScroll: true }); }
   }
   function carGo(sec, d) { carShow(sec, (+sec.getAttribute('data-cur') || 0) + d, true); }
@@ -242,8 +257,8 @@
 
   /* ---------- Режим чтения ---------- */
   function renderDoc(meta, d) {
-    var ctx = { n: 0, quizzes: {} }, toc = [], refMap = {};
     var asPdf = mode() === 'pdf' && !!meta.pdf && !!d.page;
+    var ctx = { n: 0, quizzes: {}, asPdf: asPdf, d: d }, toc = [], refMap = {};
     var body = '';
     if (asPdf && (d.introPdf || []).length) {
       body += '<section class="nt-intro nt-intro-pdf" id="nt-intro">' + pdfRegionsHtml(d.introPdf, d) + '</section>';
@@ -317,6 +332,7 @@
   function setReveal(btn, open) {
     var a = document.getElementById(btn.getAttribute('aria-controls')); if (!a) return;
     a.hidden = !open; btn.setAttribute('aria-expanded', String(open));
+    if (open) setTimeout(kickPdf, 0); // открытый ответ-вырезку дорисовать сразу
     var task = btn.getAttribute('data-task') === '1';
     btn.innerHTML = SP.icon(open ? 'eye-off' : 'eye', 'ic-sm') + '<span>' + esc(SP.t(open ? (task ? 'notes.hideSol' : 'notes.hide') : (task ? 'notes.showSol' : 'notes.show'))) + '</span>';
   }

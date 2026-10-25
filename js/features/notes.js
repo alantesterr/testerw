@@ -193,7 +193,8 @@
     var aHtml = crop && b.ar && b.ar.length ? cropHtml(b.ar, ctx.d) : blocksHtml(b.a, ctx);
     var refHtml = refs.length ? '<div class="nt-refs">' + refs.map(function (r) { return '<button type="button" class="chip" data-ref="' + esc(r) + '">' + SP.icon('arrow-up', 'ic-sm') + '<span>' + esc(SP.t('notes.toRef', { r: r })) + '</span></button>'; }).join('') + '</div>' : '';
     var hasA = b.a && b.a.length;
-    return '<div class="nt-qa' + (task ? ' is-task' : '') + (b.blitz ? ' is-blitz' : '') + (crop ? ' has-crop' : '') + '">' + q + refHtml +
+    var lecTag = b.lec ? '<div class="nt-qlec">' + esc(b.lec) + '</div>' : ''; // общий блок контрольных вопросов: к какой лекции вопрос
+    return '<div class="nt-qa' + (task ? ' is-task' : '') + (b.blitz ? ' is-blitz' : '') + (crop ? ' has-crop' : '') + '">' + lecTag + q + refHtml +
       (hasA ? '<button type="button" class="btn btn-sm nt-reveal" aria-expanded="false" aria-controls="' + id + '" data-task="' + (task ? 1 : 0) + '">' + SP.icon('eye', 'ic-sm') + '<span>' + esc(SP.t(task ? 'notes.showSol' : 'notes.show')) + '</span></button>' +
         '<div class="nt-a" id="' + id + '" hidden>' + aHtml + (b.own ? '<p class="xsmall subtle nt-own">' + SP.icon('info', 'ic-sm') + esc(SP.t('notes.ownAnswer')) + '</p>' : '') + '</div>' : '') + '</div>';
   }

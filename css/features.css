@@ -634,3 +634,6 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 }
 .nt-jump { --btn-bg: var(--accent-soft); --btn-fg: var(--accent-text); --btn-border: transparent; }
 @media (max-width: 767px) { .nt-jump span { display: none; } }
+
+.nt-qlec { display: inline-block; margin: 0 0 var(--sp-2); padding: 2px 10px; border-radius: var(--r-full); background: var(--accent-soft); color: var(--accent-text); font-family: var(--font); font-size: var(--fs-xs); font-weight: var(--fw-semibold); }
+.nt-paper .nt-qa.has-crop > .nt-qlec { margin-inline: 2.4%; }

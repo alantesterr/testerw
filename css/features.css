@@ -599,3 +599,36 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 .nt-paper .qs-paper, .nt-paper .qs-paper .quiz { font-family: var(--pdf-font); }/* пример под условием — как блок вывода в PDF: тот же размер шрифта и подпись */
 .nt-paper .nt-out figcaption { font-size: calc(var(--pdf-fs) * 0.83); text-transform: none; letter-spacing: 0; color: var(--text); font-weight: 700; }
 .nt-paper .nt-out pre { font-size: calc(var(--pdf-fs) * 0.86); padding: 0.8cqw 1.2cqw; border-radius: 2px; }
+/* ===== Конспекты: вопросы и задачи крупнее PDF, всегда «по одному» ===== */
+.nt-paper .nt-sec.has-car { padding-inline: 1.5cqw; }
+.nt-crops { margin-inline-start: 0; max-width: 100%; }
+.nt-paper .nt-qa.has-crop { padding: 1.4cqw 0 1.8cqw; border-radius: 6px; }
+.nt-paper .nt-qa.has-crop > :not(.nt-crops):not(.nt-a), .nt-paper .nt-qa.has-crop > .nt-a > :not(.nt-crops) { margin-inline: 2.4%; }
+.nt-paper .nt-sec.has-car .nt-task-more, .nt-paper .nt-sec.has-car .nt-out, .nt-paper .nt-sec.has-car .nt-html { font-size: calc(var(--pdf-fs) * 1.12); }
+.nt-paper .nt-sec.has-car .nt-out { font-size: calc(var(--pdf-fs) * 1.12); }
+.nt-paper .nt-sec.has-car > .nt-sec-head { margin-inline: 2.5cqw; }
+.nt-sec.is-one > .nt-car { padding: 0 var(--sp-1); }
+.nt-paper .nt-sec.is-one > .nt-car { margin-inline: 2.5cqw; }
+
+/* ===== Телефон: удобное чтение ===== */
+@media (max-width: 767px) {
+  .nt-layout { padding-inline: 12px; gap: 0; }
+  .nt:not(.is-pdfmode) .nt-doc { font-size: 1.0625rem; line-height: 1.7; }
+  .nt:not(.is-pdfmode) .nt-p { margin-bottom: 0.9em; }
+  .nt:not(.is-pdfmode) .nt-list li { margin-bottom: 0.45em; }
+  .nt:not(.is-pdfmode) .nt-h { font-size: 1.15rem; margin-top: 1.4em; }
+  .nt:not(.is-pdfmode) .nt-sec-t { font-size: 1.2rem; }
+  .nt:not(.is-pdfmode) .nt-lec-t { font-size: 1.4rem; }
+  .nt:not(.is-pdfmode) .nt-note { font-size: 0.95rem; padding: 12px 14px; }
+  .nt:not(.is-pdfmode) .nt-table table { font-size: 0.875rem; }
+  .nt-doc .code pre, .nt-doc .code code, .nt-out pre { font-size: 0.8rem; }
+  .nt:not(.is-pdfmode) .nt-qa { padding: 16px; border-radius: 14px; }
+  .nt:not(.is-pdfmode) .nt-q { font-size: 1.1rem; }
+  /* листание вопросов всегда под рукой — над нижней панелью сайта */
+  .nt-sec.is-one > .nt-car { position: sticky; bottom: calc(4.4rem + env(safe-area-inset-bottom)); z-index: 2; padding: 8px; margin-inline: -4px; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); border-radius: 14px; }
+  :root.nt-focus .nt-sec.is-one > .nt-car { bottom: calc(8px + env(safe-area-inset-bottom)); }
+  .nt-car .btn { min-height: 2.75rem; min-width: 3.25rem; }
+  /* вид «Как в PDF» на телефоне — лист во всю ширину экрана */
+  .nt.is-pdfmode .nt-layout { padding-inline: 0; }
+  .nt-paper .nt-sec.has-car { padding-inline: 2cqw; }
+}

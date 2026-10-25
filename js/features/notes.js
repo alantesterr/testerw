@@ -54,9 +54,11 @@
   /* Вырезка вопроса/ответа из PDF: тот же масштаб, что у страниц лекции (ширина = доля ширины листа) */
   function cropHtml(regs, d) {
     var W = (d.page && d.page.w) || 595.3;
+    /* вырезка растягивается на всю ширину карточки — текст чуть крупнее, чем в PDF; узкие (блиц) — в той же пропорции */
+    var base = d.subject === 'C++' ? 516 : 528;
     return '<div class="nt-crops">' + (regs || []).map(function (r) {
       var x0 = r.x0 == null ? 0 : r.x0, x1 = r.x1 == null ? W : r.x1;
-      return '<div class="nt-pg nt-crop" data-p="' + r.p + '" data-t="' + r.t + '" data-b="' + r.b + '" data-x0="' + x0 + '" data-x1="' + x1 + '" style="width:calc(100cqw * ' + ((x1 - x0) / W).toFixed(4) + ');aspect-ratio:' + (x1 - x0).toFixed(1) + ' / ' + Math.max(1, r.t - r.b).toFixed(1) + '"></div>';
+      return '<div class="nt-pg nt-crop" data-p="' + r.p + '" data-t="' + r.t + '" data-b="' + r.b + '" data-x0="' + x0 + '" data-x1="' + x1 + '" style="width:' + Math.min(100, (x1 - x0) / base * 100).toFixed(2) + '%;aspect-ratio:' + (x1 - x0).toFixed(1) + ' / ' + Math.max(1, r.t - r.b).toFixed(1) + '"></div>';
     }).join('') + '</div>';
   }
   function unloadPg(el) { el.innerHTML = ''; el.removeAttribute('data-done'); }
@@ -197,9 +199,7 @@
     var ex = (b.a || []).filter(function (x) { return x.t === 'out'; })[0];
     return '<p class="nt-p nt-task-more">' + b.plain + '</p>' + (ex ? blockHtml({ t: 'out', cap: SP.t('notes.plainEx'), text: ex.text }, {}) : '');
   }
-  /* Вопросы и задачи: «Списком» (подряд) или «По одному» (одна карточка, листать ← →). Выбор общий. */
-  var QV_KEY = 'sp-notes-qview';
-  function qView() { return SP.store.get(QV_KEY, 'list') === 'one' ? 'one' : 'list'; }
+  /* Вопросы и задачи показываются «по одному»: одна карточка, листать кнопками, ← → или свайпом */
   function carItems(sec) { return SP.$$(':scope > .nt-qa', sec); }
   function carShow(sec, i, focus) {
     var items = carItems(sec); if (!items.length) return;
@@ -216,34 +216,12 @@
     if (focus) { var r = sec.getBoundingClientRect(); if (r.top < 0 || r.top > window.innerHeight * 0.6) sec.scrollIntoView({ block: 'start' }); items[i].setAttribute('tabindex', '-1'); items[i].focus({ preventScroll: true }); }
   }
   function carGo(sec, d) { carShow(sec, (+sec.getAttribute('data-cur') || 0) + d, true); }
-  function setQView(v) {
-    SP.store.set(QV_KEY, v);
-    SP.$$('.nt-sec.has-car', root).forEach(function (sec) {
-      sec.classList.toggle('is-one', v === 'one');
-      SP.$$('[data-qview]', sec).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-qview') === v)); });
-    });
-  }
-
-  /* Оформление тестов: «Белое» (как PDF) или «Как на сайте». По умолчанию — по виду конспекта. */
-  var QS_KEY = 'sp-notes-quizstyle';
-  function quizStyle() { var v = SP.store.get(QS_KEY, null); return v === 'paper' || v === 'site' ? v : (mode() === 'pdf' ? 'paper' : 'site'); }
-  function quizStyleCls(v) { return v === 'paper' ? 'theme-paper qs-paper' : ('qs-site' + (SP.settings.resolvedTheme() === 'dark' ? ' theme-dark' : '')); }
-  function applyQuizStyle(v) {
-    SP.store.set(QS_KEY, v);
-    SP.$$('.nt-quiz', root).forEach(function (c) {
-      c.classList.remove('theme-paper', 'qs-paper', 'qs-site', 'theme-dark');
-      quizStyleCls(v).split(' ').forEach(function (k) { c.classList.add(k); });
-      SP.$$('[data-qstyle]', c).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-qstyle') === v)); });
-    });
-  }
   function quizCard(b, ctx) {
     var key = ctx.lec.id + ':' + ctx.sec;
     var best = (SP.store.get(bestKey(openId), {}) || {})[key];
     ctx.quizzes[key] = { qs: b.questions, title: ctx.lec.label + ' · ' + SP.t('notes.test') };
-    var qs = quizStyle();
-    return '<div class="nt-quiz card ' + quizStyleCls(qs) + '" data-quiz="' + esc(key) + '">' +
-      '<div class="nt-qstyle"><span class="xsmall subtle">' + esc(SP.t('notes.qstyle')) + '</span><div class="segmented" role="group" aria-label="' + esc(SP.t('notes.qstyle')) + '">' +
-      ['paper', 'site'].map(function (v) { return '<button type="button" data-qstyle="' + v + '" aria-pressed="' + (qs === v) + '">' + esc(SP.t('notes.qstyle.' + v)) + '</button>'; }).join('') + '</div></div>' +
+    /* оформление теста: в виде «Как в PDF» — белое, как PDF; в виде «Текстом» — тема сайта */
+    return '<div class="nt-quiz card' + (ctx.asPdf ? ' theme-paper qs-paper' : '') + '" data-quiz="' + esc(key) + '">' +
       '<div class="nt-quiz-start"><span class="nt-quiz-ic">' + SP.icon('list-checks') + '</span>' +
       '<div class="grow"><b>' + esc(SP.t('notes.testTitle', { l: ctx.lec.label })) + '</b><div class="small muted">' + esc(SP.t('notes.testN', { n: b.questions.length })) +
       (best != null ? ' · <span class="text-' + (best >= 90 ? 'success' : best >= 50 ? 'warning' : 'danger') + '">' + esc(SP.t('notes.best', { p: best })) + '</span>' : '') + '</div></div>' +
@@ -282,11 +260,10 @@
         var pdfSec = asPdf && s.pdf && s.pdf.length;
         var title = s.title ? (s.id ? '<span class="nt-sec-id">' + esc(s.id) + '</span>' : '') + esc(s.title) : '';
         var nQa = (s.blocks || []).filter(function (b) { return b.t === 'qa' && b.a && b.a.length; }).length;
-        var car = isQ && !pdfSec && nQa > 1, one = car && qView() === 'one';
+        var car = isQ && !pdfSec && nQa > 1, one = car; // вопросы и задачи всегда «по одному» (листать ← →)
         body += '<section class="nt-sec nk-' + s.kind + (pdfSec ? ' is-pdf' : '') + (car ? ' has-car' : '') + (one ? ' is-one' : '') + '" id="' + sid + '" data-label="' + esc(lec.label + (s.title ? ' · ' + (s.id ? s.id + ' ' : '') + s.title : '')) + '">' +
           (title ? '<div class="nt-sec-head"><h3 class="nt-sec-t">' + title + '</h3><div class="nt-sec-tools">' +
-            (car ? '<div class="segmented nt-qview" role="group" aria-label="' + esc(SP.t('notes.qview')) + '">' + ['list', 'one'].map(function (v) { return '<button type="button" data-qview="' + v + '" aria-pressed="' + (qView() === v) + '">' + SP.icon(v === 'list' ? 'list' : 'square', 'ic-sm') + '<span>' + esc(SP.t('notes.qview.' + v)) + '</span></button>'; }).join('') + '</div>' : '') +
-            (isQ && nQa > 1 ? '<button type="button" class="btn btn-ghost btn-sm" data-allans="' + sid + '" aria-pressed="false">' + SP.icon('eye', 'ic-sm') + '<span>' + esc(SP.t('notes.showAll')) + '</span></button>' : '') + '</div></div>' : '') +
+            (isQ && nQa > 1 && !car ? '<button type="button" class="btn btn-ghost btn-sm" data-allans="' + sid + '" aria-pressed="false">' + SP.icon('eye', 'ic-sm') + '<span>' + esc(SP.t('notes.showAll')) + '</span></button>' : '') + '</div></div>' : '') +
           (pdfSec ? pdfRegionsHtml(s.pdf, d) : blocksHtml(s.blocks, ctx)) +
           (car ? '<div class="nt-car"><button type="button" class="btn" data-car="-1">' + SP.icon('chevron-left') + '<span>' + esc(SP.t('common.back')) + '</span></button><span class="nt-car-n" aria-live="polite"></span><button type="button" class="btn btn-primary" data-car="1"><span>' + esc(SP.t('quiz.next')) + '</span>' + SP.icon('chevron-right') + '</button></div>' : '') + '</section>';
         if (s.title) items.push({ id: sid, label: (s.id ? s.id + ' ' : '') + s.title, kind: s.kind });
@@ -364,12 +341,8 @@
         if (target) scrollToId(target, true);
         return;
       }
-      var qv = e.target.closest('[data-qview]');
-      if (qv) { var sec0 = qv.closest('.nt-sec'); setQView(qv.getAttribute('data-qview')); var nb = SP.$('[data-qview="' + qv.getAttribute('data-qview') + '"]', sec0); if (nb) nb.focus(); return; }
       var cb = e.target.closest('[data-car]');
       if (cb) { carGo(cb.closest('.nt-sec'), +cb.getAttribute('data-car')); return; }
-      var qst = e.target.closest('[data-qstyle]');
-      if (qst) { applyQuizStyle(qst.getAttribute('data-qstyle')); return; }
       var qs = e.target.closest('[data-qstart]');
       if (qs) {
         var key = qs.getAttribute('data-qstart'), info = ctx.quizzes[key], card = qs.closest('.nt-quiz');

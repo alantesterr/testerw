@@ -1,5 +1,5 @@
 {
-    "version":  "2026-10-26.1",
+    "version":  "2026-10-27.1",
     "files":  [
                   {
                       "subject":  "Философия",
@@ -69,6 +69,15 @@
                       "type":  "application/pdf",
                       "size":  1125117,
                       "note":  "Подробный конспект к РК1"
+                  },
+                  {
+                      "subject":  "Исследование операций",
+                      "kind":  "material",
+                      "name":  "IO_RK_uchebnik.pdf",
+                      "path":  "data/ir-252/files/Исследование операций/IO_RK_uchebnik.pdf",
+                      "type":  "application/pdf",
+                      "size":  2304554,
+                      "note":  "Учебник-тетрадь к РК: 15 тем, задачи с решениями"
                   }
               ]
 }

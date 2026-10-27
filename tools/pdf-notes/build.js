@@ -43,7 +43,17 @@ export async function build() {
     });
     da.lectures = da.lectures.filter(l => l !== t9);
   }
-  await fetch('/save/filo2.final.json', { method: 'POST', body: JSON.stringify(d2) });
+  // исправления ключей тестов философии (сверено с файлом одногруппника test_for_ph.pdf)
+  const fixes = await (await fetch('/out/philo-key-fixes.json?' + Date.now())).json();
+  const N = s => String(s).toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]/g, '');
+  [d2, df].forEach(d => d.lectures.forEach(l => l.sections.forEach(s => (s.blocks || []).forEach(b => { if (b.t !== 'quiz') return; b.questions.forEach(q => {
+    const k = Object.keys(fixes).find(x => N(q.q).startsWith(N(x))); if (!k) return;
+    const i = q.opts.findIndex(o => N(o.t) === N(fixes[k])); if (i >= 0) q.opts.forEach((o, j) => { o.right = j === i; });
+  }); }))));
+  // Исследование операций
+  const io = await (await fetch('/out/io.raw.json')).json(); const di = P.parseIO(io); di.page = { w: io[0].w, h: io[0].h }; delete di._report;
+  await fetch('/save/io.final.json', { method: 'POST', body: JSON.stringify(di) });
+  await fetch('/save/filo2.final.json',{ method: 'POST', body: JSON.stringify(d2) });
   await fetch('/save/arch.final.json', { method: 'POST', body: JSON.stringify(da) });
   await fetch('/save/cpp.final.json', { method: 'POST', body: JSON.stringify(dc) });
   await fetch('/save/filo.final.json', { method: 'POST', body: JSON.stringify(df) });

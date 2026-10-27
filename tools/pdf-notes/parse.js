@@ -644,3 +644,70 @@ export function parseArch(pages) {
   doc.solved = Object.keys(sol).length;
   return doc;
 }
+/* Исследование операций: темы 1–15 + приложения. Конспект — страницами PDF, задача — условие видно, решение под кнопкой */
+export function parseIO(pages) {
+  const L = stream(pages, l => l.s <= 6.5 && l.y < 30);
+  const doc = { subject: 'Исследование операций', pdfOnly: true, title: 'Исследование операций: подготовка к РК', sub: 'Темы 1–15 + теория игр: суть → алгоритм → задачи с решением «как в тетради»; пробный РК, шпаргалка', intro: [], introPdf: [], lectures: [] };
+  const introL = []; let lec = null, cur = null;
+  const isTopic = l => near(l.s, 9.5, 0.2) && l.bold0 && /^(ТЕМА \d+|ПРИЛОЖЕНИЕ [А-Г])/.test(l.text) && l.y > 780;
+  const isH = l => near(l.s, 13, 0.2) && l.bold0 && l.x < 40;
+  const isBox = l => near(l.s, 9.5, 0.2) && l.bold0 && l.x < 46;
+  const isTask = l => near(l.s, 10, 0.2) && l.bold0 && /^ЗАДАЧА\s/.test(l.text);
+  const isStep = l => (near(l.s, 10.2, 0.1) && l.x > 52 && l.x < 58) || (l.bold0 && ((near(l.s, 9, 0.05) && l.x > 54 && l.x < 64) || (near(l.s, 11, 0.1) && l.x < 40)));
+  for (let i = 0; i < L.length; i++) {
+    const l = L[i];
+    if (isTopic(l)) {
+      const hdr = [l]; let title = '';
+      while (L[i + 1] && near(L[i + 1].s, 19, 0.5)) { hdr.push(L[i + 1]); title += (title ? ' ' : '') + L[++i].text; }
+      const m = l.text.match(/^ТЕМА (\d+)/), a = l.text.match(/^ПРИЛОЖЕНИЕ ([А-Г])/);
+      const n = m ? m[1] : a[1];
+      lec = { id: 't' + (m ? n : 'app' + 'АБВГ'.indexOf(n)), n, label: m ? 'Тема ' + n : 'Прил. ' + n, title, source: '', sections: [], _ch: [] };
+      cur = { kind: 'text', title: '', lines: [], head: hdr, withHeader: true }; lec._ch.push(cur); doc.lectures.push(lec); continue;
+    }
+    if (!lec) { introL.push(l); continue; }
+    if (isTask(l)) { cur = { kind: 'task', head: l, cond: [l], sol: [], inSol: false }; lec._ch.push(cur); continue; }
+    if (cur.kind === 'task') {
+      if (isH(l) || isBox(l)) { cur = { kind: 'text', title: isH(l) ? l.text : '', lines: isH(l) ? [] : [l], head: isH(l) ? [l] : [] }; lec._ch.push(cur); continue; }
+      if (!cur.inSol && isStep(l)) cur.inSol = true;
+      (cur.inSol ? cur.sol : cur.cond).push(l); continue;
+    }
+    if (isH(l)) { cur = { kind: 'text', title: l.text, lines: [], head: [l] }; lec._ch.push(cur); continue; }
+    cur.lines.push(l);
+  }
+  const crop = ls => regionsOf(ls, { tf: 0.95, padT: 1.5, padB: 4, x0: 30, x1: 566 });
+  const nice = t => { const m = t.match(/^ЗАДАЧА\s+([\dА-Г.]+)\s*(.*)$/); const rest = (m ? m[2] : t).replace(/^[·\s]+|[()]/g, '').trim(); return { num: m ? m[1] : '', title: 'Задача ' + (m ? m[1] : '') + (rest ? ' · ' + rest.charAt(0) + rest.slice(1).toLowerCase() : '') }; };
+  let tasks = 0, solved = 0; const report = [];
+  for (const lc of doc.lectures) {
+    // пробный РК: ответы из таблицы «Ответы» — к своим задачам
+    const ansCh = lc.n === 'Б' ? lc._ch.find(c => c.kind === 'text' && /^Ответы/.test(c.title)) : null;
+    const ans = {};
+    if (ansCh) {
+      const ls = ansCh.lines.filter(x => !/^№/.test(x.text));
+      const nums = ls.filter(x => x.x <= 43 && near(x.s, 9.2, 0.2) && /^\d{1,2}/.test(x.real[0].t.trim())).map(x => ({ n: x.real[0].t.trim().match(/^\d+/)[0], y: x.y }));
+      nums.forEach((r, k) => {
+        const top = k ? (nums[k - 1].y + r.y) / 2 : 9999, bot = nums[k + 1] ? (nums[k + 1].y + r.y) / 2 : -1;
+        ans[r.n] = crop(ls.filter(x => x.y < top && x.y >= bot));
+      });
+      lc._ch = lc._ch.filter(c => c !== ansCh);
+    }
+    for (const ch of lc._ch) {
+      if (ch.kind === 'task') {
+        const t = nice(ch.head.text); tasks++;
+        const ar = ch.sol.length ? crop(ch.sol) : (ans[t.num] || null);
+        if (ar) solved++;
+        report.push(t.num + ':' + ch.cond.length + '/' + ch.sol.length + (ch.sol[0] ? ' «' + ch.sol[0].text.slice(0, 30) + '»' : ''));
+        lc.sections.push({ kind: 'tasks', id: '', title: lc.label + ' · ' + t.title, blocks: [{ t: 'qa', task: true, num: t.num, title: '', q: [], qr: crop(ch.cond), a: ar ? [{ t: 'p', html: '' }] : [], ar: ar || undefined }] });
+        continue;
+      }
+      const all = [].concat(ch.withHeader ? ch.head : [], ch.withHeader ? [] : ch.head, ch.lines);
+      if (!all.length) continue;
+      const sec = { kind: 'text', id: '', title: ch.title, blocks: [], pdf: regionsOf(all) };
+      if (ch.withHeader) sec.withHeader = true;
+      lc.sections.push(sec);
+    }
+    delete lc._ch;
+  }
+  doc.introPdf = regionsOf(introL);
+  doc._report = { tasks, solved, report };
+  return doc;
+}

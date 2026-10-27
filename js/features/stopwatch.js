@@ -23,17 +23,21 @@
   }
   function mount() {
     if (el) return;
+    /* кнопка «скрыть / раскрыть» — справа, у края экрана: при раскрытии она остаётся на месте,
+       а «обнулить» и «пауза» появляются слева — двойной клик не попадёт в «обнулить» */
     el = SP.el('<div class="stopwatch" role="timer" aria-live="off">' +
-      '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-sw="min">' + SP.icon('timer') + '</button>' +
-      '<span class="sw-time mono">00:00:00</span>' +
+      '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-sw="reset">' + SP.icon('rotate-ccw') + '</button>' +
       '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-sw="play"></button>' +
-      '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-sw="reset">' + SP.icon('rotate-ccw') + '</button></div>');
+      '<span class="sw-time mono">00:00:00</span>' +
+      '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-sw="min">' + SP.icon('timer') + '</button></div>');
     document.body.appendChild(el);
     el.querySelector('[data-sw=min]').setAttribute('aria-label', SP.t('stopwatch.toggle'));
     el.querySelector('[data-sw=reset]').setAttribute('aria-label', SP.t('stopwatch.reset'));
     el.addEventListener('click', function (e) {
       var b = e.target.closest('[data-sw]'); if (!b) return;
       var a = b.getAttribute('data-sw');
+      if (a !== 'min' && Date.now() - (el._opened || 0) < 500) return; // клик сразу после раскрытия — случайный
+      if (a === 'min' && st.min) el._opened = Date.now();
       if (a === 'play') { if (st.startedAt) { st.acc += Date.now() - st.startedAt; st.startedAt = null; } else st.startedAt = Date.now(); }
       if (a === 'reset') { st.acc = 0; st.startedAt = null; }
       if (a === 'min') st.min = !st.min;

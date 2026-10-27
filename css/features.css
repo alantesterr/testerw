@@ -656,3 +656,7 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 .nt-paper.subj-philosophy2 .nt-sec-head .nt-sec-t, .nt-paper.subj-philosophy2 .nt-sec-head .nt-sec-id { color: #fff; font-size: 1.0625rem; }
 .nt-paper.subj-philosophy2 .nt-qn { color: #0f8a6a; }
 .nt-paper.subj-arch .nt-sec-t, .nt-paper.subj-arch .nt-sec-id { color: #1e3a5f; }
+/* ИО: заголовок задачи уже есть на вырезке из PDF — свой не дублируем (в оглавлении он остаётся) */
+.nt-paper.subj-io { --pdf-fs: calc(100cqw * 10.2 / 596); --pdf-font: Carlito, Calibri, "Segoe UI", sans-serif; }
+.nt-paper.subj-io .nk-tasks > .nt-sec-head { display: none; }
+.nt-paper.subj-io .nt-sec-t, .nt-paper.subj-io .nt-sec-id { color: #1e3a5f; }

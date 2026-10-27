@@ -415,7 +415,7 @@ button.mark:focus-visible { box-shadow: var(--focus-ring); }
 @media (max-width: 600px) { .gr-row { grid-template-columns: 1fr auto; } .gr-row [data-k=folder] { grid-column: 1; } }
 
 /* ============================ СЕКУНДОМЕР ============================ */
-.stopwatch { position: fixed; right: var(--sp-4); top: var(--sp-4); z-index: var(--z-header); display: flex; align-items: center; gap: 2px; padding: 2px var(--sp-1) 2px 2px; border-radius: var(--r-full); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-md); }
+.stopwatch { position: fixed; right: var(--sp-4); top: var(--sp-4); z-index: var(--z-header); display: flex; align-items: center; gap: 2px; padding: 2px; border-radius: var(--r-full); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-md); }
 .stopwatch .sw-time { font-size: var(--fs-sm); font-weight: var(--fw-semibold); padding: 0 var(--sp-1); font-variant-numeric: tabular-nums; }
 .stopwatch.run { border-color: var(--accent); }
 .stopwatch.run .sw-time { color: var(--accent-text); }

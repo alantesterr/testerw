@@ -6,6 +6,8 @@
    ===================================================================== */
 
 /* ---------- Переключатель режима расписания ---------- */
+.seg-block { display: flex; width: 100%; }
+.seg-block button { flex: 1; min-height: var(--hit); gap: 6px; }
 .sch-modes { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
 .sch-modes .segmented button { min-height: var(--hit); padding: 0 var(--sp-4); font-size: var(--fs-sm); }
 .sch-modes .segmented button[aria-checked="true"] { color: var(--accent-text); }
@@ -133,8 +135,16 @@
 @media (max-width: 767px) {
   .mode-shokan .shk { border-radius: 0; border-left: 0; border-right: 0; margin: 0 calc(var(--page-pad) * -1); }
   .shk-grid { min-width: 0; }
-  .shk-tcol { width: 3.25rem; }
-  .shk-wl { padding: 6px 5px; }
+  /* пропорции как в приложении Shokan на iPhone (размер «меньше»: колонка времени ≈ 39px, строка ≈ 47px, шапка дней ≈ 39px) */
+  .shk-tcol { width: 3rem; }
+  .shk-grid thead th { padding: 4px 2px; line-height: 1.25; }
+  .shk-head { padding: 3px var(--sp-3); }
+  .shk-cal { width: 2.5rem; height: 2.5rem; }
+  .shk-grid tbody tr { height: 3.6rem; }
+  .shk-wl { min-height: 3.6rem; padding: 6px 5px; gap: 4px; }
+  .shk-wn { font-size: 0.875rem; }
+  .shk-wk { font-size: 0.75rem; }
+  .mode-shokan .shk { scroll-margin-top: 3.5rem; }
 }
 
 /* ===================== ЖУРНАЛ (стиль Shokan) ===================== */
@@ -631,7 +641,18 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
   /* вид «Как в PDF» на телефоне — лист во всю ширину экрана */
   .nt.is-pdfmode .nt-layout { padding-inline: 0; }
   .nt-paper .nt-sec.has-car { padding-inline: 2cqw; }
+  /* кнопки на листе PDF — небольшие, в цветах PDF, но с рамкой и значком «глаз», чтобы было видно, что это кнопка */
+  .nt-paper .nt-reveal { font-size: 0.75rem; min-height: 1.9rem; padding: 0 10px; gap: 5px; border-radius: 6px; }
+  .nt-paper .nt-reveal .ic { width: 0.95rem; height: 0.95rem; }
+  .nt-paper .nt-refs .chip { font-size: 0.75rem; }
+  .nt-paper .nt-sec.is-one > .nt-car { padding: 4px 6px; }
+  .nt-paper .nt-car .btn { min-height: 2.25rem; font-size: 0.8125rem; }
+  .nt-paper .nt-car-n { font-size: 0.75rem; }
 }
+/* «Показать ответ / решение» на листе PDF: светлая, в синем цвете заголовков PDF */
+.nt-paper .nt-reveal { background: #f1f5fc; color: #1a4fa0; border: 1px solid #c6d5f0; box-shadow: none; }
+.nt-paper .nt-reveal:hover { background: #e4ecfa; }
+.nt-paper .nt-reveal[aria-expanded="true"] { background: #fff; color: #5b6b82; border-color: #dbe2ec; }
 .nt-jump { --btn-bg: var(--accent-soft); --btn-fg: var(--accent-text); --btn-border: transparent; }
 @media (max-width: 767px) { .nt-jump span { display: none; } }
 

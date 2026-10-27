@@ -24,11 +24,20 @@
      телефон — шрифт «меньше среднего», Shokan «меньше», Timetable «стандарт»;
      ПК — шрифт «средний», Shokan «стандарт», Timetable «меньше». */
   var phone = window.matchMedia && (window.matchMedia('(max-width: 767px)').matches || window.matchMedia('(pointer: coarse) and (max-width: 1024px)').matches);
-  var SIZES = phone ? { font: 'ms', schShk: 'sm', schTt: 'std' } : { font: 'm', schShk: 'std', schTt: 'sm' };
-  Object.assign(DEFAULTS, SIZES);
+  var SIZES_BY = { phone: { font: 'ms', schShk: 'sm', schTt: 'std' }, pc: { font: 'm', schShk: 'std', schTt: 'sm' } };
+  var SIZES = SIZES_BY[phone ? 'phone' : 'pc'];
+  Object.assign(DEFAULTS, SIZES, { device: phone ? 'phone' : 'pc' });
   var s = Object.assign({}, DEFAULTS, SP.store.get(KEY, {}) || {});
   /* Один раз применяем эти размеры у всех, кто уже пользовался сайтом */
   if (!s.sizesV2) { Object.assign(s, SIZES); s.sizesV2 = true; SP.store.set(KEY, s); }
+  /* Вид расписания по устройству: телефон — Shokan «Неделя», ПК — Timetable (один раз для всех, дальше — выбор человека) */
+  var UI_KEY = 'sp-schedule-ui2';
+  function schedDefaults(dev) {
+    var ui = SP.store.get(UI_KEY, {}) || {};
+    ui.mode = dev === 'phone' ? 'shokan' : 'timetable'; ui.view = 'week';
+    SP.store.set(UI_KEY, ui);
+  }
+  if (!s.deviceV1) { schedDefaults(s.device); s.deviceV1 = true; SP.store.set(KEY, s); }
 
   /* Перенос старой настройки темы со старого сайта */
   if (!SP.store.get(KEY)) {
@@ -60,6 +69,17 @@
       s[k] = v; SP.store.set(KEY, s); apply();
       if (k === 'lang') SP.setLang(v);
       SP.emit('settings', { key: k, value: v });
+    },
+    /* Устройство (телефон / ПК): определяется само, можно сменить при входе и в Настройках.
+       Ставит размеры и вид расписания, которые удобны на этом устройстве. */
+    detected: phone ? 'phone' : 'pc',
+    applyDevice: function (dev) {
+      dev = dev === 'phone' ? 'phone' : 'pc';
+      var sz = SIZES_BY[dev];
+      Object.keys(sz).forEach(function (k) { SP.settings.set(k, sz[k]); });
+      SP.settings.set('device', dev);
+      schedDefaults(dev);
+      SP.emit('device', dev);
     },
     resolvedTheme: resolvedTheme,
     apply: apply

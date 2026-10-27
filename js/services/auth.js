@@ -36,7 +36,15 @@
     user: function () { return state ? Object.assign({ guest: true }, state.user || {}) : null; },
     isGuest: function () { return !!state; },
     isLinked: function () { return false; },   /* автоматического входа в вуз нет */
-    loggedIn: function () { return !!state; },
+    loggedIn: function () { return !!state && !state.out; },
+    /* «Выйти»: вернуться на экран входа (имя и группа подставятся — можно поменять группу или устройство) */
+    signOut: function () {
+      return SP.confirm({ title: SP.t('auth.outTitle'), text: SP.t('auth.outText'), okLabel: SP.t('auth.out'), icon: 'log-out' }).then(function (ok) {
+        if (!ok) return;
+        state = state || { mode: 'local', user: {} }; state.out = true; SP.store.set(KEY, state);
+        location.hash = ''; location.reload();
+      });
+    },
 
     setGroup: function (g) {
       if (!state) state = { mode: 'local', user: {} };
@@ -83,6 +91,12 @@
         return '<button type="button" data-lang="' + l.code + '" aria-pressed="' + (SP.lang() === l.code) + '" title="' + SP.esc(l.name) + '">' + l.short + '</button>';
       }).join('') + '</div>';
     }
+    var dev = SP.settings.get('device') || SP.settings.detected;
+    function devSeg() {
+      return '<div class="segmented seg-block" role="radiogroup" aria-labelledby="suDevL">' + [['phone', 'smartphone'], ['pc', 'monitor']].map(function (d) {
+        return '<button type="button" role="radio" data-dev="' + d[0] + '" aria-checked="' + (dev === d[0]) + '" aria-pressed="' + (dev === d[0]) + '">' + SP.icon(d[1], 'ic-sm') + '<span>' + SP.esc(SP.t('auth.dev.' + d[0])) + '</span></button>';
+      }).join('') + '</div>';
+    }
     function draw() {
       root.innerHTML =
         '<div class="auth-top"><div class="sb-brand"><span class="logo">' + SP.icon('book-open') + '</span><span>StudyPlay</span></div>' + langSeg() + '</div>' +
@@ -93,18 +107,22 @@
         '<div class="ac"><input class="input" id="suGroup" value="' + SP.esc(u.group || '') + '" placeholder="' + SP.esc(SP.t('auth.groupPh')) + '"></div>' +
         '<span class="error-text" id="suGroupErr" role="alert"></span>' +
         '<span class="hint">' + SP.esc(SP.t('auth.groupHint')) + '</span></div>' +
+        '<div class="field"><div class="label" id="suDevL">' + SP.esc(SP.t('auth.device')) + '</div>' + devSeg() +
+        '<span class="hint">' + SP.esc(SP.t('auth.deviceHint', { d: SP.t('auth.dev.' + SP.settings.detected).toLowerCase() })) + '</span></div>' +
         '<button type="submit" class="btn btn-primary btn-lg btn-block">' + SP.icon('arrow-right') + '<span>' + SP.esc(SP.t('auth.start')) + '</span></button>' +
         '<button type="button" class="link-btn small" id="suHow">' + SP.icon('shield-check', 'ic-sm') + ' ' + SP.esc(SP.t('auth.how')) + '</button>' +
         '</form></div>' +
         '<p class="auth-foot subtle xsmall">' + SP.esc(SP.t('auth.footer')) + '</p>';
       SP.$$('[data-lang]', root).forEach(function (b) { b.onclick = function () { SP.settings.set('lang', b.getAttribute('data-lang')); draw(); }; });
       SP.$('#suHow', root).onclick = SP.auth.explain;
+      SP.$$('[data-dev]', root).forEach(function (b) { b.onclick = function () { dev = b.getAttribute('data-dev'); SP.$$('[data-dev]', root).forEach(function (x) { var on = x === b; x.setAttribute('aria-checked', on); x.setAttribute('aria-pressed', on); }); }; });
       SP.group.attach(SP.$('#suGroup', root), SP.$('#suGroupErr', root));
       SP.$('#setupForm', root).onsubmit = function (e) {
         e.preventDefault();
         var name = SP.$('#suName', root).value.trim(), gi = SP.$('#suGroup', root), group = SP.group.format(gi.value);
         if (group && !SP.group.valid(group)) { SP.$('#suGroupErr', root).textContent = SP.t('group.invalid'); gi.setAttribute('aria-invalid', 'true'); gi.focus(); return; }
         state = { mode: 'local', user: { name: name, group: group, nameSet: !!name } };
+        SP.settings.applyDevice(dev);
         save(); applyGroup(); SP.hub.reloadBase();
         root.innerHTML = ''; document.body.classList.remove('auth-open');
         resolve(state);

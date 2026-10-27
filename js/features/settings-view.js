@@ -51,7 +51,10 @@
     acc += '<div class="alert alert-info">' + SP.icon('info') + '<div class="alert-body"><span>' + esc(SP.t('settings.localText')) + '</span><div class="alert-actions"><button type="button" class="btn btn-ghost btn-sm" id="sHow">' + SP.icon('shield-check') + '<span>' + esc(SP.t('auth.how')) + '</span></button></div></div></div>';
     acc += '<div class="field"><label class="label" for="sName">' + esc(SP.t('auth.yourName')) + '</label><input class="input" id="sName" value="' + esc(u.name || '') + '" placeholder="' + esc(SP.t('auth.yourNamePh')) + '"></div>';
     acc += '<div class="field"><label class="label" for="sGroup">' + esc(SP.t('auth.group')) + '</label><div class="row row-nowrap"><div class="ac grow"><input class="input" id="sGroup" value="' + esc(u.group || '') + '" placeholder="' + esc(SP.t('auth.groupPh')) + '" autocomplete="off"></div><button type="button" class="btn" id="sProfileSave">' + esc(SP.t('common.save')) + '</button></div><span class="error-text" id="sGroupErr" role="alert"></span><span class="hint">' + esc(SP.t('settings.groupHint', { dir: window.SP_GROUP_DIR || '—' })) + '</span></div>';
-    acc += '<div class="row"><button type="button" class="btn btn-danger" id="sLogout">' + SP.icon('log-out') + '<span>' + esc(SP.t('auth.reset')) + '</span></button></div>';
+    acc += setRow(SP.t('auth.device'), esc(SP.t('settings.deviceHint', { d: SP.t('auth.dev.' + SP.settings.detected).toLowerCase() })), '<div class="segmented" role="group" aria-label="' + esc(SP.t('auth.device')) + '">' + [['phone', 'smartphone'], ['pc', 'monitor']].map(function (x) { return '<button type="button" data-dev="' + x[0] + '" aria-pressed="' + (s.device === x[0]) + '">' + SP.icon(x[1], 'ic-sm') + '<span>' + esc(SP.t('auth.dev.' + x[0])) + '</span></button>'; }).join('') + '</div>');
+    acc += '<div class="row"><button type="button" class="btn" id="sOut">' + SP.icon('log-out') + '<span>' + esc(SP.t('auth.out')) + '</span></button>' +
+      '<button type="button" class="btn btn-danger-outline" id="sLogout">' + SP.icon('trash-2') + '<span>' + esc(SP.t('auth.reset')) + '</span></button></div>' +
+      '<p class="xsmall subtle">' + esc(SP.t('auth.outHint')) + '</p>';
     html += section('account', 'user', acc);
 
     /* 5. Тестер и плеер */
@@ -116,6 +119,8 @@
     on('#sHow', SP.auth.explain);
     var gi = $('#sGroup'); if (gi) SP.group.attach(gi, $('#sGroupErr'));
     on('#sLogout', function () { SP.auth.logout(); });
+    on('#sOut', function () { SP.auth.signOut(); });
+    SP.$$('[data-dev]', root).forEach(function (b) { b.onclick = function () { SP.settings.applyDevice(b.getAttribute('data-dev')); render(); SP.toast(SP.t('settings.deviceDone'), 'success'); }; });
     on('#sProfileSave', function () {
       var gv = SP.group.format($('#sGroup').value);
       if (gv && !SP.group.valid(gv)) { $('#sGroupErr').textContent = SP.t('group.invalid'); $('#sGroup').setAttribute('aria-invalid', 'true'); $('#sGroup').focus(); return; }

@@ -10,7 +10,8 @@
   'use strict';
   var SP = window.SP, esc = SP.esc;
   var UI_KEY = 'sp-schedule-ui2';
-  var ui = Object.assign({ mode: 'timetable', view: window.innerWidth < 768 ? 'day' : 'week' }, SP.store.get(UI_KEY, {}));
+  var ui = Object.assign({ mode: SP.settings.get('device') === 'phone' ? 'shokan' : 'timetable', view: 'week' }, SP.store.get(UI_KEY, {}));
+  SP.on('device', function () { ui = Object.assign(ui, SP.store.get(UI_KEY, {})); });
   var weekOff = 0, dayIdx = null, root = null, updDismissed = false, detail = null;
   var DAY_KEYS = ['day.mon', 'day.tue', 'day.wed', 'day.thu', 'day.fri', 'day.sat'];
 
@@ -234,9 +235,15 @@
     weekOff = Math.round((dm - monday(0)) / (7 * 864e5)); dayIdx = Math.min(5, (d.getDay() + 6) % 7); render();
   }
 
+  /* Телефон, режим Shokan: экран начинается сразу с «День / Неделя», как в приложении (переключатели — выше, если пролистать вверх) */
+  function toShk() {
+    if (ui.mode !== 'shokan' || window.innerWidth >= 768) return;
+    var e = SP.$('.shk', root); if (!e) return;
+    requestAnimationFrame(function () { e.scrollIntoView({ block: 'start' }); });
+  }
   function wire() {
     var q = function (s) { return SP.$(s, root); };
-    SP.$$('[data-mode]', root).forEach(function (b) { b.onclick = function () { ui.mode = b.getAttribute('data-mode'); detail = null; saveUI(); render(); var n = SP.$('[data-mode="' + ui.mode + '"]', root); if (n) n.focus(); }; });
+    SP.$$('[data-mode]', root).forEach(function (b) { b.onclick = function () { ui.mode = b.getAttribute('data-mode'); detail = null; saveUI(); render(); var n = SP.$('[data-mode="' + ui.mode + '"]', root); if (n) n.focus({ preventScroll: true }); toShk(); }; });
     SP.$$('[data-view]', root).forEach(function (b) { b.onclick = function () { ui.view = b.getAttribute('data-view'); saveUI(); render(); }; });
     SP.$$('[data-src]', root).forEach(function (b) { b.onclick = function () { SP.hub.setPref(b.getAttribute('data-src')); }; });
     SP.$$('[data-wk]', root).forEach(function (b) { b.onclick = function () { weekOff += +b.getAttribute('data-wk'); render(); }; });
@@ -326,8 +333,8 @@
 
   SP.views.register('schedule', {
     titleKey: 'nav.schedule',
-    mount: function (el) { root = el; render(); },
-    show: function () { render(); SP.hub.checkUpdate(); },
+    mount: function (el) { root = el; render(); setTimeout(toShk, 60); },
+    show: function () { render(); toShk(); SP.hub.checkUpdate(); },
     refresh: render
   });
   SP.on('hub', function () { if (root && SP.views.current() === 'schedule') render(); });

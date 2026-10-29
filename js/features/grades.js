@@ -106,13 +106,10 @@
   }
   function card(it) {
     var v = jCalc(it), hn = jHint(v);
-    /* В Platonus нет экзамена (физкультура — «ДЗ», практика и т. п.) — пишем его название и «—» вместо 0 */
-    var ek = it.pl ? (it.pl.examKey != null ? it.pl.examKey : examKeyOf(it.pl.exams || {})) : null, noExam = ek != null && !/^экз/i.test(ek);
-    var exLabel = noExam && ek ? ek : SP.t('jr.exam');
     return '<article class="jr-card" data-id="' + esc(it.id) + '"><div class="jr-top"><div class="jr-title"><h3 class="jr-name">' + esc(it.name || '—') + '</h3>' +
       '<div class="jr-teach">' + (it.teachers ? esc(teachLabel(it.teachers)) : '&nbsp;') + '</div></div>' +
       '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-edit="' + esc(it.id) + '" aria-label="' + esc(SP.t('jr.edit')) + '" data-tip="' + esc(SP.t('jr.edit')) + '">' + SP.icon('chevron-right') + '</button></div>' +
-      '<div class="jr-rings">' + ring(SP.t('jr.cur'), v.c) + ring(SP.t('jr.rating'), v.R) + ring(exLabel, v.e, noExam ? '—' : '') + ring(SP.t('jr.final'), v.F, noExam ? '—' : '') +
+      '<div class="jr-rings">' + ring(SP.t('jr.cur'), v.c) + ring(SP.t('jr.rating'), v.R) + ring(SP.t('jr.exam'), v.e) + ring(SP.t('jr.final'), v.F) +
       /* РК — только когда поставлен (как в Shokan) */
       (v.r1 != null ? ring(SP.t('jr.rk1'), v.r1) : '') + (v.r2 != null ? ring(SP.t('jr.rk2'), v.r2) : '') +
       /* Нет ни одного РК — пустое место под строку, чтобы все карточки были одной высоты */

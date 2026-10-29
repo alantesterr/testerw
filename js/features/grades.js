@@ -69,9 +69,7 @@
     var h = '<div class="btn-group jr-bar"><button type="button" class="btn" id="jrHow">' + SP.icon('circle-help') + '<span>' + esc(SP.t('jr.how')) + '</span></button>' +
       '<button type="button" class="btn" id="jrPl">' + SP.icon('upload') + '<span>' + esc(SP.t('jr.plLoad')) + '</span></button>' +
       '<input type="file" id="jrPlFile" accept=".json,application/json,text/plain" hidden>' +
-      '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div>' +
-      (st.plAt ? '<p class="small muted jr-pl-at">' + SP.icon('clock', 'ic-sm') + '<span>' + esc(SP.t('jr.plAt', { d: fmtTaken(st.plAt) })) + '</span>' +
-        '<button type="button" class="link-btn" id="jrPlHow">' + esc(SP.t('jr.plHow')) + '</button></p>' : '');
+      '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div>';
     if (!st.items.length) {
       return h + '<section class="card"><div class="empty">' + SP.icon('graduation-cap', 'ic-xl') + '<h3>' + esc(SP.t('jr.emptyTitle')) + '</h3><p>' + esc(SP.t('jr.emptyText')) + '</p></div></section>';
     }
@@ -85,6 +83,8 @@
     /* Оценки из Platonus и вы их не меняли — берём «Ср.тек.» как в Platonus (там «н» и веса учтены по-своему) */
     if (it.pl && it.pl.avg != null && it.mode !== 'avg' && (it.grades || []).join(',') === it.pl.g) c = it.pl.avg;
     var r1 = num(it.rk1), r2 = num(it.rk2), e = num(it.exam);
+    /* «ДЗ = 0» из Platonus, загруженный раньше, — тоже «ещё нет» */
+    if (e === 0 && it.pl && it.pl.exams) { var ek0 = examKeyOf(it.pl.exams); if (ek0 && !/^экз/i.test(ek0) && num(it.pl.exams[ek0]) === 0) e = null; }
     /* Рейтинг — как в Platonus: виден сразу, ещё не стоящий РК считается как 0 */
     var R = c != null || r1 != null || r2 != null ? 0.6 * (c || 0) + 0.2 * (r1 || 0) + 0.2 * (r2 || 0) : null;
     /* Итоговая — только когда стоит экзамен */
@@ -119,24 +119,17 @@
       '<p class="small jr-hint ' + hn.cls + (hn.text ? '' : ' jr-ph') + '"' + (hn.text ? '' : ' aria-hidden="true"') + '>' + SP.icon('info', 'ic-sm') + '<span>' + esc(hn.text || '—') + '</span></p>' + plHtml(it) + '</article>';
   }
   /* ---------- Оценки из файла программы «Мои оценки» (Platonus) ---------- */
-  function fmtTaken(s) {
-    var d = new Date(s); if (isNaN(d)) return String(s);
-    var p = function (n) { return (n < 10 ? '0' : '') + n; };
-    return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
-  }
   function ddmm(s) { var m = /^(\d{4})-(\d\d)-(\d\d)/.exec(s || ''); return m ? m[3] + '.' + m[2] : String(s || ''); }
   /* Под карточкой: текущие оценки с датами и то, что не число (например «Экз.: Допуск») */
   function plHtml(it) {
     var pl = it.pl; if (!pl) return '';
-    var cur = pl.current || [], notes = Object.keys(pl.exams || {}).filter(function (k) { var v = pl.exams[k]; return v && v !== '-' && num(v) == null; })
-      .map(function (k) { return k + ' ' + pl.exams[k]; });
-    if (!cur.length && !notes.length) return '';
+    var cur = pl.current || [];
+    if (!cur.length) return '';
     var items = cur.map(function (c) {
       var n = num(c.mark), t = n == null ? '' : tone(n);
       return '<li class="mark ' + t + '" title="' + esc(c.type || '') + '"><span>' + esc(ddmm(c.date)) + '</span><b>' + esc(c.mark) + '</b></li>';
     }).join('');
-    return '<details class="jr-pl"><summary>' + SP.icon('chevron-right', 'ic-sm') + '<span>' + esc(SP.t('jr.plCur', { n: cur.length })) + '</span>' +
-      (notes.length ? '<em>' + esc(notes.join(' · ')) + '</em>' : '') + '</summary>' + (items ? '<ul class="jr-pl-list">' + items + '</ul>' : '') + '</details>';
+    return '<details class="jr-pl"><summary>' + SP.icon('chevron-right', 'ic-sm') + '<span>' + esc(SP.t('jr.plCur', { n: cur.length })) + '</span></summary>' + (items ? '<ul class="jr-pl-list">' + items + '</ul>' : '') + '</details>';
   }
   function normName(s) { return SP.lc(String(s || '')).replace(/ё/g, 'е').replace(/[^a-zа-яәіңғүұқөһ0-9+#]+/gi, ' ').trim(); }
   /* Ищем карточку с тем же предметом: точное совпадение, потом «одно содержит другое», потом общие слова */
@@ -183,6 +176,8 @@
       if (marks.length) { it.mode = 'list'; it.grades = marks; }
       else if (c != null) { it.mode = 'avg'; it.cur = c; }
       it.rk1 = num(keep['РК 1']); it.rk2 = num(keep['РК 2']); it.exam = ek ? num(keep[ek]) : null;
+      /* У «ДЗ» (физкультура) Platonus пишет 0, пока зачёт не поставлен — это «ещё нет», а не ноль */
+      if (ek && !/^экз/i.test(ek) && it.exam === 0) it.exam = null;
       if (!it.teachers && s.tutor) it.teachers = String(s.tutor);
       it.pl = { at: data.taken, exams: keep, examKey: ek, avg: c, g: marks.join(','), current: list };
     });
@@ -190,7 +185,6 @@
     jSave(st);
     return { upd: upd, added: added };
   }
-  function plHow() { SP.modal({ title: SP.t('jr.plHowTitle'), size: 'lg', body: SP.t('jr.plHowHtml') }); }
   function editCard(it) {
     var f = function (k, label, val, full, type) {
       return '<div class="field' + (full ? ' full' : '') + '"><label class="label" for="je-' + k + '">' + esc(label) + '</label><input class="input" id="je-' + k + '" data-k="' + k + '"' + (type === 'num' ? ' inputmode="decimal" placeholder="0–100"' : '') + ' value="' + esc(val == null ? '' : val) + '"></div>';
@@ -314,7 +308,6 @@
       }
       $('#jrPlFile').click();
     });
-    on('#jrPlHow', plHow);
     var fileIn = $('#jrPlFile');
     if (fileIn) fileIn.onchange = function () {
       var f = fileIn.files && fileIn.files[0]; if (!f) return;

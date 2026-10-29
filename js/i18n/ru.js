@@ -923,3 +923,6 @@ Object.assign(SP.I18N.ru, { 'jr.plSetupTitle': 'Подключить оценк�
     '<p><b>Дальше:</b> «Обновить из Platonus» → браузер спросит «Открыть приложение?» → «Открыть» (галочка «Всегда разрешать» уберёт этот вопрос). Через несколько секунд оценки появятся сами. Первый раз браузер попросит доступ к буферу обмена — разрешите.</p>' +
     '<p class="small muted">Отключить — disconnect.bat в той же папке. Подробности — README.txt в архиве. С телефона: в программе «Сохранить для StudyPlay» и здесь «Загрузить из Platonus».</p>' });
 Object.assign(SP.I18N.ru, { 'settings.plHide': 'Скрыть кнопки Platonus в «Оценках»', 'settings.plHideHint': 'Кнопки «Обновить из Platonus», настройка программы и «Загрузить из Platonus». Снимите галочку, чтобы они появились.' });
+Object.assign(SP.I18N.ru, { 'schedule.dl': 'Скачать', 'schedule.dlCsv': 'Таблица (Excel)', 'schedule.dlCsvHint': 'Открывается в Excel и на телефоне — удобно скинуть себе в Telegram.',
+  'schedule.dlJson': 'Файл для StudyPlay', 'schedule.dlJsonHint': 'Чтобы перенести расписание на другое устройство: там Настройки → Данные → Загрузить расписание.',
+  'schedule.csv.day': 'День', 'schedule.csv.time': 'Время', 'schedule.csv.subject': 'Предмет', 'schedule.csv.kind': 'Тип', 'schedule.csv.room': 'Аудитория', 'schedule.csv.teacher': 'Преподаватель' });

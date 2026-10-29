@@ -86,13 +86,44 @@
     }).join('') + '</div>';
   }
 
+  /* ---------- Скачать расписание (например, чтобы скинуть себе в Telegram) ---------- */
+  var DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  /* Таблица .csv: открывается в Excel и на телефоне (Google Таблицы, просмотр файлов) */
+  function scheduleCsv() {
+    var d = SP.hub.data(), slots = {};
+    (d.timeSlots || []).forEach(function (s, i) { slots[s.id] = { i: i, t: String(s.start || '').slice(0, 5) + '–' + String(s.end || '').slice(0, 5) }; });
+    var rows = d.schedule.slice().sort(function (a, b) { return (a.day - b.day) || ((slots[a.slotId] || { i: 99 }).i - (slots[b.slotId] || { i: 99 }).i); });
+    var q = function (v) { v = String(v == null ? '' : v); return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var head = [SP.t('schedule.csv.day'), SP.t('schedule.csv.time'), SP.t('schedule.csv.subject'), SP.t('schedule.csv.kind'), SP.t('schedule.csv.room'), SP.t('schedule.csv.teacher')];
+    var lines = [head.map(q).join(';')].concat(rows.map(function (l) {
+      var room = [l.room, l.building].filter(Boolean).join(', ');
+      return [SP.t('day.' + (DAY_KEYS[l.day] || 'mon')), (slots[l.slotId] || {}).t || '', SP.hub.cleanName ? SP.hub.cleanName(l.name) : l.name, l.kind, room, l.teacher].map(q).join(';');
+    }));
+    /* BOM + «;» — чтобы Excel сразу понял кириллицу и столбцы */
+    return '﻿' + lines.join('\r\n');
+  }
+  function downloadDialog() {
+    var grp = SP.lc((SP.auth.user() || {}).group || '').replace(/[^a-zа-я0-9-]+/gi, '') || 'group';
+    var m = SP.modal({ title: SP.t('schedule.dl'), body:
+      '<div class="stack-sm">' +
+      '<button type="button" class="btn btn-block wrap" data-dl="csv">' + SP.icon('file-text') + '<span><b>' + esc(SP.t('schedule.dlCsv')) + '</b><br><span class="small muted">' + esc(SP.t('schedule.dlCsvHint')) + '</span></span></button>' +
+      '<button type="button" class="btn btn-block wrap" data-dl="json">' + SP.icon('file-json') + '<span><b>' + esc(SP.t('schedule.dlJson')) + '</b><br><span class="small muted">' + esc(SP.t('schedule.dlJsonHint')) + '</span></span></button>' +
+      '</div>' });
+    SP.$$('[data-dl]', m.el).forEach(function (b) { b.onclick = function () {
+      if (b.getAttribute('data-dl') === 'csv') SP.downloadText(scheduleCsv(), 'raspisanie-' + grp + '.csv', 'text/csv;charset=utf-8');
+      else SP.hub.exportAll();
+      m.close();
+    }; });
+  }
+
   /* ---------- Отрисовка ---------- */
   function render() {
     if (!root) return;
     var d = SP.hub.data(), td = weekOff === 0 ? todayIdx() : -1;
     if (dayIdx === null) dayIdx = td >= 0 ? td : 0;
     var srcBadge = d.source ? '<span class="badge">' + SP.icon(d.source === 'course' ? 'users' : 'user') + esc(SP.t('schedule.src.' + d.source)) + '</span>' + (d.source === 'course' && d.baseVersion ? '<span class="subtle xsmall">' + esc(SP.t('schedule.version', { v: d.baseVersion })) + '</span>' : '') : '';
-    var html = SP.pageHead({ title: SP.t('nav.schedule'), sub: '<span class="row">' + srcBadge + '</span>', actions: sourceSwitch() });
+    var dlBtn = d.schedule.length ? '<button type="button" class="btn" id="schDl">' + SP.icon('download') + '<span>' + esc(SP.t('schedule.dl')) + '</span></button>' : '';
+    var html = SP.pageHead({ title: SP.t('nav.schedule'), sub: '<span class="row">' + srcBadge + '</span>', actions: '<div class="row">' + sourceSwitch() + dlBtn + '</div>' });
     html += modeSwitch();
     var upd = SP.hub.pendingUpdate();
     if (upd && !updDismissed) {
@@ -249,6 +280,7 @@
     SP.$$('[data-mode]', root).forEach(function (b) { b.onclick = function () { ui.mode = b.getAttribute('data-mode'); detail = null; saveUI(); render(); var n = SP.$('[data-mode="' + ui.mode + '"]', root); if (n) n.focus({ preventScroll: true }); toShk(); }; });
     SP.$$('[data-view]', root).forEach(function (b) { b.onclick = function () { ui.view = b.getAttribute('data-view'); saveUI(); render(); }; });
     SP.$$('[data-src]', root).forEach(function (b) { b.onclick = function () { SP.hub.setPref(b.getAttribute('data-src')); }; });
+    var dl = SP.$('#schDl', root); if (dl) dl.onclick = downloadDialog;
     SP.$$('[data-wk]', root).forEach(function (b) { b.onclick = function () { weekOff += +b.getAttribute('data-wk'); render(); }; });
     SP.$$('[data-day]', root).forEach(function (b) { b.onclick = function () { dayIdx = +b.getAttribute('data-day'); render(); var c = SP.$('[data-day="' + dayIdx + '"]', root); if (c) c.focus(); }; });
     SP.$$('[data-sid]', root).forEach(function (b) { b.onclick = function () { SP.navigate('subjects', [b.getAttribute('data-sid')]); }; });

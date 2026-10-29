@@ -498,3 +498,5 @@ Object.assign(SP.I18N.en, { 'jr.csvSubject': 'Subject' });
 Object.assign(SP.I18N.en, { 'settings.plAuto': 'Auto-update from Platonus', 'settings.min': 'min',
   'settings.plAutoHint': 'Every N minutes while the site is open, and right when it opens, the site presses "Update from Platonus" by itself. 0 — off. Tick "Always allow" in the "Open application?" prompt so the browser stops asking. Not too often: Platonus may block sign-in for a while.' });
 Object.assign(SP.I18N.en, { 'jr.plBusy': 'Updating grades from Platonus…' });
+
+Object.assign(SP.I18N.en, { 'jr.newOne': 'New grade', 'jr.newMany': 'New grades' });

@@ -152,7 +152,7 @@
   function importPlatonus(data) {
     if (!data || data.format !== 'studyplay-grades' || !data.subjects) throw new Error('format');
     var subs = Array.isArray(data.subjects) ? data.subjects : [data.subjects];
-    var st = jState(), upd = 0, added = 0;
+    var st = jState(), upd = 0, added = 0, news = [];
     st.hidden = st.hidden || [];
     subs.forEach(function (s) {
       var name = String(s.subject || '').trim(); if (!name) return;
@@ -177,11 +177,35 @@
       /* У «ДЗ» (физкультура) Platonus пишет 0, пока зачёт не поставлен — это «ещё нет», а не ноль */
       if (ek && !/^экз/i.test(ek) && it.exam === 0) it.exam = null;
       if (!it.teachers && s.tutor) it.teachers = String(s.tutor);
+      /* Что появилось нового с прошлого обновления (в первый раз молчим — иначе «новое» всё) */
+      var prev = it.pl;
+      if (prev) {
+        var fresh = [], seen = {}, kf = function (x) { return x.date + '|' + x.type + '|' + x.mark; };
+        (prev.current || []).forEach(function (x) { seen[kf(x)] = (seen[kf(x)] || 0) + 1; });
+        list.forEach(function (x) { var q = kf(x); if (seen[q]) seen[q]--; else fresh.push(x.mark); });
+        var pe = prev.exams || {};
+        [['РК 1', SP.t('jr.rk1')], ['РК 2', SP.t('jr.rk2')], [ek, SP.t('jr.exam')]].forEach(function (p) {
+          if (!p[0]) return;
+          var nv = num(keep[p[0]]), ov = num(pe[p[0]]);
+          if (p[0] === ek && !/^экз/i.test(ek) && nv === 0) nv = null;   /* «ДЗ = 0» — ещё не поставлен */
+          if (nv != null && nv !== ov) fresh.push(p[1] + ': ' + String(Math.round(nv * 100) / 100));
+        });
+        if (fresh.length) news.push({ name: it.name || name, marks: fresh });
+      }
       it.pl = { at: data.taken, exams: keep, examKey: ek, avg: c, g: marks.join(','), current: list };
     });
     st.plAt = data.taken || new Date().toISOString();
     jSave(st);
-    return { upd: upd, added: added };
+    return { upd: upd, added: added, news: news };
+  }
+  /* Уведомление справа снизу: «Новая оценка · Философия: 95» */
+  function notifyNews(news) {
+    if (!news || !news.length) return;
+    var cnt = news.reduce(function (a, n) { return a + n.marks.length; }, 0);
+    var html = '<b>' + esc(SP.t(cnt > 1 ? 'jr.newMany' : 'jr.newOne')) + '</b>' + news.map(function (n) {
+      return '<div>' + esc(n.name) + ': <b>' + esc(n.marks.join(', ')) + '</b></div>';
+    }).join('');
+    SP.toast(html, 'success', { html: true, ms: 12000 });
   }
   function editCard(it) {
     var f = function (k, label, val, full, type) {
@@ -336,7 +360,7 @@
         try {
           var res = importPlatonus(JSON.parse(String(r.result).replace(/^﻿/, '')));
           editing = null; render();
-          /* без сообщения «обновлено» — оценки просто меняются */ void res;
+          notifyNews(res.news);   /* сообщаем только о новых оценках */
         } catch (e) { SP.toast(SP.t('jr.plBad'), 'danger'); }
       };
       r.onerror = function () { SP.toast(SP.t('jr.plBad'), 'danger'); };
@@ -416,7 +440,7 @@
       try { history.replaceState(null, '', location.pathname + location.search + '#/grades'); } catch (e) { /* ничего */ }
       fromLink(data).then(function (d) {
         var res = importPlatonus(d); editing = null; render();
-        /* без сообщения «обновлено» — оценки просто меняются */ void res;
+        notifyNews(res.news);   /* сообщаем только о новых оценках */
       }).catch(function (e) { SP.toast(e && e.message === 'old' ? SP.t('jr.plOld') : SP.t('jr.plBadLink'), 'danger'); });
     }
     render();
@@ -502,7 +526,7 @@
       waitUntil = 0; clearInterval(waitTimer);
       return fromLink(t.slice(PREFIX.length)).then(function (d) {
         var res = importPlatonus(d); editing = null; render();
-        /* без сообщения «обновлено» — оценки просто меняются */ void res;
+        notifyNews(res.news);   /* сообщаем только о новых оценках */
         busy(false);
         try { navigator.clipboard.writeText(''); } catch (e) { /* ничего */ }
       });

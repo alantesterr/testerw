@@ -116,22 +116,11 @@
       /* Нет ни одного РК — пустое место под строку, чтобы все карточки были одной высоты */
       (v.r1 == null && v.r2 == null ? ring(SP.t('jr.rk1'), null).replace('class="jr-ring"', 'class="jr-ring jr-ph" aria-hidden="true"') : '') + '</div>' +
       /* подсказка; если её нет — пустое место той же высоты */
-      '<p class="small jr-hint ' + hn.cls + (hn.text ? '' : ' jr-ph') + '"' + (hn.text ? '' : ' aria-hidden="true"') + '>' + SP.icon('info', 'ic-sm') + '<span>' + esc(hn.text || '—') + '</span></p>' + plHtml(it) + '</article>';
+      '<p class="small jr-hint ' + hn.cls + (hn.text ? '' : ' jr-ph') + '"' + (hn.text ? '' : ' aria-hidden="true"') + '>' + SP.icon('info', 'ic-sm') + '<span>' + esc(hn.text || '—') + '</span></p></article>';
   }
   /* ---------- Оценки из файла программы «Мои оценки» (Platonus) ---------- */
-  function ddmm(s) { var m = /^(\d{4})-(\d\d)-(\d\d)/.exec(s || ''); return m ? m[3] + '.' + m[2] : String(s || ''); }
-  /* Под карточкой: текущие оценки с датами и то, что не число (например «Экз.: Допуск») */
-  function plHtml(it) {
-    var pl = it.pl; if (!pl) return '';
-    var cur = pl.current || [];
-    if (!cur.length) return '';
-    var items = cur.map(function (c) {
-      var n = num(c.mark), t = n == null ? '' : tone(n);
-      return '<li class="mark ' + t + '" title="' + esc(c.type || '') + '"><span>' + esc(ddmm(c.date)) + '</span><b>' + esc(c.mark) + '</b></li>';
-    }).join('');
-    return '<details class="jr-pl"><summary>' + SP.icon('chevron-right', 'ic-sm') + '<span>' + esc(SP.t('jr.plCur', { n: cur.length })) + '</span></summary>' + (items ? '<ul class="jr-pl-list">' + items + '</ul>' : '') + '</details>';
-  }
-  function normName(s) { return SP.lc(String(s || '')).replace(/ё/g, 'е').replace(/[^a-zа-яәіңғүұқөһ0-9+#]+/gi, ' ').trim(); }
+  /* «C ++ Builder» и «C++Builder» → «c++ builder» */
+  function normName(s) { return SP.lc(String(s || '')).replace(/ё/g, 'е').replace(/\s*\+\s*/g, '+').replace(/\+\+(?=[a-zа-я])/gi, '++ ').replace(/[^a-zа-яәіңғүұқөһ0-9+#]+/gi, ' ').trim(); }
   /* Ищем карточку с тем же предметом: точное совпадение, потом «одно содержит другое», потом общие слова */
   function findItem(st, name) {
     var n = normName(name); if (!n) return null;
@@ -143,6 +132,11 @@
         var a = n.split(' ').filter(function (w) { return w.length > 2; }), b = m.split(' ').filter(function (w) { return w.length > 2; });
         var common = a.filter(function (w) { return b.indexOf(w) >= 0; }).length, min = Math.min(a.length, b.length);
         if (min && common / min >= 0.6) s = 1 + common / 10;
+        /* Название на другом языке: совпали латинские слова вроде «Borland», «C++» */
+        else {
+          var lat = a.filter(function (w) { return /[a-z+#]/.test(w) && b.indexOf(w) >= 0; }).length;
+          if (lat >= 2 || (lat === 1 && min <= 2)) s = 0.5 + lat / 10;
+        }
       }
       if (s > score) { score = s; best = it; }
     });
@@ -163,6 +157,9 @@
       var name = String(s.subject || '').trim(); if (!name) return;
       var ex = s.exams || {}, cur = s.current ? (Array.isArray(s.current) ? s.current : [s.current]) : [];
       var it = findItem(st, name);
+      /* Предмет без единой оценки (например, практика) новой карточкой не добавляем */
+      var hasAny = cur.length || Object.keys(ex).some(function (k) { return num(ex[k]) != null; });
+      if (!it && !hasAny) return;
       if (!it) {
         it = { id: SP.uid('j'), name: name, teachers: '', mode: 'list', grades: [], cur: null, rk1: null, rk2: null, exam: null };
         st.items.push(it); added++;

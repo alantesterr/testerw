@@ -79,8 +79,7 @@
   SP.tester = {
     openIsolated: function (title, questions) {
       var m = SP.modal({ title: title, size: 'xl', body: '<div id="isoHost"></div>', onClose: function () { if (q) q.destroy(); } });
-      m.el.classList.add('is-quiz'); /* «На весь экран» растягивает это окно на весь экран */
-      var q = SP.Quiz(SP.$('#isoHost', m.el), questions, { title: title, onExit: function () { m.close(); } });
+      var q = SP.Quiz(SP.$('#isoHost', m.el), questions, { title: title, focus: false, onExit: function () { m.close(); } });
     },
     help: function () {
       SP.modal({

@@ -62,7 +62,7 @@
       host.innerHTML = '<div class="quiz stack">' +
         '<section class="card card-flat quiz-top"><div class="row-between"><div class="stack-sm"><b>' + esc(opts.title || SP.t('nav.tester')) + '</b>' +
         '<span class="small muted">' + (round > 1 ? esc(SP.t('quiz.round', { n: round })) + ' · ' : '') + esc(SP.t('quiz.progress', { i: cur + 1, n: quiz.length, d: done })) + '</span></div>' +
-        '<div class="row row-nowrap quiz-top-a">' + (SP.focus ? SP.focus.btn(true, 'btn-ghost') : '') +
+        '<div class="row row-nowrap quiz-top-a">' + (SP.focus && opts.focus !== false ? SP.focus.btn(true, 'btn-ghost') : '') +
         '<button type="button" class="btn btn-ghost" id="qExit">' + SP.icon('x') + '<span>' + esc(SP.t('quiz.exit')) + '</span></button></div></div>' +
         '<div class="progress"><i style="width:' + Math.round(done / quiz.length * 100) + '%"></i></div>' +
         '<nav class="qn-list" aria-label="' + esc(SP.t('quiz.nav')) + '">' + navHtml() + '</nav></section>' +

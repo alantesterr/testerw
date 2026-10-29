@@ -891,7 +891,3 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 .lx-toc-h b { margin: 0 !important; }
 .lx-toc-h .btn { min-height: 1.9rem; padding: 0 8px; font-size: var(--fs-xs); color: var(--text-3); }
 .quiz-top-a { gap: 4px; flex: none; }
-/* тест из папки (окно) в режиме «На весь экран» — окно на весь экран */
-:root.nt-focus .modal-backdrop.is-quiz { padding: 0 !important; place-items: stretch; animation: none; opacity: 1; background: var(--bg); }
-:root.nt-focus .modal-backdrop.is-quiz .modal { width: 100vw; max-width: none; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; margin: 0; animation: none; transform: none; opacity: 1; }
-:root.nt-focus .modal-backdrop.is-quiz .modal-head { padding-top: calc(var(--sp-3) + env(safe-area-inset-top)); }

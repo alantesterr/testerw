@@ -32,8 +32,10 @@
     return '<div class="jr-ring"><span>' + esc(label) + '</span><div class="ring ' + ringCls(v) + '" role="img" aria-label="' + esc(label + ': ' + txt) + '"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="bg" cx="20" cy="20" r="16"/>' +
       (len ? '<circle class="fg" cx="20" cy="20" r="16" stroke-dasharray="' + len.toFixed(2) + ' ' + c.toFixed(2) + '"/>' : '') + '</svg><b>' + esc(txt) + '</b></div></div>';
   }
+  /* «В картотеке нет преподавателя по данной дисциплине» и т. п. — значит, преподаватель не указан */
+  function noTeacher(t) { return /нет\s+преподавател|картотек|оқытушы\s+жоқ|no\s+teacher/i.test(String(t || '')); }
   function teachLabel(t) {
-    t = String(t || '').trim(); if (!t) return '';
+    t = String(t || '').trim(); if (!t || noTeacher(t)) return '';
     return SP.t(/[,;]/.test(t) ? 'jr.teachers' : 'jr.teacher') + ': ' + t;
   }
   /* Журнал сам подтягивает все предметы из расписания (кроме удалённых вручную)
@@ -61,6 +63,8 @@
       var nm = SP.hub.cleanName(s.name); if (!nm || hidden.indexOf(SP.lc(nm)) >= 0) return;
       if (!st.items.some(function (x) { return SP.lc(x.name) === SP.lc(nm); })) { upsert(st, nm, { teachers: s.teacher || '' }); changed = true; }
     });
+    /* Убираем «В картотеке нет преподавателя…», если уже сохранилось */
+    st.items.forEach(function (it) { if (it.teachers && noTeacher(it.teachers)) { it.teachers = ''; changed = true; } });
     if (changed) jSave(st);
   }
   function journalHtml() {
@@ -173,7 +177,8 @@
       it.rk1 = num(keep['РК 1']); it.rk2 = num(keep['РК 2']); it.exam = ek ? num(keep[ek]) : null;
       /* У «ДЗ» (физкультура) Platonus пишет 0, пока зачёт не поставлен — это «ещё нет», а не ноль */
       if (ek && !/^экз/i.test(ek) && it.exam === 0) it.exam = null;
-      if (!it.teachers && s.tutor) it.teachers = String(s.tutor);
+      if (noTeacher(it.teachers)) it.teachers = '';
+      if (!it.teachers && s.tutor && !noTeacher(s.tutor)) it.teachers = String(s.tutor);
       /* Что появилось нового с прошлого обновления (в первый раз молчим — иначе «новое» всё) */
       var prev = it.pl;
       if (prev) {

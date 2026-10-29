@@ -500,3 +500,5 @@ Object.assign(SP.I18N.kk, { 'settings.plAuto': 'Platonus-тан автожаңа
 Object.assign(SP.I18N.kk, { 'jr.plBusy': 'Platonus бағалары жаңартылуда…' });
 
 Object.assign(SP.I18N.kk, { 'jr.newOne': 'Жаңа баға', 'jr.newMany': 'Жаңа бағалар' });
+
+Object.assign(SP.I18N.kk, { 'settings.plHideHint': '«Platonus-тан жаңарту» батырмасы және бағдарлама баптауы. Көрсету үшін белгіні алыңыз.' });

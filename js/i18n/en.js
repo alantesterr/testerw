@@ -500,3 +500,5 @@ Object.assign(SP.I18N.en, { 'settings.plAuto': 'Auto-update from Platonus', 'set
 Object.assign(SP.I18N.en, { 'jr.plBusy': 'Updating grades from Platonus…' });
 
 Object.assign(SP.I18N.en, { 'jr.newOne': 'New grade', 'jr.newMany': 'New grades' });
+
+Object.assign(SP.I18N.en, { 'settings.plHideHint': 'The "Update from Platonus" button and program setup. Untick to show them.' });

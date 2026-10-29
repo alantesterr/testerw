@@ -69,8 +69,7 @@
     var h = '<div class="btn-group jr-bar"><button type="button" class="btn" id="jrHow">' + SP.icon('circle-help') + '<span>' + esc(SP.t('jr.how')) + '</span></button>' +
       (plHidden() ? '' : (isWinPc() ? '<button type="button" class="btn" id="jrRun">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRun')) + '</span></button>' +
         '<button type="button" class="btn btn-icon" id="jrSetup" aria-label="' + esc(SP.t('jr.plSetupTitle')) + '" data-tip="' + esc(SP.t('jr.plSetupTitle')) + '">' + SP.icon('settings') + '</button>' : '') +
-      '<button type="button" class="btn" id="jrPl">' + SP.icon('upload') + '<span>' + esc(SP.t('jr.plLoad')) + '</span></button>' +
-      '<input type="file" id="jrPlFile" accept=".json,application/json,text/plain" hidden>') +
+      '') +
       (st.items.length ? '<button type="button" class="btn" id="jrDl">' + SP.icon('download') + '<span>' + esc(SP.t('jr.dl')) + '</span></button>' : '') +
       '<input type="file" id="jrJFile" accept=".json,application/json,text/plain" hidden>' +
       '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div>';
@@ -326,7 +325,10 @@
       var r = new FileReader();
       r.onload = function () {
         try {
-          var n = importJournal(JSON.parse(String(r.result).replace(/^﻿/, '')));
+          var d = JSON.parse(String(r.result).replace(/^﻿/, ''));
+          /* Файл программы «Мои оценки» («Сохранить для StudyPlay») тоже подходит */
+          if (d && d.format === 'studyplay-grades') { var res = importPlatonus(d); editing = null; render(); notifyNews(res.news); SP.toast(SP.t('jr.jDone', { n: res.upd + res.added }), 'success'); return; }
+          var n = importJournal(d);
           editing = null; render(); SP.toast(SP.t('jr.jDone', { n: n }), 'success');
         } catch (e) { SP.toast(SP.t('jr.jBad'), 'danger'); }
       };

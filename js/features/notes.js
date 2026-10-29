@@ -276,9 +276,7 @@
       '<div class="lx-title"><b>' + esc(lec.label) + '</b><span>' + esc(meta.short || meta.subject) + '</span></div>' +
       '<a class="btn btn-ghost btn-icon' + (cur.li === 0 ? ' is-off' : '') + '" href="' + (cur.li > 0 ? esc(lecHref(meta, cur.li - 1)) : '#') + '" aria-label="' + esc(SP.t('lx.prevLec')) + '" data-tip="' + esc(SP.t('lx.prevLec')) + '"' + (cur.li === 0 ? ' aria-disabled="true" tabindex="-1"' : '') + '>' + SP.icon('chevron-up') + '</a>' +
       '<a class="btn btn-ghost btn-icon' + (cur.li >= n - 1 ? ' is-off' : '') + '" href="' + (cur.li < n - 1 ? esc(lecHref(meta, cur.li + 1)) : '#') + '" aria-label="' + esc(SP.t('lx.nextLec')) + '" data-tip="' + esc(SP.t('lx.nextLec')) + '"' + (cur.li >= n - 1 ? ' aria-disabled="true" tabindex="-1"' : '') + '>' + SP.icon('chevron-down') + '</a>' +
-      '<span class="lx-bar-a">' + (cur.tab === 'text' && lec._m.text.filter(function (si) { return lec.sections[si].title; }).length > 1
-        ? '<button type="button" class="btn btn-ghost btn-sm lx-tocbtn" data-lxtoc aria-pressed="' + !tocOff() + '">' + SP.icon(tocOff() ? 'panel-left-open' : 'panel-left-close', 'ic-sm') + '<span>' + esc(SP.t(tocOff() ? 'notes.tocShow' : 'notes.tocHide')) + '</span></button>' : '') +
-      SP.focus.btn(true, 'btn-ghost') + '</span>' +
+      '<span class="lx-bar-a">' + SP.focus.btn(true, 'btn-ghost') + '</span>' +
       '</div><div class="lx-tabs" role="tablist" aria-label="' + esc(SP.t('lx.parts')) + '">' + tabs.map(function (t) {
         return '<button type="button" role="tab" data-lxtab="' + t[0] + '" aria-selected="' + (cur.tab === t[0]) + '">' + esc(t[1]) + (t[2] !== '' ? '<span class="n">' + t[2] + '</span>' : '') + '</button>';
       }).join('') + '</div><div class="lx-prog" aria-hidden="true"' + (cur.tab === 'text' ? '' : ' hidden') + '><i></i></div></header>';
@@ -307,14 +305,15 @@
         (s.title && !pdfSec ? '<div class="nt-sec-head"><h3 class="nt-sec-t">' + (s.id ? '<span class="nt-sec-id">' + esc(s.id) + '</span>' : '') + esc(s.title) + '</h3></div>' : '') +
         (pdfSec ? pdfRegionsHtml(s.pdf, d) : blocksHtml(s.blocks, ctx)) + '</section>';
     });
-    var tools = '<div class="lx-tools">' + (canPdf ? '<div class="segmented" role="group" aria-label="' + esc(SP.t('notes.view')) + '">' +
+    var hasToc = toc.length > 1;
+    var tools = '<div class="lx-tools">' + (hasToc && tocOff() ? '<button type="button" class="btn btn-sm lx-tocbtn" data-lxtoc>' + SP.icon('panel-left-open', 'ic-sm') + '<span>' + esc(SP.t('notes.toc')) + '</span></button>' : '') + (canPdf ? '<div class="segmented" role="group" aria-label="' + esc(SP.t('notes.view')) + '">' +
       [['pdf', 'file-text'], ['text', 'type']].map(function (m) { return '<button type="button" data-ntmode="' + m[0] + '" aria-pressed="' + (mode() === m[0]) + '">' + SP.icon(m[1], 'ic-sm') + '<span>' + esc(SP.t('notes.view.' + m[0])) + '</span></button>'; }).join('') + '</div>' : '') +
       (meta.pdf ? '<a class="btn btn-ghost btn-sm" href="' + esc(encodeURI(meta.pdf)) + '" target="_blank" rel="noopener">' + SP.icon('external-link', 'ic-sm') + '<span>' + esc(SP.t('notes.pdf')) + '</span></a>' : '') + '</div>';
     var top = '<div class="lx-intro"><div class="lx-eyebrow">' + esc(SP.t('lx.lecOf', { l: lec.label, n: d.lectures.length })) + '</div><h1 class="lx-h1">' + esc(lec.title) + '</h1>' + tools +
       (sum.length ? '<details class="lx-sum" open><summary>' + SP.icon('zap', 'ic-sm') + '<span>' + esc(SP.t('lx.sum')) + '</span></summary><ul>' + sum.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></details>' : '') + '</div>';
     var tabs = tabsOf(lec), nx = tabs[1];
     var end = '<div class="lx-end"><span class="small muted">' + esc(SP.t(lec._m.tasks.length ? 'lx.endTasks' : 'lx.endQs')) + '</span>' + (nx ? '<button type="button" class="btn btn-primary" data-lxtab="' + nx[0] + '">' + esc(SP.t('lx.nextTab', { t: nx[1] })) + SP.icon('chevron-right') + '</button>' : '') + '</div>';
-    return '<div class="lx-text' + (toc.length > 1 && !tocOff() ? ' has-toc' : '') + (toc.length > 1 && tocOff() ? ' toc-off' : '') + '">' + (toc.length > 1 ? '<nav class="lx-toc" aria-label="' + esc(SP.t('notes.toc')) + '"><b>' + esc(SP.t('notes.toc')) + '</b>' + toc.join('') + '</nav>' : '') +
+    return '<div class="lx-text' + (toc.length > 1 && !tocOff() ? ' has-toc' : '') + (toc.length > 1 && tocOff() ? ' toc-off' : '') + '">' + (toc.length > 1 ? '<nav class="lx-toc" aria-label="' + esc(SP.t('notes.toc')) + '"><div class="lx-toc-h"><b>' + esc(SP.t('notes.toc')) + '</b><button type="button" class="btn btn-ghost btn-sm" data-lxtoc data-tip="' + esc(SP.t('notes.tocHide')) + '" aria-label="' + esc(SP.t('notes.tocHide')) + '">' + SP.icon('panel-left-close', 'ic-sm') + '<span>' + esc(SP.t('lx.hide')) + '</span></button></div>' + toc.join('') + '</nav>' : '') +
       '<div class="lx-main">' + top + '<article class="nt-doc' + (asPdf ? ' nt-paper theme-paper subj-' + esc(meta.id) : '') + '" id="lxDoc"><section class="nt-lec">' + secs + '</section></article>' + end + '</div></div>';
   }
 

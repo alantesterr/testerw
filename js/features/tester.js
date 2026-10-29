@@ -18,8 +18,7 @@
       title: SP.t('nav.tester'),
       sub: esc(SP.t('tester.sub')),
       actions: '<button type="button" class="btn btn-ghost" id="tHelp">' + SP.icon('circle-help') + '<span>' + esc(SP.t('tester.help')) + '</span></button>' +
-        '<a class="btn" href="#/designer">' + SP.icon('square-pen') + '<span>' + esc(SP.t('tester.editQuestions')) + '</span></a>' +
-        SP.focus.btn(false, 'btn-ghost')
+        '<a class="btn" href="#/designer">' + SP.icon('square-pen') + '<span>' + esc(SP.t('tester.editQuestions')) + '</span></a>'
     });
     /* Шаг 1 — файлы */
     html += '<section class="card drop-card" id="tDrop"><div class="card-head"><div><div class="card-title">' + SP.icon('upload') + esc(SP.t('tester.step1')) + '</div><div class="card-sub">' + esc(SP.t('tester.formats')) + '</div></div>' +
@@ -80,6 +79,7 @@
   SP.tester = {
     openIsolated: function (title, questions) {
       var m = SP.modal({ title: title, size: 'xl', body: '<div id="isoHost"></div>', onClose: function () { if (q) q.destroy(); } });
+      m.el.classList.add('is-quiz'); /* «На весь экран» растягивает это окно на весь экран */
       var q = SP.Quiz(SP.$('#isoHost', m.el), questions, { title: title, onExit: function () { m.close(); } });
     },
     help: function () {

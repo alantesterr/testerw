@@ -62,7 +62,8 @@
       host.innerHTML = '<div class="quiz stack">' +
         '<section class="card card-flat quiz-top"><div class="row-between"><div class="stack-sm"><b>' + esc(opts.title || SP.t('nav.tester')) + '</b>' +
         '<span class="small muted">' + (round > 1 ? esc(SP.t('quiz.round', { n: round })) + ' · ' : '') + esc(SP.t('quiz.progress', { i: cur + 1, n: quiz.length, d: done })) + '</span></div>' +
-        '<button type="button" class="btn btn-ghost" id="qExit">' + SP.icon('x') + '<span>' + esc(SP.t('quiz.exit')) + '</span></button></div>' +
+        '<div class="row row-nowrap quiz-top-a">' + (SP.focus ? SP.focus.btn(true, 'btn-ghost') : '') +
+        '<button type="button" class="btn btn-ghost" id="qExit">' + SP.icon('x') + '<span>' + esc(SP.t('quiz.exit')) + '</span></button></div></div>' +
         '<div class="progress"><i style="width:' + Math.round(done / quiz.length * 100) + '%"></i></div>' +
         '<nav class="qn-list" aria-label="' + esc(SP.t('quiz.nav')) + '">' + navHtml() + '</nav></section>' +
         '<section class="card quiz-card"><div class="row-between"><span class="badge">' + esc(typeLabel) + '</span></div>' +
@@ -119,9 +120,11 @@
         .then(function () { if (i === cur && !finished) show(); });
     }
 
+    /* вышли из теста — выходим и из полного экрана */
+    function unfocus() { if (SP.focus && SP.focus.is()) SP.focus.set(false); }
     function exit() {
-      if (!ans.some(Boolean) || finished) { if (opts.onExit) opts.onExit(); return; }
-      SP.confirm({ title: SP.t('quiz.exitTitle'), text: SP.t('quiz.exitText'), okLabel: SP.t('quiz.exit'), danger: true }).then(function (ok) { if (ok && opts.onExit) opts.onExit(); });
+      if (!ans.some(Boolean) || finished) { unfocus(); if (opts.onExit) opts.onExit(); return; }
+      SP.confirm({ title: SP.t('quiz.exitTitle'), text: SP.t('quiz.exitText'), okLabel: SP.t('quiz.exit'), danger: true }).then(function (ok) { if (ok) { unfocus(); if (opts.onExit) opts.onExit(); } });
     }
 
     function finish() {
@@ -174,6 +177,6 @@
     }
     document.addEventListener('keydown', onKey);
     show();
-    return { destroy: function () { document.removeEventListener('keydown', onKey); } };
+    return { destroy: function () { document.removeEventListener('keydown', onKey); unfocus(); } };
   };
 })();

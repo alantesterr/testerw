@@ -897,3 +897,4 @@ Object.assign(SP.I18N.ru, {
   'lx.flip': 'Перевернуть карточку', 'lx.tapFlip': 'Нажми, чтобы увидеть ответ', 'lx.answer': 'Ответ', 'lx.remember': 'Запомни', 'lx.dontKnow': 'Не знаю',
   'lx.backQ': 'Вернуться к вопросу {n}', 'lx.backTask': 'Вернуться к задаче {n}'
 });Object.assign(SP.I18N.ru, { 'lx.zoom': 'Увеличенный фрагмент' });
+Object.assign(SP.I18N.ru, { 'lx.hide': 'Скрыть' });

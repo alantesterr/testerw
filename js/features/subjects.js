@@ -46,8 +46,7 @@
       sub: esc(SP.t('subjects.count', { n: d.subjects.length })),
       actions: (d.subjects.length ? '<button type="button" class="btn" id="sjSelect" aria-pressed="' + selMode + '">' + SP.icon(selMode ? 'x' : 'square-check-big') + '<span>' + esc(SP.t(selMode ? 'subjects.selDone' : 'subjects.select')) + '</span></button>' : '') +
         (Object.keys(d.removed || {}).length ? '<button type="button" class="btn btn-ghost" id="sjRestore">' + SP.icon('undo-2') + '<span>' + esc(SP.t('subjects.restoreRemoved')) + '</span></button>' : '') +
-        '<button type="button" class="btn btn-primary" id="sjAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('subjects.add')) + '</span></button>' +
-        SP.focus.btn(true, 'btn-ghost')
+        '<button type="button" class="btn btn-primary" id="sjAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('subjects.add')) + '</span></button>'
     });
     if (!d.subjects.length) {
       html += '<section class="card"><div class="empty">' + SP.icon('folder-open', 'ic-xl') + '<h3>' + esc(SP.t('subjects.emptyTitle')) + '</h3><p>' + esc(SP.t('subjects.emptyText')) + '</p>' +

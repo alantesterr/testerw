@@ -464,3 +464,4 @@ Object.assign(SP.I18N.kk, {
   'lx.flip': 'Карточканы аудару', 'lx.tapFlip': 'Жауапты көру үшін бас', 'lx.answer': 'Жауап', 'lx.remember': 'Есте сақта', 'lx.dontKnow': 'Білмеймін',
   'lx.backQ': '{n}-сұраққа оралу', 'lx.backTask': '{n} есебіне оралу'
 });Object.assign(SP.I18N.kk, { 'lx.zoom': 'Үлкейтілген үзінді' });
+Object.assign(SP.I18N.kk, { 'lx.hide': 'Жасыру' });

@@ -464,3 +464,4 @@ Object.assign(SP.I18N.en, {
   'lx.flip': 'Flip the card', 'lx.tapFlip': 'Tap to see the answer', 'lx.answer': 'Answer', 'lx.remember': 'Remember', 'lx.dontKnow': 'Don’t know',
   'lx.backQ': 'Back to question {n}', 'lx.backTask': 'Back to task {n}'
 });Object.assign(SP.I18N.en, { 'lx.zoom': 'Zoomed fragment' });
+Object.assign(SP.I18N.en, { 'lx.hide': 'Hide' });

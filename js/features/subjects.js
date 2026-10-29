@@ -128,7 +128,8 @@
           if (st.tasks) chips.push('<span class="chip-s' + (st.tasksOk === st.tasks ? ' ok' : '') + '">' + esc(SP.t('sj.tasks', { a: st.tasksOk, n: st.tasks })) + '</span>');
           if (st.best != null) chips.push('<span class="chip-s' + (st.best >= 70 ? ' ok' : '') + '">' + esc(SP.t('sj.test', { p: st.best })) + '</span>');
           var num = String(lec.n || li + 1);
-          return '<a class="sj-lec" href="' + esc(SP.notes.href(meta, li)) + '"><span class="sj-lnum' + (st.read >= 97 ? ' done' : '') + '">' + esc(num.length > 3 ? li + 1 : num) + '</span>' +
+          /* где остановился — слегка подсвечено, без отдельной кнопки */
+          return '<a class="sj-lec' + (li === cl ? ' is-last' : '') + '" href="' + esc(SP.notes.href(meta, li)) + '"' + (li === cl ? ' aria-current="true"' : '') + '><span class="sj-lnum' + (st.read >= 97 ? ' done' : '') + '">' + esc(num.length > 3 ? li + 1 : num) + '</span>' +
             '<span class="meta"><b>' + esc(lec.title) + '</b><small>' + esc(lec.label) + '</small>' + (chips.length ? '<span class="chips-s">' + chips.join('') + '</span>' : '') + '</span>' + SP.icon('chevron-right', 'sj-chev') + '</a>';
         }).join('');
         /* свёрнутая строка: название конспекта, общий прогресс и «Продолжить»; нажал — раскрылся список лекций */

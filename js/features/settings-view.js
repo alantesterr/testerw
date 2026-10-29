@@ -121,7 +121,7 @@
     var hk = $('#sHotkeys'); if (hk) hk.onchange = function () { SP.settings.set('hotkeys', hk.checked); };
     var sw = $('#sSw'); if (sw) sw.onchange = function () { SP.settings.set('stopwatch', sw.checked); };
     var ph = $('#sPlHide'); if (ph) ph.onchange = function () { SP.settings.set('plHide', ph.checked); SP.toast(SP.t('settings.saved'), 'success'); render(); var n = $('#sPlHide'); if (n) n.focus(); };
-    var pa = $('#sPlAuto'); if (pa) pa.onchange = function () { var v = Math.round(SP.clamp(parseFloat(pa.value) || 0, 0, 1440)); pa.value = v; SP.settings.set('plAuto', v); SP.toast(SP.t('settings.saved'), 'success'); };
+    var pa = $('#sPlAuto'); if (pa) pa.onchange = function () { var v = Math.round(SP.clamp(parseFloat(pa.value) || 0, 0, 1440)); if (v > 0 && v < 1) v = 1;   /* не чаще раза в минуту */ pa.value = v; SP.settings.set('plAuto', v); SP.toast(SP.t('settings.saved'), 'success'); };
     on('#sHow', SP.auth.explain);
     var gi = $('#sGroup'); if (gi) SP.group.attach(gi, $('#sGroupErr'));
     on('#sLogout', function () { SP.auth.logout(); });

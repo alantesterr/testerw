@@ -936,3 +936,5 @@ Object.assign(SP.I18N.ru, { 'jr.newOne': 'Новая оценка', 'jr.newMany'
 
 Object.assign(SP.I18N.ru, { 'settings.plHideHint': 'Кнопка «Обновить из Platonus» и настройка программы. Снимите галочку, чтобы они появились.' });
 Object.assign(SP.I18N.ru, { 'jr.more': 'Ещё' });
+
+Object.assign(SP.I18N.ru, { 'jr.plCool': 'Откат: ещё {s} сек. Обновлять из Platonus можно не чаще раза в минуту — это защита от блокировки.' });

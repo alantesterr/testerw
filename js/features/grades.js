@@ -504,7 +504,17 @@
   /* Кнопки Platonus скрыты, пока в Настройках → Инструменты не снята галочка */
   function plHidden() { return SP.settings.get('plHide') !== false; }
   function isWinPc() { return /Windows/i.test(navigator.userAgent) && !/Mobile|Phone/i.test(navigator.userAgent); }
+  /* Откат: не чаще 1 обновления из Platonus в минуту — общий для всех вкладок (и программа следит сама) */
+  var COOL_MS = 60000, LAST_KEY = 'sp-pl-last';
+  function coolLeft() { var t = +SP.store.get(LAST_KEY, 0) || 0; return Math.max(0, t + COOL_MS - Date.now()); }
   function runProgram(quiet) {
+    var left = coolLeft();
+    if (left > 0) {
+      if (quiet) { autoDue = true; setTimeout(autoRun, left + 500); }   /* автообновление — тихо после отката */
+      else SP.toast(SP.t('jr.plCool', { s: Math.ceil(left / 1000) }), 'warning');
+      return;
+    }
+    SP.store.set(LAST_KEY, Date.now());
     var a = document.createElement('a'); a.href = PREFIX + 'run'; a.style.display = 'none';
     document.body.appendChild(a); a.click(); a.remove();
     if (!quiet) SP.toast(SP.t('jr.plRunToast'), 'info', { html: false });
@@ -554,7 +564,7 @@
      пока вкладка открыта. Работает только на Windows и когда кнопки Platonus не скрыты.
      Вкладка не на экране — обновление откладывается до возвращения к ней. */
   var autoTimer = null, autoDue = false;
-  function autoMin() { var v = parseFloat(SP.settings.get('plAuto')); return v > 0 ? v : 0; }
+  function autoMin() { var v = parseFloat(SP.settings.get('plAuto')); return v > 0 ? Math.max(1, v) : 0; }
   function autoOn() { return autoMin() > 0 && !plHidden() && isWinPc(); }
   function autoRun() {
     if (!autoOn()) return;

@@ -20,3 +20,4 @@ node_modules/
 # Programma «Moi ocenki»: lichnye nastroiki i vygruzki ocenok (parol!)
 config.json
 studyplay-*.json
+last-run.txt

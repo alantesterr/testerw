@@ -503,3 +503,5 @@ Object.assign(SP.I18N.kk, { 'jr.newOne': 'Жаңа баға', 'jr.newMany': 'Ж�
 
 Object.assign(SP.I18N.kk, { 'settings.plHideHint': '«Platonus-тан жаңарту» батырмасы және бағдарлама баптауы. Көрсету үшін белгіні алыңыз.' });
 Object.assign(SP.I18N.kk, { 'jr.more': 'Тағы' });
+
+Object.assign(SP.I18N.kk, { 'jr.plCool': 'Күту: тағы {s} сек. Platonus-тан минутына бір реттен жиі жаңартуға болмайды — бұғаттаудан қорғаныс.' });

@@ -503,3 +503,5 @@ Object.assign(SP.I18N.en, { 'jr.newOne': 'New grade', 'jr.newMany': 'New grades'
 
 Object.assign(SP.I18N.en, { 'settings.plHideHint': 'The "Update from Platonus" button and program setup. Untick to show them.' });
 Object.assign(SP.I18N.en, { 'jr.more': 'More' });
+
+Object.assign(SP.I18N.en, { 'jr.plCool': 'Cooldown: {s} s left. Platonus can be updated at most once a minute to avoid a sign-in block.' });

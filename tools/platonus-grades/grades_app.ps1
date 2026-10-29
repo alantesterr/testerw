@@ -135,7 +135,23 @@ function Build-Result($subjects, $marksBySubject, $year, $term) {
     [pscustomobject]@{ Year = $year; Term = $term; Taken = Get-Date; Summary = $summary; Current = $current }
 }
 
+# ---------- откат: не чаще 1 входа в Platonus в минуту (защита от блокировки) ----------
+$CoolSec  = 60
+$lastPath = Join-Path $Here 'last-run.txt'
+function Cooldown-Left {
+    try {
+        $t = [long](Get-Content $lastPath -Raw -ErrorAction Stop).Trim()
+        $left = $CoolSec - ([DateTime]::UtcNow - [DateTime]::FromBinary($t)).TotalSeconds
+        if ($left -gt 0) { return [int][math]::Ceiling($left) }
+    } catch {}
+    0
+}
+function Mark-Run { [IO.File]::WriteAllText($lastPath, [string][DateTime]::UtcNow.ToBinary()) }
+
 function Fetch-Grades($login, $password, $status) {
+    $left = Cooldown-Left
+    if ($left -gt 0) { throw "Откат: ещё $left сек. Обновлять из Platonus можно не чаще раза в минуту — это защита от блокировки." }
+    Mark-Run
     $status.Invoke('Вход на platonus.kgu.kz...')
     Login-Platonus $login $password
     $status.Invoke('Открываю журнал оценок...')
@@ -277,6 +293,7 @@ if ($Auto) {
     $c0 = Load-Config
     $pw0 = if ($c0.savedPassword) { Unprotect $c0.savedPassword } else { '' }
     if ($c0.login -and $pw0) {
+        if ((Cooldown-Left) -gt 0) { return }   # откат ещё идёт — тихо пропускаем, сайт попробует позже
         try {
             $script:Result = Fetch-Grades $c0.login $pw0 ([Action[string]]{ param($t) })
             [Windows.Forms.Clipboard]::SetText('studyplay-grades:' + (StudyPlay-B64 $script:Result))

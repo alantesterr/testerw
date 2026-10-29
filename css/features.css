@@ -912,3 +912,12 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 .sj-konsp .sj-k-chev { color: var(--text-3); transition: transform var(--dur) var(--ease); }
 .sj-konsp[open] .sj-k-chev { transform: rotate(180deg); }
 .sj-konsp .sj-lec-list { border: 0; border-top: 1px solid var(--border); border-radius: 0; }
+/* Телефон: список папок целиком (без своей прокрутки), «Выбрать / Добавить» — просто в конце списка */
+@media (max-width: 899px) {
+  .sj-layout:not(.list-collapsed) .sj-list { max-height: none; overflow: visible; }
+  .sj-list-foot { position: static; }
+}
+/* Тест внутри лекции: нижнего меню сайта нет — панель «Сверхпоиск / Назад / Дальше» у самого низа, как в Тестере */
+@media (max-width: 767px) {
+  :root.lx-on .quiz-foot { bottom: 0; padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom)); }
+}

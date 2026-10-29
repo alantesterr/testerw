@@ -169,6 +169,7 @@
 .ring b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 0.9375rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
 .ring.green .fg { stroke: var(--ring-green); } .ring.blue .fg { stroke: var(--ring-blue); }
 .ring.yellow .fg { stroke: var(--ring-yellow); } .ring.red .fg { stroke: var(--ring-red); }
+.jr-ph { visibility: hidden; }
 .ring.zero b { color: var(--ring-red); } .ring.zero .bg { stroke: color-mix(in srgb, var(--ring-red) 30%, transparent); }
 .jr-edit { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
 .jr-edit .field.full { grid-column: 1 / -1; }

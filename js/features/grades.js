@@ -99,12 +99,15 @@
   function card(it) {
     var v = jCalc(it), hn = jHint(v);
     return '<article class="jr-card" data-id="' + esc(it.id) + '"><div class="jr-top"><div class="jr-title"><h3 class="jr-name">' + esc(it.name || '—') + '</h3>' +
-      (it.teachers ? '<div class="jr-teach">' + esc(teachLabel(it.teachers)) + '</div>' : '') + '</div>' +
+      '<div class="jr-teach">' + (it.teachers ? esc(teachLabel(it.teachers)) : '&nbsp;') + '</div></div>' +
       '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-edit="' + esc(it.id) + '" aria-label="' + esc(SP.t('jr.edit')) + '" data-tip="' + esc(SP.t('jr.edit')) + '">' + SP.icon('chevron-right') + '</button></div>' +
       '<div class="jr-rings">' + ring(SP.t('jr.cur'), v.c) + ring(SP.t('jr.rating'), v.R) + ring(SP.t('jr.exam'), v.e) + ring(SP.t('jr.final'), v.F) +
       /* РК — только когда поставлен (как в Shokan) */
-      (v.r1 != null ? ring(SP.t('jr.rk1'), v.r1) : '') + (v.r2 != null ? ring(SP.t('jr.rk2'), v.r2) : '') + '</div>' +
-      (hn.text ? '<p class="small jr-hint ' + hn.cls + '">' + SP.icon('info', 'ic-sm') + '<span>' + esc(hn.text) + '</span></p>' : '') + '</article>';
+      (v.r1 != null ? ring(SP.t('jr.rk1'), v.r1) : '') + (v.r2 != null ? ring(SP.t('jr.rk2'), v.r2) : '') +
+      /* Нет ни одного РК — пустое место под строку, чтобы все карточки были одной высоты */
+      (v.r1 == null && v.r2 == null ? ring(SP.t('jr.rk1'), null).replace('class="jr-ring"', 'class="jr-ring jr-ph" aria-hidden="true"') : '') + '</div>' +
+      /* подсказка; если её нет — пустое место той же высоты */
+      '<p class="small jr-hint ' + hn.cls + (hn.text ? '' : ' jr-ph') + '"' + (hn.text ? '' : ' aria-hidden="true"') + '>' + SP.icon('info', 'ic-sm') + '<span>' + esc(hn.text || '—') + '</span></p></article>';
   }
   function editCard(it) {
     var f = function (k, label, val, full, type) {

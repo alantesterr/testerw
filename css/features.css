@@ -176,7 +176,22 @@
 .jr-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; flex-wrap: wrap; }
 .jr-legend { display: flex; gap: var(--sp-2) var(--sp-4); flex-wrap: wrap; font-size: var(--fs-xs); color: var(--text-2); }
 .jr-legend i { display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 50%; vertical-align: -1px; margin-right: 4px; }
-@media (max-width: 420px) { .ring { width: 3.25rem; height: 3.25rem; } .jr-card { padding: var(--sp-4); } }
+/* Телефон — пропорции как в приложении Shokan (iPhone, ширина 390) */
+@media (max-width: 600px) {
+  .jr-grid { gap: 0.75rem; }
+  .jr-card { border: 0; border-radius: 1rem; padding: 0.85rem 1.25rem 1.5rem; gap: 1.2rem; }
+  .jr-top { align-items: center; }
+  .jr-name { font-size: 0.875rem; line-height: 1.25; font-weight: 600; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; hyphens: none; overflow-wrap: normal; }
+  .jr-teach { font-size: 0.7rem; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .jr-top .btn-icon { color: var(--text-3); }
+  .jr-rings { row-gap: 0.5rem; column-gap: 0; }
+  .jr-ring { gap: 0.375rem; }
+  .jr-ring > span { font-size: 0.75rem; letter-spacing: 0.02em; }
+  .ring { width: 2.7rem; height: 2.7rem; }
+  .ring circle { stroke-width: 3.5; }
+  .ring b { font-size: 0.7rem; font-weight: 400; }
+  .jr-hint { font-size: 0.75rem; margin-top: -0.5rem; }
+}
 
 /* Перенос длинных слов в оценках и калькуляторе — без обрезки */
 .view-grades .card, .view-grades .label, .view-grades .gm span, .view-grades .cv-res span,

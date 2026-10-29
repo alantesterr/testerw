@@ -27,7 +27,8 @@
   function jState() { var s = SP.store.get(jKey(), null); if (!s || !Array.isArray(s.items)) s = { items: [] }; return s; }
   function jSave(s) { SP.store.set(jKey(), s); }
   function ring(label, v) {
-    var txt = v == null ? '—' : f1(v), c = 2 * Math.PI * 16, len = Math.max(0, Math.min(100, v || 0)) / 100 * c;
+    /* Как в Shokan: целое число, пусто — серый «0» */
+    var txt = v == null ? '0' : String(Math.round(v)), c = 2 * Math.PI * 16, len = Math.max(0, Math.min(100, v || 0)) / 100 * c;
     return '<div class="jr-ring"><span>' + esc(label) + '</span><div class="ring ' + ringCls(v) + '" role="img" aria-label="' + esc(label + ': ' + txt) + '"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="bg" cx="20" cy="20" r="16"/>' +
       (len ? '<circle class="fg" cx="20" cy="20" r="16" stroke-dasharray="' + len.toFixed(2) + ' ' + c.toFixed(2) + '"/>' : '') + '</svg><b>' + esc(txt) + '</b></div></div>';
   }
@@ -101,7 +102,8 @@
       (it.teachers ? '<div class="jr-teach">' + esc(teachLabel(it.teachers)) + '</div>' : '') + '</div>' +
       '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-edit="' + esc(it.id) + '" aria-label="' + esc(SP.t('jr.edit')) + '" data-tip="' + esc(SP.t('jr.edit')) + '">' + SP.icon('chevron-right') + '</button></div>' +
       '<div class="jr-rings">' + ring(SP.t('jr.cur'), v.c) + ring(SP.t('jr.rating'), v.R) + ring(SP.t('jr.exam'), v.e) + ring(SP.t('jr.final'), v.F) +
-      ring(SP.t('jr.rk1'), v.r1) + ring(SP.t('jr.rk2'), v.r2) + '</div>' +
+      /* РК — только когда поставлен (как в Shokan) */
+      (v.r1 != null ? ring(SP.t('jr.rk1'), v.r1) : '') + (v.r2 != null ? ring(SP.t('jr.rk2'), v.r2) : '') + '</div>' +
       (hn.text ? '<p class="small jr-hint ' + hn.cls + '">' + SP.icon('info', 'ic-sm') + '<span>' + esc(hn.text) + '</span></p>' : '') + '</article>';
   }
   function editCard(it) {

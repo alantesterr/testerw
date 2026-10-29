@@ -154,6 +154,36 @@
     renderUser: renderUser
   };
 
+  /* «На весь экран»: прячет меню сайта (и включает полноэкранный режим браузера, где он есть).
+     Кнопку даёт SP.focus.btn(); работает в папках, Тестере и конспектах. */
+  function isFocus() { return document.documentElement.classList.contains('nt-focus'); }
+  function paintFocus() {
+    var on = isFocus();
+    SP.$$('[data-spfocus]').forEach(function (b) {
+      var lbl = SP.t(on ? 'notes.focusExit' : 'notes.focus'), icOnly = b.hasAttribute('data-icon-only');
+      b.setAttribute('aria-pressed', String(on)); b.setAttribute('data-tip', lbl); b.setAttribute('aria-label', lbl);
+      b.innerHTML = SP.icon(on ? 'minimize' : 'maximize') + (icOnly ? '' : '<span>' + SP.esc(lbl) + '</span>');
+    });
+  }
+  function setFocus(on) {
+    var html = document.documentElement;
+    html.classList.toggle('nt-focus', on);
+    try {
+      if (on && !document.fullscreenElement && html.requestFullscreen) html.requestFullscreen().catch(function () { });
+      if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () { });
+    } catch (e) { /* браузер без полного экрана — достаточно спрятать меню */ }
+    paintFocus(); SP.emit('focus', on);
+  }
+  document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement && isFocus()) setFocus(false); });
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-spfocus]'); if (b) { e.preventDefault(); setFocus(!isFocus()); } });
+  SP.focus = {
+    is: isFocus, set: setFocus, paint: paintFocus,
+    btn: function (iconOnly, cls) {
+      var on = isFocus(), lbl = SP.t(on ? 'notes.focusExit' : 'notes.focus');
+      return '<button type="button" class="btn ' + (cls || '') + (iconOnly ? ' btn-icon' : '') + '" data-spfocus' + (iconOnly ? ' data-icon-only' : '') + ' aria-pressed="' + on + '" aria-label="' + SP.esc(lbl) + '" data-tip="' + SP.esc(lbl) + '">' + SP.icon(on ? 'minimize' : 'maximize') + (iconOnly ? '' : '<span>' + SP.esc(lbl) + '</span>') + '</button>';
+    }
+  };
+
   /* Шапка страницы: заголовок + подпись + действия справа */
   SP.pageHead = function (o) {
     return '<header class="page-head"><div><h1>' + SP.esc(o.title) + '</h1>' + (o.sub ? '<div class="page-sub">' + o.sub + '</div>' : '') + '</div>' +

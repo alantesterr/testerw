@@ -18,7 +18,8 @@
       title: SP.t('nav.tester'),
       sub: esc(SP.t('tester.sub')),
       actions: '<button type="button" class="btn btn-ghost" id="tHelp">' + SP.icon('circle-help') + '<span>' + esc(SP.t('tester.help')) + '</span></button>' +
-        '<a class="btn" href="#/designer">' + SP.icon('square-pen') + '<span>' + esc(SP.t('tester.editQuestions')) + '</span></a>'
+        '<a class="btn" href="#/designer">' + SP.icon('square-pen') + '<span>' + esc(SP.t('tester.editQuestions')) + '</span></a>' +
+        SP.focus.btn(false, 'btn-ghost')
     });
     /* Шаг 1 — файлы */
     html += '<section class="card drop-card" id="tDrop"><div class="card-head"><div><div class="card-title">' + SP.icon('upload') + esc(SP.t('tester.step1')) + '</div><div class="card-sub">' + esc(SP.t('tester.formats')) + '</div></div>' +

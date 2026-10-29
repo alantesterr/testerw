@@ -876,3 +876,13 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 /* стрелки лекций — рядом с названием, чтобы их не закрывал секундомер в углу */
 .lx-title { flex: 0 1 auto; }
 .lx-bar > a:last-child { margin-right: auto; }
+
+/* оглавление спрятано / полный экран */
+.lx-text.toc-off .lx-toc { display: none; }
+.lx-bar-a { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+.lx-bar > a:last-of-type { margin-right: 0; }
+@media (max-width: 1099px) { .lx-tocbtn { display: none; } }
+/* ПК: под секундомером в правом верхнем углу оставляем место */
+@media (min-width: 768px) { .lx-bar-a { margin-right: 13rem; } }
+:root.nt-focus .lx-head { top: 0; }
+:root.nt-focus .page { padding-bottom: calc(var(--sp-6) + env(safe-area-inset-bottom)); }

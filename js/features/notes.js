@@ -236,6 +236,8 @@
     if (M.tests.length) t.push(['test', SP.t('lx.tab.test'), M.tests.reduce(function (n, q) { return n + q.qs.length; }, 0)]);
     return t;
   }
+  /* оглавление слева (ПК): можно спрятать, выбор запоминается */
+  function tocOff() { return !!SP.store.get('sp-notes-toc-off', false); }
   function asPdfOf(d, meta) { return (mode() === 'pdf' || !!d.pdfOnly) && !!meta.pdf && !!d.page; }
 
   /* ---------- Для папки предмета: список лекций и прогресс ---------- */
@@ -274,6 +276,9 @@
       '<div class="lx-title"><b>' + esc(lec.label) + '</b><span>' + esc(meta.short || meta.subject) + '</span></div>' +
       '<a class="btn btn-ghost btn-icon' + (cur.li === 0 ? ' is-off' : '') + '" href="' + (cur.li > 0 ? esc(lecHref(meta, cur.li - 1)) : '#') + '" aria-label="' + esc(SP.t('lx.prevLec')) + '" data-tip="' + esc(SP.t('lx.prevLec')) + '"' + (cur.li === 0 ? ' aria-disabled="true" tabindex="-1"' : '') + '>' + SP.icon('chevron-up') + '</a>' +
       '<a class="btn btn-ghost btn-icon' + (cur.li >= n - 1 ? ' is-off' : '') + '" href="' + (cur.li < n - 1 ? esc(lecHref(meta, cur.li + 1)) : '#') + '" aria-label="' + esc(SP.t('lx.nextLec')) + '" data-tip="' + esc(SP.t('lx.nextLec')) + '"' + (cur.li >= n - 1 ? ' aria-disabled="true" tabindex="-1"' : '') + '>' + SP.icon('chevron-down') + '</a>' +
+      '<span class="lx-bar-a">' + (cur.tab === 'text' && lec._m.text.filter(function (si) { return lec.sections[si].title; }).length > 1
+        ? '<button type="button" class="btn btn-ghost btn-sm lx-tocbtn" data-lxtoc aria-pressed="' + !tocOff() + '">' + SP.icon(tocOff() ? 'panel-left-open' : 'panel-left-close', 'ic-sm') + '<span>' + esc(SP.t(tocOff() ? 'notes.tocShow' : 'notes.tocHide')) + '</span></button>' : '') +
+      SP.focus.btn(true, 'btn-ghost') + '</span>' +
       '</div><div class="lx-tabs" role="tablist" aria-label="' + esc(SP.t('lx.parts')) + '">' + tabs.map(function (t) {
         return '<button type="button" role="tab" data-lxtab="' + t[0] + '" aria-selected="' + (cur.tab === t[0]) + '">' + esc(t[1]) + (t[2] !== '' ? '<span class="n">' + t[2] + '</span>' : '') + '</button>';
       }).join('') + '</div><div class="lx-prog" aria-hidden="true"' + (cur.tab === 'text' ? '' : ' hidden') + '><i></i></div></header>';
@@ -309,7 +314,7 @@
       (sum.length ? '<details class="lx-sum" open><summary>' + SP.icon('zap', 'ic-sm') + '<span>' + esc(SP.t('lx.sum')) + '</span></summary><ul>' + sum.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></details>' : '') + '</div>';
     var tabs = tabsOf(lec), nx = tabs[1];
     var end = '<div class="lx-end"><span class="small muted">' + esc(SP.t(lec._m.tasks.length ? 'lx.endTasks' : 'lx.endQs')) + '</span>' + (nx ? '<button type="button" class="btn btn-primary" data-lxtab="' + nx[0] + '">' + esc(SP.t('lx.nextTab', { t: nx[1] })) + SP.icon('chevron-right') + '</button>' : '') + '</div>';
-    return '<div class="lx-text' + (toc.length > 1 ? ' has-toc' : '') + '">' + (toc.length > 1 ? '<nav class="lx-toc" aria-label="' + esc(SP.t('notes.toc')) + '"><b>' + esc(SP.t('notes.toc')) + '</b>' + toc.join('') + '</nav>' : '') +
+    return '<div class="lx-text' + (toc.length > 1 && !tocOff() ? ' has-toc' : '') + (toc.length > 1 && tocOff() ? ' toc-off' : '') + '">' + (toc.length > 1 ? '<nav class="lx-toc" aria-label="' + esc(SP.t('notes.toc')) + '"><b>' + esc(SP.t('notes.toc')) + '</b>' + toc.join('') + '</nav>' : '') +
       '<div class="lx-main">' + top + '<article class="nt-doc' + (asPdf ? ' nt-paper theme-paper subj-' + esc(meta.id) : '') + '" id="lxDoc"><section class="nt-lec">' + secs + '</section></article>' + end + '</div></div>';
   }
 
@@ -407,6 +412,7 @@
     root.onclick = function (e) {
       var t = e.target.closest('[data-lxtab]'); if (t) { setTab(t.getAttribute('data-lxtab')); return; }
       var off = e.target.closest('a.is-off'); if (off) { e.preventDefault(); return; }
+      if (e.target.closest('[data-lxtoc]')) { SP.store.set('sp-notes-toc-off', !tocOff()); var y = window.scrollY; render(true); window.scrollTo(0, y); if (SP.$('.nt-pg', root)) setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 50); return; }
       var g = e.target.closest('[data-lxgo]'); if (g) { e.preventDefault(); var el = document.getElementById(g.getAttribute('data-lxgo')); if (el) el.scrollIntoView({ block: 'start' }); return; }
       var tm = e.target.closest('.lx-term'); if (tm) { e.stopPropagation(); showTerm(tm); return; }
       var md = e.target.closest('[data-ntmode]');

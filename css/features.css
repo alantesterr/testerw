@@ -923,3 +923,14 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 }
 /* лекция, где остановился: лёгкая подсветка */
 .sj-lec.is-last { background: color-mix(in srgb, var(--accent) 9%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+
+/* «Главное за 1 минуту»: по умолчанию свёрнуто — тихая строка, кому надо раскроет */
+.lx-sum:not([open]) { background: transparent; border-color: var(--border); padding: var(--sp-2) var(--sp-3); }
+.lx-sum:not([open]) summary { color: var(--text-2); font-weight: 500; font-size: var(--fs-sm); }
+.lx-sum .lx-sum-chev { margin-left: auto; transition: transform var(--dur) var(--ease); }
+.lx-sum[open] .lx-sum-chev { transform: rotate(180deg); }
+@media (max-width: 767px) {
+  .lx-sum:not([open]) { align-self: flex-start; border-radius: 99px; padding: 4px 12px; }
+  .lx-sum:not([open]) summary { font-size: var(--fs-xs); gap: 6px; }
+  .lx-sum:not([open]) .lx-sum-chev { margin-left: 2px; }
+}

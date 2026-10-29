@@ -13,10 +13,10 @@
   var root = null, editing = null;
 
   /* ПОРОГИ ЦВЕТА КОЛЕЦ — меняйте только здесь.
-     0 или пусто → серое пустое кольцо; 1–49 красный; 50–69 жёлтый;
-     70–89 синий; 90–100 зелёный (как на скриншотах Shokan). */
-  var RING = [{ min: 90, cls: 'green' }, { min: 70, cls: 'blue' }, { min: 50, cls: 'yellow' }, { min: 0.01, cls: 'red' }];
-  function ringCls(v) { if (!v) return ''; for (var i = 0; i < RING.length; i++) if (v >= RING[i].min) return RING[i].cls; return ''; }
+     пусто → серое кольцо с «—»; 0–49 красный (0 — настоящая оценка);
+     50–69 жёлтый; 70–89 синий; 90–100 зелёный (как на скриншотах Shokan). */
+  var RING = [{ min: 90, cls: 'green' }, { min: 70, cls: 'blue' }, { min: 50, cls: 'yellow' }, { min: 0, cls: 'red' }];
+  function ringCls(v) { if (v == null) return ''; for (var i = 0; i < RING.length; i++) if (v >= RING[i].min) return RING[i].cls + (v === 0 ? ' zero' : ''); return ''; }
   function tone(v) { return v == null ? '' : v >= 90 ? 'success' : v >= 70 ? 'accent' : v >= 50 ? 'warning' : 'danger'; }
   function f1(v) { return (Math.round(v * 10) / 10).toString(); }
   function num(v) { if (v === '' || v == null) return null; var n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : Math.max(0, Math.min(100, n)); }
@@ -27,9 +27,9 @@
   function jState() { var s = SP.store.get(jKey(), null); if (!s || !Array.isArray(s.items)) s = { items: [] }; return s; }
   function jSave(s) { SP.store.set(jKey(), s); }
   function ring(label, v) {
-    var val = v == null ? 0 : v, c = 2 * Math.PI * 16, len = Math.max(0, Math.min(100, val)) / 100 * c;
-    return '<div class="jr-ring"><span>' + esc(label) + '</span><div class="ring ' + ringCls(val) + '" role="img" aria-label="' + esc(label + ': ' + f1(val)) + '"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="bg" cx="20" cy="20" r="16"/>' +
-      (len ? '<circle class="fg" cx="20" cy="20" r="16" stroke-dasharray="' + len.toFixed(2) + ' ' + c.toFixed(2) + '"/>' : '') + '</svg><b>' + esc(f1(val)) + '</b></div></div>';
+    var txt = v == null ? '—' : f1(v), c = 2 * Math.PI * 16, len = Math.max(0, Math.min(100, v || 0)) / 100 * c;
+    return '<div class="jr-ring"><span>' + esc(label) + '</span><div class="ring ' + ringCls(v) + '" role="img" aria-label="' + esc(label + ': ' + txt) + '"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="bg" cx="20" cy="20" r="16"/>' +
+      (len ? '<circle class="fg" cx="20" cy="20" r="16" stroke-dasharray="' + len.toFixed(2) + ' ' + c.toFixed(2) + '"/>' : '') + '</svg><b>' + esc(txt) + '</b></div></div>';
   }
   function teachLabel(t) {
     t = String(t || '').trim(); if (!t) return '';
@@ -51,6 +51,11 @@
       });
       st.calcMigrated = true; changed = true;
     }
+    /* Раньше 0 значил «пусто». Теперь 0 — настоящая оценка, поэтому старые нули один раз убираем */
+    if (!st.zeroV2) {
+      st.items.forEach(function (it) { ['cur', 'rk1', 'rk2', 'exam'].forEach(function (k) { if (num(it[k]) === 0) it[k] = null; }); });
+      st.zeroV2 = true; changed = true;
+    }
     SP.hub.data().subjects.forEach(function (s) {
       var nm = SP.hub.cleanName(s.name); if (!nm || hidden.indexOf(SP.lc(nm)) >= 0) return;
       if (!st.items.some(function (x) { return SP.lc(x.name) === SP.lc(nm); })) { upsert(st, nm, { teachers: s.teacher || '' }); changed = true; }
@@ -70,11 +75,12 @@
   /* Ср. тек. — из оценок по одной (или введённое среднее); рейтинг и итоговая только считаются */
   function jCalc(it) {
     var g = (it.grades || []).map(Number).filter(function (x) { return !isNaN(x); });
-    /* 0 или пусто = «ещё нет оценки» (как пустое кольцо) */
-    var nz = function (x) { var n = num(x); return n ? n : null; };
-    var c = it.mode !== 'avg' && g.length ? g.reduce(function (a, b) { return a + b; }, 0) / g.length : nz(it.cur);
-    var r1 = nz(it.rk1), r2 = nz(it.rk2), e = nz(it.exam);
-    var R = c != null && r1 != null && r2 != null ? 0.6 * c + 0.2 * r1 + 0.2 * r2 : null;
+    /* пусто = «ещё нет оценки»; 0 — настоящий ноль */
+    var c = it.mode !== 'avg' && g.length ? g.reduce(function (a, b) { return a + b; }, 0) / g.length : num(it.cur);
+    var r1 = num(it.rk1), r2 = num(it.rk2), e = num(it.exam);
+    /* Рейтинг — как в Platonus: виден сразу, ещё не стоящий РК считается как 0 */
+    var R = c != null || r1 != null || r2 != null ? 0.6 * (c || 0) + 0.2 * (r1 || 0) + 0.2 * (r2 || 0) : null;
+    /* Итоговая — только когда стоит экзамен */
     var F = R != null && e != null ? 0.6 * R + 0.4 * e : null;
     return { c: c, r1: r1, r2: r2, e: e, R: R, F: F };
   }

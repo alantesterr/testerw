@@ -490,6 +490,3 @@ Object.assign(SP.I18N.en, { 'jr.plSetupTitle': 'Connect Platonus grades', 'jr.pl
     '<p><b>Then:</b> “Update from Platonus” → the browser asks “Open application?” → “Open”. Grades appear in a few seconds. The first time, allow clipboard access.</p>' +
     '<p class="small muted">To disconnect — disconnect.bat in the same folder. Details — README.txt in the archive.</p>' });
 Object.assign(SP.I18N.en, { 'settings.plHide': 'Hide Platonus buttons in Grades', 'settings.plHideHint': '"Update from Platonus", program setup and "Load from Platonus". Untick to show them.' });
-Object.assign(SP.I18N.en, { 'schedule.dl': 'Download', 'schedule.dlCsv': 'Table (Excel)', 'schedule.dlCsvHint': 'Opens in Excel and on a phone — handy to send yourself in Telegram.',
-  'schedule.dlJson': 'StudyPlay file', 'schedule.dlJsonHint': 'To move the schedule to another device: there, Settings → Data → Upload schedule.',
-  'schedule.csv.day': 'Day', 'schedule.csv.time': 'Time', 'schedule.csv.subject': 'Subject', 'schedule.csv.kind': 'Type', 'schedule.csv.room': 'Room', 'schedule.csv.teacher': 'Teacher' });

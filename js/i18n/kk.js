@@ -490,6 +490,3 @@ Object.assign(SP.I18N.kk, { 'jr.plSetupTitle': 'Platonus бағаларын қо
     '<p><b>Әрі қарай:</b> «Platonus-тан жаңарту» → браузер «Қолданбаны ашу керек пе?» деп сұрайды → «Ашу». Бірнеше секундтан кейін бағалар өздігінен шығады. Бірінші рет алмасу буферіне рұқсат беріңіз.</p>' +
     '<p class="small muted">Өшіру — сол қалтадағы disconnect.bat. Толығырақ — архивтегі README.txt.</p>' });
 Object.assign(SP.I18N.kk, { 'settings.plHide': '«Бағалар» ішіндегі Platonus батырмаларын жасыру', 'settings.plHideHint': '«Platonus-тан жаңарту», бағдарлама баптауы және «Platonus-тан жүктеу». Көрсету үшін белгіні алыңыз.' });
-Object.assign(SP.I18N.kk, { 'schedule.dl': 'Жүктеу', 'schedule.dlCsv': 'Кесте (Excel)', 'schedule.dlCsvHint': 'Excel-де және телефонда ашылады — Telegram-ға жіберуге ыңғайлы.',
-  'schedule.dlJson': 'StudyPlay файлы', 'schedule.dlJsonHint': 'Кестені басқа құрылғыға көшіру үшін: онда Баптаулар → Деректер → Кестені жүктеу.',
-  'schedule.csv.day': 'Күн', 'schedule.csv.time': 'Уақыт', 'schedule.csv.subject': 'Пән', 'schedule.csv.kind': 'Түрі', 'schedule.csv.room': 'Аудитория', 'schedule.csv.teacher': 'Оқытушы' });

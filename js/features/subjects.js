@@ -138,7 +138,6 @@
         return '<details class="sj-konsp" data-kid="' + esc(meta.id) + '"' + (open ? ' open' : '') + '><summary>' +
           '<span class="sj-k-ic">' + SP.icon('book-open') + '</span><span class="meta"><b>' + esc(SP.t('sj.konspekt') + ' · ' + (meta.short || meta.subject) + ' — ' + SP.t('sj.nLec', { n: d.lectures.length })) + '</b>' +
           '<small>' + esc(SP.t('sj.kProg', { r: nRead, n: d.lectures.length }) + (nT ? ' · ' + SP.t('sj.kTests', { a: nTd, n: nT }) : '')) + '</small></span>' +
-          '<a class="btn btn-primary btn-sm sj-k-go" href="' + esc(SP.notes.href(meta, ci)) + '">' + esc(SP.t(cl == null ? 'sj.start' : 'sj.continue') + ': ' + d.lectures[ci].label) + SP.icon('arrow-right', 'ic-sm') + '</a>' +
           SP.icon('chevron-down', 'sj-k-chev') + '</summary><div class="sj-lec-list">' + rows + '</div></details>';
       }).join('');
       box.innerHTML = html;

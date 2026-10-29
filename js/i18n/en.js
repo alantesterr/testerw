@@ -476,3 +476,4 @@ Object.assign(SP.I18N.en, { 'jr.plLoad': 'Load from Platonus', 'jr.plPick': 'Cho
     '<li>Here, press <b>“Load from Platonus”</b> and choose that file.</li></ol>' +
     '<p><b>On a phone:</b> send the file to yourself in Telegram, save it to the phone and choose it here.</p>' +
     '<p class="small muted">Midterm 1, Midterm 2, exam and current average fill the cards; dated current marks appear under the rings. The file holds only grades: no login or password.</p>' });
+Object.assign(SP.I18N.en, { 'jr.plBadLink': 'Could not read grades from the link. Save the file in the program and load it with "Load from Platonus".', 'jr.plOld': 'This browser is too old to load grades from a link. Update it or load the file with "Load from Platonus".' });

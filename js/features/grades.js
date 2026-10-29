@@ -378,5 +378,25 @@
   }
 
   SP.grades = { ringCls: ringCls, RING: RING };
-  SP.views.register('grades', { titleKey: 'nav.grades', mount: function (el) { root = el; render(); }, show: render, refresh: render });
+  /* ---------- Оценки, переданные программой «Мои оценки» прямо в ссылке ----------
+     Ссылка: #/grades/pl/<данные>. Часть после # браузер никуда не отправляет.
+     Данные — JSON, сжатый deflate и записанный base64url. После загрузки ссылка очищается. */
+  function fromLink(s) {
+    var b = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4));
+    var bytes = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) bytes[i] = b.charCodeAt(i);
+    if (typeof DecompressionStream === 'undefined') return Promise.reject(new Error('old'));
+    return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text().then(JSON.parse);
+  }
+  function show(params) {
+    if (params && params[0] === 'pl' && params[1]) {
+      var data = params[1];
+      try { history.replaceState(null, '', location.pathname + location.search + '#/grades'); } catch (e) { /* ничего */ }
+      fromLink(data).then(function (d) {
+        var res = importPlatonus(d); editing = null; render();
+        SP.toast(SP.t('jr.plDone', { n: res.upd + res.added }) + (res.added ? ' ' + SP.t('jr.plAdded', { n: res.added }) : ''), 'success');
+      }).catch(function (e) { SP.toast(e && e.message === 'old' ? SP.t('jr.plOld') : SP.t('jr.plBadLink'), 'danger'); });
+    }
+    render();
+  }
+  SP.views.register('grades', { titleKey: 'nav.grades', mount: function (el) { root = el; }, show: show, refresh: render });
 })();

@@ -67,10 +67,10 @@
     syncJournal();
     var st = jState();
     var h = '<div class="btn-group jr-bar"><button type="button" class="btn" id="jrHow">' + SP.icon('circle-help') + '<span>' + esc(SP.t('jr.how')) + '</span></button>' +
-      (isWinPc() ? '<button type="button" class="btn" id="jrRun">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRun')) + '</span></button>' +
+      (plHidden() ? '' : (isWinPc() ? '<button type="button" class="btn" id="jrRun">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRun')) + '</span></button>' +
         '<button type="button" class="btn btn-icon" id="jrSetup" aria-label="' + esc(SP.t('jr.plSetupTitle')) + '" data-tip="' + esc(SP.t('jr.plSetupTitle')) + '">' + SP.icon('settings') + '</button>' : '') +
       '<button type="button" class="btn" id="jrPl">' + SP.icon('upload') + '<span>' + esc(SP.t('jr.plLoad')) + '</span></button>' +
-      '<input type="file" id="jrPlFile" accept=".json,application/json,text/plain" hidden>' +
+      '<input type="file" id="jrPlFile" accept=".json,application/json,text/plain" hidden>') +
       '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div>';
     if (!st.items.length) {
       return h + '<section class="card"><div class="empty">' + SP.icon('graduation-cap', 'ic-xl') + '<h3>' + esc(SP.t('jr.emptyTitle')) + '</h3><p>' + esc(SP.t('jr.emptyText')) + '</p></div></section>';
@@ -412,6 +412,8 @@
      «Подключить к StudyPlay.bat»). Программа сама входит в Platonus, кладёт оценки в буфер обмена
      с меткой «studyplay-grades:» и закрывается; эта вкладка забирает их, когда вы к ней вернётесь. */
   var PREFIX = 'studyplay-grades:', waitUntil = 0, waitTimer = null, clipWarned = false;
+  /* Кнопки Platonus скрыты, пока в Настройках → Инструменты не снята галочка */
+  function plHidden() { return SP.settings.get('plHide') !== false; }
   function isWinPc() { return /Windows/i.test(navigator.userAgent) && !/Mobile|Phone/i.test(navigator.userAgent); }
   function runProgram() {
     var a = document.createElement('a'); a.href = PREFIX + 'run'; a.style.display = 'none';

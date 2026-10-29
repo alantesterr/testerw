@@ -67,7 +67,9 @@
 
     /* 6. Инструменты */
     html += section('tools', 'timer',
-      setRow(SP.t('stopwatch.title'), esc(SP.t('settings.stopwatchHint')), '<label class="switch"><input type="checkbox" id="sSw"' + (s.stopwatch ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('stopwatch.title')) + '</span></label>'));
+      setRow(SP.t('stopwatch.title'), esc(SP.t('settings.stopwatchHint')), '<label class="switch"><input type="checkbox" id="sSw"' + (s.stopwatch ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('stopwatch.title')) + '</span></label>') +
+      /* Кнопки Platonus в «Оценках» по умолчанию скрыты */
+      setRow(SP.t('settings.plHide'), esc(SP.t('settings.plHideHint')), '<label class="switch"><input type="checkbox" id="sPlHide"' + (s.plHide !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.plHide')) + '</span></label>'));
 
     /* 4. Данные */
     var d = SP.hub.data(), base = SP.hub.base();
@@ -116,6 +118,7 @@
     var at = $('#sAutoTr'); if (at) at.onchange = function () { SP.settings.set('autoTr', at.checked); };
     var hk = $('#sHotkeys'); if (hk) hk.onchange = function () { SP.settings.set('hotkeys', hk.checked); };
     var sw = $('#sSw'); if (sw) sw.onchange = function () { SP.settings.set('stopwatch', sw.checked); };
+    var ph = $('#sPlHide'); if (ph) ph.onchange = function () { SP.settings.set('plHide', ph.checked); SP.toast(SP.t('settings.saved'), 'success'); };
     on('#sHow', SP.auth.explain);
     var gi = $('#sGroup'); if (gi) SP.group.attach(gi, $('#sGroupErr'));
     on('#sLogout', function () { SP.auth.logout(); });

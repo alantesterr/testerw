@@ -489,3 +489,4 @@ Object.assign(SP.I18N.en, { 'jr.plSetupTitle': 'Connect Platonus grades', 'jr.pl
     '<li>Double-click <b>connect.bat</b> and press any key.</li></ol>' +
     '<p><b>Then:</b> “Update from Platonus” → the browser asks “Open application?” → “Open”. Grades appear in a few seconds. The first time, allow clipboard access.</p>' +
     '<p class="small muted">To disconnect — disconnect.bat in the same folder. Details — README.txt in the archive.</p>' });
+Object.assign(SP.I18N.en, { 'settings.plHide': 'Hide Platonus buttons in Grades', 'settings.plHideHint': '"Update from Platonus", program setup and "Load from Platonus". Untick to show them.' });

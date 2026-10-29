@@ -934,3 +934,5 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
   .lx-sum:not([open]) summary { font-size: var(--fs-xs); gap: 6px; }
   .lx-sum:not([open]) .lx-sum-chev { margin-left: 2px; }
 }
+/* тест в конспекте: без сетки номеров вопросов — занимает много места (в Тестере она остаётся) */
+.lx-test .qn-list { display: none; }

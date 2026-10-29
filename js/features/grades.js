@@ -26,9 +26,9 @@
   function jKey() { return 'sp-journal-v1:' + who(); }
   function jState() { var s = SP.store.get(jKey(), null); if (!s || !Array.isArray(s.items)) s = { items: [] }; return s; }
   function jSave(s) { SP.store.set(jKey(), s); }
-  function ring(label, v) {
-    /* Как в Shokan: целое число, пусто — серый «0» */
-    var txt = v == null ? '0' : String(Math.round(v)), c = 2 * Math.PI * 16, len = Math.max(0, Math.min(100, v || 0)) / 100 * c;
+  function ring(label, v, emptyTxt) {
+    /* Как в Shokan: целое число, пусто — серый «0» (или emptyTxt, например «—», где оценки не бывает) */
+    var txt = v == null ? (emptyTxt || '0') : String(Math.round(v)), c = 2 * Math.PI * 16, len = Math.max(0, Math.min(100, v || 0)) / 100 * c;
     return '<div class="jr-ring"><span>' + esc(label) + '</span><div class="ring ' + ringCls(v) + '" role="img" aria-label="' + esc(label + ': ' + txt) + '"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="bg" cx="20" cy="20" r="16"/>' +
       (len ? '<circle class="fg" cx="20" cy="20" r="16" stroke-dasharray="' + len.toFixed(2) + ' ' + c.toFixed(2) + '"/>' : '') + '</svg><b>' + esc(txt) + '</b></div></div>';
   }
@@ -82,6 +82,8 @@
     var g = (it.grades || []).map(Number).filter(function (x) { return !isNaN(x); });
     /* пусто = «ещё нет оценки»; 0 — настоящий ноль */
     var c = it.mode !== 'avg' && g.length ? g.reduce(function (a, b) { return a + b; }, 0) / g.length : num(it.cur);
+    /* Оценки из Platonus и вы их не меняли — берём «Ср.тек.» как в Platonus (там «н» и веса учтены по-своему) */
+    if (it.pl && it.pl.avg != null && it.mode !== 'avg' && (it.grades || []).join(',') === it.pl.g) c = it.pl.avg;
     var r1 = num(it.rk1), r2 = num(it.rk2), e = num(it.exam);
     /* Рейтинг — как в Platonus: виден сразу, ещё не стоящий РК считается как 0 */
     var R = c != null || r1 != null || r2 != null ? 0.6 * (c || 0) + 0.2 * (r1 || 0) + 0.2 * (r2 || 0) : null;
@@ -102,10 +104,13 @@
   }
   function card(it) {
     var v = jCalc(it), hn = jHint(v);
+    /* В Platonus нет экзамена (физкультура — «ДЗ», практика и т. п.) — пишем его название и «—» вместо 0 */
+    var ek = it.pl ? (it.pl.examKey != null ? it.pl.examKey : examKeyOf(it.pl.exams || {})) : null, noExam = ek != null && !/^экз/i.test(ek);
+    var exLabel = noExam && ek ? ek : SP.t('jr.exam');
     return '<article class="jr-card" data-id="' + esc(it.id) + '"><div class="jr-top"><div class="jr-title"><h3 class="jr-name">' + esc(it.name || '—') + '</h3>' +
       '<div class="jr-teach">' + (it.teachers ? esc(teachLabel(it.teachers)) : '&nbsp;') + '</div></div>' +
       '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-edit="' + esc(it.id) + '" aria-label="' + esc(SP.t('jr.edit')) + '" data-tip="' + esc(SP.t('jr.edit')) + '">' + SP.icon('chevron-right') + '</button></div>' +
-      '<div class="jr-rings">' + ring(SP.t('jr.cur'), v.c) + ring(SP.t('jr.rating'), v.R) + ring(SP.t('jr.exam'), v.e) + ring(SP.t('jr.final'), v.F) +
+      '<div class="jr-rings">' + ring(SP.t('jr.cur'), v.c) + ring(SP.t('jr.rating'), v.R) + ring(exLabel, v.e, noExam ? '—' : '') + ring(SP.t('jr.final'), v.F, noExam ? '—' : '') +
       /* РК — только когда поставлен (как в Shokan) */
       (v.r1 != null ? ring(SP.t('jr.rk1'), v.r1) : '') + (v.r2 != null ? ring(SP.t('jr.rk2'), v.r2) : '') +
       /* Нет ни одного РК — пустое место под строку, чтобы все карточки были одной высоты */
@@ -150,10 +155,11 @@
     });
     return best;
   }
-  function examOf(ex) {
-    var keys = Object.keys(ex);
-    var k = keys.filter(function (x) { return /^экз|^дз$|^емтихан|^exam/i.test(x.trim()); })[0];
-    return k ? num(ex[k]) : null;
+  /* Столбец экзамена: «Экз.», у физкультуры «ДЗ», у практики «Практика» и т. п. */
+  var EXAM_SKIP = /^(ср\.?\s*тек|рк\s*\d|рейтинг|итог)/i;
+  function examKeyOf(ex) {
+    var keys = Object.keys(ex).filter(function (x) { return !EXAM_SKIP.test(x.trim()); });
+    return keys.filter(function (x) { return /^экз/i.test(x.trim()); })[0] || keys[0] || '';
   }
   function importPlatonus(data) {
     if (!data || data.format !== 'studyplay-grades' || !data.subjects) throw new Error('format');
@@ -169,12 +175,16 @@
         st.items.push(it); added++;
         st.hidden = st.hidden.filter(function (h) { return SP.lc(h) !== SP.lc(name); });
       } else upd++;
-      var c = num(ex['Ср.тек.']);
-      if (c != null) { it.mode = 'avg'; it.cur = c; }
-      it.rk1 = num(ex['РК 1']); it.rk2 = num(ex['РК 2']); it.exam = examOf(ex);
-      if (!it.teachers && s.tutor) it.teachers = String(s.tutor);
       var keep = {}; Object.keys(ex).forEach(function (k) { if (ex[k] !== '' && ex[k] != null) keep[k] = String(ex[k]); });
-      it.pl = { at: data.taken, exams: keep, current: cur.filter(function (x) { return x && x.date; }).map(function (x) { return { type: String(x.type || ''), date: String(x.date), mark: String(x.mark == null ? '' : x.mark) }; }) };
+      var list = cur.filter(function (x) { return x && x.date; }).map(function (x) { return { type: String(x.type || ''), date: String(x.date), mark: String(x.mark == null ? '' : x.mark) }; });
+      /* Текущие — по одной, как в Platonus («н», «т» и прочие буквы пропускаем) */
+      var marks = list.map(function (x) { return num(x.mark); }).filter(function (x) { return x != null; });
+      var c = num(keep['Ср.тек.']), ek = examKeyOf(keep);
+      if (marks.length) { it.mode = 'list'; it.grades = marks; }
+      else if (c != null) { it.mode = 'avg'; it.cur = c; }
+      it.rk1 = num(keep['РК 1']); it.rk2 = num(keep['РК 2']); it.exam = ek ? num(keep[ek]) : null;
+      if (!it.teachers && s.tutor) it.teachers = String(s.tutor);
+      it.pl = { at: data.taken, exams: keep, examKey: ek, avg: c, g: marks.join(','), current: list };
     });
     st.plAt = data.taken || new Date().toISOString();
     jSave(st);
@@ -399,4 +409,9 @@
     render();
   }
   SP.views.register('grades', { titleKey: 'nav.grades', mount: function (el) { root = el; }, show: show, refresh: render });
+  /* Оценки обновились в другой вкладке (например, её открыла программа) — эта вкладка перерисуется сама */
+  window.addEventListener('storage', function (e) {
+    if (!e.key || e.key.indexOf('sp-journal-v1') < 0 || !root || root.hidden || editing) return;
+    render();
+  });
 })();

@@ -1,0 +1,856 @@
+<question>… инструмент для обработки информации – широкий спектр продуктов, программного обеспечения и услуг, которые используются для производства, хранения, обработки, распространения и обмена информацией.
+<variantright>ИКТ
+<variant>Риски для здоровья
+<variant>Согласованность
+<variant>Нарушение конфиденциальности
+<variant>Воздействие на окружающую среду
+
+<question>При использовании компьютера вы всегда получаете один и тот же результат для одного и того же процесса. Это преимущество компьютеров называется …
+<variantright>Согласованность
+<variant>Данные
+<variant>ИКТ
+<variant>Воздействие на окружающую среду
+<variant>Риски для здоровья
+
+<question>Неправильное и длительное использование компьютера может привести к болезням или травмам локтей, запястий, шеи, спины и глаз. Этот недостаток компьютеров называется …
+<variantright>Риски для здоровья
+<variant>Нарушение конфиденциальности
+<variant>Воздействие на окружающую среду
+<variant>Безопасность данных
+<variant>Знание
+
+<question>Пользуясь Интернетом на своем компьютере, вы рискуете разгласить свою личную информацию. Этот недостаток компьютеров называется …
+<variantright>Нарушение конфиденциальности
+<variant>Знание
+<variant>Риски для здоровья
+<variant>Воздействие на окружающую среду
+<variant>Безопасность данных
+
+<question>Процесс производства компьютеров и компьютерные отходы наносят вред окружающей среде. Этот недостаток компьютеров называется …
+<variantright>Воздействие на окружающую среду
+<variant>Нарушение конфиденциальности
+<variant>Безопасность данных
+<variant>Риски для здоровья
+<variant>Знание
+
+<question>Выброшенные компьютеры также могут стать причиной пожара. Этот недостаток компьютеров называется …
+<variantright>Воздействие на окружающую среду
+<variant>Безопасность данных
+<variant>Нарушение конфиденциальности
+<variant>Риски для здоровья
+<variant>Знание
+
+<question>Данные, хранящиеся на компьютере, могут быть потеряны или скомпрометированы разными способами. Этот недостаток компьютеров называется …
+<variantright>Безопасность данных
+<variant>Воздействие на окружающую среду
+<variant>Нарушение конфиденциальности
+<variant>Риски для здоровья
+<variant>Знание
+
+<question>Использование компьютеров без позитивной цели. Этот недостаток компьютеров называется …
+<variantright>Пустая трата времени и энергии
+<variant>Безопасность данных
+<variant>Воздействие на окружающую среду
+<variant>Нарушение конфиденциальности
+<variant>Знание
+
+<question>Использование компьютеров для негативной деятельности. Этот недостаток компьютеров называется …
+<variantright>Компьютерные преступления
+<variant>Воздействие на окружающую среду
+<variant>Риски для здоровья
+<variant>ИКТ
+<variant>Знание
+
+<question>Выберите наиболее полный ответ. Компьютерные системы хранят, представляют и помогают нам модифицировать: …
+<variantright>Текст, аудио, изображения, графику, видео
+<variant>Текст, аудио, изображения
+<variant>Изображения, графику, видео
+<variant>Аудио, изображения, графику, видео
+<variant>Изображения, видео, графику
+
+<question>Компьютеризированное представление моделей и атрибутов реальных или смоделированных объектов - это …
+<variantright>Данные
+<variant>Информация
+<variant>Знание
+<variant>Риски для здоровья
+<variant>Ввод
+
+<question>Данные, представляющие результаты вычислительного процесса - это …
+<variantright>Информация
+<variant>Данные
+<variant>Риски для здоровья
+<variant>Знание
+<variant>Ввод
+
+<question>Данные, которые представляют результаты некоторых процессов, таких как восприятие, обучение, ассоциации и рассуждения -  это …
+<variantright>Знание
+<variant>Информация
+<variant>Данные
+<variant>Ввод
+<variant>Риски для здоровья
+
+<question>… непрерывное представление, аналогичное фактической информации, которую оно представляет.
+<variantright>Аналоговые данные
+<variant>Цифровые данные
+<variant>Информация
+<variant>двоичное представление
+<variant>Знание
+
+<question>… это представление, разбивающее информацию на отдельные элементы.
+<variantright>Цифровые данные
+<variant>Аналоговые данные
+<variant>Информация
+<variant>двоичное представление
+<variant>Знание
+
+<question>Устройства, которые хранят и управляют цифровыми данными, гораздо менее дороги и сложны для...
+<variantright>двоичного представления
+<variant>конечных машин
+<variant>аналоговых данных
+<variant>одного бита
+<variant>бинарных данных
+
+<question>Электронные сигналы легче поддерживать, если они несут...
+<variantright>двоичные данные
+<variant>конечные машины
+<variant>аналоговые данные
+<variant>один бит
+<variant>риски для здоровья
+
+<question>… может быть либо нулем, либо единицей.
+<variantright>один бит
+<variant>2n
+<variant>восемь
+<variant>байт
+<variant>конечная машина
+
+<question>n бит может представлять… состояния.
+<variantright>2n
+<variant>128
+<variant>Семь
+<variant>2n
+<variant>37
+
+<question>Три бита могут представлять… состояний
+<variantright>восемь
+<variant>шесть
+<variant>девять
+<variant>одну тысячу
+<variant>семь
+
+<question>IEEE - это …
+<variantright>Институт электротехники и электроники
+<variant>Американский национальный институт стандартов
+<variant>Европейский институт телекоммуникационных стандартов
+<variant>Европейский комитет по стандартизации
+<variant>Компьютерные технологии
+
+<question>ANSI - это …
+<variantright>Американский национальный институт стандартов
+<variant>Институт электротехники и электроники
+<variant>Европейский институт телекоммуникационных стандартов
+<variant>Европейский комитет по стандартизации
+<variant>Компьютерные технологии
+
+<question>ETSI - это …
+<variantright>Европейский институт телекоммуникационных стандартов
+<variant>Американский национальный институт стандартов
+<variant>Институт электротехники и электроники
+<variant>Европейский комитет по стандартизации
+<variant>Компьютерные технологии
+
+<question>CEN - это …
+<variantright>Европейский комитет по стандартизации
+<variant>Европейский институт телекоммуникационных стандартов
+<variant>Американский национальный институт стандартов
+<variant>Институт электротехники и электроники
+<variant>Компьютерные технологии
+
+<question>CENELEC - это …
+<variantright>Европейский комитет по электротехнической стандартизации
+<variant>Европейский комитет по стандартизации
+<variant>Европейский институт телекоммуникационных стандартов
+<variant>Американский национальный институт стандартов
+<variant>Компьютерные технологии
+
+<question>Каждый символ кодируется как …
+<variantright>Байт
+<variant>Бит
+<variant>Гигабит
+<variant>Гигабайт
+<variant>Террабайт
+
+<question>27  - это … символов.
+<variantright>128
+<variant>256
+<variant>16
+<variant>64
+<variant>81
+
+<question>В наборе символов Юникода используется … бит на символ.
+<variantright>16
+<variant>8
+<variant>4
+<variant>256
+<variant>144
+
+<question>Программируемая и многофункциональная машина, которая принимает необработанные факты и цифры, обрабатывает или манипулирует ими, превращая их в информацию для будущего использования.
+<variantright>Компьютер/ Компьютерные технологии
+<variant>Коммуникационные технологии
+<variant>Модем
+<variant>Сканер
+<variant>Принтер
+
+<question>Состоят из электромагнитных устройств и систем для связи на большие расстояния.
+<variantright>Коммуникационные технологии
+<variant>Компьютерные технологии
+<variant>Супер компьютер
+<variant>Сканер
+<variant>Принтер
+
+<question>Высокопроизводительная машина с тысячами процессоров, способная выполнять более нескольких триллионов вычислений в секунду.
+<variantright>Супер Компьютер
+<variant>Коммуникационные технологии
+<variant>Компьютерные технологии
+<variant>Мэйнфрейм
+<variant>Рабочая станция
+
+<question>Его часто называют компьютером среднего размера.
+<variantright>Мэйнфрейм
+<variant>Рабочая станция
+<variant>Микрокомпьютер
+<variant>Микроконтроллер
+<variant>Супер Компьютер
+
+<question>Дорогие и мощные персональные компьютеры, используемые для конкретных задач, таких как проектирование, 3D-анимация и другое.
+<variantright>Рабочие станции
+<variant>Мэйнфрейм
+<variant>Микрокомпьютер
+<variant>Микроконтроллер
+<variant>Супер Компьютер
+
+<question>Персональный компьютер, который либо работает автономно, либо подключен по сети.
+<variantright>Микрокомпьютер
+<variant>Рабочая станция
+<variant>Мэйнфрейм
+<variant>Микроконтроллер
+<variant>Супер Компьютер
+
+<question>Настольные ПК, ноутбуки, портативные компьютеры. Общее название — …
+<variantright>Микрокомпьютер
+<variant>Рабочая станция
+<variant>Мэйнфрейм
+<variant>Микроконтроллер
+<variant>Сервер
+
+<question>Крошечных размеров, с установленным специализированным микропроцессором. Обычно его можно найти в Smart-приборах и автомобилях.
+<variantright>Микроконтроллер
+<variant>Микрокомпьютер
+<variant>Рабочая станция
+<variant>Мэйнфрейм
+<variant>Персональный компьютер
+
+<question>Централизованный компьютер, который собирает данные (базу данных) и распределяет ресурсы между клиентами по сети.
+<variantright>Сервер
+<variant>Микроконтроллер
+<variant>Микрокомпьютер
+<variant>Рабочая станция
+<variant>Персональный компьютер
+
+<question>Данные, которые были обобщены или обработаны для получения требуемого результата.
+<variantright>Информация
+<variant>Аппаратное обеспечение
+<variant>Программное обеспечение
+<variant>Данные
+<variant>Приложение
+
+<question>Физические компоненты компьютера.
+<variantright>Аппаратное обеспечение
+<variant>Информация
+<variant>Программное обеспечение
+<variant>Данные
+<variant>Приложение
+
+<question>Программы, состоящие из инструкций, сообщающих компьютеру, как выполнять определенную задачу.
+<variantright>Программное обеспечение
+<variant>Аппаратное обеспечение
+<variant>Информация
+<variant>Данные
+<variant>Внутренняя/временная память
+
+<question>Сухие факты и цифры.
+<variantright>Данные
+<variant>Аппаратное обеспечение
+<variant>Программное обеспечение
+<variant>Информация
+<variant>Приложение
+
+<question>…  - это манипуляции, которые выполняет компьютер для преобразования данных в информацию.
+<variantright>Обработка
+<variant>Программное обеспечение
+<variant>Аппаратное обеспечение
+<variant>Внутренняя/временная память
+<variant>Приложение
+
+<question>Схема, которая хранит данные, ожидающие обработки.
+<variantright>Внутренняя/временная память
+<variant>Обработка
+<variant>Программное обеспечение
+<variant>Аппаратное обеспечение
+<variant>Приложение
+
+<question>Устройства, которые постоянно хранят данные и информацию.
+<variantright>Внешняя/постоянная  память
+<variant>Внутренняя/временная память
+<variant>Обработка
+<variant>Программное обеспечение
+<variant>Приложение
+
+<question>Первый электронный компьютер назывался …
+<variantright>ЭНИАК
+<variant>Аналитическая машина
+<variant>Механический калькулятор
+<variant>Счеты
+<variant>Инженерный калькулятор
+
+<question>… изобрёл технологию хранения программ
+<variantright>Доктор Джон фон Нейман
+<variant>Чарльз Бэббидж
+<variant>Мур
+<variant>Джастин Бибер
+<variant>Иссак Ньютон
+
+<question>Могут выполнять от 200 000 до 250 000 вычислений в секунду
+<variantright>Транзисторы
+<variant>Вакуумные трубки
+<variant>Аналитическая машина
+<variant>Перфокарты
+<variant>Счеты
+
+<question>Комбинированные компоненты компьютера на микрочипе...
+<variantright>Микропроцессор
+<variant>Транзисторы
+<variant>Вакуумные трубки
+<variant>Аналитическая машина
+<variant>Счеты
+
+<question>Первые компьютеры использовали … для вычислений.
+<variantright>вакуумные трубки
+<variant>транзисторы
+<variant>интегральные схемы
+<variant>микропроцессоры
+<variant>счеты
+
+<question>Базой первого поколения компьютеров являются …
+<variantright>вакуумные трубки
+<variant>транзисторы
+<variant>интегральные схемы
+<variant>микропроцессоры
+<variant>счеты
+
+<question>Базой второго поколения компьютеров являются …
+<variantright>транзисторы
+<variant>интегральные схемы
+<variant>микропроцессоры
+<variant>вакуумные трубки
+<variant>счеты
+
+<question>База компьютеров третьего поколения  - …
+<variantright>интегральные схемы
+<variant>микропроцессоры
+<variant>вакуумные трубки
+<variant>транзисторы
+<variant>счеты
+
+<question>База компьютеров четвертого поколения  - …
+<variantright>микропроцессоры
+<variant>вакуумные трубки
+<variant>транзисторы
+<variant>интегральные схемы
+<variant>счеты
+
+<question>Временно сохраняет данные и инструкции программы во время работы компьютера -
+<variantright>основная память
+<variant>микропроцессоры
+<variant>периферийные устройства
+<variant>материнская плата
+<variant>дисплей
+
+<question>Выполняет инструкции -
+<variantright>микропроцессор
+<variant>периферийные устройства
+<variant>материнская плата
+<variant>основная память
+<variant>транзисторы
+
+<question>Постоянно хранят  данные  и прикладные  программы -
+<variantright>устройства хранения данных
+<variant>микропроцессоры
+<variant>периферийные устройства
+<variant>материнская плата
+<variant>основная память
+
+<question>Как изменить ширину столбца в соответствии с содержимым?
+<variantright>Дважды щелкнуть на разделителе столбцов
+<variant>Нажмите SHIFT+CTRL и щелкните один раз в любом месте столбца
+<variant>Щелкните один раз границу слева от заголовка столбца
+<variant>Нажмите ALT и щелкните один раз в любом месте столбца
+<variant>Нажмите CTRL и щелкните один раз в любом месте столбца
+
+<question>Какой из этих способов является быстрым способом копирования форматирования выбранной ячейки в  другие две ячейки на том же листе?
+<variantright>Дважды нажмите кнопку «Формат по образцу» на панели инструментов, затем щелкните каждую ячейку, в которую хотите скопировать форматирование
+<variant>Скопируйте выбранную ячейку, затем выберите две другие ячейки, нажмите «Стиль» в меню «Формат», затем нажмите «Изменить».
+<variant>Используйте CTRL, чтобы выбрать все три ячейки, затем нажмите кнопку «Вставить» на стандартной панели инструментов
+<variant>Используйте ALT, чтобы выбрать все три ячейки, затем нажмите кнопку «Вставить» на стандартной панели инструментов
+<variant>Выделите все три ячейки, нажмите кнопку «Копировать» на стандартной панели инструментов и нажмите кнопку «Вставить»
+
+<question>Какой из следующих вариантов является формулой?
+<variantright>=SUM(A1:A5)
+<variant>A1 = A5
+<variant>A1+ A5
+<variant>A1 - A5
+<variant>SUM(A1:A5)
+
+<question>Правильное написание ячеек блока в MS Excel:
+<variantright>C20:D35
+<variant>C20 \ D35
+<variant>C20 .., D35
+<variant>C20 / D35
+<variant>C20 - D35
+
+<question>Функция MS Excel, вычисляющая «корень квадратный из числа»:
+<variantright>КОРЕНЬ.
+<variant>СУММ.
+<variant>КОРЕНЬЧИС.
+<variant>SQR.
+<variant>КОРЕНЬКВ.
+
+<question>Что означает аббревиатура ИКТ?
+<variantright>Информационные и коммуникационные технологии
+<variant>Информационные и компьютерные технологии
+<variant>Интеллектуальные и коммуникационные терминологии
+<variant>Информационная и компьютерная терминология
+<variant>Интеллектуальные и компьютерные технологии
+
+<question>В каких сферах нашей жизни мы используем компьютеры?
+<variantright>Все вышеперечисленное
+<variant>Здравоохранение
+<variant>Образование
+<variant>Правительство
+<variant>Промышленность
+
+<question>Что НЕ является преимуществом компьютера?
+<variantright>воздействие на окружающую среду
+<variant>скорость
+<variant>хранилище данных
+<variant>согласованность
+<variant>надежность
+
+<question>Что НЕ является преимуществом компьютера?
+<variantright>риски для здоровья
+<variant>скорость
+<variant>надежность
+<variant>коммуникации
+<variant>согласованность
+
+<question>Что НЕ является недостатком компьютера?
+<variantright>надежность
+<variant>нарушение конфиденциальности
+<variant>влияние на рабочую силу
+<variant>риски для здоровья
+<variant>воздействие на окружающую среду
+
+<question>Что НЕ является недостатком компьютера?
+<variantright>хранилище данных
+<variant>публичная безопасность
+<variant>нарушение конфиденциальности
+<variant>воздействие на окружающую среду
+<variant>риски для здоровья
+
+<question>Какие устройства мы используем в ИКТ?
+<variantright>Все перечисленное
+<variant>Модем
+<variant>Компьютеры
+<variant>Мобильные телефоны
+<variant>Планшеты
+
+<question>Что НЕ является преимуществом использования ИКТ на предприятиях?
+<variantright>предоставление  нелегальной  информации
+<variant>обеспечение  надежного доступа к рынкам
+<variant>улучшение контактов с поставщиками
+<variant>обеспечение улучшенного доступа к информации
+<variant>все ответы верны
+
+<question>Адрес сайта электронного правительства Казахстана?
+<variantright>egov.kz
+<variant>egoverntment.kz
+<variant>electronicgovernment.kz
+<variant>government.kz
+<variant>все ответы верны
+
+<question>Какой НЕ популярный сайт в образовательной сфере?
+<variantright>booking.com
+<variant>edx.org
+<variant>coursera.org
+<variant>khanacademy.org
+<variant>ABCMouse.com
+
+<question>Вычислительные системы состоят из двух частей:
+<variantright>Аппаратное и программное обеспечение
+<variant>Обработка и хранение
+<variant>Ввод, вывод
+<variant>Обработка и программное обеспечение
+<variant>Аппаратное обеспечение и обработка
+
+<question>Устройство ввода?
+<variantright>Клавиатура
+<variant>ЦП
+<variant>Монитор
+<variant>Основная память
+<variant>Динамики
+
+<question>Устройство вывода?
+<variantright>Принтер
+<variant>Жесткий диск
+<variant>Мышь
+<variant>ЦП
+<variant>Клавиатура
+
+<question>Компонент обработки информации?
+<variantright>ЦП
+<variant>Монитор
+<variant>Клавиатура
+<variant>Проектор
+<variant>Мышь
+
+<question>Запоминающее устройство?
+<variantright>Жесткий диск
+<variant>Проектор
+<variant>Световое перо
+<variant>Мышь
+<variant>Клавиатура
+
+<question>Относится к программному обеспечению?
+<variantright>Приложения
+<variant>Процессор
+<variant>Мышь
+<variant>Аппаратное обеспечение
+<variant>Клавиатура
+
+<question>НЕ является устройством ввода?
+<variantright>Динамики
+<variant>Цифровая камера
+<variant>Сенсорный экран
+<variant>Клавиатура
+<variant>Мышь
+
+<question>НЕ является устройством вывода?
+<variantright>ЦП
+<variant>Монитор
+<variant>Принтер
+<variant>Динамики
+<variant>Дисплей
+
+<question>Команда, открывающая командную строку …
+<variantright>Нажать сочетание клавиш Win+R, ввести cmd и нажать ОК
+<variant>Нажать Пуск и ввести информацию
+<variant>Нажать Alt+Ctrl+Del, ввести Новая задача и нажать ОК
+<variant>Нажать Win+R, ввести msinfo и нажать ОК
+<variant>Выбрать Пуск-Все программы-Командная строка
+
+<question>Какая команда отображает версию операционной системы?
+<variantright>WinVer
+<variant>OSVer
+<variant>SysVer
+<variant>OpSys
+<variant>System
+
+<question>Где находится кнопка Пуск в ОС Windows?
+<variantright>на панели задач
+<variant>в папке Мой компьютер
+<variant>в папке Мои документы
+<variant>в ОС Windows нет кнопки Пуск
+<variant>в браузере
+
+<question>Как получить доступ к окну Сведения о системе?
+<variantright>в командной строке ввести msinfo32
+<variant>нажать сочетание клавиш Alt+Ctrl+Del
+<variant>нажать сочетание клавиш Win+R, ввести cmd и нажать ОК
+<variant>выбрать Пуск - Документы и нажать ОК
+<variant>нажать Пуск-Информация о системе
+
+<question>В каких единицах измеряется скорость процессора?
+<variantright>мегагерц и гигагерц
+<variant>гигабайты
+<variant>килобайты, мегабайты и гигабайты
+<variant>бит на дюйм
+<variant>миллиметры в секунду
+
+<question>В каких единицах измеряется память компьютера?
+<variantright>килобайты, мегабайты и гигабайты
+<variant>бит на дюйм
+<variant>бит на байт
+<variant>мегагерц и гигагерц
+<variant>файлы и папки
+
+<question>Специальная утилита, показывающая какие программы и службы запущены на вашем компьютере?
+<variantright>Диспетчер задач
+<variant>Командная строка
+<variant>Internet Explorer
+<variant>Program Files
+<variant>Драйвер
+
+<question>Как открыть Диспетчер задач …
+<variantright>нажать Ctrl+Shift+Esc
+<variant>нажать Alt+Shift+F2
+<variant>нажать Win+R и ввести taskmanager
+<variant>нажать Пуск-Все программы-Стандартные-Диспетчер задач
+<variant>в окне Документы кликнуть правой кнопкой мыши на пустом месте
+
+<question>Вкладка «Процессы» Диспетчера задач …
+<variantright>показывает все запущенные программы и процессы, с которыми можно взаимодействовать
+<variant>показывает общую информацию о сетевом трафике на компьютере
+<variant>все ответы верны
+<variant>показывает список всех активных пользователей
+<variant>отображает информацию об оборудовании компьютера
+
+<question>Вкладка «Производительность» Диспетчера задач …
+<variantright>показывает информацию о производительности вашего компьютера, в том числе об использовании процессора и памяти, а также о жестком диске и сети
+<variant>показывает все запущенные программы, с которыми можно взаимодействовать
+<variant>отображает список всех запущенных процессов, которые есть на компьютере
+<variant>показывает список всех активных пользователей
+<variant>отображает информацию об оборудовании компьютера
+
+<question>Вкладка «Пользователи» Диспетчера задач…
+<variantright>показывает список всех активных пользователей
+<variant>показывает общую информацию о сетевом трафике на компьютере
+<variant>отображает список всех запущенных процессов, которые есть на компьютере
+<variant>показывает все запущенные программы, с которыми можно взаимодействовать
+<variant>отображает информацию об оборудовании компьютера
+
+<question>При удалении ярлыка...
+<variantright>исходный объект не удаляется
+<variant>исходный объект удален
+<variant>исходный объект копируется в буфер
+<variant>исходный объект перемещается на локальный диск
+<variant>исходный объект перемещается на флэш-карту
+
+<question>…исследует разработку и использование компьютерных технологий с упором на интерфейсы между людьми (ПОЛЬЗОВАТЕЛЯМИ) и компьютером
+<variantright>Взаимодействие человека и компьютера
+<variant>Пользователь
+<variant>Пользователи
+<variant>Сеть
+<variant>Драйвер
+
+<question>Абстракция, обеспечивающая структуру данных на накопителе, например, на жестком диске или оптическом диске
+<variantright>Файловая система
+<variant>Операционная система
+<variant>Сетевая система
+<variant>Папка
+<variant>Статья
+
+<question>Укажите правильный путь к текстовому файлу в некоторой файловой системе
+<variantright>C:\peet\File.txt
+<variant>C::\peet\File.txt
+<variant>C:peet_File.txt
+<variant>C:/peet/File.txt
+<variant>C\peet\File.txt
+
+<question>Вершина иерархии папок называется …
+<variantright>корень
+<variant>основная папка
+<variant>рабочий стол
+<variant>ядро
+<variant>отец
+
+<question>Исполняемые файлы имеют следующее расширение файла:
+<variantright>.exe
+<variant>.docx
+<variant>.txt
+<variant>.html
+<variant>.jpg
+
+<question>Большинство графических пользовательских интерфейсов позволяют выполнять команды, выбирая один из вариантов в…
+<variantright>Меню
+<variant>Списке команд
+<variant>Окне
+<variant>Рабочем столе
+<variant>Поле со списком
+
+<question>Показатель того, насколько быстро пользователи могут достичь своих целей или завершить работу с помощью системы
+<variantright>Эффективность
+<variant>Безопасность
+<variant>Апелляция
+<variant>Утилита
+<variant>Конфиденциальность и безопасность
+
+<question>Операционная система MS-DOS использует интерфейс…
+<variantright>Командной строки
+<variant>На основе текста
+<variant>Графический
+<variant>Сетевой
+<variant>нет верного ответа
+
+<question>Браузеры, MS Word это...
+<variantright>прикладное программное обеспечение
+<variant>инструментальное программное обеспечение
+<variant>системное программное обеспечение
+<variant>оборудование
+<variant>таблицы
+
+<question>Высший уровень программного обеспечения
+<variantright>макросы, скрипты
+<variant>пользовательский интерфейс
+<variant>ядро
+<variant>оборудование
+<variant>драйверы
+
+<question>Низший уровень компьютера
+<variantright>оборудование
+<variant>макросы, скрипты
+<variant>пользовательский интерфейс
+<variant>ядро
+<variant>драйверы
+
+<question>Операционная система, распространяющаяся вместе с исходным кодом
+<variantright>Linux
+<variant>Windows 8
+<variant>MacOS
+<variant>MS DOS
+<variant>Windows XP
+
+<question>Операционная система без механизма определения приоритета процессов
+<variantright>простые пакетные системы
+<variant>мультипрограммные пакетные системы
+<variant>мультипроцессорные системы
+<variant>распределенные операционные системы
+<variant>все ответы верны
+
+<question>Очистители дисков, дефрагментаторы диска, антивирусы  - это
+<variantright>Утилиты
+<variant>Драйверы
+<variant>инструментальное программное обеспечение
+<variant>скрипты
+<variant>все ответы верны
+
+<question>... называется также, как и оригинальный файл, но на самом деле не содержит никаких данных
+<variantright>Ярлык
+<variant>Файл
+<variant>Диск
+<variant>Браузер
+<variant>Меню
+
+<question>Программная система, которая позволяет пользователям определять данные и манипулировать ими
+<variantright>Система управления базами данных (СУБД)
+<variant>ЦП
+<variant>Клавиатура
+<variant>Файл
+<variant>Текстовый файл
+
+<question>Язык структурированных запросов (SQL) используется для …
+<variantright>манипуляция данными
+<variant>создания текстовых файлов
+<variant>создания графики
+<variant>сети
+<variant>манипуляции с текстом
+
+<question>НЕ является частью системы управления данными
+<variantright>Пользователь
+<variant>Таблицы
+<variant>Инструменты проектирования БД
+<variant>Запросы
+<variant>Формы
+
+<question>НЕ коммерческая СУБД
+<variantright>MySQL
+<variant>Oracle
+<variant>IBM DB2
+<variant>Microsoft Access
+<variant>Microsoft SQL Server
+
+<question>Архитектура базы данных логически делится на следующие типы:
+<variantright>Одноуровневая архитектура, двухуровневая архитектура и трехуровневая архитектура
+<variant>Многоуровневые архитектуры
+<variant>Двухуровневая архитектура и трехуровневая архитектура
+<variant>Только одноуровневая архитектура
+<variant>Одноуровневая архитектура и двухуровневая архитектура
+
+<question>В… база данных централизована, что означает, что программное обеспечение СУБД и данные находятся в одном месте, а для доступа к системе управления базой данных использовались dump терминалы
+<variantright>одноуровневой архитектуре
+<variant>двухуровневой архитектуре
+<variant>трехуровневой архитектуре
+<variant>всех типах архитектуры
+<variant>нулевой архитектуре
+
+<question>Двухуровневая архитектура состоит из следующих слоев:
+<variantright>Уровень клиента и уровень базы данных
+<variant>Уровень логики и уровень базы данных
+<variant>Уровень сервера и уровень сети
+<variant>Уровни клиентов
+<variant>Уровни серверов
+
+<question>Это абстрактное, формальное представление сущностей, включающее их свойства, отношения и операции, которые можно над ними выполнять
+<variantright>Информационная модель
+<variant>Модель базы данных
+<variant>Аппаратная модель
+<variant>Программная модель
+<variant>Биллинговая система
+
+<question>Формальное описание проблемной области без ограничений на то, как это описание будет сопоставлено с фактической реализацией в программном обеспечении
+<variantright>Модель данных
+<variant>Модель базы данных
+<variant>Аппаратная модель
+<variant>Программная модель
+<variant>Информационная модель
+
+<question>Этот математический класс состоит из операций, которые используются для управления отношениями в реляционной модели данных
+<variantright>Реляционная алгебра
+<variant>Семантическое ограничение
+<variant>Модель
+<variant>Схема
+<variant>Ссылочная целостность
+
+<question>Набор атомарных значений одного типа – это…
+<variantright>Домен
+<variant>Поле
+<variant>Кортеж
+<variant>Ключ
+<variant>Запись
+
+<question>Формальное описание всех отношений базы данных и всех отношений, существующих между ними
+<variantright>Схема базы данных
+<variant>Ключ
+<variant>Запись
+<variant>Домен
+<variant>Поле
+
+<question>Основная логическая структура этой модели представлена перевернутым деревом
+<variantright>Иерархическая модель
+<variant>Реляционная модель
+<variant>Сетевая модель
+<variant>Объектно-ориентированная модель
+<variant>Гибридная модель
+
+<question>Быстрый способ сложить данный столбец чисел — щелкнуть ячейку под числами, а затем…
+<question_image>data:image/png;base64,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</question_image>
+<variantright>нажать кнопку «Автосумма» на стандартной панели инструментов, затем нажать ENTER
+<variant>посмотрите сумму в строке форму
+<variant>нажать «Промежуточные итоги» в меню «Данные»
+<variant>ввести формулу ‘=A2+A3+A4+A5’
+<variant>нажать ENTER
+
+<question>Как можно быстро расширить эти числа до более длинной последовательности, например от 1 до 20?
+<question_image>data:image/png;base64,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</question_image>
+<variantright>Выделить обе ячейки, а затем перетащить маркер заполнения на нужный диапазон, например еще на 18 строк вниз
+<variant>Выбрать нужный диапазон, включая обе ячейки, выбрать «Заполнить», а затем нажать клавишу «Вниз»
+<variant>Скопировать вторую ячейку, щелкнуть ячейку под ней, на стандартной панели инструментов щелкнуть стрелку вниз на кнопке «Вставить», а затем нажать «Специальная вставка».
+<variant>Выбрать нужный диапазон, включая обе ячейки, выбрать «Заполнить», а затем нажать клавишу «Вверх»
+<variant>> Выбрать нужный диапазон, включая обе ячейки, выбрать «Заполнить», а затем нажать клавишу «Влево»
+
+<question>Результат расчета в ячейке C1:
+<question_image>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAV8AAAAzCAYAAAAw9AsUAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAAdbSURBVHhe7d2/axrvAwfwt9//QocMeksHs6XDBy2cheoSXAL1xyIUEryhZChxiVuGKg7iULFTIUQtdJEsKjTSKB0qdHHVGwrVP8PvUO/wHs/Ei7an5/sFB/V5TiM+d++750fVNZ1Op1iRy+USi4iI9paF+Fzgshq+nU5HLN5qsizzPZOt2J7OJMvyWuH7P7GAiIj+PoYvEZENGL5ERDZg+BIR2YDh+0STyQSyLGMwGIhVZGIwGECW5aVbsVgUn0I7plgsmrbpxcWFuCsxfJ/u8+fPAICvX7+KVWTC7/ej0+kgGo3C4/Gg0+noWzabRaPRQDKZFJ9GO0C7Een3+4Z2PTw8hCzL4u40w/B9on6/j2g0ikajgclkIlaTBaFQCGdnZxiPx+xJ7KBEIoGjoyPc3NwYykOhEEqlEn7//m0opz8Yvk9Qr9dxfHyMly9fAgC+ffsm7kK0F+r1OgAgEomIVcCsx3N0dCQWE8P3aW5vbxGLxeD3++HxeHB7eyvuQhZMJhNUKhV4PB74/X6xmrbYz58/AQDPnj0Tq3Tn5+diETF8rbu7uzNcyd+8ecPuskXj8dgwMZNIJHB2drbQbaXtpw0puN1usYoewfC1qNls4vXr1/rjUCgEcOLNEnHCrVqtolKpcPUI7RWGrwWDwQD9fh+JRMJw5waAE29rcLvdqFarAID379+L1bTFtF4gL5rWMXwtuL6+RqlUMty1dTodlEolgBNva2G3dTdpvcDr62uxSlcsFnljYoLhu6K7uztgNnsr0mZ0K5UKD7In0tb4Hh8fi1W0xdxuN7LZLPr9vuk67WQyicPDQ15cTfArJVdQLBbRaDT0x9Vq1XAwJZNJjMdj/XE0Gl1rhncT73nbDAYDvH37Viw2yGaz+hi6kzixPc2I5wFMzhUnkdf8SkmG7xbaxfdMy7E9nWnd8OWwAxGRDRi+REQ2YPgSEdmA4UtEZAOGLxGRDSyvdiAioj8sxOcCy+G7a0tm1l0OYgeXy7Vz75mWY3s607rtymEHIiIbMHyJiGzA8CUisgHDl4jIBgxf2gmRSET/vTAiJ9iK8B0MBpBleadOLkVR4HK59C2fz4u77L16vb7S8sRer7fSZ/jr1y+xCJjNOmvbsh9yJGvy+TwkSRKLF2ht/JRzV5IkQ9uJ2zLauaeqqli1U2wP32Kx+OhXDW4bVVXRbrcxnU717eLiQtxt711eXgJzv3BrRlEUBINBsRiYfc7aie31evHff/8hEokYAlaSJL0NRqMRWq0WA3gDMpkMRqMRer2eWKWLRCKIx+Ni8QJVVaEoiliM4XCIbrcLAOh2u4bzCbOLqvj3XS4XyuWyoWxX2R6+5+fnO7d2uFAo4OrqSiymOb1eD69evYLP59ND2MyHDx+WrpX0er3odruIx+NQVRWpVArD4RDNZhOY/Y12u23YP5fLodVqzb0KWVWv15HL5QDgweO82WxiNBqJxRuhva7281Ka6XSKWq1mKNtVtofvrlFVFeVyGfF4fKVu2b66urpCIpHA6enpo3dQqzAL1EAgAK/Xayg7ODiAz+czlJE1l5eXODk5QTqdRqvV2vnu/bZi+Fo0Ho8XukYPdaud4LGxObF7qJ2sgUAAJycngMkdzCpUVUUwGEStVkM6ncanT58gSdKDwwr39/c4PT0Vi/eW2E5m23y4aj0Wr9eLRCIBAPjy5cvcK/4b2jCF9h6ciOFrUSAQ0P89HA5Rq9X0brFTDYdDw3ic2Tb/uRQKBaRSKWA2FJBOp580Tuf1ejGdThGLxdBut/H9+3c0m0192MFMu93m+PscsZ3Mtvneg9ZjwexYD4fD+Pjx49wrPk6bQNU2n8+HcrlsKBMvoMFg0FCvHXPzx5XTMHzXFIvFEA6H8ePHD7Fqb7XbbcRiMf2xdjKv00OQJAkHBwdisYGiKIYxYLJmvseiSaVSloeNAoGAIdxHoxHS6bShTLyAihNuWm/LbKLOKRi+GyCOOzqNlWGHfD6P0WhkqNNWMzw08faYZrNpCHRRPp/HixcvHN8WVontZLZpoVsoFNBqtQx12mqGhybe/oZms4lwOIxyuWwp+HcJw3cDVFXF8+fPxWLHsDLskMlkFuqm0ylyuZzlO6hVaXfUD4XzvhLbwWzzer2myye1za6JN6dfSBm+a1IUBaFQyPEHyioURdGXKIm0cVhtLHhT6vU67u/vDeO8y9aV0nKKoiy9u3337h0wNwn2L+TzeZTLZfh8PseO+9r+fb71eh2VSkV/7PF4cHNzY9hnHZv+Pl9FUQyTR7VabeN3XK41vyfUDpIk6WszfT4fhsOhXqeq6sLyL+1zy+fzyGQyern43IeIz503Go225oK47e3pmvvfZOFw2DAe2+v1Fv4TTLfbRSAQWDgXxOc+Zv6YMWP2euJzcrmcbROs67ar7eH7t206fP+FdRuVtgvb05nWbVcOOxAR2YDhS0RkA4YvEZENGL5ERDawPOFGRER/WIjPBZbCl4iINoPDDkRENmD4EhHZgOFLRGSD/wN2lus+jmEb8AAAAABJRU5ErkJggg==</question_image>
+<variantright>15
+<variant>5
+<variant>10
+<variant>20
+<variant>30

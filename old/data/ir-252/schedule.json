@@ -1,0 +1,292 @@
+{
+  "version": "2026-10-28.1",
+  "updatedAt": "2026-10-22T16:21:56.732Z",
+  "timeSlots": [
+    {
+      "id": "p1",
+      "start": "08:30",
+      "end": "09:20"
+    },
+    {
+      "id": "p2",
+      "start": "09:30",
+      "end": "10:20"
+    },
+    {
+      "id": "p3",
+      "start": "10:30",
+      "end": "11:20"
+    },
+    {
+      "id": "p4",
+      "start": "11:30",
+      "end": "12:20"
+    },
+    {
+      "id": "p5",
+      "start": "12:30",
+      "end": "13:20"
+    },
+    {
+      "id": "p6",
+      "start": "13:40",
+      "end": "14:30"
+    }
+  ],
+  "subjects": [
+    {
+      "id": "s43334",
+      "code": "",
+      "name": "Архитектура компьютера",
+      "teacher": "Жак Ирина Николаевна"
+    },
+    {
+      "id": "s48108",
+      "code": "",
+      "name": "Философия",
+      "teacher": "Абдукаликова Гульнара Копеевна"
+    },
+    {
+      "id": "s43381",
+      "code": "",
+      "name": "Информационно-коммуникационные технологии",
+      "teacher": "Жак Ирина Николаевна"
+    },
+    {
+      "id": "s43423",
+      "code": "",
+      "name": "Исследование операций",
+      "teacher": "Ильяшева Гулжамал Ирановна"
+    },
+    {
+      "id": "s43515",
+      "code": "",
+      "name": "Object-Oriented Programming (Borland C ++ Builder)",
+      "teacher": "Атаев Ержан Курманович"
+    },
+    {
+      "id": "s44169",
+      "code": "",
+      "name": "Физическая культура",
+      "teacher": "Исмаилова Светлана Ивановна"
+    }
+  ],
+  "schedule": [
+    {
+      "id": "lesson-1",
+      "day": 0,
+      "slotId": "p1",
+      "subjectId": "s43334",
+      "code": "",
+      "name": "Архитектура компьютера",
+      "kind": "Лекция",
+      "room": "218",
+      "building": "Главный корпус",
+      "teacher": "Жак Ирина Николаевна"
+    },
+    {
+      "id": "lesson-2",
+      "day": 2,
+      "slotId": "p1",
+      "subjectId": "s48108",
+      "code": "",
+      "name": "Философия",
+      "kind": "Практика",
+      "room": "306",
+      "building": "Корпус №4",
+      "teacher": "Абдукаликова Гульнара Копеевна"
+    },
+    {
+      "id": "lesson-3",
+      "day": 3,
+      "slotId": "p1",
+      "subjectId": "s43381",
+      "code": "",
+      "name": "Информационно-коммуникационные технологии",
+      "kind": "Лекция",
+      "room": "512",
+      "building": "Главный корпус",
+      "teacher": "Жак Ирина Николаевна"
+    },
+    {
+      "id": "lesson-4",
+      "day": 4,
+      "slotId": "p1",
+      "subjectId": "s48108",
+      "code": "",
+      "name": "Философия",
+      "kind": "Лекция",
+      "room": "Актовый зал (302)",
+      "building": "Корпус №4",
+      "teacher": "Абдукаликова Гульнара Копеевна"
+    },
+    {
+      "id": "lesson-5",
+      "day": 1,
+      "slotId": "p2",
+      "subjectId": "s43515",
+      "code": "",
+      "name": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "Лабораторная",
+      "room": "502",
+      "building": "Главный корпус",
+      "teacher": "Атаев Ержан Курманович"
+    },
+    {
+      "id": "lesson-6",
+      "day": 2,
+      "slotId": "p2",
+      "subjectId": "s43423",
+      "code": "",
+      "name": "Исследование операций",
+      "kind": "Лабораторная",
+      "room": "504",
+      "building": "Главный корпус",
+      "teacher": "Ильяшева Гулжамал Ирановна"
+    },
+    {
+      "id": "lesson-7",
+      "day": 3,
+      "slotId": "p2",
+      "subjectId": "s43381",
+      "code": "",
+      "name": "Информационно-коммуникационные технологии",
+      "kind": "Лабораторная",
+      "room": "222",
+      "building": "Главный корпус",
+      "teacher": "Бозаева Камила Еркеновна"
+    },
+    {
+      "id": "lesson-8",
+      "day": 4,
+      "slotId": "p2",
+      "subjectId": "s48108",
+      "code": "",
+      "name": "Философия",
+      "kind": "Лекция",
+      "room": "Актовый зал (302)",
+      "building": "Корпус №4",
+      "teacher": "Абдукаликова Гульнара Копеевна"
+    },
+    {
+      "id": "lesson-9",
+      "day": 0,
+      "slotId": "p3",
+      "subjectId": "s43423",
+      "code": "",
+      "name": "Исследование операций",
+      "kind": "Лекция",
+      "room": "523",
+      "building": "Главный корпус",
+      "teacher": "Ильяшева Гулжамал Ирановна"
+    },
+    {
+      "id": "lesson-10",
+      "day": 1,
+      "slotId": "p3",
+      "subjectId": "s43515",
+      "code": "",
+      "name": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "Лабораторная",
+      "room": "502",
+      "building": "Главный корпус",
+      "teacher": "Атаев Ержан Курманович"
+    },
+    {
+      "id": "lesson-11",
+      "day": 2,
+      "slotId": "p3",
+      "subjectId": "s43423",
+      "code": "",
+      "name": "Исследование операций",
+      "kind": "Лабораторная",
+      "room": "504",
+      "building": "Главный корпус",
+      "teacher": "Ильяшева Гулжамал Ирановна"
+    },
+    {
+      "id": "lesson-12",
+      "day": 3,
+      "slotId": "p3",
+      "subjectId": "s43381",
+      "code": "",
+      "name": "Информационно-коммуникационные технологии",
+      "kind": "Лабораторная",
+      "room": "222",
+      "building": "Главный корпус",
+      "teacher": "Бозаева Камила Еркеновна"
+    },
+    {
+      "id": "lesson-14",
+      "day": 2,
+      "slotId": "p4",
+      "subjectId": "s43334",
+      "code": "",
+      "name": "Архитектура компьютера",
+      "kind": "Лабораторная",
+      "room": "611",
+      "building": "Главный корпус",
+      "teacher": "Жак Ирина Николаевна"
+    },
+    {
+      "id": "lesson-15",
+      "day": 4,
+      "slotId": "p4",
+      "subjectId": "s43515",
+      "code": "",
+      "name": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "Лекция",
+      "room": "501",
+      "building": "Главный корпус",
+      "teacher": "Жак Ирина Николаевна"
+    },
+    {
+      "id": "lesson-16",
+      "day": 2,
+      "slotId": "p5",
+      "subjectId": "s43334",
+      "code": "",
+      "name": "Архитектура компьютера",
+      "kind": "Лабораторная",
+      "room": "611",
+      "building": "Главный корпус",
+      "teacher": "Жак Ирина Николаевна"
+    },
+    {
+      "id": "lesson-17",
+      "day": 4,
+      "slotId": "p5",
+      "subjectId": "s43515",
+      "code": "",
+      "name": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "Лекция",
+      "room": "501",
+      "building": "Главный корпус",
+      "teacher": "Жак Ирина Николаевна"
+    },
+    {
+      "id": "lesson-18",
+      "day": 0,
+      "slotId": "p5",
+      "subjectId": "s44169",
+      "code": "",
+      "name": "Физическая культура",
+      "kind": "Практика",
+      "room": "223 (спортзал)",
+      "building": "Корпус №4",
+      "teacher": "Исмаилова Светлана Ивановна"
+    },
+    {
+      "id": "lesson-19",
+      "day": 0,
+      "slotId": "p6",
+      "subjectId": "s44169",
+      "code": "",
+      "name": "Физическая культура",
+      "kind": "Практика",
+      "room": "223 (спортзал)",
+      "building": "Корпус №4",
+      "teacher": "Исмаилова Светлана Ивановна"
+    }
+  ]
+}

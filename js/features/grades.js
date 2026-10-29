@@ -67,7 +67,8 @@
     syncJournal();
     var st = jState();
     var h = '<div class="btn-group jr-bar"><button type="button" class="btn" id="jrHow">' + SP.icon('circle-help') + '<span>' + esc(SP.t('jr.how')) + '</span></button>' +
-      (isWinPc() ? '<button type="button" class="btn" id="jrRun">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRun')) + '</span></button>' : '') +
+      (isWinPc() ? '<button type="button" class="btn" id="jrRun">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRun')) + '</span></button>' +
+        '<button type="button" class="btn btn-icon" id="jrSetup" aria-label="' + esc(SP.t('jr.plSetupTitle')) + '" data-tip="' + esc(SP.t('jr.plSetupTitle')) + '">' + SP.icon('settings') + '</button>' : '') +
       '<button type="button" class="btn" id="jrPl">' + SP.icon('upload') + '<span>' + esc(SP.t('jr.plLoad')) + '</span></button>' +
       '<input type="file" id="jrPlFile" accept=".json,application/json,text/plain" hidden>' +
       '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div>';
@@ -295,7 +296,15 @@
         upsert(st, nm, { teachers: sj ? sj.teacher || '' : '' }); jSave(st); m.close(); render(); SP.toast(SP.t('jr.restored', { name: nm }), 'success');
       }; });
     });
-    on('#jrRun', runProgram);
+    on('#jrRun', function () {
+      /* Первый раз — инструкция, как скачать и подключить программу */
+      if (SP.store.get('sp-pl-run-ok', false)) return runProgram();
+      var m = SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') +
+        '<div class="row" style="justify-content:flex-end;gap:var(--sp-2);margin-top:var(--sp-4)"><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a>' +
+        '<button type="button" class="btn btn-primary" data-plgo>' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRunGo')) + '</span></button></div>' });
+      var b = SP.$('[data-plgo]', m.el); if (b) b.onclick = function () { SP.store.set('sp-pl-run-ok', true); m.close(); runProgram(); };
+    });
+    on('#jrSetup', function () { SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') + '<p><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a></p>' }); });
     on('#jrPl', function () {
       var st = jState();
       /* Первый раз — сначала короткая инструкция, откуда взять файл */

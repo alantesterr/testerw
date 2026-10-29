@@ -479,3 +479,13 @@ Object.assign(SP.I18N.en, { 'jr.plLoad': 'Load from Platonus', 'jr.plPick': 'Cho
 Object.assign(SP.I18N.en, { 'jr.plBadLink': 'Could not read grades from the link. Save the file in the program and load it with "Load from Platonus".', 'jr.plOld': 'This browser is too old to load grades from a link. Update it or load the file with "Load from Platonus".' });
 Object.assign(SP.I18N.en, { 'jr.plRun': 'Update from Platonus', 'jr.plRunToast': 'Starting the "My grades" program. When it closes, grades will appear here. If nothing opened, run "Подключить к StudyPlay.bat" next to the program once.',
   'jr.plClip': 'Allow the site to read the clipboard (icon in the address bar) so it can receive grades from the program.' });
+Object.assign(SP.I18N.en, { 'jr.plSetupTitle': 'Connect Platonus grades', 'jr.plDownload': 'Download the program', 'jr.plRunGo': 'Already connected — update',
+  'jr.plRunToast': 'Getting grades from Platonus… They will appear here in a few seconds.',
+  'jr.plSetupHtml': '<p>The “Update from Platonus” button starts the “My grades” program on your computer. It signs in to Platonus and sends the grades here. Your password stays encrypted on your computer only — the site never sees it. Windows only.</p>' +
+    '<p><b>Setup (once):</b></p><ol class="jr-steps">' +
+    '<li>Download the program (button below) and unzip it into a permanent folder, e.g. “Documents\\StudyPlay-grades”.</li>' +
+    '<li>Double-click <b>start.vbs</b>. If Windows shows “Windows protected your PC” — “More info” → “Run anyway”.</li>' +
+    '<li>Enter your Platonus login and password, tick <b>“Remember password”</b> and press <b>“Get grades”</b> (enter the e-mail code if asked). Close the window.</li>' +
+    '<li>Double-click <b>connect.bat</b> and press any key.</li></ol>' +
+    '<p><b>Then:</b> “Update from Platonus” → the browser asks “Open application?” → “Open”. Grades appear in a few seconds. The first time, allow clipboard access.</p>' +
+    '<p class="small muted">To disconnect — disconnect.bat in the same folder. Details — README.txt in the archive.</p>' });

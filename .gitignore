@@ -16,3 +16,7 @@ studyplay-backup*.json
 
 # Node (на случай, если добавите инструменты сборки — сейчас они не нужны)
 node_modules/
+
+# Programma «Moi ocenki»: lichnye nastroiki i vygruzki ocenok (parol!)
+config.json
+studyplay-*.json

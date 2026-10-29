@@ -490,3 +490,7 @@ Object.assign(SP.I18N.en, { 'jr.plSetupTitle': 'Connect Platonus grades', 'jr.pl
     '<p><b>Then:</b> “Update from Platonus” → the browser asks “Open application?” → “Open”. Grades appear in a few seconds. The first time, allow clipboard access.</p>' +
     '<p class="small muted">To disconnect — disconnect.bat in the same folder. Details — README.txt in the archive.</p>' });
 Object.assign(SP.I18N.en, { 'settings.plHide': 'Hide Platonus buttons in Grades', 'settings.plHideHint': '"Update from Platonus", program setup and "Load from Platonus". Untick to show them.' });
+Object.assign(SP.I18N.en, { 'jr.dl': 'Download', 'jr.dlCsv': 'Table (Excel)', 'jr.dlCsvHint': 'All subjects: current, midterms, rating, exam, final. Opens in Excel and on a phone — handy to send in Telegram.',
+  'jr.dlJson': 'StudyPlay file', 'jr.dlJsonHint': 'Move grades to another device: there, Grades → Download → "Load grades file".',
+  'jr.jLoad': 'Load grades file (from another device)', 'jr.jDone': 'Grades loaded, subjects: {n}.', 'jr.jBad': 'This is not a StudyPlay grades file.', 'jr.csvMarks': 'Current marks' });
+Object.assign(SP.I18N.en, { 'jr.csvSubject': 'Subject' });

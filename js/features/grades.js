@@ -71,6 +71,8 @@
         '<button type="button" class="btn btn-icon" id="jrSetup" aria-label="' + esc(SP.t('jr.plSetupTitle')) + '" data-tip="' + esc(SP.t('jr.plSetupTitle')) + '">' + SP.icon('settings') + '</button>' : '') +
       '<button type="button" class="btn" id="jrPl">' + SP.icon('upload') + '<span>' + esc(SP.t('jr.plLoad')) + '</span></button>' +
       '<input type="file" id="jrPlFile" accept=".json,application/json,text/plain" hidden>') +
+      (st.items.length ? '<button type="button" class="btn" id="jrDl">' + SP.icon('download') + '<span>' + esc(SP.t('jr.dl')) + '</span></button>' : '') +
+      '<input type="file" id="jrJFile" accept=".json,application/json,text/plain" hidden>' +
       '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div>';
     if (!st.items.length) {
       return h + '<section class="card"><div class="empty">' + SP.icon('graduation-cap', 'ic-xl') + '<h3>' + esc(SP.t('jr.emptyTitle')) + '</h3><p>' + esc(SP.t('jr.emptyText')) + '</p></div></section>';
@@ -293,6 +295,19 @@
         upsert(st, nm, { teachers: sj ? sj.teacher || '' : '' }); jSave(st); m.close(); render(); SP.toast(SP.t('jr.restored', { name: nm }), 'success');
       }; });
     });
+    on('#jrDl', downloadDialog);
+    var jf = $('#jrJFile');
+    if (jf) jf.onchange = function () {
+      var f = jf.files && jf.files[0]; if (!f) return;
+      var r = new FileReader();
+      r.onload = function () {
+        try {
+          var n = importJournal(JSON.parse(String(r.result).replace(/^﻿/, '')));
+          editing = null; render(); SP.toast(SP.t('jr.jDone', { n: n }), 'success');
+        } catch (e) { SP.toast(SP.t('jr.jBad'), 'danger'); }
+      };
+      r.readAsText(f, 'utf-8'); jf.value = '';
+    };
     on('#jrRun', function () {
       /* Первый раз — инструкция, как скачать и подключить программу */
       if (SP.store.get('sp-pl-run-ok', false)) return runProgram();
@@ -407,6 +422,44 @@
     render();
   }
   SP.views.register('grades', { titleKey: 'nav.grades', mount: function (el) { root = el; }, show: show, refresh: render });
+  /* ---------- Скачать оценки (например, чтобы скинуть себе в Telegram) ---------- */
+  function gradesCsv() {
+    var q = function (v) { v = String(v == null ? '' : v); return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var n = function (v) { return v == null ? '' : String(Math.round(v * 100) / 100).replace('.', ','); };
+    var head = [SP.t('jr.csvSubject'), SP.t('jr.cur'), SP.t('jr.rk1'), SP.t('jr.rk2'), SP.t('jr.rating'), SP.t('jr.exam'), SP.t('jr.final'), SP.t('jr.csvMarks')];
+    var lines = [head.map(q).join(';')].concat(jState().items.map(function (it) {
+      var v = jCalc(it);
+      return [it.name, n(v.c), n(v.r1), n(v.r2), n(v.R), n(v.e), n(v.F), it.mode === 'avg' ? '' : (it.grades || []).join(' ')].map(q).join(';');
+    }));
+    return '﻿' + lines.join('\r\n');   /* BOM и «;» — Excel сразу понимает кириллицу и столбцы */
+  }
+  function downloadDialog() {
+    var day = new Date().toISOString().slice(0, 10);
+    var m = SP.modal({ title: SP.t('jr.dl'), body: '<div class="stack-sm">' +
+      '<button type="button" class="btn btn-block wrap" data-gdl="csv">' + SP.icon('file-text') + '<span><b>' + esc(SP.t('jr.dlCsv')) + '</b><br><span class="small muted">' + esc(SP.t('jr.dlCsvHint')) + '</span></span></button>' +
+      '<button type="button" class="btn btn-block wrap" data-gdl="json">' + SP.icon('file-json') + '<span><b>' + esc(SP.t('jr.dlJson')) + '</b><br><span class="small muted">' + esc(SP.t('jr.dlJsonHint')) + '</span></span></button>' +
+      '<button type="button" class="btn btn-ghost btn-block wrap" data-gdl="load">' + SP.icon('upload') + '<span>' + esc(SP.t('jr.jLoad')) + '</span></button></div>' });
+    SP.$$('[data-gdl]', m.el).forEach(function (b) { b.onclick = function () {
+      var k = b.getAttribute('data-gdl'); m.close();
+      if (k === 'csv') SP.downloadText(gradesCsv(), 'ocenki-' + day + '.csv', 'text/csv;charset=utf-8');
+      else if (k === 'json') SP.downloadText(JSON.stringify({ format: 'studyplay-journal', version: 1, savedAt: new Date().toISOString(), items: jState().items }, null, 1), 'studyplay-ocenki-' + day + '.json', 'application/json');
+      else { var f = SP.$('#jrJFile', root); if (f) f.click(); }
+    }; });
+  }
+  /* Файл с другого устройства: карточки с теми же названиями обновляются, новые добавляются */
+  function importJournal(d) {
+    if (!d || d.format !== 'studyplay-journal' || !Array.isArray(d.items)) throw new Error('format');
+    var st = jState(), n = 0;
+    d.items.forEach(function (x) {
+      if (!x || !String(x.name || '').trim()) return;
+      var it = st.items.filter(function (y) { return SP.lc(y.name) === SP.lc(x.name); })[0];
+      var keep = it ? it.id : SP.uid('j');
+      if (!it) { it = {}; st.items.push(it); }
+      Object.keys(x).forEach(function (k) { it[k] = x[k]; }); it.id = keep; n++;
+      st.hidden = (st.hidden || []).filter(function (h) { return SP.lc(h) !== SP.lc(x.name); });
+    });
+    jSave(st); return n;
+  }
   /* ---------- Кнопка «Обновить из Platonus» (Windows) ----------
      Сайт запускает программу «Мои оценки» через ссылку studyplay-grades: (её подключает файл
      «Подключить к StudyPlay.bat»). Программа сама входит в Platonus, кладёт оценки в буфер обмена

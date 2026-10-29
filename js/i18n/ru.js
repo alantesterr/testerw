@@ -898,3 +898,4 @@ Object.assign(SP.I18N.ru, {
   'lx.backQ': 'Вернуться к вопросу {n}', 'lx.backTask': 'Вернуться к задаче {n}'
 });Object.assign(SP.I18N.ru, { 'lx.zoom': 'Увеличенный фрагмент' });
 Object.assign(SP.I18N.ru, { 'lx.hide': 'Скрыть' });
+Object.assign(SP.I18N.ru, { 'sj.itemMeta': 'Файлов: {m} · тестов: {t}', 'sj.hasNotes': 'конспект', 'sj.konspekt': 'Конспект', 'sj.nLec': '{n} лекц.', 'sj.kProg': 'прочитано {r} из {n}', 'sj.kTests': 'тесты {a} из {n}' });

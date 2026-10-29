@@ -891,3 +891,24 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 .lx-toc-h b { margin: 0 !important; }
 .lx-toc-h .btn { min-height: 1.9rem; padding: 0 8px; font-size: var(--fs-xs); color: var(--text-3); }
 .quiz-top-a { gap: 4px; flex: none; }
+
+/* Папки: кнопки под списком (прилипают к низу), вкладки, свёрнутый конспект */
+.sj-list { display: flex; flex-direction: column; }
+.sj-list-foot { position: sticky; bottom: 0; z-index: 2; display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-3); padding: var(--sp-3) 0 2px; background: var(--surface); border-top: 1px solid var(--border); }
+.sj-list-foot .btn { flex: 1 1 auto; }
+.sj-list-foot .sj-restore { flex-basis: 100%; }
+@media (max-width: 767px) { .sj-list-foot { bottom: calc(4.5rem + env(safe-area-inset-bottom)); } }
+.sj-tabs { margin-top: var(--sp-2); }
+.sj-tab-acts { justify-content: flex-end; margin-bottom: var(--sp-2); }
+.sj-konsp { border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+.sj-konsp + .sj-konsp { margin-top: var(--sp-3); }
+.sj-konsp > summary { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); cursor: pointer; list-style: none; flex-wrap: wrap; }
+.sj-konsp > summary::-webkit-details-marker { display: none; }
+.sj-konsp > summary:hover { background: var(--hover); }
+.sj-konsp .sj-k-ic { width: 2.5rem; height: 2.5rem; border-radius: var(--r-md); display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); flex: none; }
+.sj-konsp .meta { flex: 1 1 14rem; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sj-konsp .meta b { line-height: 1.35; }
+.sj-konsp .meta small { color: var(--text-3); font-size: var(--fs-xs); }
+.sj-konsp .sj-k-chev { color: var(--text-3); transition: transform var(--dur) var(--ease); }
+.sj-konsp[open] .sj-k-chev { transform: rotate(180deg); }
+.sj-konsp .sj-lec-list { border: 0; border-top: 1px solid var(--border); border-radius: 0; }

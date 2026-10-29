@@ -465,3 +465,4 @@ Object.assign(SP.I18N.en, {
   'lx.backQ': 'Back to question {n}', 'lx.backTask': 'Back to task {n}'
 });Object.assign(SP.I18N.en, { 'lx.zoom': 'Zoomed fragment' });
 Object.assign(SP.I18N.en, { 'lx.hide': 'Hide' });
+Object.assign(SP.I18N.en, { 'sj.itemMeta': 'Files: {m} · tests: {t}', 'sj.hasNotes': 'notes', 'sj.konspekt': 'Notes', 'sj.nLec': '{n} lectures', 'sj.kProg': 'read {r} of {n}', 'sj.kTests': 'tests {a} of {n}' });

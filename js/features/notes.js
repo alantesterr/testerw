@@ -255,6 +255,13 @@
     }).then(function (r) { return r.filter(Boolean); });
   }
   function continueOf(meta) { return SP.store.get(key('pos', meta.id), null); }
+  /* есть ли у предмета конспект (для списка папок); список конспектов грузится один раз */
+  var idxAsked = false;
+  function has(name) {
+    if (!index || indexDir !== dir()) { if (!idxAsked) { idxAsked = true; loadIndex().then(function () { idxAsked = false; SP.emit('notes-index'); }); } return false; }
+    var n = SP.lc(SP.hub.cleanName(name || ''));
+    return index.some(function (m) { return SP.lc(SP.hub.cleanName(m.subject || '')) === n; });
+  }
 
   /* ---------- Экран лекции ---------- */
   function subjectId(meta) {
@@ -341,7 +348,8 @@
       q = crop ? cropHtml(b.qr, d) : '<div class="lx-qh"><span class="lx-qn">' + (i + 1) + '</span><b class="lx-qt">' + (typeof b.q === 'string' ? b.q : '') + '</b></div>' + (Array.isArray(b.q) ? blocksHtml(b.q, { d: d }) : '');
       a = crop && b.ar && b.ar.length ? cropHtml(b.ar, d) : blocksHtml(b.a, { d: d });
     }
-    var hasWhere = isTask ? it.whereSi != null : !!b.src;
+    /* «Где в лекции?» — только там, где известно точное место ответа (вопросы Философии); у задач не показываем */
+    var hasWhere = !isTask && !!b.src;
     var whereBtn = hasWhere ? '<button type="button" class="btn btn-ghost btn-sm lx-where" data-lxwhere>' + SP.icon('map-pin', 'ic-sm') + '<span>' + esc(SP.t('lx.where')) + '</span></button>' : '';
     var hasA = (b.a && b.a.length) || (b.ar && b.ar.length);
     var stTxt = st ? '<span class="lx-st ' + st + '">' + esc(SP.t(st === 'know' ? (isTask ? 'lx.mSolved' : 'lx.mKnew') : 'lx.mAgain')) + '</span>' : '';
@@ -569,7 +577,7 @@
     });
   }
 
-  SP.notes = { forSubject: forSubject, lecStats: lecStats, continueOf: continueOf, href: lecHref };
+  SP.notes = { forSubject: forSubject, lecStats: lecStats, continueOf: continueOf, href: lecHref, has: has };
   SP.views.register('notes', {
     titleKey: 'nav.notes',
     mount: function (el) { root = el; },

@@ -465,3 +465,4 @@ Object.assign(SP.I18N.kk, {
   'lx.backQ': '{n}-сұраққа оралу', 'lx.backTask': '{n} есебіне оралу'
 });Object.assign(SP.I18N.kk, { 'lx.zoom': 'Үлкейтілген үзінді' });
 Object.assign(SP.I18N.kk, { 'lx.hide': 'Жасыру' });
+Object.assign(SP.I18N.kk, { 'sj.itemMeta': 'Файлдар: {m} · тесттер: {t}', 'sj.hasNotes': 'конспект', 'sj.konspekt': 'Конспект', 'sj.nLec': '{n} дәріс', 'sj.kProg': '{n} ішінен {r} оқылды', 'sj.kTests': 'тесттер {n} ішінен {a}' });

@@ -43,10 +43,7 @@
     var narrow = window.innerWidth < 900;
     var html = SP.pageHead({
       title: SP.t('nav.subjects'),
-      sub: esc(SP.t('subjects.count', { n: d.subjects.length })),
-      actions: (d.subjects.length ? '<button type="button" class="btn" id="sjSelect" aria-pressed="' + selMode + '">' + SP.icon(selMode ? 'x' : 'square-check-big') + '<span>' + esc(SP.t(selMode ? 'subjects.selDone' : 'subjects.select')) + '</span></button>' : '') +
-        (Object.keys(d.removed || {}).length ? '<button type="button" class="btn btn-ghost" id="sjRestore">' + SP.icon('undo-2') + '<span>' + esc(SP.t('subjects.restoreRemoved')) + '</span></button>' : '') +
-        '<button type="button" class="btn btn-primary" id="sjAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('subjects.add')) + '</span></button>'
+      sub: esc(SP.t('subjects.count', { n: d.subjects.length }))
     });
     if (!d.subjects.length) {
       html += '<section class="card"><div class="empty">' + SP.icon('folder-open', 'ic-xl') + '<h3>' + esc(SP.t('subjects.emptyTitle')) + '</h3><p>' + esc(SP.t('subjects.emptyText')) + '</p>' +
@@ -71,13 +68,18 @@
         '<button type="button" class="btn btn-danger btn-sm" id="sjDelSel"' + (nSel ? '' : ' disabled') + '>' + SP.icon('trash-2') + '<span>' + esc(SP.t('common.delete')) + '</span></button></div>';
     }
     h += '<nav class="sj-items" aria-label="' + esc(SP.t('nav.subjects')) + '">' + (items.length ? items.map(function (s) {
-      var mats = (s.materials || []).length, tests = (s.tests || []).length;
+      var mats = (s.materials || []).length, tests = (s.tests || []).length, kn = SP.notes && SP.notes.has(s.name);
       var btn = '<button type="button" class="sj-item" data-sub="' + esc(s.id) + '"' + (active && s.id === active.id ? ' aria-current="true"' : '') + '>' +
         '<span class="fi-folder">' + SP.icon('folder') + '</span><span class="meta"><b>' + esc(SP.hub.cleanName(s.name)) + '</b>' +
-        '<small>' + esc(SP.t('subjects.itemMeta', { m: mats, t: tests })) + '</small></span>' + SP.icon('chevron-right', 'sj-chev') + '</button>';
+        '<small>' + esc(SP.t('sj.itemMeta', { m: mats, t: tests }) + (kn ? ' · ' + SP.t('sj.hasNotes') : '')) + '</small></span>' + SP.icon('chevron-right', 'sj-chev') + '</button>';
       if (!selMode) return btn;
       return '<div class="sj-item-wrap"><label class="check"><input type="checkbox" data-selsub="' + esc(s.id) + '"' + (selSet[s.id] ? ' checked' : '') + ' aria-label="' + esc(SP.t('subjects.selectOne', { name: SP.hub.cleanName(s.name) })) + '"></label>' + btn + '</div>';
     }).join('') : '<p class="subtle small sj-none">' + esc(SP.t('subjects.notFound')) + '</p>') + '</nav>';
+    /* «Выбрать» и «Добавить предмет» — под списком, прилипают к низу колонки */
+    var d2 = data();
+    h += '<div class="sj-list-foot"><button type="button" class="btn" id="sjSelect" aria-pressed="' + selMode + '">' + SP.icon(selMode ? 'x' : 'square-check-big') + '<span>' + esc(SP.t(selMode ? 'subjects.selDone' : 'subjects.select')) + '</span></button>' +
+      '<button type="button" class="btn btn-primary" id="sjAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('subjects.add')) + '</span></button>' +
+      (Object.keys(d2.removed || {}).length ? '<button type="button" class="btn btn-ghost btn-sm sj-restore" id="sjRestore">' + SP.icon('undo-2') + '<span>' + esc(SP.t('subjects.restoreRemoved')) + '</span></button>' : '') + '</div>';
     return h + '</aside>';
   }
 
@@ -93,21 +95,23 @@
       '<div class="grow"><h2 class="sj-title">' + esc(s.name) + '</h2><div class="card-sub">' + esc([s.code, s.teacher].filter(Boolean).join(' · ') || SP.t('subjects.noTeacher')) + '</div></div></div>' +
       '<div class="row">' + (s.base ? '<span class="badge">' + SP.icon(s.base === 'timetable' ? 'cloud' : 'users') + esc(SP.t(s.base === 'timetable' ? 'subjects.fromTt' : 'subjects.fromCourse')) + '</span>' : '') +
       '<button type="button" class="btn btn-ghost btn-icon" id="sjEdit" aria-label="' + esc(SP.t('subjects.edit')) + '" data-tip="' + esc(SP.t('subjects.edit')) + '">' + SP.icon('pencil') + '</button></div></div>' +
-      /* Папка одной страницей: Файлы → Тесты → Лекции (конспект) → Мои заметки */
-      '<div class="sj-blocks">' +
-      '<section class="sj-sec"><div class="sj-sec-h"><h3>' + SP.icon('folder-open', 'ic-sm') + esc(SP.t('sj.files')) + (mats.length ? '<span class="count">' + mats.length + '</span>' : '') + '</h3>' +
-      '<div class="row"><button type="button" class="btn btn-sm" id="sjUpMat">' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('sj.upload')) + '</span></button>' +
-      '<button type="button" class="btn btn-sm" id="sjAddLink">' + SP.icon('link', 'ic-sm') + '<span>' + esc(SP.t('subjects.addLink')) + '</span></button></div></div>' +
-      (mats.length ? listHtml(s, 'material') : '<p class="subtle small">' + esc(SP.t('subjects.noMat')) + '</p>') + '</section>' +
-      '<section class="sj-sec"><div class="sj-sec-h"><h3>' + SP.icon('list-checks', 'ic-sm') + esc(SP.t('subjects.tests')) + (tests.length ? '<span class="count">' + tests.length + '</span>' : '') + '</h3>' +
-      '<div class="row"><button type="button" class="btn btn-sm" id="sjUpTest">' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('sj.upload')) + '</span></button></div></div>' +
-      (tests.length ? listHtml(s, 'test') : '<p class="subtle small">' + esc(SP.t('subjects.noTests')) + '</p>') + '</section>' +
-      '<section class="sj-sec" id="sjLecs" hidden><div class="sj-sec-h"><h3>' + SP.icon('book-open', 'ic-sm') + esc(SP.t('sj.lectures')) + '</h3></div><div class="sj-lecs"></div></section>' +
-      '<details class="sj-sec sj-mynotes"' + (s.notes ? ' open' : '') + '><summary><h3>' + SP.icon('square-pen', 'ic-sm') + esc(SP.t('sj.myNotes')) + '</h3>' + SP.icon('chevron-down', 'ic-sm sj-chev2') + '</summary>' +
-      '<div class="field"><textarea class="textarea" id="sjNotes" rows="6" aria-label="' + esc(SP.t('sj.myNotes')) + '" placeholder="' + esc(SP.t('subjects.notesPh')) + '">' + esc(s.notes) + '</textarea>' +
-      '<span class="hint" id="sjNoteSt" aria-live="polite">' + esc(SP.t('subjects.notesAuto')) + '</span></div></details>' +
-      '</div>';
-    return h + '</section>';
+      /* Вкладки папки: Файлы и ссылки · Тесты · Конспект (если он есть у предмета) */
+      '';
+    var kn = SP.notes && SP.notes.has(s.name);
+    if (tab === 'konspekt' && !kn) tab = 'materials';
+    h += '<div class="tabs sj-tabs" role="tablist">' + tabBtn('materials', 'folder-open', SP.t('sj.files'), mats.length) + tabBtn('tests', 'list-checks', SP.t('subjects.tests'), tests.length) +
+      (kn ? tabBtn('konspekt', 'book-open', SP.t('sj.konspekt'), null) : '') + '</div><div class="sj-tab" role="tabpanel">';
+    if (tab === 'materials') {
+      h += '<div class="row sj-tab-acts"><button type="button" class="btn btn-sm" id="sjUpMat">' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('sj.upload')) + '</span></button>' +
+        '<button type="button" class="btn btn-sm" id="sjAddLink">' + SP.icon('link', 'ic-sm') + '<span>' + esc(SP.t('subjects.addLink')) + '</span></button></div>' +
+        (mats.length ? listHtml(s, 'material') : '<p class="subtle small">' + esc(SP.t('subjects.noMat')) + '</p>');
+    } else if (tab === 'tests') {
+      h += '<div class="row sj-tab-acts"><button type="button" class="btn btn-sm" id="sjUpTest">' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('sj.upload')) + '</span></button></div>' +
+        (tests.length ? listHtml(s, 'test') : '<p class="subtle small">' + esc(SP.t('subjects.noTests')) + '</p>');
+    } else {
+      h += '<div id="sjLecs"><p class="muted small">' + SP.icon('loader-circle', 'spin') + ' ' + esc(SP.t('notes.loading')) + '</p></div>';
+    }
+    return h + '</div></section>';
   }
   /* Лекции конспекта этого предмета: продолжить + список с отметками прогресса */
   function fillLectures(s) {
@@ -127,10 +131,18 @@
           return '<a class="sj-lec" href="' + esc(SP.notes.href(meta, li)) + '"><span class="sj-lnum' + (st.read >= 97 ? ' done' : '') + '">' + esc(num.length > 3 ? li + 1 : num) + '</span>' +
             '<span class="meta"><b>' + esc(lec.title) + '</b><small>' + esc(lec.label) + '</small>' + (chips.length ? '<span class="chips-s">' + chips.join('') + '</span>' : '') + '</span>' + SP.icon('chevron-right', 'sj-chev') + '</a>';
         }).join('');
-        var cont = '<a class="sj-cont" href="' + esc(SP.notes.href(meta, cl == null ? 0 : cl)) + '"><span class="grow"><small>' + esc(SP.t(cl == null ? 'sj.start' : 'sj.continue')) + '</small><b>' + esc(d.lectures[cl == null ? 0 : cl].label + ' · ' + d.lectures[cl == null ? 0 : cl].title) + '</b></span>' + SP.icon('arrow-right') + '</a>';
-        return (list.length > 1 ? '<div class="sj-doc-t">' + esc(meta.short || meta.subject) + '</div>' : '') + cont + '<div class="sj-lec-list">' + rows + '</div>';
+        /* свёрнутая строка: название конспекта, общий прогресс и «Продолжить»; нажал — раскрылся список лекций */
+        var stats = d.lectures.map(function (lec) { return SP.notes.lecStats(meta, d, lec); });
+        var nRead = stats.filter(function (x) { return x.read >= 97; }).length, nT = stats.filter(function (x) { return x.tests; }).length, nTd = stats.filter(function (x) { return x.best != null; }).length;
+        var ci = cl == null ? 0 : cl, open = !!(SP.store.get('sp-sj-konsp-open', {}) || {})[meta.id];
+        return '<details class="sj-konsp" data-kid="' + esc(meta.id) + '"' + (open ? ' open' : '') + '><summary>' +
+          '<span class="sj-k-ic">' + SP.icon('book-open') + '</span><span class="meta"><b>' + esc(SP.t('sj.konspekt') + ' · ' + (meta.short || meta.subject) + ' — ' + SP.t('sj.nLec', { n: d.lectures.length })) + '</b>' +
+          '<small>' + esc(SP.t('sj.kProg', { r: nRead, n: d.lectures.length }) + (nT ? ' · ' + SP.t('sj.kTests', { a: nTd, n: nT }) : '')) + '</small></span>' +
+          '<a class="btn btn-primary btn-sm sj-k-go" href="' + esc(SP.notes.href(meta, ci)) + '">' + esc(SP.t(cl == null ? 'sj.start' : 'sj.continue') + ': ' + d.lectures[ci].label) + SP.icon('arrow-right', 'ic-sm') + '</a>' +
+          SP.icon('chevron-down', 'sj-k-chev') + '</summary><div class="sj-lec-list">' + rows + '</div></details>';
       }).join('');
-      SP.$('.sj-lecs', box).innerHTML = html; box.hidden = false;
+      box.innerHTML = html;
+      SP.$$('.sj-konsp', box).forEach(function (dt) { dt.addEventListener('toggle', function () { var o = SP.store.get('sp-sj-konsp-open', {}) || {}; o[dt.getAttribute('data-kid')] = dt.open; SP.store.set('sp-sj-konsp-open', o); }); });
     });
   }
   function lessonsBlock(s) {
@@ -156,11 +168,12 @@
     var meta = link ? li.label + (f.note ? ' · ' + f.note : '') : (f.size ? SP.formatSize(f.size) : '');
     var badge = link ? '<span class="file-badge accent">' + SP.icon(li.icon) + '</span>' : SP.fileIcon(f.name);
     var inner = badge + '<span class="meta"><b>' + (isPin(f) ? SP.icon('pin', 'ic-sm pin-ic') + ' ' : '') + esc(f.name) + '</b><small>' + esc(meta) + '</small></span>';
+    /* значок «от курса» в строке не показываем — лишний шум */
     var main = link ? '<a class="list-row-main" href="' + esc(f.url) + '" target="_blank" rel="noopener noreferrer">' + inner + SP.icon('external-link', 'ic-sm subtle') + '</a>'
       : '<button type="button" class="list-row-main" data-open="' + type + ':' + i + '">' + inner + '</button>';
     var pos = ord.indexOf(i), same = function (j) { return j !== undefined && isPin(listOf(s, type)[j]) === isPin(f); };
     return '<div class="list-row' + (isPin(f) ? ' pinned' : '') + (hid ? ' is-hidden' : '') + '">' + main +
-      (hid ? '<span class="badge">' + SP.icon('eye-off') + esc(SP.t('subjects.hiddenBadge')) + '</span>' : f.base ? '<span class="badge" title="' + esc(SP.t('subjects.courseFileTip')) + '">' + esc(SP.t('subjects.courseFile')) + '</span>' : '') +
+      (hid ? '<span class="badge">' + SP.icon('eye-off') + esc(SP.t('subjects.hiddenBadge')) + '</span>' : '') +
       (type === 'test' ? '<button type="button" class="btn btn-soft btn-sm" data-run="' + i + '">' + SP.icon('play') + '<span>' + esc(SP.t('subjects.runTest')) + '</span></button>' : '') +
       '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-mv="' + type + ':' + i + ':-1"' + (same(ord[pos - 1]) ? '' : ' disabled') + ' aria-label="' + esc(SP.t('subjects.moveUp')) + '" data-tip="' + esc(SP.t('subjects.moveUp')) + '">' + SP.icon('arrow-up') + '</button>' +
       '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-mv="' + type + ':' + i + ':1"' + (same(ord[pos + 1]) ? '' : ' disabled') + ' aria-label="' + esc(SP.t('subjects.moveDown')) + '" data-tip="' + esc(SP.t('subjects.moveDown')) + '">' + SP.icon('arrow-down') + '</button>' +
@@ -193,7 +206,7 @@
     SP.$$('[data-sub]', root).forEach(function (b) { b.onclick = function () { SP.navigate('subjects', [b.getAttribute('data-sub')]); }; });
     var bk = q('#sjBack'); if (bk) bk.onclick = function () { selected = null; SP.navigate('subjects'); };
     if (!s) return;
-    fillLectures(s);
+    if (tab === 'konspekt') fillLectures(s);
     q('#sjEdit').onclick = function () { editor(s); };
     var tl = q('#sjToggleList'); if (tl) tl.onclick = function () { sui.collapsed = !sui.collapsed; saveSui(); render(); var n = SP.$('#sjToggleList', root); if (n) n.focus(); };
     var shh = q('#sjShowHidden'); if (shh) shh.onclick = function () { showHidden = !showHidden; render(); };
@@ -430,6 +443,7 @@
     refresh: render
   });
   SP.on('hub', function () { if (root && SP.views.current() === 'subjects') render(); });
+  SP.on('notes-index', function () { if (root && SP.views.current() === 'subjects') render(); });
   /* перерисовываем только при переходе через ширину 900px (клавиатура телефона тоже меняет размер окна) */
   var wasNarrow = window.innerWidth < 900;
   window.addEventListener('resize', SP.debounce(function () {

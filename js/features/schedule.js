@@ -236,9 +236,12 @@
   }
 
   /* Телефон, режим Shokan: экран начинается сразу с «День / Неделя», как в приложении (переключатели — выше, если пролистать вверх) */
+  /* ПК, режим Timetable: страница сразу прокручена к таблице — строка с днями вверху экрана, как на сайте Timetable */
   function toShk() {
-    if (ui.mode !== 'shokan' || window.innerWidth >= 768) return;
-    var e = SP.$('.shk', root); if (!e) return;
+    var e = null;
+    if (ui.mode === 'shokan' && window.innerWidth < 768) e = SP.$('.shk', root);
+    else if (ui.mode !== 'shokan' && window.innerWidth >= 768) e = SP.$('.tt-scroll', root);
+    if (!e) return;
     requestAnimationFrame(function () { e.scrollIntoView({ block: 'start' }); });
   }
   function wire() {
@@ -333,11 +336,17 @@
 
   SP.views.register('schedule', {
     titleKey: 'nav.schedule',
-    mount: function (el) { root = el; render(); setTimeout(toShk, 60); },
-    show: function () { render(); toShk(); SP.hub.checkUpdate(); },
+    mount: function (el) { root = el; autoScroll = Date.now(); render(); setTimeout(toShk, 60); },
+    show: function () { autoScroll = Date.now(); render(); toShk(); SP.hub.checkUpdate(); },
     refresh: render
   });
-  SP.on('hub', function () { if (root && SP.views.current() === 'schedule') render(); });
+  /* расписание догрузилось после открытия — один раз прокручиваем к таблице, если человек ещё не листал сам */
+  var autoScroll = 0;
+  SP.on('hub', function () {
+    if (!root || SP.views.current() !== 'schedule') return;
+    render();
+    if (Date.now() - autoScroll < 4000 && window.scrollY < 40) toShk();
+  });
   SP.on('hub-update', function () { updDismissed = false; if (root && SP.views.current() === 'schedule') render(); });
   SP.on('settings', function (e) { if (e.key === 'theme' && root && SP.views.current() === 'schedule') render(); });
 })();

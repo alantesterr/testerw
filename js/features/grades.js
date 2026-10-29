@@ -67,7 +67,11 @@
     syncJournal();
     var st = jState();
     var h = '<div class="btn-group jr-bar"><button type="button" class="btn" id="jrHow">' + SP.icon('circle-help') + '<span>' + esc(SP.t('jr.how')) + '</span></button>' +
-      '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div>';
+      '<button type="button" class="btn" id="jrPl">' + SP.icon('upload') + '<span>' + esc(SP.t('jr.plLoad')) + '</span></button>' +
+      '<input type="file" id="jrPlFile" accept=".json,application/json,text/plain" hidden>' +
+      '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div>' +
+      (st.plAt ? '<p class="small muted jr-pl-at">' + SP.icon('clock', 'ic-sm') + '<span>' + esc(SP.t('jr.plAt', { d: fmtTaken(st.plAt) })) + '</span>' +
+        '<button type="button" class="link-btn" id="jrPlHow">' + esc(SP.t('jr.plHow')) + '</button></p>' : '');
     if (!st.items.length) {
       return h + '<section class="card"><div class="empty">' + SP.icon('graduation-cap', 'ic-xl') + '<h3>' + esc(SP.t('jr.emptyTitle')) + '</h3><p>' + esc(SP.t('jr.emptyText')) + '</p></div></section>';
     }
@@ -107,8 +111,76 @@
       /* Нет ни одного РК — пустое место под строку, чтобы все карточки были одной высоты */
       (v.r1 == null && v.r2 == null ? ring(SP.t('jr.rk1'), null).replace('class="jr-ring"', 'class="jr-ring jr-ph" aria-hidden="true"') : '') + '</div>' +
       /* подсказка; если её нет — пустое место той же высоты */
-      '<p class="small jr-hint ' + hn.cls + (hn.text ? '' : ' jr-ph') + '"' + (hn.text ? '' : ' aria-hidden="true"') + '>' + SP.icon('info', 'ic-sm') + '<span>' + esc(hn.text || '—') + '</span></p></article>';
+      '<p class="small jr-hint ' + hn.cls + (hn.text ? '' : ' jr-ph') + '"' + (hn.text ? '' : ' aria-hidden="true"') + '>' + SP.icon('info', 'ic-sm') + '<span>' + esc(hn.text || '—') + '</span></p>' + plHtml(it) + '</article>';
   }
+  /* ---------- Оценки из файла программы «Мои оценки» (Platonus) ---------- */
+  function fmtTaken(s) {
+    var d = new Date(s); if (isNaN(d)) return String(s);
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function ddmm(s) { var m = /^(\d{4})-(\d\d)-(\d\d)/.exec(s || ''); return m ? m[3] + '.' + m[2] : String(s || ''); }
+  /* Под карточкой: текущие оценки с датами и то, что не число (например «Экз.: Допуск») */
+  function plHtml(it) {
+    var pl = it.pl; if (!pl) return '';
+    var cur = pl.current || [], notes = Object.keys(pl.exams || {}).filter(function (k) { var v = pl.exams[k]; return v && v !== '-' && num(v) == null; })
+      .map(function (k) { return k + ' ' + pl.exams[k]; });
+    if (!cur.length && !notes.length) return '';
+    var items = cur.map(function (c) {
+      var n = num(c.mark), t = n == null ? '' : tone(n);
+      return '<li class="mark ' + t + '" title="' + esc(c.type || '') + '"><span>' + esc(ddmm(c.date)) + '</span><b>' + esc(c.mark) + '</b></li>';
+    }).join('');
+    return '<details class="jr-pl"><summary>' + SP.icon('chevron-right', 'ic-sm') + '<span>' + esc(SP.t('jr.plCur', { n: cur.length })) + '</span>' +
+      (notes.length ? '<em>' + esc(notes.join(' · ')) + '</em>' : '') + '</summary>' + (items ? '<ul class="jr-pl-list">' + items + '</ul>' : '') + '</details>';
+  }
+  function normName(s) { return SP.lc(String(s || '')).replace(/ё/g, 'е').replace(/[^a-zа-яәіңғүұқөһ0-9+#]+/gi, ' ').trim(); }
+  /* Ищем карточку с тем же предметом: точное совпадение, потом «одно содержит другое», потом общие слова */
+  function findItem(st, name) {
+    var n = normName(name); if (!n) return null;
+    var best = null, score = 0;
+    st.items.forEach(function (it) {
+      var m = normName(it.name); if (!m) return;
+      var s = m === n ? 3 : (m.length >= 5 && n.indexOf(m) >= 0) || (n.length >= 5 && m.indexOf(n) >= 0) ? 2 : 0;
+      if (!s) {
+        var a = n.split(' ').filter(function (w) { return w.length > 2; }), b = m.split(' ').filter(function (w) { return w.length > 2; });
+        var common = a.filter(function (w) { return b.indexOf(w) >= 0; }).length, min = Math.min(a.length, b.length);
+        if (min && common / min >= 0.6) s = 1 + common / 10;
+      }
+      if (s > score) { score = s; best = it; }
+    });
+    return best;
+  }
+  function examOf(ex) {
+    var keys = Object.keys(ex);
+    var k = keys.filter(function (x) { return /^экз|^дз$|^емтихан|^exam/i.test(x.trim()); })[0];
+    return k ? num(ex[k]) : null;
+  }
+  function importPlatonus(data) {
+    if (!data || data.format !== 'studyplay-grades' || !data.subjects) throw new Error('format');
+    var subs = Array.isArray(data.subjects) ? data.subjects : [data.subjects];
+    var st = jState(), upd = 0, added = 0;
+    st.hidden = st.hidden || [];
+    subs.forEach(function (s) {
+      var name = String(s.subject || '').trim(); if (!name) return;
+      var ex = s.exams || {}, cur = s.current ? (Array.isArray(s.current) ? s.current : [s.current]) : [];
+      var it = findItem(st, name);
+      if (!it) {
+        it = { id: SP.uid('j'), name: name, teachers: '', mode: 'list', grades: [], cur: null, rk1: null, rk2: null, exam: null };
+        st.items.push(it); added++;
+        st.hidden = st.hidden.filter(function (h) { return SP.lc(h) !== SP.lc(name); });
+      } else upd++;
+      var c = num(ex['Ср.тек.']);
+      if (c != null) { it.mode = 'avg'; it.cur = c; }
+      it.rk1 = num(ex['РК 1']); it.rk2 = num(ex['РК 2']); it.exam = examOf(ex);
+      if (!it.teachers && s.tutor) it.teachers = String(s.tutor);
+      var keep = {}; Object.keys(ex).forEach(function (k) { if (ex[k] !== '' && ex[k] != null) keep[k] = String(ex[k]); });
+      it.pl = { at: data.taken, exams: keep, current: cur.filter(function (x) { return x && x.date; }).map(function (x) { return { type: String(x.type || ''), date: String(x.date), mark: String(x.mark == null ? '' : x.mark) }; }) };
+    });
+    st.plAt = data.taken || new Date().toISOString();
+    jSave(st);
+    return { upd: upd, added: added };
+  }
+  function plHow() { SP.modal({ title: SP.t('jr.plHowTitle'), size: 'lg', body: SP.t('jr.plHowHtml') }); }
   function editCard(it) {
     var f = function (k, label, val, full, type) {
       return '<div class="field' + (full ? ' full' : '') + '"><label class="label" for="je-' + k + '">' + esc(label) + '</label><input class="input" id="je-' + k + '" data-k="' + k + '"' + (type === 'num' ? ' inputmode="decimal" placeholder="0–100"' : '') + ' value="' + esc(val == null ? '' : val) + '"></div>';
@@ -158,7 +230,7 @@
   function dragCards() {
     var grid = SP.$('.jr-grid', root); if (!grid || editing) return;
     var drag = null, timer = 0;
-    var skip = function (t) { return t.closest('button, a, input, textarea, select, label'); };
+    var skip = function (t) { return t.closest('button, a, input, textarea, select, label, summary, .jr-pl-list'); };
     function begin(card) {
       drag.on = true; card.classList.add('jr-dragging'); grid.classList.add('jr-sorting');
       if (drag.touch && navigator.vibrate) { try { navigator.vibrate(15); } catch (e) { /* без вибрации */ } }
@@ -221,6 +293,33 @@
         upsert(st, nm, { teachers: sj ? sj.teacher || '' : '' }); jSave(st); m.close(); render(); SP.toast(SP.t('jr.restored', { name: nm }), 'success');
       }; });
     });
+    on('#jrPl', function () {
+      var st = jState();
+      /* Первый раз — сначала короткая инструкция, откуда взять файл */
+      if (!st.plAt && !SP.store.get('sp-pl-seen', false)) {
+        SP.store.set('sp-pl-seen', true);
+        var m = SP.modal({ title: SP.t('jr.plHowTitle'), size: 'lg', body: SP.t('jr.plHowHtml') + '<div class="row" style="justify-content:flex-end;margin-top:var(--sp-4)"><button type="button" class="btn btn-primary" data-plpick>' + SP.icon('upload') + '<span>' + esc(SP.t('jr.plPick')) + '</span></button></div>' });
+        var b = SP.$('[data-plpick]', m.el); if (b) b.onclick = function () { m.close(); $('#jrPlFile').click(); };
+        return;
+      }
+      $('#jrPlFile').click();
+    });
+    on('#jrPlHow', plHow);
+    var fileIn = $('#jrPlFile');
+    if (fileIn) fileIn.onchange = function () {
+      var f = fileIn.files && fileIn.files[0]; if (!f) return;
+      var r = new FileReader();
+      r.onload = function () {
+        try {
+          var res = importPlatonus(JSON.parse(String(r.result).replace(/^﻿/, '')));
+          editing = null; render();
+          SP.toast(SP.t('jr.plDone', { n: res.upd + res.added }) + (res.added ? ' ' + SP.t('jr.plAdded', { n: res.added }) : ''), 'success');
+        } catch (e) { SP.toast(SP.t('jr.plBad'), 'danger'); }
+      };
+      r.onerror = function () { SP.toast(SP.t('jr.plBad'), 'danger'); };
+      r.readAsText(f, 'utf-8');
+      fileIn.value = '';
+    };
     on('#jrHow', function () { SP.modal({ title: SP.t('jr.how'), size: 'lg', body: SP.t('jr.howHtml') }); });
     SP.$$('[data-edit]', root).forEach(function (b) { b.onclick = function () { editing = b.getAttribute('data-edit'); render(); var i = $('#je-newg') || $('#je-cur'); if (i) i.focus(); }; });
     /* Правка на месте: каждое поле сохраняется сразу, расчёт обновляется */

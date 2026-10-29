@@ -466,3 +466,13 @@ Object.assign(SP.I18N.en, {
 });Object.assign(SP.I18N.en, { 'lx.zoom': 'Zoomed fragment' });
 Object.assign(SP.I18N.en, { 'lx.hide': 'Hide' });
 Object.assign(SP.I18N.en, { 'sj.itemMeta': 'Files: {m} · tests: {t}', 'sj.hasNotes': 'notes', 'sj.konspekt': 'Notes', 'sj.nLec': '{n} lectures', 'sj.kProg': 'read {r} of {n}', 'sj.kTests': 'tests {a} of {n}' });
+
+Object.assign(SP.I18N.en, { 'jr.plLoad': 'Load from Platonus', 'jr.plPick': 'Choose file', 'jr.plAt': 'From Platonus: {d}', 'jr.plHow': 'How to update?',
+  'jr.plCur': 'Current marks: {n}', 'jr.plDone': 'Grades updated, subjects: {n}.', 'jr.plAdded': 'New cards: {n}.',
+  'jr.plBad': 'This is not a grades file. Choose the file saved with “Save for StudyPlay”.',
+  'jr.plHowTitle': 'Grades from Platonus',
+  'jr.plHowHtml': '<p>The site never asks for your Platonus password. The “My grades” program on your computer fetches the grades, and you upload the ready file here.</p>' +
+    '<ol class="jr-steps"><li>Run the “My grades” program and press <b>“Get grades”</b>.</li><li>Press <b>“Save for StudyPlay”</b>. The file is saved to the desktop.</li>' +
+    '<li>Here, press <b>“Load from Platonus”</b> and choose that file.</li></ol>' +
+    '<p><b>On a phone:</b> send the file to yourself in Telegram, save it to the phone and choose it here.</p>' +
+    '<p class="small muted">Midterm 1, Midterm 2, exam and current average fill the cards; dated current marks appear under the rings. The file holds only grades: no login or password.</p>' });

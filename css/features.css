@@ -942,3 +942,21 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 .jr-grid .jr-card .jr-edit, .jr-grid .jr-card input { -webkit-user-select: text; user-select: text; cursor: auto; }
 .jr-grid.jr-sorting .jr-card { transition: transform .15s ease; }
 .jr-card.jr-dragging { cursor: grabbing; opacity: .75; transform: scale(1.02); box-shadow: 0 12px 30px rgb(0 0 0 / .35); outline: 2px solid var(--accent); z-index: 5; position: relative; }
+/* Оценки из Platonus (файл программы «Мои оценки») */
+.jr-pl-at { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: calc(-1 * var(--sp-2)) 0 var(--sp-3); justify-content: flex-end; }
+.jr-pl { margin-top: var(--sp-3); border-top: 1px solid var(--border); padding-top: var(--sp-2); }
+.jr-pl > summary { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; cursor: pointer; list-style: none; font-size: 0.875rem; color: var(--text-2); min-height: 32px; }
+.jr-pl > summary::-webkit-details-marker { display: none; }
+.jr-pl > summary .ic { transition: transform .15s; flex: none; }
+.jr-pl[open] > summary .ic { transform: rotate(90deg); }
+.jr-pl > summary em { font-style: normal; color: var(--text-3); margin-left: auto; }
+.jr-pl-list { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.jr-pl-list .mark { display: inline-flex; flex-direction: column; align-items: center; gap: 0; padding: 4px 8px; min-width: 52px; line-height: 1.15; cursor: default; }
+.jr-pl-list .mark span { font-size: 0.6875rem; opacity: .75; }
+.jr-pl-list .mark b { font-size: 0.9375rem; }
+.jr-steps { padding-left: 1.25rem; display: grid; gap: 6px; }
+@media (max-width: 767px) {
+  .jr-pl > summary { font-size: 0.8125rem; }
+  .jr-pl-list .mark { min-width: 46px; padding: 3px 6px; }
+  .jr-pl-at { justify-content: flex-start; }
+}

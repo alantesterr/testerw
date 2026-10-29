@@ -497,3 +497,4 @@ Object.assign(SP.I18N.kk, { 'jr.csvSubject': 'Пән' });
 
 Object.assign(SP.I18N.kk, { 'settings.plAuto': 'Platonus-тан автожаңарту', 'settings.min': 'мин',
   'settings.plAutoHint': 'Сайт ашық тұрғанда әр N минут сайын және ашқанда бірден «Platonus-тан жаңарту» өзі басылады. 0 — өшірулі. Браузер әр жолы сұрамауы үшін «Қолданбаны ашу?» терезесінде «Әрқашан рұқсат ету» белгілеңіз.' });
+Object.assign(SP.I18N.kk, { 'jr.plBusy': 'Platonus бағалары жаңартылуда…' });

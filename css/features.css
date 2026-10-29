@@ -960,3 +960,13 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
   .jr-pl-list .mark { min-width: 46px; padding: 3px 6px; }
   .jr-pl-at { justify-content: flex-start; }
 }
+/* Значок «обновляю оценки из Platonus» — справа снизу, пару секунд крутится */
+.pl-busy { position: fixed; right: var(--sp-4); bottom: var(--sp-4); z-index: calc(var(--z-toast) - 1); width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-md); color: var(--accent-text);
+  opacity: 0; transform: scale(.8); pointer-events: none; transition: opacity .25s, transform .25s; }
+.pl-busy.on { opacity: 1; transform: none; }
+.pl-busy .ic { width: 18px; height: 18px; }
+.pl-busy.on .ic { animation: pl-spin 1s linear infinite; }
+@keyframes pl-spin { to { transform: rotate(360deg); } }
+@media (max-width: 767px) { .pl-busy { bottom: calc(5rem + env(safe-area-inset-bottom)); left: var(--sp-3); right: auto; } }
+@media (prefers-reduced-motion: reduce) { .pl-busy.on .ic { animation-duration: 3s; } }

@@ -472,11 +472,30 @@
     var a = document.createElement('a'); a.href = PREFIX + 'run'; a.style.display = 'none';
     document.body.appendChild(a); a.click(); a.remove();
     if (!quiet) SP.toast(SP.t('jr.plRunToast'), 'info', { html: false });
+    busy(true);
     waitUntil = Date.now() + 5 * 60 * 1000; clipWarned = false;
     clearInterval(waitTimer); waitTimer = setInterval(checkClip, 1500);
   }
+  /* Маленький крутящийся значок справа снизу, пока идёт обновление (не меньше 2 секунд, не дольше минуты) */
+  var busyEl = null, busyAt = 0, busyMax = null;
+  function busy(on) {
+    clearTimeout(busyMax);
+    if (on) {
+      if (!busyEl) {
+        busyEl = document.createElement('div'); busyEl.className = 'pl-busy'; busyEl.setAttribute('role', 'status');
+        busyEl.innerHTML = SP.icon('refresh-cw') + '<span class="sr-only">' + esc(SP.t('jr.plBusy')) + '</span>';
+        busyEl.title = SP.t('jr.plBusy');
+        document.body.appendChild(busyEl);
+      }
+      busyAt = Date.now(); busyEl.classList.add('on');
+      busyMax = setTimeout(function () { busy(false); }, 60000);
+    } else if (busyEl) {
+      var el = busyEl;
+      setTimeout(function () { el.classList.remove('on'); }, Math.max(0, 2000 - (Date.now() - busyAt)));
+    }
+  }
   function checkClip() {
-    if (!waitUntil || Date.now() > waitUntil) { waitUntil = 0; clearInterval(waitTimer); return; }
+    if (!waitUntil || Date.now() > waitUntil) { waitUntil = 0; clearInterval(waitTimer); busy(false); return; }
     if (!document.hasFocus() || !navigator.clipboard || !navigator.clipboard.readText) return;
     navigator.clipboard.readText().then(function (t) {
       t = String(t || '').trim(); if (!waitUntil || t.indexOf(PREFIX) !== 0) return;
@@ -484,6 +503,7 @@
       return fromLink(t.slice(PREFIX.length)).then(function (d) {
         var res = importPlatonus(d); editing = null; render();
         /* без сообщения «обновлено» — оценки просто меняются */ void res;
+        busy(false);
         try { navigator.clipboard.writeText(''); } catch (e) { /* ничего */ }
       });
     }).catch(function () {

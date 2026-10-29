@@ -930,3 +930,4 @@ Object.assign(SP.I18N.ru, { 'jr.csvSubject': 'Предмет' });
 
 Object.assign(SP.I18N.ru, { 'settings.plAuto': 'Автообновление из Platonus', 'settings.min': 'мин',
   'settings.plAutoHint': 'Каждые N минут, пока сайт открыт, и сразу при открытии сайт сам нажимает «Обновить из Platonus». 0 — выключено. Чтобы браузер не спрашивал каждый раз, поставьте «Всегда разрешать» в окне «Открыть приложение?». Слишком часто не стоит: Platonus может временно заблокировать вход.' });
+Object.assign(SP.I18N.ru, { 'jr.plBusy': 'Обновляю оценки из Platonus…' });

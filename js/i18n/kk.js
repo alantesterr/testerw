@@ -505,3 +505,7 @@ Object.assign(SP.I18N.kk, { 'settings.plHideHint': '«Platonus-тан жаңар
 Object.assign(SP.I18N.kk, { 'jr.more': 'Тағы' });
 
 Object.assign(SP.I18N.kk, { 'jr.plCool': 'Күту: тағы {s} сек. Platonus-тан минутына бір реттен жиі жаңартуға болмайды — бұғаттаудан қорғаныс.' });
+Object.assign(SP.I18N.kk, { 'jr.plNightTitle': 'Platonus түнгі үзілісі', 'jr.plNightGo': 'Бәрібір көру',
+  'jr.plNightText': 'Platonus әдетте түнде жұмыс істемейді — шамамен 23:00-ден 7:00-ге дейін. Қазір бағаларды жаңарту мүмкін болмауы ықтимал.',
+  'settings.plAutoHint': 'Сайт ашық тұрғанда әр N минут сайын және ашқанда бірден «Platonus-тан жаңарту» өзі басылады. 0 — өшірулі, ең азы 1 минут. Түнде (шамамен 23:00–7:00) Platonus әдетте жұмыс істемейді, сондықтан автожаңарту бұл уақытта үзіліс жасайды.' });
+SP.I18N.kk['jr.plSetupHtml'] = SP.I18N.kk['jr.plSetupHtml'].replace('<p class="small muted">', '<p class="small"><b>Түнгі үзіліс:</b> Platonus әдетте шамамен 23:00-ден 7:00-ге дейін жұмыс істемейді — бұл уақытта бағаларды жаңарту мүмкін емес, автожаңарту таңды күтеді.</p><p class="small muted">');

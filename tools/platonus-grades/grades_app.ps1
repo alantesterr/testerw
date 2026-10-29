@@ -298,6 +298,8 @@ if ($Auto) {
             $script:Result = Fetch-Grades $c0.login $pw0 ([Action[string]]{ param($t) })
             [Windows.Forms.Clipboard]::SetText('studyplay-grades:' + (StudyPlay-B64 $script:Result))
         } catch {
+            # Platonus не отвечает (ночной перерыв ~23:00–7:00, 502 и т. п.) — при запуске с сайта молчим
+            if ($_.Exception.Message -match '\(50[234]\)|шлюз|недоступ|тайм-?аут|timed out|соедин|connect|resolve|разреш') { return }
             $top0 = New-Object Windows.Forms.Form; $top0.TopMost = $true   # чтобы сообщение не спряталось за браузер
             [Windows.Forms.MessageBox]::Show($top0, "Не удалось получить оценки: $($_.Exception.Message)", 'Мои оценки', 'OK', 'Warning') | Out-Null
         }
@@ -397,7 +399,11 @@ $btnFetch.Add_Click({
         if ($Auto) { Send-ToSite }
     } catch {
         $lblStatus.Text = 'Ошибка.'
-        [Windows.Forms.MessageBox]::Show($_.Exception.Message, 'Не получилось', 'OK', 'Warning') | Out-Null
+        $msg = $_.Exception.Message
+        if ($msg -match '\(50[234]\)|шлюз|недоступ|тайм-?аут|timed out|соедин|connect|resolve|разреш') {
+            $msg = "Platonus сейчас не отвечает.`n`nОбычно он не работает ночью — примерно с 23:00 до 7:00 (ночной перерыв). Попробуйте позже.`n`n($msg)"
+        }
+        [Windows.Forms.MessageBox]::Show($msg, 'Не получилось', 'OK', 'Warning') | Out-Null
     } finally { $btnFetch.Enabled = $true; $form.Cursor = 'Default' }
 })
 

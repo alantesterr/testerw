@@ -505,3 +505,7 @@ Object.assign(SP.I18N.en, { 'settings.plHideHint': 'The "Update from Platonus" b
 Object.assign(SP.I18N.en, { 'jr.more': 'More' });
 
 Object.assign(SP.I18N.en, { 'jr.plCool': 'Cooldown: {s} s left. Platonus can be updated at most once a minute to avoid a sign-in block.' });
+Object.assign(SP.I18N.en, { 'jr.plNightTitle': 'Platonus night break', 'jr.plNightGo': 'Try anyway',
+  'jr.plNightText': 'Platonus is usually offline at night — roughly 23:00 to 7:00. Updating grades will most likely fail now.',
+  'settings.plAutoHint': 'Every N minutes while the site is open, and right when it opens, the site presses "Update from Platonus" by itself. 0 — off, minimum 1 minute. Platonus is usually offline at night (about 23:00–7:00), so auto-update pauses then. Tick "Always allow" in the "Open application?" prompt so the browser stops asking.' });
+SP.I18N.en['jr.plSetupHtml'] = SP.I18N.en['jr.plSetupHtml'].replace('<p class="small muted">', '<p class="small"><b>Night break:</b> Platonus is usually offline from about 23:00 to 7:00 — grades cannot be updated then; auto-update waits for the morning.</p><p class="small muted">');

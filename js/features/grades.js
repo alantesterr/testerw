@@ -338,6 +338,11 @@
       r.readAsText(f, 'utf-8'); jf.value = '';
     };
     var runClick = function () {
+      /* Ночью Platonus обычно выключен — спросим, пробовать ли всё равно */
+      if (plNight() && SP.store.get('sp-pl-run-ok', false)) {
+        SP.confirm({ title: SP.t('jr.plNightTitle'), text: SP.t('jr.plNightText'), okLabel: SP.t('jr.plNightGo'), icon: 'clock' }).then(function (ok) { if (ok) runProgram(); });
+        return;
+      }
       /* Первый раз — инструкция, как скачать и подключить программу */
       if (SP.store.get('sp-pl-run-ok', false)) return runProgram();
       var m = SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') +
@@ -566,8 +571,10 @@
   var autoTimer = null, autoDue = false;
   function autoMin() { var v = parseFloat(SP.settings.get('plAuto')); return v > 0 ? Math.max(1, v) : 0; }
   function autoOn() { return autoMin() > 0 && !plHidden() && isWinPc(); }
+  /* Ночной перерыв Platonus: обычно не работает примерно с 23:00 до 7:00 */
+  function plNight() { var h = new Date().getHours(); return h >= 23 || h < 7; }
   function autoRun() {
-    if (!autoOn()) return;
+    if (!autoOn() || plNight()) return;
     if (document.visibilityState !== 'visible' || editing) { autoDue = true; return; }
     if (waitUntil) return;              /* прошлое обновление ещё не пришло */
     autoDue = false; runProgram(true);

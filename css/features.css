@@ -936,3 +936,9 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 }
 /* тест в конспекте: без сетки номеров вопросов — занимает много места (в Тестере она остаётся) */
 .lx-test .qn-list { display: none; }
+
+/* Оценки: перетаскивание карточек */
+.jr-grid .jr-card[data-id] { cursor: grab; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.jr-grid .jr-card .jr-edit, .jr-grid .jr-card input { -webkit-user-select: text; user-select: text; cursor: auto; }
+.jr-grid.jr-sorting .jr-card { transition: transform .15s ease; }
+.jr-card.jr-dragging { cursor: grabbing; opacity: .75; transform: scale(1.02); box-shadow: 0 12px 30px rgb(0 0 0 / .35); outline: 2px solid var(--accent); z-index: 5; position: relative; }

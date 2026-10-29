@@ -150,7 +150,61 @@
     root.innerHTML = '<div class="page">' + html + '</div>';
     wire();
   }
-  function wire() { wireJournal(); }
+  function wire() { wireJournal(); dragCards(); }
+
+  /* Перетаскивание карточек предметов: на ПК — зажать мышью и тащить,
+     на телефоне — подержать палец ~0,4 с (лёгкая вибрация) и тащить. Порядок сохраняется. */
+  var dragWin = {};
+  function dragCards() {
+    var grid = SP.$('.jr-grid', root); if (!grid || editing) return;
+    var drag = null, timer = 0;
+    var skip = function (t) { return t.closest('button, a, input, textarea, select, label'); };
+    function begin(card) {
+      drag.on = true; card.classList.add('jr-dragging'); grid.classList.add('jr-sorting');
+      if (drag.touch && navigator.vibrate) { try { navigator.vibrate(15); } catch (e) { /* без вибрации */ } }
+    }
+    function moveTo(x, y) {
+      var el = document.elementFromPoint(x, y), over = el && el.closest('.jr-card[data-id]');
+      if (!over || over === drag.card || over.parentNode !== grid) return;
+      var r = over.getBoundingClientRect(), after = (y > r.top + r.height / 2) || (Math.abs(y - (r.top + r.height / 2)) < r.height / 4 && x > r.left + r.width / 2);
+      grid.insertBefore(drag.card, after ? over.nextSibling : over);
+    }
+    function finish() {
+      clearTimeout(timer);
+      if (drag && drag.on) {
+        drag.card.classList.remove('jr-dragging'); grid.classList.remove('jr-sorting');
+        var ids = SP.$$('.jr-card[data-id]', grid).map(function (c) { return c.getAttribute('data-id'); });
+        var st = jState(); st.items.sort(function (a, b) { return ids.indexOf(a.id) - ids.indexOf(b.id); }); jSave(st);
+        drag.block = true; setTimeout(function () { drag = null; }, 0);
+      } else drag = null;
+    }
+    grid.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0 || skip(e.target)) return;
+      var card = e.target.closest('.jr-card[data-id]'); if (!card) return;
+      drag = { card: card, x: e.clientX, y: e.clientY, on: false, touch: e.pointerType !== 'mouse' };
+      if (drag.touch) timer = setTimeout(function () { if (drag && !drag.on) begin(card); }, 400);
+    });
+    /* обработчики окна — одни на весь раздел, работают с текущей сеткой */
+    dragWin.move = function (e) {
+      if (!drag) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y, far = Math.abs(dx) + Math.abs(dy) > 8;
+      if (!drag.on) { if (!drag.touch && far) begin(drag.card); else if (drag.touch && far) { clearTimeout(timer); drag = null; return; } else return; }
+      e.preventDefault(); moveTo(e.clientX, e.clientY);
+    };
+    dragWin.up = finish;
+    dragWin.cancel = function () { if (drag && drag.on) finish(); else { clearTimeout(timer); drag = null; } };
+    if (!dragWin.wired) {
+      dragWin.wired = true;
+      window.addEventListener('pointermove', function (e) { if (dragWin.move) dragWin.move(e); });
+      window.addEventListener('pointerup', function (e) { if (dragWin.up) dragWin.up(e); });
+      window.addEventListener('pointercancel', function (e) { if (dragWin.cancel) dragWin.cancel(e); });
+    }
+    /* пока тащим пальцем — страница не прокручивается */
+    grid.addEventListener('touchmove', function (e) { if (drag && drag.on) e.preventDefault(); }, { passive: false });
+    grid.addEventListener('contextmenu', function (e) { if (drag) e.preventDefault(); });
+    /* после перетаскивания не открывать карточку случайным кликом */
+    grid.addEventListener('click', function (e) { if (drag && drag.block) { e.stopPropagation(); e.preventDefault(); } }, true);
+  }
   function wireJournal() {
     var $ = function (s) { return SP.$(s, root); };
     var on = function (s, fn) { var el = $(s); if (el) el.onclick = fn; };

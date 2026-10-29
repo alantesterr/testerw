@@ -502,3 +502,4 @@ Object.assign(SP.I18N.kk, { 'jr.plBusy': 'Platonus бағалары жаңарт
 Object.assign(SP.I18N.kk, { 'jr.newOne': 'Жаңа баға', 'jr.newMany': 'Жаңа бағалар' });
 
 Object.assign(SP.I18N.kk, { 'settings.plHideHint': '«Platonus-тан жаңарту» батырмасы және бағдарлама баптауы. Көрсету үшін белгіні алыңыз.' });
+Object.assign(SP.I18N.kk, { 'jr.more': 'Тағы' });

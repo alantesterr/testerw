@@ -67,10 +67,8 @@
     syncJournal();
     var st = jState();
     var h = '<div class="btn-group jr-bar"><button type="button" class="btn" id="jrHow">' + SP.icon('circle-help') + '<span>' + esc(SP.t('jr.how')) + '</span></button>' +
-      (plHidden() ? '' : (isWinPc() ? '<button type="button" class="btn" id="jrRun">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRun')) + '</span></button>' +
-        '<button type="button" class="btn btn-icon" id="jrSetup" aria-label="' + esc(SP.t('jr.plSetupTitle')) + '" data-tip="' + esc(SP.t('jr.plSetupTitle')) + '">' + SP.icon('settings') + '</button>' : '') +
-      '') +
-      (st.items.length ? '<button type="button" class="btn" id="jrDl">' + SP.icon('download') + '<span>' + esc(SP.t('jr.dl')) + '</span></button>' : '') +
+      /* Шестерёнка: «Обновить из Platonus», «Скачать», подключение программы */
+      '<button type="button" class="btn btn-icon" id="jrMenu" aria-haspopup="menu" aria-label="' + esc(SP.t('jr.more')) + '" data-tip="' + esc(SP.t('jr.more')) + '">' + SP.icon('settings') + '</button>' +
       '<input type="file" id="jrJFile" accept=".json,application/json,text/plain" hidden>' +
       '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div>';
     if (!st.items.length) {
@@ -334,15 +332,22 @@
       };
       r.readAsText(f, 'utf-8'); jf.value = '';
     };
-    on('#jrRun', function () {
+    var runClick = function () {
       /* Первый раз — инструкция, как скачать и подключить программу */
       if (SP.store.get('sp-pl-run-ok', false)) return runProgram();
       var m = SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') +
         '<div class="row" style="justify-content:flex-end;gap:var(--sp-2);margin-top:var(--sp-4)"><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a>' +
         '<button type="button" class="btn btn-primary" data-plgo>' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRunGo')) + '</span></button></div>' });
       var b = SP.$('[data-plgo]', m.el); if (b) b.onclick = function () { SP.store.set('sp-pl-run-ok', true); m.close(); runProgram(); };
+    };
+    var setupModal = function () { SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') + '<p><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a></p>' }); };
+    on('#jrMenu', function () {
+      var pl = !plHidden() && isWinPc(), items = [];
+      if (pl) items.push({ label: SP.t('jr.plRun'), icon: 'refresh-cw', onClick: runClick });
+      items.push({ label: SP.t('jr.dl'), icon: 'download', onClick: downloadDialog });
+      if (pl) items.push('-', { label: SP.t('jr.plSetupTitle'), icon: 'settings', onClick: setupModal });
+      SP.menu(this, items);
     });
-    on('#jrSetup', function () { SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') + '<p><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a></p>' }); });
     on('#jrPl', function () {
       var st = jState();
       /* Первый раз — сначала короткая инструкция, откуда взять файл */

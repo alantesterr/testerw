@@ -935,3 +935,4 @@ Object.assign(SP.I18N.ru, { 'jr.plBusy': 'Обновляю оценки из Pla
 Object.assign(SP.I18N.ru, { 'jr.newOne': 'Новая оценка', 'jr.newMany': 'Новые оценки' });
 
 Object.assign(SP.I18N.ru, { 'settings.plHideHint': 'Кнопка «Обновить из Platonus» и настройка программы. Снимите галочку, чтобы они появились.' });
+Object.assign(SP.I18N.ru, { 'jr.more': 'Ещё' });

@@ -1,7 +1,7 @@
 /* =====================================================================
    КАРКАС САЙТА И НАВИГАЦИЯ.
    - Главные разделы (видны всегда): Расписание, Папки с предметами,
-     Тестер, Оценки, Плеер, Конспекты.
+     Тестер, Оценки, Плеер. Конспекты открываются из папки предмета.
    - Второстепенное — в «Настройках».
    - Боковая панель: развёрнута (иконка + название), свёрнута (только
      иконки, подсказки при наведении), скрыта (уезжает вверх, остаётся
@@ -17,8 +17,7 @@
     { id: 'subjects', icon: 'folder', key: 'nav.subjects' },
     { id: 'tester', icon: 'list-checks', key: 'nav.tester' },
     { id: 'grades', icon: 'graduation-cap', key: 'nav.grades' },
-    { id: 'player', icon: 'circle-play', key: 'nav.player' },
-    { id: 'notes', icon: 'book-open', key: 'nav.notes' }
+    { id: 'player', icon: 'circle-play', key: 'nav.player' }
   ];
   var views = {}, mounted = {}, current = null;
 
@@ -134,7 +133,7 @@
     current = r.id;
     if (views[r.id].show) views[r.id].show(r.params);
     SP.$$('[data-route]').forEach(function (a) {
-      var on = a.getAttribute('data-route') === r.id || (r.id === 'designer' && a.getAttribute('data-route') === 'settings');
+      var on = a.getAttribute('data-route') === r.id || (r.id === 'designer' && a.getAttribute('data-route') === 'settings') || (r.id === 'notes' && a.getAttribute('data-route') === 'subjects');
       if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     setTitle();

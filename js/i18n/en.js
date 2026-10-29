@@ -443,3 +443,24 @@ Object.assign(SP.I18N.en, { 'notes.jump': 'To tasks', 'notes.jumpTip': 'Go to th
 
 Object.assign(SP.I18N.en, { 'notes.where': 'Where it is in the notes', 'notes.whereNone': 'Could not find the place in the notes', 'notes.backToQ': 'Back to question' });
 Object.assign(SP.I18N.en, { 'auth.device': 'Device', 'auth.dev.phone': 'Phone', 'auth.dev.pc': 'Computer', 'auth.deviceHint': 'Detected automatically: {d}. It sets sizes and the schedule view: Shokan “Week” on a phone, Timetable on a computer.', 'settings.deviceHint': 'Detected automatically: {d}. Changing it applies sizes and the schedule view that suit this device.', 'settings.deviceDone': 'Sizes and schedule adjusted to the device', 'auth.out': 'Sign out', 'auth.outTitle': 'Go back to the sign-in screen?', 'auth.outText': 'The sign-in screen opens — you can pick another group or device. Tests, grades, folders and notes stay.', 'auth.outHint': '“Sign out” returns to the sign-in screen (e.g. if you picked the wrong group). “Reset profile” also deletes your name, group and grades from this device.' });
+/* New notes: subject folder and lecture screen */
+Object.assign(SP.I18N.en, {
+  'sj.files': 'Files', 'sj.upload': 'Upload', 'sj.lectures': 'Lectures', 'sj.myNotes': 'My notes',
+  'sj.read': 'read', 'sj.readPct': 'read {p}%', 'sj.qs': 'questions {a}/{n}', 'sj.tasks': 'tasks {a}/{n}', 'sj.test': 'test {p}%',
+  'sj.start': 'Start', 'sj.continue': 'Continue',
+  'lx.tab.text': 'Text', 'lx.tab.qs': 'Questions', 'lx.tab.tasks': 'Tasks', 'lx.tab.cards': 'Cards', 'lx.tab.test': 'Test',
+  'lx.back': 'Back to subject folder', 'lx.prevLec': 'Previous lecture', 'lx.nextLec': 'Next lecture', 'lx.parts': 'Lecture parts',
+  'lx.lecOf': '{l} of {n}', 'lx.sum': 'Key points in 1 minute',
+  'lx.endQs': 'Done reading? Answer the questions — if you forget, “Where in the lecture?” takes you to the right place.',
+  'lx.endTasks': 'Done reading? Solve the tasks — if stuck, “Where in the lecture?” shows the section that explains it.',
+  'lx.nextTab': 'Next: {t}', 'lx.task': 'Task', 'lx.q': 'Question', 'lx.nOf': '{w} {i} of {n}',
+  'lx.yourCode': 'Your code · saved automatically', 'lx.codeReset': 'Reset', 'lx.where': 'Where in the lecture?',
+  'lx.mSolved': 'You marked: solved', 'lx.mKnew': 'You marked: knew it', 'lx.mAgain': 'You marked: repeat',
+  'lx.check': 'Compare with solution', 'lx.hint': 'Hint', 'lx.gotIt': 'Did it work?', 'lx.knewIt': 'Did you know it?',
+  'lx.solved': 'Solved', 'lx.knew': 'Knew it', 'lx.again': 'Repeat',
+  'lx.swipeHint': 'Swipe left/right or use the ← → keys',
+  'lx.cardsHint': 'Tap a card to see the answer. Cards you don’t know come back a few cards later.',
+  'lx.cardsDone': 'knew / total answers', 'lx.again2': 'Again', 'lx.cardsStat': 'Knew {y} · Didn’t know {n}',
+  'lx.flip': 'Flip the card', 'lx.tapFlip': 'Tap to see the answer', 'lx.answer': 'Answer', 'lx.remember': 'Remember', 'lx.dontKnow': 'Don’t know',
+  'lx.backQ': 'Back to question {n}', 'lx.backTask': 'Back to task {n}'
+});Object.assign(SP.I18N.en, { 'lx.zoom': 'Zoomed fragment' });

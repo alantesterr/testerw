@@ -1,7 +1,7 @@
 /* =====================================================================
    РАЗДЕЛ «ПАПКИ С ПРЕДМЕТАМИ».
-   Слева — список папок, справа — папка предмета: материалы и ссылки,
-   тесты, заметки. На ПК список можно спрятать кнопкой, чтобы рабочая
+   Слева — список папок, справа — папка предмета одной страницей:
+   Файлы (и ссылки) → Тесты → Лекции (конспект, см. notes.js) → Мои заметки. На ПК список можно спрятать кнопкой, чтобы рабочая
    область стала шире. На телефоне — сначала список, затем папка.
    Файлы можно двигать вверх/вниз (порядок сохраняется) и скрывать.
    Папки можно удалять по одной или несколько сразу (режим «Выбрать»).
@@ -93,23 +93,45 @@
       '<div class="grow"><h2 class="sj-title">' + esc(s.name) + '</h2><div class="card-sub">' + esc([s.code, s.teacher].filter(Boolean).join(' · ') || SP.t('subjects.noTeacher')) + '</div></div></div>' +
       '<div class="row">' + (s.base ? '<span class="badge">' + SP.icon(s.base === 'timetable' ? 'cloud' : 'users') + esc(SP.t(s.base === 'timetable' ? 'subjects.fromTt' : 'subjects.fromCourse')) + '</span>' : '') +
       '<button type="button" class="btn btn-ghost btn-icon" id="sjEdit" aria-label="' + esc(SP.t('subjects.edit')) + '" data-tip="' + esc(SP.t('subjects.edit')) + '">' + SP.icon('pencil') + '</button></div></div>' +
-      '<div class="tabs" role="tablist">' +
-      tabBtn('materials', 'folder-open', SP.t('subjects.materials'), mats.length) +
-      tabBtn('tests', 'list-checks', SP.t('subjects.tests'), tests.length) +
-      tabBtn('notes', 'square-pen', SP.t('subjects.notes'), null) + '</div>' +
-      '<div class="sj-tab" role="tabpanel">';
-    if (tab === 'materials') {
-      h += '<div class="row"><button type="button" class="btn btn-primary" id="sjUpMat">' + SP.icon('upload') + '<span>' + esc(SP.t('subjects.uploadMat')) + '</span></button>' +
-        '<button type="button" class="btn" id="sjAddLink">' + SP.icon('link') + '<span>' + esc(SP.t('subjects.addLink')) + '</span></button></div>';
-      h += mats.length ? listHtml(s, 'material') : '<p class="subtle small">' + esc(SP.t('subjects.noMat')) + '</p>';
-    } else if (tab === 'tests') {
-      h += '<div class="row"><button type="button" class="btn btn-primary" id="sjUpTest">' + SP.icon('upload') + '<span>' + esc(SP.t('subjects.uploadTest')) + '</span></button></div>';
-      h += tests.length ? listHtml(s, 'test') : '<p class="subtle small">' + esc(SP.t('subjects.noTests')) + '</p>';
-    } else {
-      h += '<div class="field"><label class="label" for="sjNotes">' + esc(SP.t('subjects.notesLabel')) + '</label><textarea class="textarea" id="sjNotes" rows="10" placeholder="' + esc(SP.t('subjects.notesPh')) + '">' + esc(s.notes) + '</textarea>' +
-        '<span class="hint" id="sjNoteSt" aria-live="polite">' + esc(SP.t('subjects.notesAuto')) + '</span></div>';
-    }
-    return h + '</div></section>';
+      /* Папка одной страницей: Файлы → Тесты → Лекции (конспект) → Мои заметки */
+      '<div class="sj-blocks">' +
+      '<section class="sj-sec"><div class="sj-sec-h"><h3>' + SP.icon('folder-open', 'ic-sm') + esc(SP.t('sj.files')) + (mats.length ? '<span class="count">' + mats.length + '</span>' : '') + '</h3>' +
+      '<div class="row"><button type="button" class="btn btn-sm" id="sjUpMat">' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('sj.upload')) + '</span></button>' +
+      '<button type="button" class="btn btn-sm" id="sjAddLink">' + SP.icon('link', 'ic-sm') + '<span>' + esc(SP.t('subjects.addLink')) + '</span></button></div></div>' +
+      (mats.length ? listHtml(s, 'material') : '<p class="subtle small">' + esc(SP.t('subjects.noMat')) + '</p>') + '</section>' +
+      '<section class="sj-sec"><div class="sj-sec-h"><h3>' + SP.icon('list-checks', 'ic-sm') + esc(SP.t('subjects.tests')) + (tests.length ? '<span class="count">' + tests.length + '</span>' : '') + '</h3>' +
+      '<div class="row"><button type="button" class="btn btn-sm" id="sjUpTest">' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('sj.upload')) + '</span></button></div></div>' +
+      (tests.length ? listHtml(s, 'test') : '<p class="subtle small">' + esc(SP.t('subjects.noTests')) + '</p>') + '</section>' +
+      '<section class="sj-sec" id="sjLecs" hidden><div class="sj-sec-h"><h3>' + SP.icon('book-open', 'ic-sm') + esc(SP.t('sj.lectures')) + '</h3></div><div class="sj-lecs"></div></section>' +
+      '<details class="sj-sec sj-mynotes"' + (s.notes ? ' open' : '') + '><summary><h3>' + SP.icon('square-pen', 'ic-sm') + esc(SP.t('sj.myNotes')) + '</h3>' + SP.icon('chevron-down', 'ic-sm sj-chev2') + '</summary>' +
+      '<div class="field"><textarea class="textarea" id="sjNotes" rows="6" aria-label="' + esc(SP.t('sj.myNotes')) + '" placeholder="' + esc(SP.t('subjects.notesPh')) + '">' + esc(s.notes) + '</textarea>' +
+      '<span class="hint" id="sjNoteSt" aria-live="polite">' + esc(SP.t('subjects.notesAuto')) + '</span></div></details>' +
+      '</div>';
+    return h + '</section>';
+  }
+  /* Лекции конспекта этого предмета: продолжить + список с отметками прогресса */
+  function fillLectures(s) {
+    if (!SP.notes) return;
+    SP.notes.forSubject(s.name).then(function (list) {
+      var box = SP.$('#sjLecs', root); if (!box || !list.length || selected !== s.id) return;
+      var html = list.map(function (x) {
+        var meta = x.meta, d = x.doc, pos = SP.notes.continueOf(meta), cl = pos && d.lectures[pos.li] ? pos.li : null;
+        var rows = d.lectures.map(function (lec, li) {
+          var st = SP.notes.lecStats(meta, d, lec), chips = [];
+          if (st.read >= 97) chips.push('<span class="chip-s ok">' + SP.icon('check', 'ic-sm') + esc(SP.t('sj.read')) + '</span>');
+          else if (st.read > 0) chips.push('<span class="chip-s">' + esc(SP.t('sj.readPct', { p: st.read })) + '</span>');
+          if (st.qs) chips.push('<span class="chip-s' + (st.qsOk === st.qs ? ' ok' : '') + '">' + esc(SP.t('sj.qs', { a: st.qsOk, n: st.qs })) + '</span>');
+          if (st.tasks) chips.push('<span class="chip-s' + (st.tasksOk === st.tasks ? ' ok' : '') + '">' + esc(SP.t('sj.tasks', { a: st.tasksOk, n: st.tasks })) + '</span>');
+          if (st.best != null) chips.push('<span class="chip-s' + (st.best >= 70 ? ' ok' : '') + '">' + esc(SP.t('sj.test', { p: st.best })) + '</span>');
+          var num = String(lec.n || li + 1);
+          return '<a class="sj-lec" href="' + esc(SP.notes.href(meta, li)) + '"><span class="sj-lnum' + (st.read >= 97 ? ' done' : '') + '">' + esc(num.length > 3 ? li + 1 : num) + '</span>' +
+            '<span class="meta"><b>' + esc(lec.title) + '</b><small>' + esc(lec.label) + '</small>' + (chips.length ? '<span class="chips-s">' + chips.join('') + '</span>' : '') + '</span>' + SP.icon('chevron-right', 'sj-chev') + '</a>';
+        }).join('');
+        var cont = '<a class="sj-cont" href="' + esc(SP.notes.href(meta, cl == null ? 0 : cl)) + '"><span class="grow"><small>' + esc(SP.t(cl == null ? 'sj.start' : 'sj.continue')) + '</small><b>' + esc(d.lectures[cl == null ? 0 : cl].label + ' · ' + d.lectures[cl == null ? 0 : cl].title) + '</b></span>' + SP.icon('arrow-right') + '</a>';
+        return (list.length > 1 ? '<div class="sj-doc-t">' + esc(meta.short || meta.subject) + '</div>' : '') + cont + '<div class="sj-lec-list">' + rows + '</div>';
+      }).join('');
+      SP.$('.sj-lecs', box).innerHTML = html; box.hidden = false;
+    });
   }
   function lessonsBlock(s) {
     var ls = SP.schedule && SP.schedule.lessonsOf ? SP.schedule.lessonsOf(s.id) : [];
@@ -171,6 +193,7 @@
     SP.$$('[data-sub]', root).forEach(function (b) { b.onclick = function () { SP.navigate('subjects', [b.getAttribute('data-sub')]); }; });
     var bk = q('#sjBack'); if (bk) bk.onclick = function () { selected = null; SP.navigate('subjects'); };
     if (!s) return;
+    fillLectures(s);
     q('#sjEdit').onclick = function () { editor(s); };
     var tl = q('#sjToggleList'); if (tl) tl.onclick = function () { sui.collapsed = !sui.collapsed; saveSui(); render(); var n = SP.$('#sjToggleList', root); if (n) n.focus(); };
     var shh = q('#sjShowHidden'); if (shh) shh.onclick = function () { showHidden = !showHidden; render(); };
@@ -210,6 +233,11 @@
       if (f.base) { var p = data().pins = data().pins || {}; if (p[f.id]) delete p[f.id]; else p[f.id] = 1; } else f.pinned = !f.pinned;
       SP.hub.save(); render();
     } });
+    /* на телефоне стрелок в строке нет — двигать можно из этого меню */
+    if (window.innerWidth < 768) {
+      items.push({ label: SP.t('subjects.moveUp'), icon: 'arrow-up', onClick: function () { move(s, type, i, -1); } });
+      items.push({ label: SP.t('subjects.moveDown'), icon: 'arrow-down', onClick: function () { move(s, type, i, 1); } });
+    }
     items.push({ label: SP.t(isHidden(f) ? 'subjects.unhide' : 'subjects.hide'), icon: isHidden(f) ? 'eye' : 'eye-off', onClick: function () { toggleHide(f); } });
     items.push('-');
     items.push({ label: SP.t(f.base ? 'subjects.cantDelete' : 'common.delete'), icon: 'trash-2', danger: true, disabled: !!f.base, onClick: function () {

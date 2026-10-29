@@ -1,9 +1,8 @@
 {
-  "version": "2026-10-27.1",
+  "version": "2026-10-29.1",
   "notes": [
     { "id": "io", "subject": "Исследование операций", "short": "Исследование операций", "title": "Исследование операций: подготовка к РК (15 тем, 56 задач с решением, пробный РК)", "file": "io.json", "pdf": "data/ir-252/files/Исследование операций/IO_RK_uchebnik.pdf" },
-    { "id": "philosophy2", "subject": "Философия", "short": "Философия 2.0", "title": "Философия: РК1 — итоговый учебник (новая версия, у вопросов — «Где ответ в конспекте»)", "file": "philosophy2.json", "pdf": "data/ir-252/files/Философия/Filosofiya_RK1_ITOG.pdf" },
-    { "id": "philosophy", "subject": "Философия", "short": "Философия", "title": "Философия: подготовка к РК1 (первая версия)", "file": "philosophy.json", "pdf": "data/ir-252/files/Философия/Filosofiya_RK1_lekcii_1-7.pdf" },
+    { "id": "philosophy2", "subject": "Философия", "short": "Философия", "title": "Философия: РК1 — итоговый учебник", "file": "philosophy2.json", "pdf": "data/ir-252/files/Философия/Filosofiya_RK1_ITOG.pdf" },
     { "id": "cpp", "subject": "Object-Oriented Programming (Borland C ++ Builder)", "short": "C++", "title": "Программирование I (C++): подготовка к РК1", "file": "cpp.json", "pdf": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/RK1_Cpp_konspekt.pdf" },
     { "id": "arch", "subject": "Архитектура компьютера", "short": "Архитектура компьютера", "title": "Архитектура компьютера: подготовка к РК1 (темы 1–9, 51 задача с разбором)", "file": "arch.json", "pdf": "data/ir-252/files/Архитектура компьютера/Arhitektura_RK1_podrobno.pdf" }
   ]

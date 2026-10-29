@@ -67,6 +67,7 @@
     syncJournal();
     var st = jState();
     var h = '<div class="btn-group jr-bar"><button type="button" class="btn" id="jrHow">' + SP.icon('circle-help') + '<span>' + esc(SP.t('jr.how')) + '</span></button>' +
+      (isWinPc() ? '<button type="button" class="btn" id="jrRun">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRun')) + '</span></button>' : '') +
       '<button type="button" class="btn" id="jrPl">' + SP.icon('upload') + '<span>' + esc(SP.t('jr.plLoad')) + '</span></button>' +
       '<input type="file" id="jrPlFile" accept=".json,application/json,text/plain" hidden>' +
       '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div>';
@@ -294,6 +295,7 @@
         upsert(st, nm, { teachers: sj ? sj.teacher || '' : '' }); jSave(st); m.close(); render(); SP.toast(SP.t('jr.restored', { name: nm }), 'success');
       }; });
     });
+    on('#jrRun', runProgram);
     on('#jrPl', function () {
       var st = jState();
       /* Первый раз — сначала короткая инструкция, откуда взять файл */
@@ -399,6 +401,35 @@
     render();
   }
   SP.views.register('grades', { titleKey: 'nav.grades', mount: function (el) { root = el; }, show: show, refresh: render });
+  /* ---------- Кнопка «Обновить из Platonus» (Windows) ----------
+     Сайт запускает программу «Мои оценки» через ссылку studyplay-grades: (её подключает файл
+     «Подключить к StudyPlay.bat»). Программа сама входит в Platonus, кладёт оценки в буфер обмена
+     с меткой «studyplay-grades:» и закрывается; эта вкладка забирает их, когда вы к ней вернётесь. */
+  var PREFIX = 'studyplay-grades:', waitUntil = 0, waitTimer = null, clipWarned = false;
+  function isWinPc() { return /Windows/i.test(navigator.userAgent) && !/Mobile|Phone/i.test(navigator.userAgent); }
+  function runProgram() {
+    var a = document.createElement('a'); a.href = PREFIX + 'run'; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); a.remove();
+    SP.toast(SP.t('jr.plRunToast'), 'info', { html: false });
+    waitUntil = Date.now() + 5 * 60 * 1000; clipWarned = false;
+    clearInterval(waitTimer); waitTimer = setInterval(checkClip, 1500);
+  }
+  function checkClip() {
+    if (!waitUntil || Date.now() > waitUntil) { waitUntil = 0; clearInterval(waitTimer); return; }
+    if (!document.hasFocus() || !navigator.clipboard || !navigator.clipboard.readText) return;
+    navigator.clipboard.readText().then(function (t) {
+      t = String(t || '').trim(); if (!waitUntil || t.indexOf(PREFIX) !== 0) return;
+      waitUntil = 0; clearInterval(waitTimer);
+      return fromLink(t.slice(PREFIX.length)).then(function (d) {
+        var res = importPlatonus(d); editing = null; render();
+        SP.toast(SP.t('jr.plDone', { n: res.upd + res.added }) + (res.added ? ' ' + SP.t('jr.plAdded', { n: res.added }) : ''), 'success');
+        try { navigator.clipboard.writeText(''); } catch (e) { /* ничего */ }
+      });
+    }).catch(function () {
+      if (!clipWarned) { clipWarned = true; SP.toast(SP.t('jr.plClip'), 'warning'); }
+    });
+  }
+  window.addEventListener('focus', function () { if (waitUntil) checkClip(); });
   /* Оценки обновились в другой вкладке (например, её открыла программа) — эта вкладка перерисуется сама */
   window.addEventListener('storage', function (e) {
     if (!e.key || e.key.indexOf('sp-journal-v1') < 0 || !root || root.hidden || editing) return;

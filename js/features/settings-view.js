@@ -69,7 +69,9 @@
     html += section('tools', 'timer',
       setRow(SP.t('stopwatch.title'), esc(SP.t('settings.stopwatchHint')), '<label class="switch"><input type="checkbox" id="sSw"' + (s.stopwatch ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('stopwatch.title')) + '</span></label>') +
       /* Кнопки Platonus в «Оценках» по умолчанию скрыты */
-      setRow(SP.t('settings.plHide'), esc(SP.t('settings.plHideHint')), '<label class="switch"><input type="checkbox" id="sPlHide"' + (s.plHide !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.plHide')) + '</span></label>'));
+      setRow(SP.t('settings.plHide'), esc(SP.t('settings.plHideHint')), '<label class="switch"><input type="checkbox" id="sPlHide"' + (s.plHide !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.plHide')) + '</span></label>') +
+      /* Автообновление — видно, только когда кнопки Platonus показаны */
+      (s.plHide === false ? setRow(SP.t('settings.plAuto'), esc(SP.t('settings.plAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sPlAuto" min="0" max="1440" step="1" value="' + esc(s.plAuto || 0) + '" aria-label="' + esc(SP.t('settings.plAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') : ''));
 
     /* 4. Данные */
     var d = SP.hub.data(), base = SP.hub.base();
@@ -118,7 +120,8 @@
     var at = $('#sAutoTr'); if (at) at.onchange = function () { SP.settings.set('autoTr', at.checked); };
     var hk = $('#sHotkeys'); if (hk) hk.onchange = function () { SP.settings.set('hotkeys', hk.checked); };
     var sw = $('#sSw'); if (sw) sw.onchange = function () { SP.settings.set('stopwatch', sw.checked); };
-    var ph = $('#sPlHide'); if (ph) ph.onchange = function () { SP.settings.set('plHide', ph.checked); SP.toast(SP.t('settings.saved'), 'success'); };
+    var ph = $('#sPlHide'); if (ph) ph.onchange = function () { SP.settings.set('plHide', ph.checked); SP.toast(SP.t('settings.saved'), 'success'); render(); var n = $('#sPlHide'); if (n) n.focus(); };
+    var pa = $('#sPlAuto'); if (pa) pa.onchange = function () { var v = Math.round(SP.clamp(parseFloat(pa.value) || 0, 0, 1440)); pa.value = v; SP.settings.set('plAuto', v); SP.toast(SP.t('settings.saved'), 'success'); };
     on('#sHow', SP.auth.explain);
     var gi = $('#sGroup'); if (gi) SP.group.attach(gi, $('#sGroupErr'));
     on('#sLogout', function () { SP.auth.logout(); });

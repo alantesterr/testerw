@@ -336,7 +336,7 @@
         try {
           var res = importPlatonus(JSON.parse(String(r.result).replace(/^﻿/, '')));
           editing = null; render();
-          SP.toast(SP.t('jr.plDone', { n: res.upd + res.added }) + (res.added ? ' ' + SP.t('jr.plAdded', { n: res.added }) : ''), 'success');
+          /* без сообщения «обновлено» — оценки просто меняются */ void res;
         } catch (e) { SP.toast(SP.t('jr.plBad'), 'danger'); }
       };
       r.onerror = function () { SP.toast(SP.t('jr.plBad'), 'danger'); };
@@ -416,7 +416,7 @@
       try { history.replaceState(null, '', location.pathname + location.search + '#/grades'); } catch (e) { /* ничего */ }
       fromLink(data).then(function (d) {
         var res = importPlatonus(d); editing = null; render();
-        SP.toast(SP.t('jr.plDone', { n: res.upd + res.added }) + (res.added ? ' ' + SP.t('jr.plAdded', { n: res.added }) : ''), 'success');
+        /* без сообщения «обновлено» — оценки просто меняются */ void res;
       }).catch(function (e) { SP.toast(e && e.message === 'old' ? SP.t('jr.plOld') : SP.t('jr.plBadLink'), 'danger'); });
     }
     render();
@@ -468,10 +468,10 @@
   /* Кнопки Platonus скрыты, пока в Настройках → Инструменты не снята галочка */
   function plHidden() { return SP.settings.get('plHide') !== false; }
   function isWinPc() { return /Windows/i.test(navigator.userAgent) && !/Mobile|Phone/i.test(navigator.userAgent); }
-  function runProgram() {
+  function runProgram(quiet) {
     var a = document.createElement('a'); a.href = PREFIX + 'run'; a.style.display = 'none';
     document.body.appendChild(a); a.click(); a.remove();
-    SP.toast(SP.t('jr.plRunToast'), 'info', { html: false });
+    if (!quiet) SP.toast(SP.t('jr.plRunToast'), 'info', { html: false });
     waitUntil = Date.now() + 5 * 60 * 1000; clipWarned = false;
     clearInterval(waitTimer); waitTimer = setInterval(checkClip, 1500);
   }
@@ -483,7 +483,7 @@
       waitUntil = 0; clearInterval(waitTimer);
       return fromLink(t.slice(PREFIX.length)).then(function (d) {
         var res = importPlatonus(d); editing = null; render();
-        SP.toast(SP.t('jr.plDone', { n: res.upd + res.added }) + (res.added ? ' ' + SP.t('jr.plAdded', { n: res.added }) : ''), 'success');
+        /* без сообщения «обновлено» — оценки просто меняются */ void res;
         try { navigator.clipboard.writeText(''); } catch (e) { /* ничего */ }
       });
     }).catch(function () {
@@ -491,6 +491,30 @@
     });
   }
   window.addEventListener('focus', function () { if (waitUntil) checkClip(); });
+
+  /* ---------- Автообновление из Platonus ----------
+     Настройки → Инструменты → «Автообновление из Platonus, мин» (0 — выключено).
+     Сайт сам «нажимает» «Обновить из Platonus»: сразу при открытии и дальше каждые N минут,
+     пока вкладка открыта. Работает только на Windows и когда кнопки Platonus не скрыты.
+     Вкладка не на экране — обновление откладывается до возвращения к ней. */
+  var autoTimer = null, autoDue = false;
+  function autoMin() { var v = parseFloat(SP.settings.get('plAuto')); return v > 0 ? v : 0; }
+  function autoOn() { return autoMin() > 0 && !plHidden() && isWinPc(); }
+  function autoRun() {
+    if (!autoOn()) return;
+    if (document.visibilityState !== 'visible' || editing) { autoDue = true; return; }
+    if (waitUntil) return;              /* прошлое обновление ещё не пришло */
+    autoDue = false; runProgram(true);
+  }
+  function autoSchedule() {
+    clearInterval(autoTimer); autoTimer = null;
+    if (autoOn()) autoTimer = setInterval(autoRun, autoMin() * 60000);
+  }
+  document.addEventListener('visibilitychange', function () { if (autoDue && document.visibilityState === 'visible') autoRun(); });
+  SP.on('settings', function (e) { if (e && (e.key === 'plAuto' || e.key === 'plHide')) { autoSchedule(); if (e.key === 'plAuto' && autoOn()) autoRun(); } });
+  /* при открытии сайта — сразу */
+  var openedWithData = /\/pl\//.test(location.hash);   /* сайт открыла программа и уже принесла оценки */
+  window.addEventListener('load', function () { setTimeout(function () { autoSchedule(); if (!openedWithData) autoRun(); }, 2000); });
   /* Оценки обновились в другой вкладке (например, её открыла программа) — эта вкладка перерисуется сама */
   window.addEventListener('storage', function (e) {
     if (!e.key || e.key.indexOf('sp-journal-v1') < 0 || !root || root.hidden || editing) return;

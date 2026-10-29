@@ -494,3 +494,6 @@ Object.assign(SP.I18N.en, { 'jr.dl': 'Download', 'jr.dlCsv': 'Table (Excel)', 'j
   'jr.dlJson': 'StudyPlay file', 'jr.dlJsonHint': 'Move grades to another device: there, Grades → Download → "Load grades file".',
   'jr.jLoad': 'Load grades file (from another device)', 'jr.jDone': 'Grades loaded, subjects: {n}.', 'jr.jBad': 'This is not a StudyPlay grades file.', 'jr.csvMarks': 'Current marks' });
 Object.assign(SP.I18N.en, { 'jr.csvSubject': 'Subject' });
+
+Object.assign(SP.I18N.en, { 'settings.plAuto': 'Auto-update from Platonus', 'settings.min': 'min',
+  'settings.plAutoHint': 'Every N minutes while the site is open, and right when it opens, the site presses "Update from Platonus" by itself. 0 — off. Tick "Always allow" in the "Open application?" prompt so the browser stops asking. Not too often: Platonus may block sign-in for a while.' });

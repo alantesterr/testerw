@@ -124,7 +124,7 @@
         var a = SP.$('[data-mnadd]', box); if (a) a.onclick = function () { SP.myNotes.add(s.name); };
         var im = SP.$('[data-mnimport]', box); if (im) im.onclick = function () { SP.myNotes.importDialog(s.name); };
         SP.$$('[data-mnedit]', box).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); SP.myNotes.edit(b.getAttribute('data-mnedit')); }; });
-        SP.$$('[data-mnmore]', box).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); SP.myNotes.add(s.name); }; });
+        SP.$$('[data-mnmore]', box).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); SP.myNotes.more(b.getAttribute('data-mnmore')); }; });
         SP.$$('[data-mndl]', box).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); SP.myNotes.exportFile(b.getAttribute('data-mndl')); }; });
       };
       if (!list.length) { box.innerHTML = acts + '<div class="mn-empty">' + SP.icon('book-open', 'ic-xl') + '<p class="small muted">' + esc(SP.t('mn.empty')) + '</p></div>'; wireMine(); return; }
@@ -152,7 +152,7 @@
           SP.icon('chevron-down', 'sj-k-chev') + '</summary><div class="sj-lec-list">' + rows + '</div>' +
           (meta.local ? '<div class="row sj-mine-acts"><span class="badge">' + SP.icon('user', 'ic-sm') + esc(SP.t('mn.mineBadge')) + '</span>' +
             '<button type="button" class="btn btn-sm btn-ghost" data-mnedit="' + esc(meta.id) + '">' + SP.icon('pencil', 'ic-sm') + '<span>' + esc(SP.t('mn.editBtn')) + '</span></button>' +
-            '<button type="button" class="btn btn-sm btn-ghost" data-mnmore>' + SP.icon('plus', 'ic-sm') + '<span>' + esc(SP.t('mn.moreLec')) + '</span></button>' +
+            '<button type="button" class="btn btn-sm btn-ghost" data-mnmore="' + esc(meta.id) + '">' + SP.icon('plus', 'ic-sm') + '<span>' + esc(SP.t('mn.moreLec')) + '</span></button>' +
             '<button type="button" class="btn btn-sm btn-ghost" data-mndl="' + esc(meta.id) + '">' + SP.icon('download', 'ic-sm') + '<span>' + esc(SP.t('mn.download')) + '</span></button></div>' : '') +
           '</details>';
       }).join('');

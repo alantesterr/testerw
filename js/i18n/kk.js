@@ -606,3 +606,9 @@ Object.assign(SP.I18N.kk, {
   'mn.depth.short': 'Қысқа', 'mn.depth.medium': 'Орташа', 'mn.depth.full': 'Толық', 'mn.q.want': 'Тағы не жасау', 'mn.want.qs': 'Сұрақ-жауаптар', 'mn.want.test': 'Тест', 'mn.want.cards': 'Карточкалар',
   'mn.q.tasks': 'Шешімі бар есептер', 'mn.q.testSrc': 'Тест кімдікі', 'mn.q.split': 'Қалай бөлу', 'mn.q.lang': 'Конспект тілі', 'mn.q.fmt': 'Жауап форматы', 'mn.impCopy': 'Промтты көшіру'
 });
+
+Object.assign(SP.I18N.kk, {
+  'mn.moreLec': 'Толықтыру', 'mn.bTitle': 'Жаңа конспект — қадаммен', 'mn.bTitleMore': 'Конспектіні толықтыру', 'mn.bSave': 'Конспектіні сақтау',
+  'mn.step.konspekt': 'Конспект', 'mn.step.qs': 'Сұрақтар', 'mn.step.test': 'Тест', 'mn.step.cards': 'Карточкалар', 'mn.step.tasks': 'Есептер',
+  'mn.bCopy1': 'Промтты көшіру', 'mn.bCopyN': 'Промтты көшіру', 'mn.bAdd': 'Конспектіге қосу', 'mn.bPaste': 'ЖИ жауабы', 'mn.bNextT': 'Дайын! Тағы не қосамыз?', 'mn.bSaveNow': 'Сақтап, ашу', 'mn.bMoreLec': 'Тағы дәрістер'
+});

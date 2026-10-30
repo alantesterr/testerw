@@ -42,12 +42,7 @@
   function newId() { return 'my-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function openNote(id) { location.hash = '#/notes/' + encodeURIComponent(id) + '/0'; }
 
-  /* ---------- проверка текста: что получилось и что не так ---------- */
-  function checkHtml(src, images, o) {
-    var c = checkCore(src, images);
-    if (c.ok && o) { var imp = improveHtml(c.r, o); c.html += imp.html; c.imp = imp; }
-    return c;
-  }
+  /* ---------- проверка текста: что получилось и что не так ---------- */  /* ---------- проверка текста: что получилось и что не так ---------- */
   function checkCore(src, images) {
     if (!String(src || '').trim()) return { ok: false, html: '<p class="small muted">' + esc(SP.t('mn.waiting')) + '</p>' };
     var r;
@@ -62,151 +57,203 @@
     return { ok: true, html: h, r: r };
   }
 
-  /* ---------- шаг 1: короткая анкета → промт (вся логика внутри notes-prompts.js) ---------- */
-  var OPT_KEY = 'sp-mynotes-opts';
-  function loadOpts(subject) {
-    var o = Object.assign({}, SP.NOTES_PROMPTS.defaults, SP.store.get(OPT_KEY, {}) || {});
-    o.subject = subject || o.subject || ''; o.bank = '';
-    return o;
-  }
-  function saveOpts(o) { var c = Object.assign({}, o); delete c.bank; delete c.subject; SP.store.set(OPT_KEY, c); }
+  /* ---------- КОНСТРУКТОР КОНСПЕКТА: шаг за шагом ----------
+     1) Конспект (обязательно) → потом по желанию: Вопросы, Тест, Карточки, Задачи.
+     Каждый шаг — короткий промт про одно дело (notes-prompts.js), ответ вставляется и сразу проверяется,
+     «Добавить» дописывает его к черновику; по заголовкам «## Лекция N» сайт кладёт его в нужную лекцию.
+     Черновик не теряется: хранится, пока конспект не сохранён. */
+  var OPT_KEY = 'sp-mynotes-opts2', DRAFT_KEY = 'sp-mynotes-draft';
+  var STEPS = [['konspekt', 'book-open'], ['qs', 'circle-help'], ['test', 'list-checks'], ['cards', 'layers'], ['tasks', 'square-pen']];
+  function loadOpts() { return Object.assign({}, SP.NOTES_PROMPTS.defaults, SP.store.get(OPT_KEY, {}) || {}, { bank: '' }); }
+  function saveOpts(o) { var c = Object.assign({}, o); delete c.bank; SP.store.set(OPT_KEY, c); }
   function seg(key, opts, cur) {
     return '<div class="segmented seg-wrap" role="group" data-mnopt="' + key + '">' + opts.map(function (x) {
-      return '<button type="button" data-v="' + x[0] + '" aria-pressed="' + (String(cur) === String(x[0])) + '">' + esc(SP.t(x[1])) + '</button>';
+      return '<button type="button" data-v="' + x[0] + '" aria-pressed="' + (String(cur) === String(x[0])) + '">' + esc(/^mn\./.test(x[1]) ? SP.t(x[1]) : x[1]) + '</button>';
     }).join('') + '</div>';
   }
-  function chip(key, on) { return '<button type="button" class="chip mn-chip" data-mnchip="' + key + '" aria-pressed="' + !!on + '">' + SP.icon(on ? 'check' : 'plus', 'ic-sm') + '<span>' + esc(SP.t('mn.want.' + key)) + '</span></button>'; }
   function qRow(label, ctl, hint) { return '<div class="mn-qrow"><div class="mn-ql">' + esc(SP.t(label)) + (hint ? '<span class="xsmall subtle">' + esc(SP.t(hint)) + '</span>' : '') + '</div><div class="mn-qc">' + ctl + '</div></div>'; }
-  function promptBlock(o) {
-    return '<div class="mn-step"><div class="mn-step-h"><span class="mn-n">1</span><b>' + esc(SP.t('mn.s1')) + '</b></div>' +
-      '<p class="small">' + esc(SP.t('mn.s1Text')) + '</p>' +
-      '<div class="mn-quiz">' +
-      qRow('mn.q.subject', '<input class="input" data-mnin="subject" value="' + esc(o.subject) + '" placeholder="' + esc(SP.t('mn.q.subjectPh')) + '">') +
-      qRow('mn.q.goal', seg('goal', [['rk1', 'mn.goal.rk1'], ['rk2', 'mn.goal.rk2'], ['exam', 'mn.goal.exam'], ['study', 'mn.goal.study']], o.goal)) +
-      qRow('mn.q.depth', seg('depth', [['short', 'mn.depth.short'], ['medium', 'mn.depth.medium'], ['full', 'mn.depth.full']], o.depth), 'mn.q.depthHint') +
-      qRow('mn.q.want', chip('qs', o.qs) + chip('test', o.test) + chip('cards', o.cards), 'mn.q.wantHint') +
-      qRow('mn.q.tasks', seg('tasks', [['auto', 'mn.tasks.auto'], ['yes', 'mn.tasks.yes'], ['no', 'mn.tasks.no']], o.tasks), 'mn.q.tasksHint') +
-      '<div class="mn-testsrc"' + (o.test ? '' : ' hidden') + '>' + qRow('mn.q.testSrc', seg('testSrc', [['ai', 'mn.src.ai'], ['mine', 'mn.src.mine'], ['both', 'mn.src.both']], o.testSrc)) +
-      '<div class="mn-bank"' + (o.testSrc === 'ai' ? ' hidden' : '') + '><textarea class="textarea mono xsmall" data-mnin="bank" rows="5" placeholder="' + esc(SP.t('mn.bankPh')) + '"></textarea><p class="xsmall subtle mn-bank-n">' + esc(SP.t('mn.bankHint')) + '</p></div></div>' +
-      qRow('mn.q.split', seg('split', [['auto', 'mn.split.auto'], ['lectures', 'mn.split.lectures'], ['topics', 'mn.split.topics']], o.split), 'mn.q.splitHint') +
-      qRow('mn.q.lang', seg('lang', [['auto', 'mn.lang.auto'], ['ru', 'mn.lang.ru'], ['kk', 'mn.lang.kk']], o.lang)) +
-      qRow('mn.q.fmt', seg('fmt', [['markup', 'mn.fmtText'], ['json', 'mn.fmtJson']], o.fmt)) +
-      '<div class="mn-fmt-note small" data-mnfmtnote></div>' +
-      '</div>' +
-      '<div class="row" style="gap:var(--sp-2);flex-wrap:wrap"><button type="button" class="btn btn-primary" data-mncopy>' + SP.icon('copy') + '<span>' + esc(SP.t('mn.copyPrompt')) + '</span></button>' +
-      '<button type="button" class="btn btn-ghost" data-mnshow>' + SP.icon('eye') + '<span>' + esc(SP.t('mn.showPrompt')) + '</span></button></div>' +
-      '<textarea class="textarea mono xsmall mn-prompt" rows="10" readonly hidden></textarea>' +
-      '<details class="mn-tips"><summary>' + esc(SP.t('mn.tipsT')) + '</summary><div data-mntips></div></details></div>';
+  function parseSafe(src, images) { try { return F().parse(src, { images: images || {} }); } catch (e) { return null; } }
+  function countsOf(r) {
+    var c = { lectures: 0, text: 0, qs: 0, test: 0, cards: 0, tasks: 0 }; if (!r) return c;
+    c.lectures = r.stats.lectures;
+    r.stats.per.forEach(function (p) { if (p.parts) c.text++; c.qs += p.qs; c.test += p.tests; c.cards += p.cards; c.tasks += p.tasks; });
+    return c;
   }
-  function wirePrompt(box, o, onChange) {
-    var ta = SP.$('.mn-prompt', box);
-    var paint = function () {
-      ta.value = SP.NOTES_PROMPTS.build(o);
-      SP.$('[data-mnfmtnote]', box).innerHTML = SP.icon(o.fmt === 'json' ? 'file-json' : 'file-text', 'ic-sm') + '<span>' + esc(SP.t(o.fmt === 'json' ? 'mn.fmtJsonNote' : 'mn.fmtTextNote')) + '</span>';
-      SP.$('[data-mntips]', box).innerHTML = SP.t(o.fmt === 'json' ? 'mn.tipsJson' : 'mn.tipsText');
-      SP.$('.mn-testsrc', box).hidden = !o.test;
-      SP.$('.mn-bank', box).hidden = o.testSrc === 'ai';
-      var bl = String(o.bank || '').length, bn = SP.$('.mn-bank-n', box);
-      if (bn) bn.textContent = bl > 25000 ? SP.t('mn.bankBig') : SP.t('mn.bankHint');
-      saveOpts(o); if (onChange) onChange(o);
-    };
-    box.addEventListener('click', function (e) {
-      var b = e.target.closest('[data-mnopt] [data-v]');
-      if (b) { var g = b.closest('[data-mnopt]'); o[g.getAttribute('data-mnopt')] = b.getAttribute('data-v'); SP.$$('[data-v]', g).forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); paint(); return; }
-      var c = e.target.closest('[data-mnchip]');
-      if (c) { var k = c.getAttribute('data-mnchip'); o[k] = !o[k]; c.setAttribute('aria-pressed', o[k]); c.querySelector('svg').outerHTML = SP.icon(o[k] ? 'check' : 'plus', 'ic-sm'); paint(); }
-    });
-    SP.$$('[data-mnin]', box).forEach(function (i) { i.addEventListener('input', SP.debounce(function () { o[i.getAttribute('data-mnin')] = i.value; paint(); }, 250)); });
-    SP.$('[data-mncopy]', box).onclick = function () {
-      if (o.test && o.testSrc !== 'ai' && !String(o.bank || '').trim()) { SP.toast(SP.t('mn.bankEmpty'), 'warning'); var bt = SP.$('[data-mnin="bank"]', box); if (bt) bt.focus(); return; }
-      SP.copyText(SP.NOTES_PROMPTS.build(o)).then(function () { SP.toast(SP.t('mn.copied'), 'success', { ms: 6000 }); });
-    };
-    SP.$('[data-mnshow]', box).onclick = function () { ta.hidden = !ta.hidden; };
-    paint();
+  /* только сам конспект (без вопросов/теста/карточек/задач) — для промта в новом чате */
+  function konspektOnly(src) {
+    var skip = false;
+    return String(src).split('\n').filter(function (l) {
+      if (/^\s*##\s/.test(l)) skip = false;
+      if (/^\s*###\s/.test(l)) skip = /^\s*###\s*(Вопросы|Тест|Карточки|Задачи|Сұрақтар|Тапсырмалар|Questions|Test|Cards|Tasks)/i.test(l);
+      return !skip;
+    }).join('\n').trim();
   }
-  /* ---------- «Доработать»: чего не хватает в ответе ИИ — и готовый короткий промт в тот же чат ---------- */
-  function improveHtml(r, o) {
-    var n = SP.NOTES_PROMPTS.counts[o.depth] || SP.NOTES_PROMPTS.counts.medium, items = [];
-    r.stats.per.forEach(function (p, li) {
-      var add = function (kind, why) { items.push({ kind: kind, li: li, label: p.label, title: p.title, why: why }); };
-      if (o.test && p.tests < n.minTest) add('test', SP.t('mn.imp.test', { n: p.tests }));
-      if (o.qs && p.qs < n.minQs) add('qs', SP.t('mn.imp.qs', { n: p.qs }));
-      else if (o.qs && p.noWhere) add('where', SP.t('mn.imp.where', { n: p.noWhere }));
-      if (o.cards && p.cards < n.minCards) add('cards', SP.t('mn.imp.cards', { n: p.cards }));
-      if (o.tasks === 'yes' && !p.tasks) add('tasks', SP.t('mn.imp.tasks'));
-      if (!p.sum) add('sum', SP.t('mn.imp.sum'));
-      if (p.text < n.minText) add('text', SP.t('mn.imp.text'));
-    });
-    var rows = items.slice(0, 8).map(function (it, i) {
-      return '<div class="mn-imp-row"><span class="grow small"><b>' + esc(it.label) + ':</b> ' + esc(it.why) + '</span><button type="button" class="btn btn-sm" data-mnimp="' + i + '">' + SP.icon('copy', 'ic-sm') + '<span>' + esc(SP.t('mn.impCopy')) + '</span></button></div>';
-    }).join('');
-    var html = '<div class="mn-imp"><div class="mn-imp-h">' + SP.icon('wand-sparkles', 'ic-sm') + '<b>' + esc(SP.t(items.length ? 'mn.impTitle' : 'mn.impGood')) + '</b></div>' + rows +
-      '<div class="mn-imp-row"><span class="grow small muted">' + esc(SP.t('mn.imp.all')) + '</span><button type="button" class="btn btn-sm btn-ghost" data-mnimp="all">' + SP.icon('copy', 'ic-sm') + '<span>' + esc(SP.t('mn.impCopy')) + '</span></button></div>' +
-      '<p class="xsmall subtle">' + esc(SP.t('mn.impHow')) + '</p></div>';
-    return { html: html, items: items.slice(0, 8) };
-  }
-  function wireImprove(box, imp, r, o) {
-    SP.$$('[data-mnimp]', box).forEach(function (b) {
-      b.onclick = function () {
-        var k = b.getAttribute('data-mnimp'), it = k === 'all' ? null : imp.items[+k];
-        var txt = SP.NOTES_PROMPTS.improve(it ? it.kind : 'all', it ? { label: it.label, title: it.title } : null, o);
-        SP.copyText(txt).then(function () { SP.toast(SP.t('mn.impCopied'), 'success', { ms: 7000 }); });
-      };
-    });
-  }
-
-  /* ---------- «Добавить конспект» ---------- */
-  function addDialog(subject, prefill) {
-    var opts = loadOpts(subject);
-    var mine = list().filter(function (m) { return !subject || SP.lc(m.subject) === SP.lc(subject); });
-    var subs = subjectsNames(); if (subject && subs.indexOf(subject) < 0) subs.unshift(subject);
-    var body = '<div class="mn">' + promptBlock(opts) +
-      '<div class="mn-step"><div class="mn-step-h"><span class="mn-n">2</span><b>' + esc(SP.t('mn.s2')) + '</b></div>' +
-      '<p class="small">' + esc(SP.t('mn.s2Text')) + '</p>' +
-      '<textarea class="textarea mono small mn-src" id="mnSrc" rows="10" spellcheck="false" placeholder="' + esc(SP.t('mn.srcPh')) + '"></textarea>' +
-      '<div class="row" style="gap:var(--sp-2)"><button type="button" class="btn btn-sm" data-mnfile>' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('mn.fromFile')) + '</span></button>' +
-      '<button type="button" class="btn btn-sm btn-ghost" data-mnpaste>' + SP.icon('copy', 'ic-sm') + '<span>' + esc(SP.t('mn.paste')) + '</span></button></div>' +
-      '<div class="mn-check" id="mnCheck"></div></div>' +
-      '<div class="mn-step"><div class="mn-step-h"><span class="mn-n">3</span><b>' + esc(SP.t('mn.s3')) + '</b></div>' +
-      '<div class="field"><label class="label" for="mnTitle">' + esc(SP.t('mn.title')) + '</label><input class="input" id="mnTitle" placeholder="' + esc(SP.t('mn.titlePh')) + '"></div>' +
-      '<div class="field"><label class="label" for="mnSubj">' + esc(SP.t('mn.subject')) + '</label><select class="input" id="mnSubj">' + subs.map(function (s) { return '<option' + (s === subject ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') + '<option value="">' + esc(SP.t('mn.otherSubj')) + '</option></select></div>' +
-      (mine.length ? '<div class="field"><div class="label">' + esc(SP.t('mn.where')) + '</div><label class="row" style="gap:var(--sp-2)"><input type="radio" name="mnMode" value="new" checked><span>' + esc(SP.t('mn.asNew')) + '</span></label>' +
-        mine.map(function (m) { return '<label class="row" style="gap:var(--sp-2)"><input type="radio" name="mnMode" value="' + esc(m.id) + '"><span>' + esc(SP.t('mn.appendTo', { t: m.title })) + '</span></label>'; }).join('') + '</div>' : '') +
-      '</div></div>';
-    var m = SP.modal({ title: SP.t('mn.addTitle'), size: 'xl', body: body, actions: [
-      { label: SP.t('common.cancel') },
-      { label: SP.t('mn.saveOpen'), kind: 'primary', icon: 'check', onClick: function () { return save(); } }] });
-    var el = m.el, src = SP.$('#mnSrc', el), chk = SP.$('#mnCheck', el), titleIn = SP.$('#mnTitle', el), subjIn = SP.$('#mnSubj', el), last = null;
-    wirePrompt(el, opts, function () { if (src && src.value.trim()) run(); });
-    var run = function () {
-      var c = checkHtml(src.value, null, opts); chk.innerHTML = c.html; last = c.ok ? c.r : null; if (c.imp) wireImprove(chk, c.imp, c.r, opts);
-      if (last && !titleIn.value.trim() && last.doc.title) titleIn.placeholder = last.doc.title;
-      if (last && last.doc.subject && !subject) { var opt = [].slice.call(subjIn.options).filter(function (o) { return SP.lc(o.value) === SP.lc(last.doc.subject); })[0]; if (opt) subjIn.value = opt.value; }
-    };
-    src.addEventListener('input', SP.debounce(run, 350));
-    if (prefill) { src.value = prefill; run(); } else run();
-    SP.$('[data-mnfile]', el).onclick = function () { pickText(function (t) { src.value = t; run(); }); };
-    SP.$('[data-mnpaste]', el).onclick = function () { if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (t) { if (t) { src.value = t; run(); } }, function () { src.focus(); SP.toast(SP.t('mn.pasteHand'), 'info'); }); else src.focus(); };
-    function save() {
-      run();
-      if (!last) { src.focus(); SP.toast(SP.t('mn.fixFirst'), 'warning'); return false; }
-      var mode = (SP.$('input[name="mnMode"]:checked', el) || {}).value || 'new';
-      var subj = subjIn.value || last.doc.subject || subject || SP.t('mn.noSubject');
-      if (mode !== 'new') {
-        rec(mode).then(function (r) {
-          r.source = String(r.source || '').replace(/\s+$/, '') + '\n\n' + stripHeader(src.value);
-          var meta = list().filter(function (x) { return x.id === mode; })[0] || { subject: subj, title: r.title };
-          return saveRec(mode, r, meta).then(function () { SP.toast(SP.t('mn.appended', { n: last.stats.lectures }), 'success'); openNote(mode); });
-        }).catch(function (e) { SP.toast(e.message, 'danger'); });
-        return;
-      }
-      var id = newId(), title = titleIn.value.trim() || last.doc.title || (subj + ' — ' + SP.t('mn.my'));
-      saveRec(id, { source: src.value, images: {}, title: title, subject: subj, at: Date.now() }, { subject: subj, title: title, short: subj }).then(function () {
-        SP.toast(SP.t('mn.saved'), 'success'); openNote(id);
-        if (last.stats.imgsNeeded.length) setTimeout(function () { SP.toast(SP.t('mn.imgsLater', { n: last.stats.imgsNeeded.length }), 'info', { ms: 9000 }); }, 1200);
-      }).catch(function (e) { SP.toast(e.message || SP.t('app.fail'), 'danger'); });
+  /* лишнее вокруг ответа ИИ: обёртка ```markdown, «Вот ваш конспект:» перед первым заголовком, «ПРОДОЛЖЕНИЕ СЛЕДУЕТ» */
+  function cleanChunk(s) {
+    var L = String(s || '').replace(/\r/g, '').trim().split('\n'), first = -1;
+    for (var i = 0; i < Math.min(L.length, 4); i++) if (/^\s*(#|```)/.test(L[i])) { first = i; break; }
+    if (first > 0 && L.slice(0, first).every(function (l) { return l.length < 160 && !/^\s*([?=+\-@]|\d+\.)\s/.test(l); })) L = L.slice(first);
+    L = L.filter(function (l) { return !/^\s*\**\s*продолжение следует\s*\**\s*$/i.test(l); });
+    if (/^\s*```(markdown|md|text)?\s*$/i.test(L[0] || '')) {
+      L.shift();
+      while (L.length && !L[L.length - 1].trim()) L.pop();
+      if (/^\s*```\s*$/.test(L[L.length - 1] || '')) L.pop();
     }
-    return m;
+    return L.join('\n').trim();
+  }
+  function builder(subject, existingId, prefill) {
+    var o = loadOpts(), st = { src: '', images: {}, step: 'konspekt', id: existingId || null, title: '', subject: subject || '' };
+    var start = Promise.resolve();
+    if (existingId) start = rec(existingId).then(function (r) { st.src = r.source || ''; st.images = r.images || {}; st.title = r.title || ''; st.subject = r.subject || st.subject; st.step = 'next'; });
+    else { var d = SP.store.get(DRAFT_KEY, null); if (d && d.src && (Date.now() - d.at) < 7 * 864e5 && (!subject || SP.lc(d.subject || '') === SP.lc(subject))) { st.src = d.src; st.subject = d.subject || st.subject; st.restored = true; } }
+    return start.then(open, function (e) { SP.toast(e.message, 'danger'); });
+
+    function open() {
+      var parsed = null;
+      var m = SP.modal({ title: SP.t(existingId ? 'mn.bTitleMore' : 'mn.bTitle'), size: 'xl', body: '<div class="mnb"><nav class="mnb-steps" id="mnbSteps" aria-label="' + esc(SP.t('mn.bSteps')) + '"></nav><div class="mnb-main" id="mnbMain"></div></div>', actions: [
+        { label: SP.t('common.close') },
+        { label: SP.t('mn.bSave'), kind: 'primary', icon: 'check', onClick: function () { return save(); } }] });
+      var el = m.el, stepsEl = SP.$('#mnbSteps', el), main = SP.$('#mnbMain', el);
+      var keepDraft = function () { if (!existingId) SP.store.set(DRAFT_KEY, { src: st.src, subject: st.subject, at: Date.now() }); };
+      var reparse = function () { parsed = st.src.trim() ? parseSafe(st.src, st.images) : null; };
+      var done = function (k) { var c = countsOf(parsed); return k === 'konspekt' ? c.text > 0 : c[k] > 0; };
+      var lecs = function () { return parsed ? parsed.doc.lectures.map(function (l) { return { label: l.label, title: l.title }; }) : []; };
+
+      function paintSteps() {
+        var c = countsOf(parsed);
+        stepsEl.innerHTML = STEPS.map(function (s) {
+          var k = s[0], ok = done(k), locked = k !== 'konspekt' && !done('konspekt');
+          var sub = ok ? (k === 'konspekt' ? SP.t('mn.bLecN', { n: c.lectures }) : SP.t('mn.bItemsN', { n: c[k] })) : SP.t(k === 'konspekt' ? 'mn.bNeed' : 'mn.bOpt');
+          return '<button type="button" class="mnb-step' + (st.step === k ? ' cur' : '') + (ok ? ' ok' : '') + '" data-step="' + k + '"' + (locked ? ' disabled' : '') + (st.step === k ? ' aria-current="step"' : '') + '>' +
+            '<span class="mnb-ic">' + SP.icon(ok ? 'check' : s[1], 'ic-sm') + '</span><span class="mnb-st"><b>' + esc(SP.t('mn.step.' + k)) + '</b><small>' + esc(sub) + '</small></span></button>';
+        }).join('');
+      }
+      function stepOpts(k) {
+        if (k === 'konspekt') return qRow('mn.q.subject', '<input class="input" data-mnin="subject" value="' + esc(st.subject) + '" placeholder="' + esc(SP.t('mn.q.subjectPh')) + '">') +
+          qRow('mn.q.depth', seg('depth', [['short', 'mn.depth.short'], ['medium', 'mn.depth.medium'], ['full', 'mn.depth.full']], o.depth), 'mn.q.depthHint') +
+          qRow('mn.q.split', seg('split', [['auto', 'mn.split.auto'], ['lectures', 'mn.split.lectures'], ['topics', 'mn.split.topics']], o.split)) +
+          qRow('mn.q.lang', seg('lang', [['auto', 'mn.lang.auto'], ['ru', 'mn.lang.ru'], ['kk', 'mn.lang.kk']], o.lang));
+        if (k === 'qs') return qRow('mn.bHowMany', seg('nQs', [[5, '5'], [10, '10'], [15, '15'], [20, '20']], o.nQs), 'mn.bPerLec');
+        if (k === 'cards') return qRow('mn.bHowMany', seg('nCards', [[10, '10'], [15, '15'], [20, '20'], [30, '30']], o.nCards), 'mn.bPerLec');
+        if (k === 'tasks') return qRow('mn.bHowMany', seg('nTasks', [[3, '3'], [5, '5'], [8, '8'], [10, '10']], o.nTasks), 'mn.bPerLec');
+        return qRow('mn.q.testSrc', seg('testSrc', [['ai', 'mn.src.ai'], ['mine', 'mn.src.mine'], ['both', 'mn.src.both']], o.testSrc)) +
+          '<div class="mnb-n"' + (o.testSrc === 'mine' ? ' hidden' : '') + '>' + qRow('mn.bHowMany', seg('nTest', [[10, '10'], [15, '15'], [20, '20'], [30, '30']], o.nTest), 'mn.bPerLec') + '</div>' +
+          '<div class="mn-bank"' + (o.testSrc === 'ai' ? ' hidden' : '') + '><textarea class="textarea mono xsmall" data-mnin="bank" rows="5" placeholder="' + esc(SP.t('mn.bankPh')) + '">' + esc(o.bank || '') + '</textarea><p class="xsmall subtle">' + esc(SP.t('mn.bankHint')) + '</p></div>';
+      }
+      function paintNext() {
+        var c = countsOf(parsed);
+        main.innerHTML = '<div class="mnb-done">' + SP.icon('circle-check') + '<div><b>' + esc(SP.t('mn.bNextT')) + '</b><div class="small muted">' +
+          esc(SP.t('mn.bNextSum', { l: c.lectures, q: c.qs, t: c.test, c: c.cards, z: c.tasks })) + '</div></div></div>' +
+          '<p class="small">' + esc(SP.t('mn.bNextText')) + '</p>' +
+          '<div class="mnb-next">' + STEPS.slice(1).map(function (s) {
+            return '<button type="button" class="btn' + (done(s[0]) ? ' btn-ghost' : '') + '" data-go="' + s[0] + '">' + SP.icon(done(s[0]) ? 'check' : 'plus') + '<span>' + esc(SP.t('mn.step.' + s[0])) + '</span></button>';
+          }).join('') + '<button type="button" class="btn btn-ghost" data-go="konspekt">' + SP.icon('book-open') + '<span>' + esc(SP.t('mn.bMoreLec')) + '</span></button></div>' +
+          '<button type="button" class="btn btn-primary btn-block mnb-savebig" data-mnbsave>' + SP.icon('check') + '<span>' + esc(SP.t('mn.bSaveNow')) + '</span></button>';
+        SP.$$('[data-go]', main).forEach(function (b) { b.onclick = function () { st.step = b.getAttribute('data-go'); paintSteps(); paintMain(); }; });
+        SP.$('[data-mnbsave]', main).onclick = save;
+      }
+      function paintMain() {
+        if (st.step === 'next') return paintNext();
+        var k = st.step, ic = STEPS.filter(function (s) { return s[0] === k; })[0][1];
+        main.innerHTML = '<div class="mnb-h">' + SP.icon(ic) + '<b>' + esc(SP.t('mn.step.' + k)) + '</b></div>' +
+          '<p class="small">' + esc(SP.t('mn.bText.' + k)) + '</p>' +
+          '<div class="mn-quiz">' + stepOpts(k) + '</div>' +
+          '<div class="mnb-copy"><button type="button" class="btn btn-primary" data-mnbcopy>' + SP.icon('copy') + '<span>' + esc(SP.t(k === 'konspekt' ? 'mn.bCopy1' : 'mn.bCopyN')) + '</span></button>' +
+          (k !== 'konspekt' ? '<label class="mnb-ctx xsmall"><input type="checkbox" data-mnbctx' + (o.withKonspekt ? ' checked' : '') + '><span>' + esc(SP.t('mn.bNewChat')) + '</span></label>' : '') + '</div>' +
+          '<div class="field"><label class="label" for="mnbAns">' + esc(SP.t('mn.bPaste')) + '</label><textarea class="textarea mono small mn-src" id="mnbAns" rows="8" spellcheck="false" placeholder="' + esc(SP.t('mn.bPastePh.' + k)) + '"></textarea>' +
+          '<div class="row" style="gap:6px;margin-top:6px"><button type="button" class="btn btn-sm" data-mnbfile>' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('mn.fromFile')) + '</span></button>' +
+          '<button type="button" class="btn btn-sm btn-ghost" data-mnbclip>' + SP.icon('copy', 'ic-sm') + '<span>' + esc(SP.t('mn.paste')) + '</span></button></div></div>' +
+          '<div class="mn-check" id="mnbCheck"></div>' +
+          '<div class="mnb-acts"><button type="button" class="btn btn-primary" data-mnbadd disabled>' + SP.icon('plus') + '<span>' + esc(SP.t(k === 'konspekt' && done('konspekt') ? 'mn.bAddMore' : 'mn.bAdd')) + '</span></button></div>' +
+          '<details class="mn-tips"><summary>' + esc(SP.t('mn.tipsT')) + '</summary>' + SP.t('mn.bTips') + '</details>';
+        wireMain(k);
+      }
+      function wireMain(k) {
+        var ans = SP.$('#mnbAns', main), chk = SP.$('#mnbCheck', main), add = SP.$('[data-mnbadd]', main), good = null;
+        SP.$$('[data-mnopt] [data-v]', main).forEach(function (b) {
+          b.onclick = function () {
+            var g = b.closest('[data-mnopt]'), key = g.getAttribute('data-mnopt'), v = b.getAttribute('data-v');
+            o[key] = /^n[A-Z]/.test(key) ? +v : v; saveOpts(o);
+            SP.$$('[data-v]', g).forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+            if (key === 'testSrc') { SP.$('.mn-bank', main).hidden = v === 'ai'; SP.$('.mnb-n', main).hidden = v === 'mine'; }
+          };
+        });
+        SP.$$('[data-mnin]', main).forEach(function (i) { i.oninput = function () { var key = i.getAttribute('data-mnin'); if (key === 'subject') { st.subject = i.value; keepDraft(); } else o[key] = i.value; }; });
+        var cx = SP.$('[data-mnbctx]', main); if (cx) cx.onchange = function () { o.withKonspekt = cx.checked; saveOpts(o); };
+        SP.$('[data-mnbcopy]', main).onclick = function () {
+          if (k === 'test' && o.testSrc !== 'ai' && !String(o.bank || '').trim()) { SP.toast(SP.t('mn.bankEmpty'), 'warning'); var bt = SP.$('[data-mnin="bank"]', main); if (bt) bt.focus(); return; }
+          var konsp = o.withKonspekt && parsed ? konspektOnly(st.src) : '';
+          SP.copyText(SP.NOTES_PROMPTS.build(k, Object.assign({}, o, { subject: st.subject }), { lectures: lecs(), konspekt: konsp })).then(function () { SP.toast(SP.t(k === 'konspekt' ? 'mn.bCopied1' : 'mn.bCopiedN'), 'success', { ms: 7000 }); });
+        };
+        var check = function () {
+          var t = ans.value.trim(); good = null; add.disabled = true;
+          if (!t) { chk.innerHTML = ''; return; }
+          var cut = /продолжение следует/i.test(t.split('\n').slice(-3).join('\n'));
+          t = cleanChunk(t);
+          var r = parseSafe(t, st.images), msg = [], warn = [];
+          if (!r) { chk.innerHTML = '<div class="alert alert-danger">' + SP.icon('circle-x') + '<div class="alert-body">' + esc(SP.t('mn.bBad')) + '</div></div>'; return; }
+          var c = countsOf(r), have = {}; lecs().forEach(function (l) { have[SP.lc(l.label)] = 1; });
+          var count = k === 'konspekt' ? c.text : c[k], cont = false;
+          /* продолжение после «дальше» — без заголовка лекции: дописывается в конец последней лекции */
+          if (parsed && !/^\s*##\s/m.test(t)) {
+            count = 0;
+            var both = parseSafe(st.src.replace(/\s+$/, '') + '\n' + t, st.images), size = function (x) { return x ? x.stats.per.reduce(function (a, p) { return a + (p.text || 0); }, 0) : 0; };
+            var grow = k === 'konspekt' ? size(both) - size(parsed) : (both ? countsOf(both)[k] - countsOf(parsed)[k] : 0);
+            if (both && both.stats.lectures === parsed.stats.lectures && grow > 0) { cont = true; count = grow; r = both; }
+          }
+          if (!count) { chk.innerHTML = '<div class="alert alert-warning">' + SP.icon('triangle-alert') + '<div class="alert-body">' + esc(SP.t('mn.bNone.' + k)) + '</div></div>'; return; }
+          if (cont) msg.push(SP.t('mn.bCont', { l: (function (l) { return l.label + '. ' + l.title; })(parsed.doc.lectures[parsed.doc.lectures.length - 1]) }) + (k !== 'konspekt' ? ' ' + SP.t('mn.bFound.' + k, { n: count }) : ''));
+          else if (k === 'konspekt') msg.push(SP.t('mn.bFoundLec', { n: c.text }) + ' — ' + r.doc.lectures.map(function (l) { return l.label + '. ' + l.title; }).join('; '));
+          else {
+            msg.push(SP.t('mn.bFound.' + k, { n: count }));
+            r.stats.per.forEach(function (p) { if (!have[SP.lc(p.label)]) warn.push(SP.t('mn.bNewLec', { l: p.label + '. ' + p.title })); });
+            if (k === 'qs') { var nw = r.stats.per.reduce(function (a, p) { return a + p.noWhere; }, 0); if (nw) warn.push(SP.t('mn.imp.where', { n: nw })); }
+          }
+          if (r.stats.imgsNeeded.length) warn.push(SP.t('mn.imgsNeed', { n: r.stats.imgsNeeded.length }));
+          r.warn.forEach(function (w) { if (k === 'konspekt' || !/нет текста/.test(w)) warn.push(w); });
+          chk.innerHTML = '<div class="mn-ok">' + SP.icon('circle-check') + '<span>' + msg.map(esc).join('<br>') + '</span></div>' +
+            (cut ? '<div class="alert alert-info">' + SP.icon('info') + '<div class="alert-body">' + esc(SP.t('mn.bCut')) + '<div class="alert-actions"><button type="button" class="btn btn-sm" data-mnbmore>' + SP.icon('copy', 'ic-sm') + '<span>' + esc(SP.t('mn.bCopyMore')) + '</span></button></div></div></div>' : '') +
+            (warn.length ? '<details class="mn-warn"' + (warn.length < 3 ? ' open' : '') + '><summary>' + SP.icon('triangle-alert', 'ic-sm') + esc(SP.t('mn.warnN', { n: warn.length })) + '</summary><ul>' + warn.slice(0, 20).map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul></details>' : '');
+          var mb = SP.$('[data-mnbmore]', chk); if (mb) mb.onclick = function () { SP.copyText(SP.NOTES_PROMPTS.more()).then(function () { SP.toast(SP.t('mn.bMoreCopied'), 'success'); }); };
+          good = t; add.disabled = false;
+        };
+        ans.addEventListener('input', SP.debounce(check, 300));
+        SP.$('[data-mnbfile]', main).onclick = function () { pickText(function (t) { ans.value = t; check(); }); };
+        SP.$('[data-mnbclip]', main).onclick = function () { if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (t) { if (t) { ans.value = t; check(); } }, function () { ans.focus(); SP.toast(SP.t('mn.pasteHand'), 'info'); }); else ans.focus(); };
+        add.onclick = function () {
+          if (!good) return;
+          var chunk = cleanChunk(good);
+          st.src = st.src.trim() ? st.src.replace(/\s+$/, '') + '\n\n' + stripHeader(chunk) : chunk;
+          ans.value = ''; good = null;
+          reparse(); keepDraft();
+          if (k === 'konspekt' && !st.subject && parsed && parsed.doc.subject) st.subject = parsed.doc.subject;
+          SP.toast(SP.t('mn.bAdded'), 'success');
+          /* дальше студент сам выбирает кнопками: «+ Вопросы», «+ Тест»… */
+          st.step = 'next'; paintSteps(); paintMain();
+        };
+      }
+      stepsEl.addEventListener('click', function (e) { var b = e.target.closest('[data-step]'); if (!b || b.disabled) return; st.step = b.getAttribute('data-step'); paintSteps(); paintMain(); });
+      function save() {
+        reparse();
+        if (!done('konspekt')) { SP.toast(SP.t('mn.bSaveNeed'), 'warning'); return false; }
+        var subj = (st.subject || parsed.doc.subject || SP.t('mn.noSubject')).trim();
+        var title = st.title || parsed.doc.title || (subj + ' — ' + SP.t('mn.my'));
+        var id = st.id || newId();
+        saveRec(id, { source: st.src, images: st.images, title: title, subject: subj, at: Date.now() }, { subject: subj, title: title, short: subj }).then(function () {
+          if (!existingId) SP.store.del(DRAFT_KEY);
+          m.close(); SP.toast(SP.t('mn.saved'), 'success'); openNote(id);
+          if (parsed.stats.imgsNeeded.length) setTimeout(function () { SP.toast(SP.t('mn.imgsLater', { n: parsed.stats.imgsNeeded.length }), 'info', { ms: 9000 }); }, 1200);
+        }).catch(function (e) { SP.toast(e.message || SP.t('app.fail'), 'danger'); });
+        return false;
+      }
+      reparse();
+      if (st.restored && done('konspekt') && !prefill) st.step = 'next';
+      if (st.step === 'next' && !done('konspekt')) st.step = 'konspekt';
+      paintSteps(); paintMain();
+      if (prefill) { var a0 = SP.$('#mnbAns', main); a0.value = prefill; a0.dispatchEvent(new Event('input')); }
+      if (st.restored) SP.toast(SP.t('mn.bRestored'), 'info', { ms: 6000 });
+      return m;
+    }
   }
   /* дописать лекции: шапку «# Конспект:» и «Предмет:» второй раз не повторяем */
   function stripHeader(s) { return String(s || '').replace(/^\s*#\s+(?!#).*\n?/m, function (h) { return /лекция|lecture|дәріс|тема/i.test(h) ? h : ''; }).replace(/^\s*(Предмет|Subject|Пән)\s*:.*\n?/im, ''); }
@@ -237,7 +284,7 @@
       .then(function () { SP.toast(SP.t('mn.imported', { t: j.title || '' }), 'success'); openNote(id); });
   }
   function importDialog(subject) {
-    pickText(function (t) { addDialog(subject, t); });
+    pickText(function (t) { builder(subject, null, t); });
   }
   /* автор: два файла как у конспектов группы (data/<группа>/notes/<id>.json и <id>.extra.json) + строка для index.json */
   function authorExport(id) {
@@ -273,7 +320,7 @@
   ];
   function edit(id) {
     return rec(id).then(function (r) {
-      var images = Object.assign({}, r.images || {}), meta = list().filter(function (x) { return x.id === id; })[0] || {}, edOpts = loadOpts(r.subject);
+      var images = Object.assign({}, r.images || {}), meta = list().filter(function (x) { return x.id === id; })[0] || {};
       var subs = subjectsNames(); if (r.subject && subs.indexOf(r.subject) < 0) subs.unshift(r.subject);
       var body = '<div class="mn mn-ed">' +
         '<div class="row mn-ed-meta"><div class="field grow"><label class="label" for="meT">' + esc(SP.t('mn.title')) + '</label><input class="input" id="meT" value="' + esc(r.title || '') + '"></div>' +
@@ -291,7 +338,7 @@
         { label: SP.t('mn.saveOpen'), kind: 'primary', icon: 'check', onClick: function () { persist(true).then(function (ok) { if (ok) openNote(id); }); } }] });
       var el = m.el, ta = SP.$('#meSrc', el), chk = SP.$('#meCheck', el), phs = SP.$('#mePhs', el);
       var run = function () {
-        var c = checkHtml(ta.value, images, edOpts); chk.innerHTML = c.html; if (c.imp) wireImprove(chk, c.imp, c.r, edOpts);
+        var c = checkCore(ta.value, images); chk.innerHTML = c.html;
         /* места под картинки: «Выбрать картинку» прямо здесь */
         var need = []; ta.value.split('\n').forEach(function (l, i) { var mm = l.trim().match(/^\[\[\s*(?:КАРТИНКА|РИСУНОК|ИЗОБРАЖЕНИЕ|ФОТО|СУРЕТ|IMAGE|PICTURE)\s*[:：]\s*(.+?)\s*\]\]$/i); if (mm) need.push({ line: i, cap: mm[1] }); });
         phs.innerHTML = need.length ? '<div class="mn-ph-list"><b class="small">' + esc(SP.t('mn.phTitle')) + '</b>' + need.map(function (n) { return '<div class="mn-ph">' + SP.icon('image', 'ic-sm') + '<span class="grow small">' + esc(n.cap) + '</span><button type="button" class="btn btn-sm" data-phline="' + n.line + '">' + esc(SP.t('mn.pickImg')) + '</button></div>'; }).join('') + '</div>' : '';
@@ -346,5 +393,5 @@
     inp.click();
   }
 
-  SP.myNotes = { metas: metas, load: load, list: list, add: addDialog, importDialog: importDialog, edit: edit, exportFile: exportFile, remove: remove, authorExport: authorExport };
+  SP.myNotes = { metas: metas, load: load, list: list, add: function (s) { return builder(s); }, more: function (id) { return builder(null, id); }, importDialog: importDialog, edit: edit, exportFile: exportFile, remove: remove, authorExport: authorExport };
 })();

@@ -605,3 +605,9 @@ Object.assign(SP.I18N.en, {
   'mn.depth.short': 'Short', 'mn.depth.medium': 'Medium', 'mn.depth.full': 'Detailed', 'mn.q.want': 'Also make', 'mn.want.qs': 'Q&A', 'mn.want.test': 'Test', 'mn.want.cards': 'Cards',
   'mn.q.tasks': 'Tasks with solutions', 'mn.q.testSrc': 'Whose test', 'mn.q.split': 'How to split', 'mn.q.lang': 'Language', 'mn.q.fmt': 'Answer format', 'mn.impCopy': 'Copy prompt'
 });
+
+Object.assign(SP.I18N.en, {
+  'mn.moreLec': 'Add more', 'mn.bTitle': 'New notes — step by step', 'mn.bTitleMore': 'Add to notes', 'mn.bSave': 'Save notes',
+  'mn.step.konspekt': 'Notes', 'mn.step.qs': 'Questions', 'mn.step.test': 'Test', 'mn.step.cards': 'Cards', 'mn.step.tasks': 'Tasks',
+  'mn.bCopy1': 'Copy prompt', 'mn.bCopyN': 'Copy prompt', 'mn.bAdd': 'Add to notes', 'mn.bPaste': 'AI answer', 'mn.bNextT': 'Done! What next?', 'mn.bSaveNow': 'Save and open', 'mn.bMoreLec': 'More lectures'
+});

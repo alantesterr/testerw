@@ -15,7 +15,7 @@ Add-Type -AssemblyName System.Windows.Forms, System.Drawing, Microsoft.VisualBas
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $Base     = 'https://platonus.kgu.kz'
-$TT       = 'https://timetable.kgu.kz'
+$TtBase       = 'https://timetable.kgu.kz'
 $SiteUrl  = 'https://alantesterr.github.io/testerw/'
 $Here     = Split-Path -Parent $MyInvocation.MyCommand.Path
 $cfgPath  = Join-Path $Here 'config.json'
@@ -210,10 +210,10 @@ function Timetable-Weeks($page) {
 }
 # Вход в Timetable; возвращает страницу «Студент сабақ кестесі» и ID студента
 function Login-Timetable($login, $password) {
-    Invoke-WebRequest -UseBasicParsing "$TT/index.php?page=login" -SessionVariable tw | Out-Null
+    Invoke-WebRequest -UseBasicParsing "$TtBase/index.php?page=login" -SessionVariable tw | Out-Null
     $script:TtWeb = $tw
-    Post-Form "$TT/index.php?page=login" ([ordered]@{ language = '1'; username = $login; password = $password; subEnter = 'Войти' }) | Out-Null
-    $page = Read-Utf8 (Invoke-WebRequest -UseBasicParsing -WebSession $script:TtWeb "$TT/index.php?page=student_timetable")
+    Post-Form "$TtBase/index.php?page=login" ([ordered]@{ language = '1'; username = $login; password = $password; subEnter = 'Войти' }) | Out-Null
+    $page = Read-Utf8 (Invoke-WebRequest -UseBasicParsing -WebSession $script:TtWeb "$TtBase/index.php?page=student_timetable")
     $sid = [regex]::Match($page, 'id="STstudentID"\s+value="(\d+)"').Groups[1].Value
     if (-not $sid -or $sid -eq '0') { throw 'Не удалось войти в Timetable: проверьте логин и пароль.' }
     @{ page = $page; sid = $sid }
@@ -228,7 +228,7 @@ function Fetch-Timetable($login, $password, $status) {
     $weeks = @(); $i = 0
     foreach ($m in $pick) {
         $i++; $status.Invoke("Загружаю расписание ($i из $($pick.Count))...")
-        $html = Post-Form "$TT/ajax/load_student_table.php" ([ordered]@{ studentID = $li.sid; begd = $m.ToString('dd'); begm = $m.ToString('MM'); begy = $m.ToString('yyyy') })
+        $html = Post-Form "$TtBase/ajax/load_student_table.php" ([ordered]@{ studentID = $li.sid; begd = $m.ToString('dd'); begm = $m.ToString('MM'); begy = $m.ToString('yyyy') })
         $weeks += [ordered]@{ monday = $m.ToString('yyyy-MM-dd'); html = (Slim-Html $html) }
         Start-Sleep -Milliseconds 150
     }

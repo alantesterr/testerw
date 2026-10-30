@@ -1086,3 +1086,36 @@ a.tt-link:focus-visible, a.shk-link:focus-visible { outline: none; box-shadow: v
   .mnb-st small { display: none; }
   .mnb-acts .btn { width: 100%; justify-content: center; }
 }
+/* «Всё сразу» и «Посмотреть» в конструкторе */
+.mnb-view { margin-top: 6px; border-top: 1px solid var(--border); border-radius: 0 0 10px 10px; padding-top: .6rem; }
+.mnb-all { display: flex; align-items: center; gap: .75rem; width: 100%; text-align: left; padding: .85rem 1rem; border-radius: 14px; border: 1.5px solid var(--accent); background: var(--accent-soft); color: var(--text); cursor: pointer; font: inherit; }
+.mnb-all:hover { filter: brightness(1.05); }
+.mnb-all > svg { color: var(--accent-text); flex: none; width: 26px; height: 26px; }
+.mnb-all span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mnb-all small { font-size: .8rem; color: var(--text-2); }
+.mnv { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.mnv > summary { display: flex; align-items: center; gap: .5rem; padding: .65rem .8rem; cursor: pointer; list-style: none; }
+.mnv > summary::-webkit-details-marker { display: none; }
+.mnv-t { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.mnv-t b { overflow-wrap: anywhere; }
+.mnv-t small { font-size: .78rem; color: var(--text-2); }
+.mnv-chev { flex: none; transition: transform .15s; }
+.mnv[open] .mnv-chev { transform: rotate(180deg); }
+.mnv-acts { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 .8rem .6rem; }
+.mnv-panel { display: flex; flex-direction: column; gap: 8px; margin: 0 .8rem .8rem; padding: .7rem; border-radius: 10px; background: var(--surface-2, rgba(127,127,127,.08)); }
+.mnv-wish { display: flex; flex-wrap: wrap; gap: 6px; }
+.mnv-body { padding: .2rem .9rem .9rem; border-top: 1px solid var(--border); max-height: 60vh; overflow: auto; min-width: 0; }
+.mnv-h { margin: 1rem 0 .4rem; font-size: .95rem; display: flex; align-items: center; gap: .4rem; }
+.mnv-qa { border-bottom: 1px solid var(--border); padding: .35rem 0; }
+.mnv-qa > summary { cursor: pointer; font-weight: 600; font-size: .9rem; overflow-wrap: anywhere; }
+.mnv-sol { border-left: 3px solid var(--success, #16a34a); padding-left: .6rem; margin-top: .4rem; }
+.mnv-test { padding-left: 1.2rem; font-size: .9rem; }
+.mnv-test > li { margin-bottom: .55rem; overflow-wrap: anywhere; }
+.mnv-test ul { list-style: none; padding-left: .2rem; margin: .2rem 0 0; color: var(--text-2); }
+.mnv-test ul li { display: flex; gap: .3rem; align-items: center; }
+.mnv-test ul li.ok { color: var(--success, #16a34a); font-weight: 600; }
+.mnv-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+.mnv-cards > div { border: 1px solid var(--border); border-radius: 10px; padding: .5rem .6rem; font-size: .85rem; overflow-wrap: anywhere; }
+.mnv-cards > div p { margin: .2rem 0 0; color: var(--text-2); }
+@media (max-width: 720px) { .mnb-view { margin-top: 0; border-top: 0; padding-top: .35rem; } .mnv-body { max-height: none; } }
+.mnb-next .btn { white-space: normal; text-align: left; min-width: 0; height: auto; min-height: 40px; }

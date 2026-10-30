@@ -62,7 +62,7 @@
      Каждый шаг — короткий промт про одно дело (notes-prompts.js), ответ вставляется и сразу проверяется,
      «Добавить» дописывает его к черновику; по заголовкам «## Лекция N» сайт кладёт его в нужную лекцию.
      Черновик не теряется: хранится, пока конспект не сохранён. */
-  var OPT_KEY = 'sp-mynotes-opts2', DRAFT_KEY = 'sp-mynotes-draft';
+  var OPT_KEY = 'sp-mynotes-opts3', DRAFT_KEY = 'sp-mynotes-draft';
   var STEPS = [['konspekt', 'book-open'], ['qs', 'circle-help'], ['test', 'list-checks'], ['cards', 'layers'], ['tasks', 'square-pen']];
   function loadOpts() { return Object.assign({}, SP.NOTES_PROMPTS.defaults, SP.store.get(OPT_KEY, {}) || {}, { bank: '' }); }
   function saveOpts(o) { var c = Object.assign({}, o); delete c.bank; SP.store.set(OPT_KEY, c); }
@@ -71,6 +71,8 @@
       return '<button type="button" data-v="' + x[0] + '" aria-pressed="' + (String(cur) === String(x[0])) + '">' + esc(/^mn\./.test(x[1]) ? SP.t(x[1]) : x[1]) + '</button>';
     }).join('') + '</div>';
   }
+  /* «ИИ решит» · числа · «Скажу сам» (студент напишет ИИ в чате) */
+  function nums(a) { return [['ai', 'mn.o.ai']].concat(a.map(function (n) { return [n, String(n)]; }), [['self', 'mn.o.self']]); }
   function qRow(label, ctl, hint) { return '<div class="mn-qrow"><div class="mn-ql">' + esc(SP.t(label)) + (hint ? '<span class="xsmall subtle">' + esc(SP.t(hint)) + '</span>' : '') + '</div><div class="mn-qc">' + ctl + '</div></div>'; }
   function parseSafe(src, images) { try { return F().parse(src, { images: images || {} }); } catch (e) { return null; } }
   function countsOf(r) {
@@ -101,6 +103,49 @@
     }
     return L.join('\n').trim();
   }
+  /* исходный текст по лекциям: шапка («# Конспект:», «Предмет:») + куски каждой лекции (по её названию).
+     Нужно, чтобы в «Посмотреть» править, переделывать с ИИ и удалять одну лекцию целиком. */
+  function groups(src) {
+    var L = String(src || '').split('\n'), pre = [], cur = null, list = [];
+    L.forEach(function (l) { if (/^\s*##\s/.test(l) && !/^\s*###/.test(l)) { cur = [l]; list.push(cur); } else if (cur) cur.push(l); else pre.push(l); });
+    var g = { pre: '', order: [], map: {} }, head = [], i = 0;
+    while (i < pre.length && (!pre[i].trim() || /^\s*#\s|^\s*(Предмет|Subject|Пән)\s*:/i.test(pre[i]))) head.push(pre[i++]);
+    g.pre = head.join('\n').trim();
+    var rest = pre.slice(i).join('\n').trim();
+    if (rest) list.unshift(rest.split('\n')); // лекция без заголовка «## …» в самом начале
+    list.forEach(function (c) {
+      var txt = c.join('\n').trim(), p = parseSafe(txt), lab = p && p.doc.lectures[0] ? SP.lc(p.doc.lectures[0].label) : SP.lc(c[0]);
+      if (!g.map[lab]) { g.map[lab] = []; g.order.push(lab); }
+      g.map[lab].push(txt);
+    });
+    return g;
+  }
+  function joinGroups(g) {
+    return [g.pre].concat(g.order.filter(function (k) { return g.map[k] && g.map[k].length; }).map(function (k) { return g.map[k].join('\n\n'); })).filter(Boolean).join('\n\n');
+  }
+  /* как лекция будет выглядеть: главное, текст, вопросы, тест (верные отмечены), карточки, задачи */
+  function lecPreview(l, sum) {
+    var B = function (b) { return SP.notes && SP.notes.blocks ? SP.notes.blocks(b || []) : ''; }, h = '';
+    var H = function (t, n) { return '<h5 class="mnv-h">' + esc(t) + (n != null ? ' <span class="badge">' + n + '</span>' : '') + '</h5>'; };
+    if (sum && sum.length) h += '<div class="mnv-sum">' + H(SP.t('mn.v.sum')) + '<ul class="nt-list">' + sum.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul></div>';
+    l.sections.forEach(function (s) {
+      if (s.kind === 'text') h += (s.title ? H(s.title) : '') + B(s.blocks);
+      else if (s.kind === 'qa') h += H(SP.t('mn.step.qs'), s.blocks.length) + s.blocks.map(function (b) {
+        return '<details class="mnv-qa"><summary>' + b.q + '</summary>' + B(b.a) + (b.where ? '<p class="xsmall subtle">' + SP.icon('map-pin', 'ic-sm') + ' ' + esc(b.where) + '</p>' : '') + '</details>';
+      }).join('');
+      else if (s.kind === 'tasks') h += H(SP.t('mn.step.tasks'), s.blocks.length) + s.blocks.map(function (b) {
+        return '<details class="mnv-qa"><summary>' + esc(((b.num || '') + ' ' + (b.title || '')).trim() || SP.t('mn.step.tasks')) + '</summary>' + B(b.q) + '<div class="mnv-sol">' + B(b.a) + '</div></details>';
+      }).join('');
+      else if (s.kind === 'test') {
+        var qs = []; s.blocks.forEach(function (b) { if (b.questions) qs = qs.concat(b.questions); });
+        h += H(SP.t('mn.step.test'), qs.length) + '<ol class="mnv-test">' + qs.map(function (q) {
+          return '<li><div>' + esc(q.q) + '</div><ul>' + (q.opts || []).map(function (o) { return '<li' + (o.right ? ' class="ok"' : '') + '>' + (o.right ? SP.icon('check', 'ic-sm') : '') + esc(o.t) + '</li>'; }).join('') + '</ul></li>';
+        }).join('') + '</ol>';
+      }
+    });
+    if (l.cards && l.cards.length) h += H(SP.t('mn.step.cards'), l.cards.length) + '<div class="mnv-cards">' + l.cards.map(function (c) { return '<div><b>' + c.q + '</b>' + c.a + '</div>'; }).join('') + '</div>';
+    return h;
+  }
   function builder(subject, existingId, prefill) {
     var o = loadOpts(), st = { src: '', images: {}, step: 'konspekt', id: existingId || null, title: '', subject: subject || '' };
     var start = Promise.resolve();
@@ -126,35 +171,103 @@
           var sub = ok ? (k === 'konspekt' ? SP.t('mn.bLecN', { n: c.lectures }) : SP.t('mn.bItemsN', { n: c[k] })) : SP.t(k === 'konspekt' ? 'mn.bNeed' : 'mn.bOpt');
           return '<button type="button" class="mnb-step' + (st.step === k ? ' cur' : '') + (ok ? ' ok' : '') + '" data-step="' + k + '"' + (locked ? ' disabled' : '') + (st.step === k ? ' aria-current="step"' : '') + '>' +
             '<span class="mnb-ic">' + SP.icon(ok ? 'check' : s[1], 'ic-sm') + '</span><span class="mnb-st"><b>' + esc(SP.t('mn.step.' + k)) + '</b><small>' + esc(sub) + '</small></span></button>';
-        }).join('');
+        }).join('') +
+          /* «Посмотреть»: что уже добавлено — как будет выглядеть, с правкой по лекциям */
+          '<button type="button" class="mnb-step mnb-view' + (st.step === 'view' ? ' cur' : '') + '" data-step="view"' + (done('konspekt') ? '' : ' disabled') + '>' +
+          '<span class="mnb-ic">' + SP.icon('eye', 'ic-sm') + '</span><span class="mnb-st"><b>' + esc(SP.t('mn.step.view')) + '</b><small>' + esc(SP.t('mn.bViewSub')) + '</small></span></button>';
       }
       function stepOpts(k) {
         if (k === 'konspekt') return qRow('mn.q.subject', '<input class="input" data-mnin="subject" value="' + esc(st.subject) + '" placeholder="' + esc(SP.t('mn.q.subjectPh')) + '">') +
-          qRow('mn.q.depth', seg('depth', [['short', 'mn.depth.short'], ['medium', 'mn.depth.medium'], ['full', 'mn.depth.full']], o.depth), 'mn.q.depthHint') +
+          qRow('mn.q.depth', seg('depth', [['ai', 'mn.o.ai'], ['short', 'mn.depth.short'], ['medium', 'mn.depth.medium'], ['full', 'mn.depth.full'], ['self', 'mn.o.self']], o.depth), 'mn.q.depthHint') +
           qRow('mn.q.split', seg('split', [['auto', 'mn.split.auto'], ['lectures', 'mn.split.lectures'], ['topics', 'mn.split.topics']], o.split)) +
           qRow('mn.q.lang', seg('lang', [['auto', 'mn.lang.auto'], ['ru', 'mn.lang.ru'], ['kk', 'mn.lang.kk']], o.lang));
-        if (k === 'qs') return qRow('mn.bHowMany', seg('nQs', [[5, '5'], [10, '10'], [15, '15'], [20, '20']], o.nQs), 'mn.bPerLec');
-        if (k === 'cards') return qRow('mn.bHowMany', seg('nCards', [[10, '10'], [15, '15'], [20, '20'], [30, '30']], o.nCards), 'mn.bPerLec');
-        if (k === 'tasks') return qRow('mn.bHowMany', seg('nTasks', [[3, '3'], [5, '5'], [8, '8'], [10, '10']], o.nTasks), 'mn.bPerLec');
-        return qRow('mn.q.testSrc', seg('testSrc', [['ai', 'mn.src.ai'], ['mine', 'mn.src.mine'], ['both', 'mn.src.both']], o.testSrc)) +
-          '<div class="mnb-n"' + (o.testSrc === 'mine' ? ' hidden' : '') + '>' + qRow('mn.bHowMany', seg('nTest', [[10, '10'], [15, '15'], [20, '20'], [30, '30']], o.nTest), 'mn.bPerLec') + '</div>' +
+        if (k === 'qs') return qRow('mn.bHowMany', seg('nQs', nums([5, 10, 15, 20]), o.nQs), 'mn.bPerLec');
+        if (k === 'cards') return qRow('mn.bHowMany', seg('nCards', nums([10, 15, 20, 30]), o.nCards), 'mn.bPerLec');
+        if (k === 'tasks') return qRow('mn.bHowMany', seg('nTasks', nums([3, 5, 8]), o.nTasks), 'mn.bPerLec');
+        return qRow('mn.q.testSrc', seg('testSrc', [['ai', 'mn.src.ai'], ['mine', 'mn.src.mine'], ['both', 'mn.src.both']], o.testSrc), k === 'all' ? 'mn.bAllHint' : '') +
+          (k === 'all' ? '' : '<div class="mnb-n"' + (o.testSrc === 'mine' ? ' hidden' : '') + '>' + qRow('mn.bHowMany', seg('nTest', nums([10, 15, 20, 30]), o.nTest), 'mn.bPerLec') + '</div>') +
           '<div class="mn-bank"' + (o.testSrc === 'ai' ? ' hidden' : '') + '><textarea class="textarea mono xsmall" data-mnin="bank" rows="5" placeholder="' + esc(SP.t('mn.bankPh')) + '">' + esc(o.bank || '') + '</textarea><p class="xsmall subtle">' + esc(SP.t('mn.bankHint')) + '</p></div>';
       }
       function paintNext() {
         var c = countsOf(parsed);
         main.innerHTML = '<div class="mnb-done">' + SP.icon('circle-check') + '<div><b>' + esc(SP.t('mn.bNextT')) + '</b><div class="small muted">' +
           esc(SP.t('mn.bNextSum', { l: c.lectures, q: c.qs, t: c.test, c: c.cards, z: c.tasks })) + '</div></div></div>' +
-          '<p class="small">' + esc(SP.t('mn.bNextText')) + '</p>' +
+          (c.qs || c.test || c.cards ? '' : '<button type="button" class="mnb-all" data-go="all">' + SP.icon('sparkles') + '<span><b>' + esc(SP.t('mn.bAllBtn')) + '</b><small>' + esc(SP.t('mn.bAllSub')) + '</small></span></button>' +
+            '<p class="small muted">' + esc(SP.t('mn.bOrOne')) + '</p>') +
+          (c.qs || c.test || c.cards ? '<p class="small">' + esc(SP.t('mn.bNextText')) + '</p>' : '') +
           '<div class="mnb-next">' + STEPS.slice(1).map(function (s) {
             return '<button type="button" class="btn' + (done(s[0]) ? ' btn-ghost' : '') + '" data-go="' + s[0] + '">' + SP.icon(done(s[0]) ? 'check' : 'plus') + '<span>' + esc(SP.t('mn.step.' + s[0])) + '</span></button>';
-          }).join('') + '<button type="button" class="btn btn-ghost" data-go="konspekt">' + SP.icon('book-open') + '<span>' + esc(SP.t('mn.bMoreLec')) + '</span></button></div>' +
+          }).join('') + '<button type="button" class="btn btn-ghost" data-go="konspekt">' + SP.icon('book-open') + '<span>' + esc(SP.t('mn.bMoreLec')) + '</span></button>' +
+          '<button type="button" class="btn btn-ghost" data-go="view">' + SP.icon('eye') + '<span>' + esc(SP.t('mn.bViewBtn')) + '</span></button></div>' +
           '<button type="button" class="btn btn-primary btn-block mnb-savebig" data-mnbsave>' + SP.icon('check') + '<span>' + esc(SP.t('mn.bSaveNow')) + '</span></button>';
         SP.$$('[data-go]', main).forEach(function (b) { b.onclick = function () { st.step = b.getAttribute('data-go'); paintSteps(); paintMain(); }; });
         SP.$('[data-mnbsave]', main).onclick = save;
       }
+      /* «Посмотреть»: каждая лекция — как будет выглядеть; «Исправить с ИИ», «Править текст», «Удалить» */
+      function setSrc(s, openLi) { st.src = s; reparse(); keepDraft(); if (!done('konspekt')) st.step = 'konspekt'; paintSteps(); paintMain(); if (openLi != null) { var d = SP.$('.mnv[data-li="' + openLi + '"]', main); if (d) { d.open = true; d.scrollIntoView({ block: 'nearest' }); } } }
+      function paintView() {
+        var d = parsed.doc, sum = (parsed.extra && parsed.extra.sum) || {}, g = groups(st.src);
+        main.innerHTML = '<div class="mnb-h">' + SP.icon('eye') + '<b>' + esc(SP.t('mn.step.view')) + '</b></div><p class="small">' + esc(SP.t('mn.bViewText')) + '</p>' +
+          d.lectures.map(function (l, i) {
+            var p = parsed.stats.per[i] || {}, key = SP.lc(l.label), can = !!g.map[key];
+            var line = [p.parts ? SP.t('mn.v.text') : SP.t('mn.v.noText'), SP.t('mn.v.qs', { n: p.qs || 0 }), SP.t('mn.v.test', { n: p.tests || 0 }), SP.t('mn.v.cards', { n: p.cards || 0 })].concat(p.tasks ? [SP.t('mn.v.tasks', { n: p.tasks })] : []).join(' · ');
+            return '<details class="mnv" data-li="' + i + '"><summary><span class="mnv-t"><b>' + esc(l.label + '. ' + l.title) + '</b><small>' + esc(line) + '</small></span>' + SP.icon('chevron-down', 'mnv-chev') + '</summary>' +
+              (can ? '<div class="mnv-acts"><button type="button" class="btn btn-sm" data-vfix>' + SP.icon('wand-sparkles', 'ic-sm') + '<span>' + esc(SP.t('mn.v.fix')) + '</span></button>' +
+                '<button type="button" class="btn btn-sm btn-ghost" data-vedit>' + SP.icon('pencil', 'ic-sm') + '<span>' + esc(SP.t('mn.v.edit')) + '</span></button>' +
+                '<button type="button" class="btn btn-sm btn-ghost" data-vdel>' + SP.icon('trash-2', 'ic-sm') + '<span>' + esc(SP.t('common.delete')) + '</span></button></div>' : '') +
+              '<div class="mnv-panel" hidden></div><div class="mnv-body nt-doc"></div></details>';
+          }).join('');
+        SP.$$('.mnv', main).forEach(function (dt) {
+          var i = +dt.getAttribute('data-li'), l = d.lectures[i], key = SP.lc(l.label), body = SP.$('.mnv-body', dt), panel = SP.$('.mnv-panel', dt);
+          dt.addEventListener('toggle', function () { if (dt.open && !body.innerHTML) { body.innerHTML = lecPreview(l, sum[l.id]); if (SP.notes && SP.notes.visuals) SP.notes.visuals(body); } });
+          var replace = function (txt) { var g2 = groups(st.src); if (txt.trim()) g2.map[key] = [txt.trim()]; else { delete g2.map[key]; } setSrc(joinGroups(g2), txt.trim() ? i : null); };
+          var bd = SP.$('[data-vdel]', dt); if (bd) bd.onclick = function () {
+            SP.confirm({ title: SP.t('mn.v.delT'), text: SP.t('mn.v.delText', { t: l.label + '. ' + l.title }), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) { if (ok) replace(''); });
+          };
+          var be = SP.$('[data-vedit]', dt); if (be) be.onclick = function () {
+            panel.hidden = false;
+            panel.innerHTML = '<textarea class="textarea mono small mn-src" rows="14" spellcheck="false"></textarea><p class="xsmall subtle">' + esc(SP.t('mn.v.editHint')) + '</p>' +
+              '<div class="row" style="gap:6px;justify-content:flex-end"><button type="button" class="btn btn-sm btn-ghost" data-vcancel>' + esc(SP.t('common.cancel')) + '</button><button type="button" class="btn btn-sm btn-primary" data-vok>' + SP.icon('check', 'ic-sm') + '<span>' + esc(SP.t('mn.v.apply')) + '</span></button></div>';
+            var ta = SP.$('textarea', panel); ta.value = groups(st.src).map[key].join('\n\n'); ta.focus();
+            SP.$('[data-vcancel]', panel).onclick = function () { panel.hidden = true; panel.innerHTML = ''; };
+            SP.$('[data-vok]', panel).onclick = function () { if (ta.value.trim() && !parseSafe(ta.value)) { SP.toast(SP.t('mn.bBad'), 'warning'); return; } replace(ta.value); SP.toast(SP.t('settings.saved'), 'success'); };
+          };
+          var bf = SP.$('[data-vfix]', dt); if (bf) bf.onclick = function () {
+            panel.hidden = false;
+            var wishes = ['more', 'simple', 'tests', 'errors', 'examples', 'visual'];
+            panel.innerHTML = '<p class="small">' + esc(SP.t('mn.v.fixText')) + '</p><div class="mnv-wish">' + wishes.map(function (w) { return '<button type="button" class="chip mn-chip" data-wish="' + w + '" aria-pressed="false">' + esc(SP.t('mn.w.' + w)) + '</button>'; }).join('') + '</div>' +
+              '<input class="input" data-vwish placeholder="' + esc(SP.t('mn.v.wishPh')) + '">' +
+              '<div class="mnb-copy"><button type="button" class="btn btn-primary btn-sm" data-vcopy>' + SP.icon('copy', 'ic-sm') + '<span>' + esc(SP.t('mn.bCopyN')) + '</span></button></div>' +
+              '<textarea class="textarea mono small mn-src" rows="6" spellcheck="false" data-vans placeholder="' + esc(SP.t('mn.v.ansPh')) + '"></textarea><div class="mn-check" data-vchk></div>' +
+              '<div class="row" style="gap:6px;justify-content:flex-end"><button type="button" class="btn btn-sm btn-ghost" data-vcancel>' + esc(SP.t('common.cancel')) + '</button><button type="button" class="btn btn-sm btn-primary" data-vok disabled>' + SP.icon('check', 'ic-sm') + '<span>' + esc(SP.t('mn.v.replace')) + '</span></button></div>';
+            var inp = SP.$('[data-vwish]', panel), ans = SP.$('[data-vans]', panel), vchk = SP.$('[data-vchk]', panel), ok = SP.$('[data-vok]', panel), good = null;
+            var wishText = function () { return SP.$$('[data-wish][aria-pressed="true"]', panel).map(function (b) { return SP.t('mn.wp.' + b.getAttribute('data-wish')); }).concat(inp.value.trim() ? [inp.value.trim()] : []).join('; '); };
+            SP.$$('[data-wish]', panel).forEach(function (b) { b.onclick = function () { b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true'); }; });
+            SP.$('[data-vcopy]', panel).onclick = function () {
+              SP.copyText(SP.NOTES_PROMPTS.build('fix', o, { lecture: { label: l.label, title: l.title }, wish: wishText(), source: groups(st.src).map[key].join('\n\n') })).then(function () { SP.toast(SP.t('mn.bCopiedN'), 'success', { ms: 7000 }); });
+            };
+            ans.addEventListener('input', SP.debounce(function () {
+              var t = cleanChunk(ans.value), r = t ? parseSafe(t, st.images) : null; good = null; ok.disabled = true;
+              if (!t) { vchk.innerHTML = ''; return; }
+              if (!r || !r.doc.lectures.length || !(r.stats.per[0].parts || r.stats.per[0].qs || r.stats.per[0].tests)) { vchk.innerHTML = '<div class="alert alert-warning">' + SP.icon('triangle-alert') + '<div class="alert-body">' + esc(SP.t('mn.bNone.konspekt')) + '</div></div>'; return; }
+              var p0 = r.stats.per[0];
+              vchk.innerHTML = '<div class="mn-ok">' + SP.icon('circle-check') + '<span>' + esc(SP.t('mn.v.got', { l: r.doc.lectures[0].label + '. ' + r.doc.lectures[0].title, q: p0.qs, t: p0.tests, c: p0.cards })) + '</span></div>' +
+                (r.doc.lectures.length > 1 || SP.lc(r.doc.lectures[0].label) !== key ? '<p class="xsmall subtle">' + esc(SP.t('mn.v.other')) + '</p>' : '');
+              /* заголовок другой — всё равно ставим на место этой лекции, под её названием */
+              good = SP.lc(r.doc.lectures[0].label) === key || !/^\s*##\s/m.test(t) ? t : t.replace(/^\s*##\s.*$/m, '## ' + l.label + '. ' + l.title);
+              if (!/^\s*##\s/m.test(good)) good = '## ' + l.label + '. ' + l.title + '\n' + good;
+              ok.disabled = false;
+            }, 300));
+            SP.$('[data-vcancel]', panel).onclick = function () { panel.hidden = true; panel.innerHTML = ''; };
+            ok.onclick = function () { if (good) { replace(good); SP.toast(SP.t('mn.v.replaced'), 'success'); } };
+          };
+        });
+        var first = SP.$('.mnv', main); if (first) first.open = true;
+      }
       function paintMain() {
         if (st.step === 'next') return paintNext();
-        var k = st.step, ic = STEPS.filter(function (s) { return s[0] === k; })[0][1];
+        if (st.step === 'view') return paintView();
+        var k = st.step, ic = k === 'all' ? 'sparkles' : STEPS.filter(function (s) { return s[0] === k; })[0][1];
         main.innerHTML = '<div class="mnb-h">' + SP.icon(ic) + '<b>' + esc(SP.t('mn.step.' + k)) + '</b></div>' +
           '<p class="small">' + esc(SP.t('mn.bText.' + k)) + '</p>' +
           '<div class="mn-quiz">' + stepOpts(k) + '</div>' +
@@ -173,9 +286,9 @@
         SP.$$('[data-mnopt] [data-v]', main).forEach(function (b) {
           b.onclick = function () {
             var g = b.closest('[data-mnopt]'), key = g.getAttribute('data-mnopt'), v = b.getAttribute('data-v');
-            o[key] = /^n[A-Z]/.test(key) ? +v : v; saveOpts(o);
+            o[key] = /^\d+$/.test(v) ? +v : v; saveOpts(o);
             SP.$$('[data-v]', g).forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
-            if (key === 'testSrc') { SP.$('.mn-bank', main).hidden = v === 'ai'; SP.$('.mnb-n', main).hidden = v === 'mine'; }
+            if (key === 'testSrc') { SP.$('.mn-bank', main).hidden = v === 'ai'; var nn = SP.$('.mnb-n', main); if (nn) nn.hidden = v === 'mine'; }
           };
         });
         SP.$$('[data-mnin]', main).forEach(function (i) { i.oninput = function () { var key = i.getAttribute('data-mnin'); if (key === 'subject') { st.subject = i.value; keepDraft(); } else o[key] = i.value; }; });
@@ -193,21 +306,22 @@
           var r = parseSafe(t, st.images), msg = [], warn = [];
           if (!r) { chk.innerHTML = '<div class="alert alert-danger">' + SP.icon('circle-x') + '<div class="alert-body">' + esc(SP.t('mn.bBad')) + '</div></div>'; return; }
           var c = countsOf(r), have = {}; lecs().forEach(function (l) { have[SP.lc(l.label)] = 1; });
-          var count = k === 'konspekt' ? c.text : c[k], cont = false;
+          var cnt = function (x) { return k === 'all' ? x.qs + x.test + x.cards + x.tasks : x[k]; };
+          var count = k === 'konspekt' ? c.text : cnt(c), cont = false;
           /* продолжение после «дальше» — без заголовка лекции: дописывается в конец последней лекции */
           if (parsed && !/^\s*##\s/m.test(t)) {
             count = 0;
             var both = parseSafe(st.src.replace(/\s+$/, '') + '\n' + t, st.images), size = function (x) { return x ? x.stats.per.reduce(function (a, p) { return a + (p.text || 0); }, 0) : 0; };
-            var grow = k === 'konspekt' ? size(both) - size(parsed) : (both ? countsOf(both)[k] - countsOf(parsed)[k] : 0);
+            var grow = k === 'konspekt' ? size(both) - size(parsed) : (both ? cnt(countsOf(both)) - cnt(countsOf(parsed)) : 0);
             if (both && both.stats.lectures === parsed.stats.lectures && grow > 0) { cont = true; count = grow; r = both; }
           }
           if (!count) { chk.innerHTML = '<div class="alert alert-warning">' + SP.icon('triangle-alert') + '<div class="alert-body">' + esc(SP.t('mn.bNone.' + k)) + '</div></div>'; return; }
-          if (cont) msg.push(SP.t('mn.bCont', { l: (function (l) { return l.label + '. ' + l.title; })(parsed.doc.lectures[parsed.doc.lectures.length - 1]) }) + (k !== 'konspekt' ? ' ' + SP.t('mn.bFound.' + k, { n: count }) : ''));
+          if (cont) msg.push(SP.t('mn.bCont', { l: (function (l) { return l.label + '. ' + l.title; })(parsed.doc.lectures[parsed.doc.lectures.length - 1]) }) + (k !== 'konspekt' && k !== 'all' ? ' ' + SP.t('mn.bFound.' + k, { n: count }) : ''));
           else if (k === 'konspekt') msg.push(SP.t('mn.bFoundLec', { n: c.text }) + ' — ' + r.doc.lectures.map(function (l) { return l.label + '. ' + l.title; }).join('; '));
           else {
-            msg.push(SP.t('mn.bFound.' + k, { n: count }));
+            msg.push(k === 'all' ? SP.t('mn.bFound.all', { q: c.qs, t: c.test, c: c.cards, z: c.tasks }) : SP.t('mn.bFound.' + k, { n: count }));
             r.stats.per.forEach(function (p) { if (!have[SP.lc(p.label)]) warn.push(SP.t('mn.bNewLec', { l: p.label + '. ' + p.title })); });
-            if (k === 'qs') { var nw = r.stats.per.reduce(function (a, p) { return a + p.noWhere; }, 0); if (nw) warn.push(SP.t('mn.imp.where', { n: nw })); }
+            if (k === 'qs' || k === 'all') { var nw = r.stats.per.reduce(function (a, p) { return a + p.noWhere; }, 0); if (nw) warn.push(SP.t('mn.imp.where', { n: nw })); }
           }
           if (r.stats.imgsNeeded.length) warn.push(SP.t('mn.imgsNeed', { n: r.stats.imgsNeeded.length }));
           r.warn.forEach(function (w) { if (k === 'konspekt' || !/нет текста/.test(w)) warn.push(w); });

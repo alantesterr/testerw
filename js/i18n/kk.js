@@ -612,3 +612,4 @@ Object.assign(SP.I18N.kk, {
   'mn.step.konspekt': 'Конспект', 'mn.step.qs': 'Сұрақтар', 'mn.step.test': 'Тест', 'mn.step.cards': 'Карточкалар', 'mn.step.tasks': 'Есептер',
   'mn.bCopy1': 'Промтты көшіру', 'mn.bCopyN': 'Промтты көшіру', 'mn.bAdd': 'Конспектіге қосу', 'mn.bPaste': 'ЖИ жауабы', 'mn.bNextT': 'Дайын! Тағы не қосамыз?', 'mn.bSaveNow': 'Сақтап, ашу', 'mn.bMoreLec': 'Тағы дәрістер'
 });
+Object.assign(SP.I18N.kk, { 'mn.o.ai': 'ЖИ шешеді', 'mn.o.self': 'Өзім айтамын', 'mn.step.all': 'Бәрі бірден', 'mn.step.view': 'Қарау', 'mn.bAllBtn': 'Қалғанының бәрін бірден жасау', 'mn.v.fix': 'ЖИ-мен түзету', 'mn.v.edit': 'Мәтінді түзету' });

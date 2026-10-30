@@ -611,3 +611,4 @@ Object.assign(SP.I18N.en, {
   'mn.step.konspekt': 'Notes', 'mn.step.qs': 'Questions', 'mn.step.test': 'Test', 'mn.step.cards': 'Cards', 'mn.step.tasks': 'Tasks',
   'mn.bCopy1': 'Copy prompt', 'mn.bCopyN': 'Copy prompt', 'mn.bAdd': 'Add to notes', 'mn.bPaste': 'AI answer', 'mn.bNextT': 'Done! What next?', 'mn.bSaveNow': 'Save and open', 'mn.bMoreLec': 'More lectures'
 });
+Object.assign(SP.I18N.en, { 'mn.o.ai': 'AI decides', 'mn.o.self': 'I will say', 'mn.step.all': 'All at once', 'mn.step.view': 'Preview', 'mn.bAllBtn': 'Make everything else at once', 'mn.v.fix': 'Fix with AI', 'mn.v.edit': 'Edit text' });

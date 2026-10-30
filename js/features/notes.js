@@ -628,7 +628,7 @@
     });
   }
 
-  SP.notes = { forSubject: forSubject, lecStats: lecStats, continueOf: continueOf, href: lecHref, has: has, visuals: renderVisuals,
+  SP.notes = { forSubject: forSubject, lecStats: lecStats, continueOf: continueOf, href: lecHref, has: has, visuals: renderVisuals, blocks: blocksHtml,
     /* свой конспект добавили, изменили или удалили — список и открытый конспект перечитать */
     reload: function () { index = null; docs = {}; extras = {}; idxAsked = false; cur = null; return loadIndex().then(function () { SP.emit('notes-index'); }); } };
   SP.views.register('notes', {

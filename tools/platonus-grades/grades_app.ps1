@@ -489,7 +489,7 @@ function To-DataTable($rows) {
 }
 
 # ===== Тихий запуск с сайта: пароль сохранён — окно не показываем =====
-# Кнопка «Обновить из Platonus» — только оценки, «Обновить расписание» (-Schedule) — только расписание.
+# Кнопка «Обновить оценки» — только оценки, «Обновить расписание» (-Schedule) — только расписание.
 # Результат кладётся в буфер обмена для вкладки StudyPlay, программа закрывается.
 if ($Auto) {
     $c0 = Load-Config; $cr0 = Get-Creds $c0
@@ -576,7 +576,7 @@ $btnBrRefresh = New-Btn '↻'; $btnBrRefresh.Width = 34
 $btnOpen = New-Btn 'Открыть StudyPlay'
 $btnOpen.BackColor = $blue; $btnOpen.ForeColor = [Drawing.Color]::White; $btnOpen.FlatStyle = 'Flat'
 $rl2 = New-Row; $rl2.Controls.AddRange(@((New-Label 'Открывать StudyPlay в:'), $cbBrowser, $btnBrRefresh, $btnOpen))
-$lblLinkHint = New-Label 'Кнопки «Обновить из Platonus» и «Обновить расписание» работают во всех браузерах — каждый один раз спросит «Открыть приложение?».'
+$lblLinkHint = New-Label 'Кнопки «Обновить оценки» и «Обновить расписание» работают во всех браузерах — каждый один раз спросит «Открыть приложение?».'
 $lblLinkHint.ForeColor = [Drawing.Color]::DimGray; $lblLinkHint.Margin = New-Object Windows.Forms.Padding(3, 2, 0, 2)
 $grpLink.Tag.Controls.AddRange(@($rl1, $rl2, $lblLinkHint))
 
@@ -647,7 +647,7 @@ function Show-LinkState {
 $btnLink.Add_Click({
     try {
         if ((Link-State) -eq 'on') { Link-Off; $lblStatus.Text = 'Кнопки на сайте отключены.' }
-        else { Link-On; $lblStatus.Text = 'Готово! Теперь на сайте работают «Обновить из Platonus» и «Обновить расписание».' }
+        else { Link-On; $lblStatus.Text = 'Готово! Теперь на сайте работают «Обновить оценки» и «Обновить расписание».' }
     } catch { [Windows.Forms.MessageBox]::Show("Не получилось: $($_.Exception.Message)", 'StudyPlay', 'OK', 'Warning') | Out-Null }
     Show-LinkState
 })

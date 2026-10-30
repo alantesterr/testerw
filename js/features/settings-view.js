@@ -66,12 +66,16 @@
       setRow(SP.t('settings.playerMore'), esc(SP.t('settings.playerMoreHint')), '<a class="btn btn-ghost" href="#/player">' + SP.icon('circle-play') + '<span>' + esc(SP.t('nav.player')) + '</span></a>'));
 
     /* 6. Инструменты */
+    var kind = SP.pl && SP.pl.kind ? SP.pl.kind() : '';
     html += section('tools', 'timer',
       setRow(SP.t('stopwatch.title'), esc(SP.t('settings.stopwatchHint')), '<label class="switch"><input type="checkbox" id="sSw"' + (s.stopwatch ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('stopwatch.title')) + '</span></label>') +
-      /* Кнопки Platonus в «Оценках» по умолчанию скрыты */
-      setRow(SP.t('settings.plHide'), esc(SP.t('settings.plHideHint')), '<label class="switch"><input type="checkbox" id="sPlHide"' + (s.plHide !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.plHide')) + '</span></label>') +
-      /* Автообновление — видно, только когда кнопки Platonus показаны */
-      (s.plHide === false ? setRow(SP.t('settings.plAuto'), esc(SP.t('settings.plAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sPlAuto" min="0" max="1440" step="1" value="' + esc(s.plAuto || 0) + '" aria-label="' + esc(SP.t('settings.plAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') +
+      /* Автообновление оценок и расписания: тот же мастер, что после регистрации, — шаги для этого устройства */
+      setRow(SP.t('settings.setupTitle'), esc(SP.t('settings.setupHint')), '<button type="button" class="btn" id="sSetup">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('settings.setupBtn')) + '</span></button>') +
+      /* кнопки «Обновить оценки» / «Обновить расписание»: включаются сами после настройки, здесь — вручную */
+      (/^(win|app|ios)$/.test(kind) ? setRow(SP.t('settings.plShow'), esc(SP.t('settings.plShowHint')), '<label class="switch"><input type="checkbox" id="sPlShow"' + (s.plHide === false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.plShow')) + '</span></label>') : '') +
+      (!SP.app ? setRow(SP.t('app.phoneRow'), esc(SP.t('app.phoneRowHint')), '<button type="button" class="btn btn-ghost" id="sPhone">' + SP.icon('smartphone') + '<span>' + esc(SP.t('common.open')) + '</span></button>') : '') +
+      /* интервалы — там, где сайт умеет обновлять сам (ПК и Android-приложение); на iPhone — «Команды» */
+      (s.plHide === false && /^(win|app)$/.test(kind) ? setRow(SP.t('settings.plAuto'), esc(SP.t('settings.plAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sPlAuto" min="0" max="1440" step="1" value="' + esc(s.plAuto || 0) + '" aria-label="' + esc(SP.t('settings.plAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') +
         setRow(SP.t('settings.ttAuto'), esc(SP.t('settings.ttAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sTtAuto" min="0" max="1440" step="1" value="' + esc(s.ttAuto || 0) + '" aria-label="' + esc(SP.t('settings.ttAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') +
         /* Android-приложение: вход на этом телефоне и уведомления из фона */
         (SP.app ? setRow(SP.t('app.credsTitle'), esc(SP.t('app.credsHint')), '<button type="button" class="btn" id="sAppCreds">' + SP.icon('user') + '<span>' + esc(SP.t('common.change')) + '</span></button>') +
@@ -124,7 +128,9 @@
     var at = $('#sAutoTr'); if (at) at.onchange = function () { SP.settings.set('autoTr', at.checked); };
     var hk = $('#sHotkeys'); if (hk) hk.onchange = function () { SP.settings.set('hotkeys', hk.checked); };
     var sw = $('#sSw'); if (sw) sw.onchange = function () { SP.settings.set('stopwatch', sw.checked); };
-    var ph = $('#sPlHide'); if (ph) ph.onchange = function () { SP.settings.set('plHide', ph.checked); SP.toast(SP.t('settings.saved'), 'success'); render(); var n = $('#sPlHide'); if (n) n.focus(); };
+    var ph = $('#sPlShow'); if (ph) ph.onchange = function () { SP.settings.set('plHide', !ph.checked); SP.toast(SP.t('settings.saved'), 'success'); render(); var n = $('#sPlShow'); if (n) n.focus(); };
+    var su = $('#sSetup'); if (su) su.onclick = function () { SP.pl.setup(); };
+    var sph = $('#sPhone'); if (sph) sph.onclick = function () { SP.pl.phone(); };
     var ac = $('#sAppCreds'); if (ac) ac.onclick = function () { SP.app.creds(); };
     var an = $('#sAppNotify'); if (an) an.onchange = function () { SP.app.notify(an.checked).then(function () { SP.toast(SP.t('settings.saved'), 'success'); }); };
     [['#sPlAuto', 'plAuto'], ['#sTtAuto', 'ttAuto']].forEach(function (p) {

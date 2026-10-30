@@ -560,3 +560,21 @@ Object.assign(SP.I18N.en, {
 Object.assign(SP.I18N.en, { 'app.iosRun': 'Opening Scriptable… In a few seconds it brings you back here with fresh data.', 'app.iosReady': 'The script is set up — update' });
 SP.I18N.en['app.phoneHtml'] = SP.I18N.en['app.phoneHtml'].replace('<li>Auto-update:', '<li>On this site in Safari the Update from Platonus and Update schedule buttons run the script in Scriptable, and it brings you back here with fresh data.</li><li>Auto-update:');
 Object.assign(SP.I18N.en, { 'app.paste': 'Paste update', 'app.pasteHint': 'Scriptable copied fresh data — paste it here.', 'app.pasteNone': 'No StudyPlay data in the clipboard. Press Update again and wait until Scriptable says Done.' });
+
+/* мастер автообновления */
+Object.assign(SP.I18N.en, {
+  'jr.plRun': 'Update grades',
+  'setup.title': 'Auto-update of grades and schedule',
+  'setup.intro': 'StudyPlay can take your grades from Platonus and the schedule with teachers\' links from Timetable by itself. Let\'s set it up on this device (2–3 minutes). The password stays only with you.',
+  'setup.skip': 'Skip, set up later', 'setup.doneCheck': 'Done — check', 'setup.saveCheck': 'Save and check',
+  'setup.win': '<ol class="jr-steps"><li>Press "Download the program" below.</li><li>Move the folder from the archive to a permanent place, e.g. Documents.</li><li>Double-click <b>StudyPlay.vbs</b>.</li><li>Enter your Platonus login and password, tick <b>"Remember password"</b>.</li><li>Press <b>"Подключить"</b> (Connect).</li><li>Come back and press <b>"Done — check"</b>.</li></ol>',
+  'setup.app': '<p><b>You are in the StudyPlay app for Android.</b> Enter your login and password once.</p>',
+  'setup.ios': '<ol class="jr-steps"><li>Install <b>Scriptable</b> from the App Store.</li><li>Press "Copy the iPhone script" below.</li><li>Scriptable → "+" → paste, name it <b>StudyPlay</b>.</li><li>Come back and press <b>"Done — check"</b>.</li></ol>',
+  'setup.android': '<p>A browser cannot sign in to Platonus by itself — auto-update needs the StudyPlay app.</p><ol class="jr-steps"><li>Press "Download for Android".</li><li>Open StudyPlay.apk and allow installing.</li><li>Open the app — it will ask for the login.</li></ol>',
+  'setup.other': '<p>Auto-update is not available on this device yet. Grades can be entered manually.</p>',
+  'settings.setupTitle': 'Auto-update of grades and schedule', 'settings.setupHint': 'Step-by-step setup for this device.',
+  'settings.plShow': '"Update grades" and "Update schedule" buttons', 'settings.plShowHint': 'Turn on by themselves after setup.', 'settings.setupBtn': 'Set up',
+  'app.phoneRow': 'StudyPlay on your phone', 'app.phoneRowHint': 'How to install on Android and iPhone.'
+});
+
+['app.phoneHtml','settings.plAutoHint','settings.ttAutoHint'].forEach(function (k) { if (SP.I18N.en[k]) SP.I18N.en[k] = SP.I18N.en[k].split('Update from Platonus').join('Update grades'); });

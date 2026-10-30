@@ -561,3 +561,21 @@ Object.assign(SP.I18N.kk, {
 Object.assign(SP.I18N.kk, { 'app.iosRun': 'Scriptable ашылуда… Бірнеше секундтан кейін жаңа деректермен осында қайтарады.', 'app.iosReady': 'Скрипт орнатылған — жаңарту' });
 SP.I18N.kk['app.phoneHtml'] = SP.I18N.kk['app.phoneHtml'].replace('<li>Автожаңарту:', '<li>Safari-дағы сайтта «Platonus-тан жаңарту» және «Кестені жаңарту» батырмалары скриптті өзі іске қосып, деректермен қайтарады.</li><li>Автожаңарту:');
 Object.assign(SP.I18N.kk, { 'app.paste': 'Жаңартуды қою', 'app.pasteHint': 'Scriptable жаңа деректерді көшірді — осында қойыңыз.', 'app.pasteNone': 'Алмасу буферінде StudyPlay деректері жоқ. «Жаңарту» батырмасын қайта басыңыз.' });
+
+/* мастер автообновления */
+Object.assign(SP.I18N.kk, {
+  'jr.plRun': 'Бағаларды жаңарту',
+  'setup.title': 'Бағалар мен кестені автожаңарту',
+  'setup.intro': 'StudyPlay бағаларды Platonus-тан және сілтемелері бар кестені Timetable-дан өзі ала алады. Осы құрылғыда баптайық (2–3 минут). Құпия сөз тек сізде сақталады.',
+  'setup.skip': 'Өткізу, кейін баптаймын', 'setup.doneCheck': 'Дайын — тексеру', 'setup.saveCheck': 'Сақтау және тексеру',
+  'setup.win': '<ol class="jr-steps"><li>Төмендегі «Бағдарламаны жүктеу» басыңыз.</li><li>Архивтегі қалтаны «Құжаттар» сияқты тұрақты орынға шығарыңыз.</li><li><b>StudyPlay.vbs</b> файлын екі рет басыңыз.</li><li>Platonus логині мен құпия сөзін енгізіп, <b>«Запомнить пароль»</b> белгілеңіз.</li><li><b>«Подключить»</b> басыңыз.</li><li>Осында қайтып, <b>«Дайын — тексеру»</b> басыңыз.</li></ol>',
+  'setup.app': '<p><b>Сіз Android үшін StudyPlay қолданбасындасыз.</b> Логин мен құпия сөзді бір рет енгізу жеткілікті.</p>',
+  'setup.ios': '<ol class="jr-steps"><li>App Store-дан <b>Scriptable</b> орнатыңыз.</li><li>Төмендегі «iPhone скриптін көшіру» басыңыз.</li><li>Scriptable → «+» → қойып, <b>StudyPlay</b> деп атаңыз.</li><li>Осында қайтып, <b>«Дайын — тексеру»</b> басыңыз.</li></ol>',
+  'setup.android': '<p>Браузер Platonus-қа өзі кіре алмайды — автожаңарту үшін StudyPlay қолданбасы керек.</p><ol class="jr-steps"><li>«Android үшін жүктеу» басыңыз.</li><li>StudyPlay.apk ашып, орнатуға рұқсат беріңіз.</li><li>Қолданбаны ашыңыз — ол логинді өзі сұрайды.</li></ol>',
+  'setup.other': '<p>Бұл құрылғыда автожаңарту әзірге жоқ. Бағаларды қолмен енгізуге болады.</p>',
+  'settings.setupTitle': 'Бағалар мен кестені автожаңарту', 'settings.setupHint': 'Осы құрылғыға арналған қадамдық баптау.',
+  'settings.plShow': '«Бағаларды жаңарту» және «Кестені жаңарту» батырмалары', 'settings.plShowHint': 'Баптаудан кейін өзі қосылады.', 'settings.setupBtn': 'Баптау',
+  'app.phoneRow': 'StudyPlay телефонда', 'app.phoneRowHint': 'Android пен iPhone-ға орнату нұсқаулығы.'
+});
+
+['app.phoneHtml','settings.plAutoHint','settings.ttAutoHint'].forEach(function (k) { if (SP.I18N.kk[k]) SP.I18N.kk[k] = SP.I18N.kk[k].split('Platonus-тан жаңарту').join('Бағаларды жаңарту'); });

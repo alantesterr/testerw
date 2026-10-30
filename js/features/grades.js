@@ -71,8 +71,9 @@
     syncJournal();
     var st = jState();
     var h = '<div class="btn-group jr-bar"><button type="button" class="btn" id="jrHow">' + SP.icon('circle-help') + '<span>' + esc(SP.t('jr.how')) + '</span></button>' +
-      /* Шестерёнка: «Обновить из Platonus», «Скачать», подключение программы */
-      '<button type="button" class="btn btn-icon" id="jrMenu" aria-haspopup="menu" aria-label="' + esc(SP.t('jr.more')) + '" data-tip="' + esc(SP.t('jr.more')) + '">' + SP.icon('settings') + '</button>' +
+      /* «Обновить оценки» — у тех, кто настроил автообновление на этом устройстве (Настройки → Автообновление) */
+      (SP.pl.visible() ? '<button type="button" class="btn" id="jrRun">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRun')) + '</span></button>' : '') +
+      (SP.pl.visible() && IS_WEBAPP ? '<button type="button" class="btn btn-ghost" id="jrPaste">' + SP.icon('copy') + '<span>' + esc(SP.t('app.paste')) + '</span></button>' : '') +
       '<input type="file" id="jrJFile" accept=".json,application/json,text/plain" hidden>' +
       '<button type="button" class="btn btn-primary" id="jrAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('grades.addSubject')) + '</span></button></div>';
     if (!st.items.length) {
@@ -337,17 +338,9 @@
       };
       r.readAsText(f, 'utf-8'); jf.value = '';
     };
-    on('#jrMenu', function () {
-      var pl = SP.pl.visible(), items = [];
-      if (pl) items.push({ label: SP.t('jr.plRun'), icon: 'refresh-cw', onClick: function () { plClick('pl'); } },
-        { label: SP.t('schedule.ttRun'), icon: 'calendar-days', onClick: function () { plClick('tt'); } });
-      items.push({ label: SP.t('jr.dl'), icon: 'download', onClick: downloadDialog });
-      if (pl && IS_APP) items.push('-', { label: SP.t('app.credsTitle'), icon: 'user', onClick: credsModal });
-      else if (pl && !IS_IOS) items.push('-', { label: SP.t('jr.plSetupTitle'), icon: 'settings', onClick: setupModal });
-      if (pl && IS_WEBAPP) items.push({ label: SP.t('app.paste'), icon: 'copy', onClick: pasteUpdate });
-      if (!plHidden() && !IS_APP) items.push({ label: SP.t('app.phoneTitle'), icon: 'smartphone', onClick: phoneModal });
-      SP.menu(this, items);
-    });
+    /* «Скачать» (Excel, файл для другого устройства) спрятан: функция downloadDialog осталась, кнопки нет */
+    on('#jrRun', function () { plClick('pl'); });
+    on('#jrPaste', pasteUpdate);
     on('#jrPl', function () {
       var st = jState();
       /* Первый раз — сначала короткая инструкция, откуда взять файл */
@@ -542,15 +535,10 @@
     waitUntil = 0; waitKind = ''; clearInterval(waitTimer); busy(false);
     var n = queue.shift(); if (n) setTimeout(function () { runProgram(true, n); }, 1500);
   }
-  /* Нажатие кнопки: первый раз — инструкция, ночью для Platonus — вопрос «всё равно попробовать?» */
+  /* Нажатие кнопки: если на этом ПК программа ещё не настроена — тот же мастер настройки;
+     ночью для Platonus — вопрос «всё равно попробовать?» */
   function plClick(k) {
-    if (!IS_APP && !IS_IOS && !SP.store.get('sp-pl-run-ok', false)) {
-      var m = SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') +
-        '<div class="row" style="justify-content:flex-end;gap:var(--sp-2);margin-top:var(--sp-4)"><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a>' +
-        '<button type="button" class="btn btn-primary" data-plgo>' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRunGo')) + '</span></button></div>' });
-      var b = SP.$('[data-plgo]', m.el); if (b) b.onclick = function () { SP.store.set('sp-pl-run-ok', true); m.close(); runProgram(false, k); };
-      return;
-    }
+    if (!IS_APP && !IS_IOS && !SP.store.get('sp-pl-run-ok', false)) { setupWizard(); return; }
     if (KIND[k].night && plNight()) {
       SP.confirm({ title: SP.t('jr.plNightTitle'), text: SP.t('jr.plNightText'), okLabel: SP.t('jr.plNightGo'), icon: 'clock' }).then(function (ok) { if (ok) runProgram(false, k); });
       return;
@@ -721,6 +709,75 @@
     return p.then(function () { return appCreds(); }).then(syncRunner);
   } } : null;
 
+  /* ---------- Мастер «Автообновление оценок и расписания» ----------
+     Показывается один раз сразу после регистрации (и один раз тем, кто уже зарегистрирован),
+     потом — из Настроек. Сайт сам понимает устройство и показывает только его шаги:
+       win — ПК с Windows (программа StudyPlay.vbs), app — Android-приложение (логин прямо здесь),
+       ios — iPhone/iPad (Scriptable), android — Android через браузер (совет поставить приложение),
+       other — Mac и прочее (автообновления нет).
+     «Готово» включает кнопки «Обновить оценки» / «Обновить расписание», «Пропустить» — нет
+     (включить потом: Настройки → Автообновление). */
+  var SETUP_SEEN = 'sp-setup-seen';
+  function deviceKind() {
+    if (IS_APP) return 'app';
+    if (IS_IOS) return 'ios';
+    if (isWinPc()) return 'win';
+    if (/Android/i.test(navigator.userAgent)) return 'android';
+    return 'other';
+  }
+  function setupWizard() {
+    var kind = deviceKind(), done = function () { SP.store.set(SETUP_SEEN, true); };
+    var enable = function () { SP.settings.set('plHide', false); done(); if (root && !root.hidden) render(); };
+    var body = '<p>' + esc(SP.t('setup.intro')) + '</p>' + SP.t('setup.' + kind);
+    var acts = [];
+    if (kind === 'app') {
+      body += '<div class="stack-sm" style="margin-top:var(--sp-3)">' +
+        '<div class="field"><label class="label" for="wzL">' + esc(SP.t('app.login')) + '</label><input class="input" id="wzL" autocomplete="username"></div>' +
+        '<div class="field"><label class="label" for="wzP">' + esc(SP.t('app.password')) + '</label><input class="input" id="wzP" type="password" autocomplete="current-password"></div>' +
+        '<label class="row" style="gap:var(--sp-2)"><input type="checkbox" id="wzSame" checked><span>' + esc(SP.t('app.same')) + '</span></label>' +
+        '<div id="wzTt" hidden><div class="field"><label class="label" for="wzTL">' + esc(SP.t('app.ttLogin')) + '</label><input class="input" id="wzTL"></div>' +
+        '<div class="field"><label class="label" for="wzTP">' + esc(SP.t('app.ttPassword')) + '</label><input class="input" id="wzTP" type="password"></div></div>' +
+        '<label class="row" style="gap:var(--sp-2)"><input type="checkbox" id="wzNotify" checked><span>' + esc(SP.t('app.notify')) + '</span></label></div>';
+      acts = [{ label: SP.t('setup.skip'), onClick: done }, { label: SP.t('setup.saveCheck'), kind: 'primary', onClick: function () {
+        var g = function (id) { return SP.$('#' + id, m.el).value; };
+        var c = { login: g('wzL').trim(), pw: g('wzP') };
+        if (!SP.$('#wzSame', m.el).checked) c.tt = { login: g('wzTL').trim(), pw: g('wzTP') };
+        if (!c.login || !c.pw) { SP.$(c.login ? '#wzP' : '#wzL', m.el).focus(); return false; }
+        SP.settings.set('appNotify', SP.$('#wzNotify', m.el).checked);
+        enable();
+        saveAppCreds(c).then(function () { return SP.app.notify(SP.$('#wzNotify', m.el) ? SP.$('#wzNotify', m.el).checked : true); }).then(function () { runProgram(false, 'pl'); });
+      } }];
+    } else if (kind === 'win') {
+      body += '<p><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a></p>';
+      acts = [{ label: SP.t('setup.skip'), onClick: done }, { label: SP.t('setup.doneCheck'), kind: 'primary', onClick: function () { SP.store.set('sp-pl-run-ok', true); enable(); runProgram(false, 'pl'); } }];
+    } else if (kind === 'ios') {
+      body += '<p class="row" style="gap:var(--sp-2);flex-wrap:wrap"><button type="button" class="btn" data-ios>' + SP.icon('copy') + '<span>' + esc(SP.t('app.iosCopy')) + '</span></button></p>';
+      acts = [{ label: SP.t('setup.skip'), onClick: done }, { label: SP.t('setup.doneCheck'), kind: 'primary', onClick: function () { SP.store.set('sp-ios-ok', true); enable(); iosRun(false, 'pl'); } }];
+    } else if (kind === 'android') {
+      body += '<p><a class="btn btn-primary" href="' + APK_URL + '">' + SP.icon('download') + '<span>' + esc(SP.t('app.apk')) + '</span></a></p>';
+      acts = [{ label: SP.t('common.understood'), kind: 'primary', onClick: done }];
+    } else {
+      acts = [{ label: SP.t('common.understood'), kind: 'primary', onClick: done }];
+    }
+    var m = SP.modal({ title: SP.t('setup.title'), size: 'lg', body: body, actions: acts });
+    var cb = SP.$('#wzSame', m.el); if (cb) cb.onchange = function () { SP.$('#wzTt', m.el).hidden = cb.checked; };
+    var ib = SP.$('[data-ios]', m.el);
+    if (ib) ib.onclick = function () { fetch('downloads/StudyPlay-iPhone.js', { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(SP.copyText).then(function () { SP.toast(SP.t('common.copied'), 'success'); }, function () { SP.toast(SP.t('app.fail'), 'danger'); }); };
+    return m;
+  }
+  /* один раз: сразу после регистрации или при первом заходе после обновления сайта */
+  (function firstRun() {
+    var tries = 0;
+    var tick = function () {
+      if (SP.store.get(SETUP_SEEN, false) || tries++ > 600) return;
+      var ready = SP.auth && SP.auth.user && SP.auth.user() && !document.body.classList.contains('auth-open') && !SP.$('.modal-backdrop, [role="dialog"]');
+      /* показали — больше сами не показываем (закрыли крестиком = «пропустить») */
+      if (ready) setTimeout(function () { if (!SP.store.get(SETUP_SEEN, false)) { SP.store.set(SETUP_SEEN, true); setupWizard(); } }, 600); else setTimeout(tick, 1000);
+    };
+    setTimeout(tick, 1500);
+  })();
+  SP.pl.setup = setupWizard; SP.pl.kind = deviceKind;
+
   /* ---------- «StudyPlay на телефоне»: Android-приложение и iPhone (Scriptable) ---------- */
   var APK_URL = 'https://github.com/alantesterr/testerw/releases/download/android-latest/StudyPlay.apk';
   function phoneModal(after) {
@@ -820,6 +877,7 @@
   SP.on('settings', function (e) {
     if (!e || ['plAuto', 'ttAuto', 'plHide'].indexOf(e.key) < 0) return;
     autoSchedule();
+    if (e.key === 'plHide' && root && !root.hidden && !editing) render();   /* кнопка «Обновить оценки» появилась/исчезла */
     if (e.key === 'plAuto' && autoOn('pl')) autoRun('pl');
     if (e.key === 'ttAuto' && autoOn('tt')) autoRun('tt');
   });

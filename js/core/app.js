@@ -80,6 +80,18 @@
   if (!IS_APP) { SP.openUrl = function (u) { window.open(u, '_blank', 'noopener'); }; return; }
   document.documentElement.classList.add('is-app');
 
+  /* ---------- запросы: через телефон — только Platonus и Timetable ----------
+     Приложение пропускает все fetch через телефон (так можно заходить в Platonus без браузерного запрета),
+     но короткие адреса файлов самого сайта (data/…/notes/index.json и т. п.) так не загружаются —
+     из-за этого пропадали конспекты. Всё, кроме *.kgu.kz, отправляем обычным путём браузера. */
+  if (typeof window.CapacitorWebFetch === 'function') {
+    var phoneFetch = window.fetch, webFetch = window.CapacitorWebFetch;
+    window.fetch = function (res, init) {
+      var u = typeof res === 'string' ? res : (res && res.url) || String(res || '');
+      return (/^https?:\/\/([^/]+\.)?kgu\.kz(\/|$)/i.test(abs(u)) ? phoneFetch : webFetch).call(window, res, init);
+    };
+  }
+
   /* ---------- ссылки: встроенная вкладка браузера поверх приложения ---------- */
   function openExternal(u) {
     var br = plug('Browser');

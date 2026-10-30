@@ -30,8 +30,19 @@
     while (end + 10 <= 20 * 60 + 40 && n < 16) { var st = end + 10; out.push({ id: 'ext-' + n, start: hhmm(st) + ':00', end: hhmm(st + 50) + ':00', ext: true }); end = st + 50; n++; }
     return out;
   }
-  function lessonsAt(day, slotId) { return SP.hub.data().schedule.filter(function (l) { return Number(l.day) === day && String(l.slotId) === String(slotId); }); }
-  function dayHas(day) { return SP.hub.data().schedule.some(function (l) { return Number(l.day) === day; }); }
+  /* занятия показываемой недели: как в Timetable (каждая неделя своя), вне семестра — пусто */
+  function weekLessons() { return SP.hub.weekSchedule(monday(weekOff)); }
+  function lessonsAt(day, slotId) { return weekLessons().filter(function (l) { return Number(l.day) === day && String(l.slotId) === String(slotId); }); }
+  function dayHas(day) { return weekLessons().some(function (l) { return Number(l.day) === day; }); }
+  /* «8-я неделя из 15 · Рубежный контроль 1 (26.10–01.11)» — по академическому календарю Platonus */
+  function calLine() {
+    var w = SP.hub.weekInfo(monday(weekOff)); if (!w || (!w.n && !w.rk.length)) return '';
+    var dm = function (s) { return s.slice(8, 10) + '.' + s.slice(5, 7); };
+    var parts = [];
+    if (w.n) parts.push(SP.t(w.total ? 'schedule.weekOf2' : 'schedule.weekN', { n: w.n, t: w.total }));
+    w.rk.forEach(function (e) { parts.push('<b>' + esc(e.name) + '</b> (' + dm(e.from) + '–' + dm(e.to) + ')'); });
+    return '<div class="sch-cal small subtle">' + SP.icon('calendar-days', 'ic-sm') + '<span>' + parts.map(function (p, i) { return i || !w.n ? p : esc(p); }).join(' · ') + '</span></div>';
+  }
 
   /* Разбор полей занятия: код, название, тип, аудитория, корпус, преподаватель */
   var ABBR_RE = /^(.*?)[\s ]+(СПЗ|СРОП|СРО|ЛЗ|ЛР|ПЗ|Л|П|С)$/u;
@@ -93,7 +104,7 @@
     if (dayIdx === null) dayIdx = td >= 0 ? td : 0;
     var srcBadge = d.source ? '<span class="badge">' + SP.icon(d.source === 'course' ? 'users' : 'user') + esc(SP.t('schedule.src.' + d.source)) + '</span>' + (d.source === 'course' && d.baseVersion ? '<span class="subtle xsmall">' + esc(SP.t('schedule.version', { v: d.baseVersion })) + '</span>' : '') : '';
     var html = SP.pageHead({ title: SP.t('nav.schedule'), sub: '<span class="row">' + srcBadge + '</span>', actions: sourceSwitch() + ttRunBtn() });
-    html += modeSwitch();
+    html += modeSwitch() + calLine();
     var upd = SP.hub.pendingUpdate();
     if (upd && !updDismissed) {
       html += '<div class="alert alert-info">' + SP.icon('bell') + '<div class="alert-body"><b>' + esc(SP.t('schedule.newCourse', { v: upd.version || '' })) + '</b><span>' + esc(SP.t('schedule.newCourseText')) + '</span>' +
@@ -209,7 +220,7 @@
         var ls = lessonsAt(d, s.id);
         if (!ls.length) { h += '<td class="shk-empty"></td>'; return; }
         var x = info(ls[0]);
-        h += '<td class="shk-fill"><button type="button" class="shk-wl" data-lid="' + SP.hub.data().schedule.indexOf(ls[0]) + '" title="' + esc(x.name + (kindLong(x.ab) ? ' · ' + kindLong(x.ab) : '')) + '"><span class="shk-wn">' + esc(x.name) + '</span><span class="shk-wk">' + esc(kindLong(x.ab) || x.ab) + (ls.length > 1 ? ' +' + (ls.length - 1) : '') + '</span></button></td>';
+        h += '<td class="shk-fill"><button type="button" class="shk-wl" data-lid="' + weekLessons().indexOf(ls[0]) + '" title="' + esc(x.name + (kindLong(x.ab) ? ' · ' + kindLong(x.ab) : '')) + '"><span class="shk-wn">' + esc(x.name) + '</span><span class="shk-wk">' + esc(kindLong(x.ab) || x.ab) + (ls.length > 1 ? ' +' + (ls.length - 1) : '') + '</span></button></td>';
       });
       h += '</tr>';
     });
@@ -229,7 +240,7 @@
       h += '<li class="shk-row' + (ls.length ? ' has' : '') + '"><div class="shk-time"><b>' + esc(String(s.start).slice(0, 5)) + '</b><span>' + esc(String(s.end).slice(0, 5)) + '</span></div><div class="shk-slot">';
       if (ls.length) h += ls.map(function (l) {
         var x = info(l);
-        return '<button type="button" class="shk-card" data-lid="' + SP.hub.data().schedule.indexOf(l) + '"><span class="shk-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</span><span class="shk-name">' + esc(x.name) + '</span></button>' +
+        return '<button type="button" class="shk-card" data-lid="' + weekLessons().indexOf(l) + '"><span class="shk-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</span><span class="shk-name">' + esc(x.name) + '</span></button>' +
           linkHtml(lessonLink(l, mon), 'shk-link');
       }).join('');
       else if (i > first && i < last) h += '<span class="shk-gap">' + esc(SP.t('schedule.gap', { m: toMin(s.end) - toMin(s.start) })) + '</span>';
@@ -270,7 +281,7 @@
     SP.$$('[data-wk]', root).forEach(function (b) { b.onclick = function () { weekOff += +b.getAttribute('data-wk'); render(); }; });
     SP.$$('[data-day]', root).forEach(function (b) { b.onclick = function () { dayIdx = +b.getAttribute('data-day'); render(); var c = SP.$('[data-day="' + dayIdx + '"]', root); if (c) c.focus(); }; });
     SP.$$('[data-sid]', root).forEach(function (b) { b.onclick = function () { SP.navigate('subjects', [b.getAttribute('data-sid')]); }; });
-    SP.$$('[data-lid]', root).forEach(function (b) { b.onclick = function () { detail = SP.hub.data().schedule[+b.getAttribute('data-lid')] || null; render(); var k = q('#shkBack'); if (k) k.focus(); window.scrollTo(0, 0); }; });
+    SP.$$('[data-lid]', root).forEach(function (b) { b.onclick = function () { detail = weekLessons()[+b.getAttribute('data-lid')] || null; render(); var k = q('#shkBack'); if (k) k.focus(); window.scrollTo(0, 0); }; });
     var bk = q('#shkBack'); if (bk) bk.onclick = function () { detail = null; render(); };
     var zr = q('#ttZoom'); if (zr) zr.oninput = function () { setTtZ(+zr.value); };
     var tc = q('#ttCust'); if (tc) tc.onclick = function () { ui.ttOpen = !ui.ttOpen; saveUI(); q('.tt-cust').hidden = !ui.ttOpen; tc.setAttribute('aria-expanded', ui.ttOpen); };

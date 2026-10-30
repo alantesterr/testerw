@@ -543,3 +543,4 @@ Object.assign(SP.I18N.en, {
     '<li>In the same window press <b>"Connect"</b> — the site buttons will work in every browser.</li></ol>' +
     '<p class="small"><b>Night break:</b> Platonus is usually offline about 23:00–7:00. This does not affect the schedule.</p>' +
     '<p class="small muted">From a phone: "File for StudyPlay" in the program, then here "Download" → "Load grades file" — both grades and the schedule with links arrive.</p>' });
+Object.assign(SP.I18N.en, { 'schedule.weekOf2': 'Week {n} of {t}', 'schedule.weekN': 'Semester week {n}' });

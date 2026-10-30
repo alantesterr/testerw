@@ -978,3 +978,7 @@ a.tt-link:focus-visible, a.shk-link:focus-visible { outline: none; box-shadow: v
 .tt-link { padding: 0.1rem 0.25rem; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); }
 .shk-slot .shk-link { margin: 0.15rem 0 0.35rem 0.9rem; }
 .shk-det-list .shk-link { font-size: 1rem; }
+
+/* Неделя семестра и РК по календарю Platonus — тихая строка над расписанием */
+.sch-cal { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin: 0.25rem 0 0.5rem; }
+.sch-cal b { font-weight: 600; color: var(--text); }

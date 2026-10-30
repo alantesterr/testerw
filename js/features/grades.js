@@ -551,6 +551,7 @@
   SP.pl = { visible: function () { return !plHidden() && isWinPc(); }, run: plClick };
   /* «Получить всё» в программе: расписание со ссылками едет вместе с оценками (ссылка, файл, буфер) */
   function withTimetable(d) {
+    if (d && d.calendar) SP.hub.setCalendar(d.calendar);   /* академический календарь из Platonus */
     if (!d || !d.timetable) return;
     try { notifyTt(SP.hub.importTimetable(d.timetable)); } catch (e) { SP.toast(SP.t('jr.ttBad'), 'danger'); }
   }

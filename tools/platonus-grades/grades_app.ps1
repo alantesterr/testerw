@@ -179,6 +179,7 @@ function Fetch-Grades($login, $password, $status) {
         [regex]::Match($s, '(?i)VALUE="(-?\d+)"\s*selected').Groups[1].Value }
     $year = & $sel 'year'; $term = & $sel 'term'
     if (-not $studentID -or -not $year -or -not $term) { throw 'Не удалось определить студента или семестр на странице журнала.' }
+    Update-Calendar $status
 
     $subjects = Json-Array (Get-Text "$Base/journal/$year/$term/$studentID")
     $marks = @{}
@@ -191,6 +192,78 @@ function Fetch-Grades($login, $password, $status) {
     Build-Result $subjects $marks $year $term
 }
 
+# ---------- академический календарь (platonus.kgu.kz/calendarview) ----------
+# Семестры, РК, сессии, практика, каникулы. Берём вместе с оценками примерно раз в месяц
+# и храним в calendar.json рядом с программой: по нему выбираются недели семестра в Timetable,
+# а сайт подписывает недели и показывает пустые недели в сессию и на каникулах.
+$calPath = Join-Path $Here 'calendar.json'
+$RuMonths = @{ 'января' = 1; 'февраля' = 2; 'марта' = 3; 'апреля' = 4; 'мая' = 5; 'июня' = 6; 'июля' = 7; 'августа' = 8; 'сентября' = 9; 'октября' = 10; 'ноября' = 11; 'декабря' = 12 }
+function Cal-Date($d, $mon, $y1, $y2) { $y = if ($mon -ge 8) { $y1 } else { $y2 }; New-Object DateTime $y, $mon, $d }
+# «7 сентября», «14-19 декабря», «21 декабря - 10 января» → даты с годом (учебный год y1–y2)
+function Cal-Range($text, $y1, $y2) {
+    $pp = @(foreach ($p in (($text -replace '\s+', ' ').Trim() -split '\s*[-–—]\s*')) {
+        $m = [regex]::Match($p, '^(\d{1,2})(?:\s+(\S+))?')
+        if ($m.Success) { @{ d = [int]$m.Groups[1].Value; mon = $RuMonths[$m.Groups[2].Value.ToLower()] } }
+    })
+    if (-not $pp.Count -or -not $pp[-1].mon) { return $null }
+    if (-not $pp[0].mon) { $pp[0].mon = $pp[-1].mon }
+    $from = Cal-Date $pp[0].d $pp[0].mon $y1 $y2; $to = Cal-Date $pp[-1].d $pp[-1].mon $y1 $y2
+    if ($to -lt $from) { $to = $to.AddYears(1) }
+    @{ from = $from; to = $to }
+}
+function Parse-Calendar($html) {
+    $html = [regex]::Replace($html, '(?s)<!--.*?-->', '')
+    $hy = [regex]::Match($html, '(\d{4})\s*-\s*(\d{4})\s+учебный')
+    if (-not $hy.Success) { throw 'На странице нет академического календаря.' }
+    $y1 = [int]$hy.Groups[1].Value; $y2 = [int]$hy.Groups[2].Value
+    $clean = { param($s) ([Net.WebUtility]::HtmlDecode(($s -replace '<[^>]+>', ' ')) -replace '\s+', ' ').Trim() }
+    $sems = @(); $events = @(); $card = -1
+    foreach ($m in [regex]::Matches($html, '(?s)<h4[^>]*>(.*?)</h4>|<td class="tdPeriodName">(.*?)</td>\s*<td class="tdPeriod">(.*?)</td>')) {
+        if ($m.Groups[1].Success) { $card++; $sems += [ordered]@{ name = (& $clean $m.Groups[1].Value); start = ''; end = ''; weeks = 0 }; continue }
+        if ($card -lt 0) { continue }
+        $name = & $clean $m.Groups[2].Value; $val = & $clean $m.Groups[3].Value
+        if ($name -match '^Всего недель') { $sems[$card].weeks = [int]('0' + ($val -replace '\D', '')); continue }
+        $r = Cal-Range $val $y1 $y2; if (-not $r) { continue }
+        if ($name -match '^Начало семестра') { $sems[$card].start = $r.from.ToString('yyyy-MM-dd'); continue }
+        if ($name -match '^Конец семестра') { $sems[$card].end = $r.to.ToString('yyyy-MM-dd'); continue }
+        $kind = if ($name -match 'Рубежн') { 'rk' } elseif ($name -match 'сесси|аттестац') { 'session' } elseif ($name -match 'каникул') { 'holiday' } elseif ($name -match 'практик') { 'practice' } elseif ($name -match 'регистрац') { 'registration' } else { 'other' }
+        $events += [ordered]@{ sem = $card; kind = $kind; name = $name; from = $r.from.ToString('yyyy-MM-dd'); to = $r.to.ToString('yyyy-MM-dd') }
+    }
+    $sems = @($sems | Where-Object { $_.start -and $_.end })
+    if (-not $sems) { throw 'Не удалось прочитать даты семестров.' }
+    [ordered]@{ format = 'studyplay-calendar'; version = 1; year = "$y1-$y2"; taken = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss'); semesters = $sems; events = $events }
+}
+function Load-Calendar {
+    if (-not (Test-Path $calPath)) { return $null }
+    try { [IO.File]::ReadAllText($calPath, [Text.Encoding]::UTF8) | ConvertFrom-Json } catch { $null }
+}
+# После входа в Platonus: календарь нет или ему больше месяца — обновить (ошибки не мешают оценкам)
+function Update-Calendar($status) {
+    $c = Load-Calendar
+    if ($c -and $c.taken -and ((Get-Date) - [datetime]::Parse($c.taken)).TotalDays -lt 30) { return }
+    try {
+        $status.Invoke('Обновляю академический календарь...')
+        $cal = Parse-Calendar (Get-Text "$Base/calendarview")
+        [IO.File]::WriteAllText($calPath, ($cal | ConvertTo-Json -Depth 5), (New-Object Text.UTF8Encoding($false)))
+    } catch {}
+}
+# Недели для Timetable по календарю: текущий семестр от первой недели до конца сессии
+# (после 15 недель там появляется расписание экзаменов). Возвращает @(с, по) или $null.
+function Calendar-Range($cal) {
+    if (-not $cal -or -not $cal.semesters) { return $null }
+    $today = (Get-Date).Date
+    $ranges = @()
+    for ($i = 0; $i -lt @($cal.semesters).Count; $i++) {
+        $s = @($cal.semesters)[$i]
+        $from = [datetime]::ParseExact($s.start, 'yyyy-MM-dd', $null); $to = [datetime]::ParseExact($s.end, 'yyyy-MM-dd', $null)
+        foreach ($e in @($cal.events | Where-Object { $_.sem -eq $i -and $_.kind -eq 'session' })) { $et = [datetime]::ParseExact($e.to, 'yyyy-MM-dd', $null); if ($et -gt $to) { $to = $et } }
+        $ranges += , @($from, $to)
+    }
+    $cur = @($ranges | Where-Object { $today -le $_[1] }) | Select-Object -First 1
+    if (-not $cur) { $cur = $ranges[-1] }
+    $cur
+}
+
 # ---------- Timetable: расписание и ссылки преподавателей ----------
 # Берём последние 8 недель и следующую: расписание сайт возьмёт с текущей недели,
 # а ссылки преподавателей (поле «Мессенджер») — со всех недель, по датам.
@@ -200,10 +273,18 @@ function Post-Form($url, $fields) {
         -ContentType 'application/x-www-form-urlencoded; charset=UTF-8' -Body ([Text.Encoding]::UTF8.GetBytes($body)))
 }
 function This-Monday { $t = (Get-Date).Date; $t.AddDays(-(([int]$t.DayOfWeek + 6) % 7)) }
-function Timetable-Weeks($page) {
+# Какие недели брать: по календарю — весь текущий семестр вместе с сессией,
+# без календаря — последние 8 недель и следующую
+function Timetable-Weeks($page, $cal) {
     $thisMon = This-Monday
     $all = @([regex]::Matches($page, '<option[^>]*>(\d{2})-(\d{2})-(\d{4})</option>') | ForEach-Object {
         New-Object DateTime ([int]$_.Groups[3].Value), ([int]$_.Groups[2].Value), ([int]$_.Groups[1].Value) })
+    $r = @(Calendar-Range $cal)
+    if ($r.Count -eq 2) {
+        $from = $r[0].AddDays(-(([int]$r[0].DayOfWeek + 6) % 7)); $to = $r[1]
+        $pick = @($all | Where-Object { $_ -ge $from -and $_ -le $to } | Sort-Object)
+        if ($pick) { return $pick }
+    }
     $pick = @($all | Where-Object { $_ -ge $thisMon.AddDays(-56) -and $_ -le $thisMon.AddDays(7) } | Sort-Object)
     if (-not $pick) { $pick = @($thisMon) }
     $pick
@@ -224,7 +305,8 @@ function Fetch-Timetable($login, $password, $status) {
     Mark-Run $ttLastPath
     $status.Invoke('Вход на timetable.kgu.kz...')
     $li = Login-Timetable $login $password
-    $pick = Timetable-Weeks $li.page
+    $cal = Load-Calendar
+    $pick = @(Timetable-Weeks $li.page $cal)
     $weeks = @(); $i = 0
     foreach ($m in $pick) {
         $i++; $status.Invoke("Загружаю расписание ($i из $($pick.Count))...")
@@ -232,7 +314,9 @@ function Fetch-Timetable($login, $password, $status) {
         $weeks += [ordered]@{ monday = $m.ToString('yyyy-MM-dd'); html = (Slim-Html $html) }
         Start-Sleep -Milliseconds 150
     }
-    [ordered]@{ format = 'studyplay-timetable'; version = 1; taken = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss'); weeks = $weeks }
+    $o = [ordered]@{ format = 'studyplay-timetable'; version = 2; taken = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss'); weeks = $weeks }
+    if ($cal) { $o.calendar = $cal }   # сайт подпишет недели и покажет пустые недели в сессию и на каникулах
+    $o
 }
 # Убираем из таблицы лишнее (скрипты кнопок, стили) — ссылка остаётся в value=""
 function Slim-Html($html) { ($html -replace '\s(onclick|style)="[^"]*"', '') -replace '\s{2,}', ' ' }
@@ -312,6 +396,7 @@ function StudyPlay-Json($res, $tt) {
         subjects = @($subs)
     }
     if ($tt) { $o.timetable = $tt }   # расписание со ссылками — сайт подхватит его вместе с оценками
+    $cal = Load-Calendar; if ($cal) { $o.calendar = $cal }   # академический календарь
     $o | ConvertTo-Json -Depth 8 -Compress
 }
 function Pack-B64($json) {

@@ -97,10 +97,9 @@
       '<button type="button" class="btn btn-ghost btn-icon" id="sjEdit" aria-label="' + esc(SP.t('subjects.edit')) + '" data-tip="' + esc(SP.t('subjects.edit')) + '">' + SP.icon('pencil') + '</button></div></div>' +
       /* Вкладки папки: Файлы и ссылки · Тесты · Конспект (если он есть у предмета) */
       '';
-    var kn = SP.notes && SP.notes.has(s.name);
-    if (tab === 'konspekt' && !kn) tab = 'materials';
+    /* вкладка «Конспект» есть всегда: в ней можно добавить свой конспект (с ИИ или вручную) */
     h += '<div class="tabs sj-tabs" role="tablist">' + tabBtn('materials', 'folder-open', SP.t('sj.files'), mats.length) + tabBtn('tests', 'list-checks', SP.t('subjects.tests'), tests.length) +
-      (kn ? tabBtn('konspekt', 'book-open', SP.t('sj.konspekt'), null) : '') + '</div><div class="sj-tab" role="tabpanel">';
+      tabBtn('konspekt', 'book-open', SP.t('sj.konspekt'), null) + '</div><div class="sj-tab" role="tabpanel">';
     if (tab === 'materials') {
       h += '<div class="row sj-tab-acts"><button type="button" class="btn btn-sm" id="sjUpMat">' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('sj.upload')) + '</span></button>' +
         '<button type="button" class="btn btn-sm" id="sjAddLink">' + SP.icon('link', 'ic-sm') + '<span>' + esc(SP.t('subjects.addLink')) + '</span></button></div>' +
@@ -117,7 +116,18 @@
   function fillLectures(s) {
     if (!SP.notes) return;
     SP.notes.forSubject(s.name).then(function (list) {
-      var box = SP.$('#sjLecs', root); if (!box || !list.length || selected !== s.id) return;
+      var box = SP.$('#sjLecs', root); if (!box || selected !== s.id) return;
+      /* свои конспекты: добавить (промт для ИИ → ответ → проверка), загрузить файл, изменить, скачать */
+      var acts = '<div class="row sj-tab-acts"><button type="button" class="btn btn-sm btn-primary" data-mnadd>' + SP.icon('sparkles', 'ic-sm') + '<span>' + esc(SP.t('mn.addBtn')) + '</span></button>' +
+        '<button type="button" class="btn btn-sm" data-mnimport>' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('mn.importBtn')) + '</span></button></div>';
+      var wireMine = function () {
+        var a = SP.$('[data-mnadd]', box); if (a) a.onclick = function () { SP.myNotes.add(s.name); };
+        var im = SP.$('[data-mnimport]', box); if (im) im.onclick = function () { SP.myNotes.importDialog(s.name); };
+        SP.$$('[data-mnedit]', box).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); SP.myNotes.edit(b.getAttribute('data-mnedit')); }; });
+        SP.$$('[data-mnmore]', box).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); SP.myNotes.add(s.name); }; });
+        SP.$$('[data-mndl]', box).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); SP.myNotes.exportFile(b.getAttribute('data-mndl')); }; });
+      };
+      if (!list.length) { box.innerHTML = acts + '<div class="mn-empty">' + SP.icon('book-open', 'ic-xl') + '<p class="small muted">' + esc(SP.t('mn.empty')) + '</p></div>'; wireMine(); return; }
       var html = list.map(function (x) {
         var meta = x.meta, d = x.doc, pos = SP.notes.continueOf(meta), cl = pos && d.lectures[pos.li] ? pos.li : null;
         var rows = d.lectures.map(function (lec, li) {
@@ -139,9 +149,15 @@
         return '<details class="sj-konsp" data-kid="' + esc(meta.id) + '"' + (open ? ' open' : '') + '><summary>' +
           '<span class="sj-k-ic">' + SP.icon('book-open') + '</span><span class="meta"><b>' + esc(SP.t('sj.konspekt') + ' · ' + (meta.short || meta.subject) + ' — ' + SP.t('sj.nLec', { n: d.lectures.length })) + '</b>' +
           '<small>' + esc(SP.t('sj.kProg', { r: nRead, n: d.lectures.length }) + (nT ? ' · ' + SP.t('sj.kTests', { a: nTd, n: nT }) : '')) + '</small></span>' +
-          SP.icon('chevron-down', 'sj-k-chev') + '</summary><div class="sj-lec-list">' + rows + '</div></details>';
+          SP.icon('chevron-down', 'sj-k-chev') + '</summary><div class="sj-lec-list">' + rows + '</div>' +
+          (meta.local ? '<div class="row sj-mine-acts"><span class="badge">' + SP.icon('user', 'ic-sm') + esc(SP.t('mn.mineBadge')) + '</span>' +
+            '<button type="button" class="btn btn-sm btn-ghost" data-mnedit="' + esc(meta.id) + '">' + SP.icon('pencil', 'ic-sm') + '<span>' + esc(SP.t('mn.editBtn')) + '</span></button>' +
+            '<button type="button" class="btn btn-sm btn-ghost" data-mnmore>' + SP.icon('plus', 'ic-sm') + '<span>' + esc(SP.t('mn.moreLec')) + '</span></button>' +
+            '<button type="button" class="btn btn-sm btn-ghost" data-mndl="' + esc(meta.id) + '">' + SP.icon('download', 'ic-sm') + '<span>' + esc(SP.t('mn.download')) + '</span></button></div>' : '') +
+          '</details>';
       }).join('');
-      box.innerHTML = html;
+      box.innerHTML = acts + html;
+      wireMine();
       SP.$$('.sj-konsp', box).forEach(function (dt) { dt.addEventListener('toggle', function () { var o = SP.store.get('sp-sj-konsp-open', {}) || {}; o[dt.getAttribute('data-kid')] = dt.open; SP.store.set('sp-sj-konsp-open', o); }); });
     });
   }

@@ -996,3 +996,47 @@ a.tt-link:focus-visible, a.shk-link:focus-visible { outline: none; box-shadow: v
 
 /* «Как часто обновлять?» — кнопки переносятся на телефоне */
 .segmented.seg-wrap { flex-wrap: wrap; }
+
+/* ===== Мои конспекты: окно «Добавить», редактор, новые блоки (картинки, формулы, схемы) ===== */
+.mn { display: flex; flex-direction: column; gap: var(--sp-4); }
+.mn-step { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3); border: 1px solid var(--border); border-radius: 12px; }
+.mn-step-h { display: flex; align-items: center; gap: var(--sp-2); }
+.mn-n { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: .85rem; flex: none; }
+.mn-src { width: 100%; min-height: 180px; resize: vertical; font-size: .82rem; line-height: 1.45; }
+.mn-ed-src { min-height: 46vh; }
+.mn-prompt { width: 100%; }
+.mn-check { min-height: 1.5rem; }
+.mn-ok { display: flex; gap: .5rem; align-items: flex-start; color: var(--success, #16a34a); font-size: .9rem; }
+.mn-ok span { color: var(--text); }
+.mn-lecs { margin: .35rem 0 0; padding-left: 1.2rem; font-size: .85rem; color: var(--text-2); }
+.mn-warn summary { cursor: pointer; font-size: .85rem; color: var(--warning-text, #b45309); display: flex; gap: .35rem; align-items: center; }
+.mn-warn ul { font-size: .8rem; margin: .35rem 0 0; padding-left: 1.2rem; }
+.mn-tips summary { cursor: pointer; font-size: .85rem; color: var(--accent-text); }
+.mn-tips ul { margin: .4rem 0 0; padding-left: 1.1rem; }
+.mn-tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.mn-tools .btn span { font-size: .8rem; }
+.mn-ed-meta { gap: var(--sp-3); flex-wrap: wrap; }
+.mn-ed-meta .field { min-width: 200px; }
+.mn-ph-list { display: flex; flex-direction: column; gap: 6px; padding: var(--sp-2); border: 1px dashed var(--border-strong); border-radius: 10px; }
+.mn-ph { display: flex; align-items: center; gap: .5rem; }
+.mn-empty { text-align: center; padding: var(--sp-5) var(--sp-3); color: var(--text-2); }
+.mn-empty p { max-width: 520px; margin: .5rem auto 0; }
+.sj-mine-acts { gap: 6px; flex-wrap: wrap; align-items: center; padding: .5rem .75rem .75rem; }
+.mn-cheat code { font-size: .78rem; }
+
+/* новые блоки в конспекте: ничего не вылезает за края экрана */
+.nt-doc .nt-p, .nt-doc li, .nt-doc td, .nt-doc th, .lx-card .nt-p, .lx-card li { overflow-wrap: anywhere; }
+.nt-img { margin: 1rem 0; text-align: center; }
+.nt-img img { max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border); background: #fff; }
+.nt-img figcaption { font-size: .82rem; color: var(--text-2); margin-top: .35rem; }
+.nt-img-ph { display: flex; gap: .6rem; align-items: center; justify-content: center; padding: 1rem; border: 2px dashed var(--border-strong); border-radius: 10px; color: var(--text-2); text-align: left; }
+.nt-img-ph figcaption { margin: 0; }
+.nt-math { margin: .8rem 0; overflow-x: auto; overflow-y: hidden; padding: .25rem 0; text-align: center; }
+.nt-tex { white-space: nowrap; }
+.nt-mermaid { margin: 1rem 0; }
+.nt-mermaid figcaption { font-size: .82rem; color: var(--text-2); margin-bottom: .35rem; }
+.nt-mm { overflow-x: auto; text-align: center; padding: .5rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.nt-mm svg { max-width: 100%; height: auto; }
+.nt-mm pre { text-align: left; white-space: pre-wrap; font-size: .8rem; margin: 0; }
+.nt-doc .nt-table, .lx-card .nt-table { max-width: 100%; overflow-x: auto; }
+.nt-doc mark { background: color-mix(in srgb, #facc15 45%, transparent); color: inherit; padding: 0 .15em; border-radius: 3px; }

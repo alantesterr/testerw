@@ -590,3 +590,11 @@ Object.assign(SP.I18N.en, {
   'setup.autoNoteApp': 'While the app is open — by this choice. A closed app checks grades about every half hour and notifies you about new ones.'
 });
 Object.assign(SP.I18N.en, { 'settings.plAuto': 'Grades auto-update' });
+
+/* мои конспекты */
+Object.assign(SP.I18N.en, {
+  'mn.addBtn': 'Add notes', 'mn.importBtn': 'Load file', 'mn.editBtn': 'Edit', 'mn.moreLec': 'Add lectures', 'mn.download': 'Download file', 'mn.forSite': 'For the site', 'mn.mineBadge': 'My notes',
+  'mn.addTitle': 'Add notes', 'mn.s1': 'Copy the prompt and send it to an AI', 'mn.s2': 'Paste the AI answer', 'mn.s3': 'Save', 'mn.copyPrompt': 'Copy prompt', 'mn.saveOpen': 'Save and open',
+  'mn.empty': 'No notes here yet. Press "Add notes": the site gives a ready prompt for an AI; paste the answer and you get notes like in StudyPlay.',
+  'mn.imgHere': 'Image here:', 'mn.editTitle': 'Notes editor'
+});

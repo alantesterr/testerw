@@ -17,13 +17,16 @@
 
   function dir() { return window.SP_GROUP_DIR ? 'data/' + window.SP_GROUP_DIR + '/' : 'data/'; }
   function getJson(url) { return fetch(url, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
+  /* конспекты группы (data/<группа>/notes) + свои конспекты с этого устройства (mynotes.js) */
   function loadIndex() {
     if (index && indexDir === dir()) return Promise.resolve(index);
     indexDir = dir(); docs = {}; extras = {};
-    return getJson(indexDir + 'notes/index.json').then(function (j) { index = (j && j.notes) || []; return index; }, function () { index = []; return index; });
+    var mine = function () { return SP.myNotes ? SP.myNotes.metas() : []; };
+    return getJson(indexDir + 'notes/index.json').then(function (j) { index = ((j && j.notes) || []).concat(mine()); return index; }, function () { index = mine(); return index; });
   }
   function loadDoc(meta) {
     if (docs[meta.id]) return Promise.resolve(docs[meta.id]);
+    if (meta.local) return SP.myNotes.load(meta.id).then(function (r) { extras[meta.id] = r.extra; docs[meta.id] = prepare(meta, r.doc, r.extra); return docs[meta.id]; });
     return Promise.all([
       getJson(dir() + 'notes/' + meta.file),
       getJson(dir() + 'notes/' + meta.id + '.extra.json').catch(function () { return {}; })
@@ -171,12 +174,50 @@
       case 'note': return noteHtml(b.kind, T(b.html, ctx));
       case 'code':
         if (/^Схема/.test(b.cap || '')) return '<figure class="nt-out nt-scheme"><figcaption>' + esc(b.cap) + '</figcaption><pre>' + esc(b.text) + '</pre></figure>';
+        /* подсветка — для C/C++ (и когда язык не указан), остальные языки — просто моноширинным */
+        if (b.lang && !/^(cpp|c\+\+|c|h|hpp|cc)$/i.test(b.lang)) return '<figure class="nt-code">' + (b.cap ? '<figcaption>' + esc(b.cap) + '</figcaption>' : '') + '<div class="rich"><div class="code"><div class="code-h"><span>' + esc(b.lang) + '</span><button type="button" class="btn btn-ghost btn-sm" data-copycode>' + esc(SP.t('common.copy')) + '</button></div><pre><code>' + esc(b.text) + '</code></pre></div></div></figure>';
         return '<figure class="nt-code">' + (b.cap ? '<figcaption>' + esc(b.cap) + '</figcaption>' : '') + E.richHtml('```cpp\n' + b.text + '\n```') + '</figure>';
+      /* свои конспекты: картинка, место под картинку, формула, схема (рисуются после вывода — renderVisuals) */
+      case 'img':
+        if (b.ph || !b.src) return '<figure class="nt-img nt-img-ph">' + SP.icon('image') + '<figcaption><b>' + esc(SP.t('mn.imgHere')) + '</b> ' + esc(b.cap || '') + '</figcaption></figure>';
+        return '<figure class="nt-img"><img src="' + esc(b.src) + '" alt="' + esc(b.cap || '') + '" loading="lazy">' + (b.cap ? '<figcaption>' + esc(b.cap) + '</figcaption>' : '') + '</figure>';
+      case 'math': return '<div class="nt-math" data-tex="' + esc(b.tex) + '">' + esc(b.tex) + '</div>';
+      case 'mermaid': return '<figure class="nt-mermaid">' + (b.cap ? '<figcaption>' + esc(b.cap) + '</figcaption>' : '') + '<div class="nt-mm" data-mm="' + esc(b.text) + '"><pre>' + esc(b.text) + '</pre></div></figure>';
       case 'out': return '<figure class="nt-out"><figcaption>' + SP.icon('monitor', 'ic-sm') + esc(b.cap || SP.t('notes.out')) + '</figcaption><pre>' + esc(b.text) + '</pre></figure>';
       case 'label': return '<p class="nt-label">' + esc(b.text) + '</p>';
       default: return '';
     }
   }
+  /* Формулы (KaTeX) и схемы (Mermaid) своих конспектов: библиотеки грузятся, только если они нужны */
+  var KATEX = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/', MERMAID = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js', libs = {}, mmTheme = '';
+  function lib(name, url, css) {
+    if (!libs[name]) libs[name] = new Promise(function (ok, no) {
+      if (css) { var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = css; document.head.appendChild(l); }
+      var s = document.createElement('script'); s.src = url; s.onload = ok; s.onerror = function () { delete libs[name]; no(new Error('load')); }; document.head.appendChild(s);
+    });
+    return libs[name];
+  }
+  function renderVisuals(box) {
+    if (!box) return;
+    var tex = SP.$$('.nt-tex:not([data-ok]), .nt-math:not([data-ok])', box);
+    if (tex.length) lib('katex', KATEX + 'katex.min.js', KATEX + 'katex.min.css').then(function () {
+      tex.forEach(function (el) { try { window.katex.render(el.getAttribute('data-tex'), el, { displayMode: el.classList.contains('nt-math'), throwOnError: false }); el.setAttribute('data-ok', '1'); } catch (e) { /* остаётся текстом */ } });
+    }, function () { /* без интернета — формула видна как текст */ });
+    var mm = SP.$$('.nt-mm:not([data-ok])', box);
+    if (mm.length) lib('mermaid', MERMAID).then(function () {
+      var M = window.mermaid, th = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default';
+      if (mmTheme !== th) { M.initialize({ startOnLoad: false, securityLevel: 'strict', theme: th, flowchart: { useMaxWidth: true, htmlLabels: false } }); mmTheme = th; }
+      mm.forEach(function (el, i) {
+        var id = 'mm' + Date.now() + '_' + i;
+        el.setAttribute('data-ok', 'busy');
+        M.render(id, el.getAttribute('data-mm')).then(function (r) { el.innerHTML = r.svg; el.setAttribute('data-ok', '1'); }, function () {
+          var junk = document.getElementById('d' + id) || document.getElementById(id); if (junk && !el.contains(junk)) junk.remove();
+          el.setAttribute('data-ok', 'err'); el.insertAdjacentHTML('afterbegin', '<p class="xsmall subtle">' + esc(SP.t('mn.mmBad')) + '</p>');
+        });
+      });
+    }, function () { });
+  }
+
   /* Термины: первое упоминание в лекции подчёркнуто, по нажатию — определение */
   function termsHtml(html, ctx) {
     var list = ctx.terms, used = ctx.used;
@@ -207,8 +248,9 @@
           if (tt) it.title = tt;
           else if (!b.title && s.kind === 'tasks' && s.title) { var parts = s.title.split('·').map(function (z) { return z.trim(); }); it.title = parts.length > 2 ? parts.slice(2).join(' · ') : parts[parts.length - 1]; var mm = s.title.match(/Задача\s+([\dА-ЯA-Z.]+)/i); if (mm && !b.num) it.num = mm[1]; }
           if (b.task || s.kind === 'tasks') {
-            /* «Где в лекции?» для задачи: раздел из .extra.json, иначе текст прямо перед задачей */
+            /* «Где в лекции?» для задачи: раздел из .extra.json (или «@ Где:» своего конспекта), иначе текст прямо перед задачей */
             var w = where[it.key] != null ? where[it.key] : where[lec.id + ':' + (b.num || '')];
+            if (w == null && b.where) { var wl = SP.lc(b.where); var fw = lec.sections.findIndex(function (z) { return z.kind === 'text' && z.title && (SP.lc(z.title) === wl || SP.lc(z.title).indexOf(wl) >= 0 || wl.indexOf(SP.lc(z.title)) >= 0); }); if (fw >= 0) w = fw; }
             if (w != null) it.whereSi = lec.sections.findIndex(function (z, zi) { return z.kind === 'text' && (zi === w || z.id === w || (z.title && z.title === w)); });
             if (it.whereSi == null || it.whereSi < 0) { for (var k = si - 1; k >= 0; k--) { if (lec.sections[k].kind === 'text') { it.whereSi = k; break; } if (lec.sections[k].kind !== 'tasks') break; } }
             if (it.whereSi == null || it.whereSi < 0) it.whereSi = M.text[1] != null ? M.text[1] : M.text[0];
@@ -216,7 +258,8 @@
           } else M.qs.push(it);
         });
       });
-      /* карточки: вопросы с текстовым ответом (кроме конспектов «только PDF») */
+      /* карточки: свои (ИИ сделал раздел «Карточки») + вопросы с текстовым ответом (кроме конспектов «только PDF») */
+      (lec.cards || []).forEach(function (c, ci) { if (c && c.q) M.cards.push({ key: lec.id + ':c' + ci, q: c.q, a: c.a || '', mem: c.mem || '' }); });
       if (!d.pdfOnly) M.qs.forEach(function (it) {
         var a = (it.b.a || []).filter(function (z) { return z.t !== 'note'; })[0], mem = (it.b.a || []).filter(function (z) { return z.t === 'note'; })[0];
         var front = typeof it.b.q === 'string' ? it.b.q : '';
@@ -294,6 +337,7 @@
     var needPdf = asPdf || d.pdfOnly;
     root.innerHTML = '<div class="nt lx' + (needPdf ? ' is-pdfmode' : '') + '" data-pdf="' + esc(meta.pdf && needPdf ? encodeURI(meta.pdf) : '') + '">' + head + '<div class="lx-body">' + body + '</div></div>';
     wire();
+    renderVisuals(root);
     if (needPdf && meta.pdf) wirePdf(encodeURI(meta.pdf));
     if (!keepScroll) window.scrollTo(0, 0);
     onScroll();
@@ -349,7 +393,7 @@
       a = crop && b.ar && b.ar.length ? cropHtml(b.ar, d) : blocksHtml(b.a, { d: d });
     }
     /* «Где в лекции?» — только там, где известно точное место ответа (вопросы Философии); у задач не показываем */
-    var hasWhere = !isTask && !!b.src;
+    var hasWhere = !isTask && (!!b.src || !!b.where);
     var whereBtn = hasWhere ? '<button type="button" class="btn btn-ghost btn-sm lx-where" data-lxwhere>' + SP.icon('map-pin', 'ic-sm') + '<span>' + esc(SP.t('lx.where')) + '</span></button>' : '';
     var hasA = (b.a && b.a.length) || (b.ar && b.ar.length);
     var stTxt = st ? '<span class="lx-st ' + st + '">' + esc(SP.t(st === 'know' ? (isTask ? 'lx.mSolved' : 'lx.mKnew') : 'lx.mAgain')) + '</span>' : '';
@@ -494,6 +538,10 @@
           return false;
         });
         if (!target) SP.$$('.nt-sec.nk-text [data-sp]', root).forEach(function (el) { var sp = +el.getAttribute('data-sp'), sy = +el.getAttribute('data-sy'); if (sp < p || (sp === p && sy >= y - 1)) target = el; });
+      } else if (it.b.where && !returnTo.task) {
+        /* свой конспект: «@ Где: подзаголовок» — ищем раздел или подзаголовок с таким названием */
+        var wl = SP.lc(it.b.where);
+        SP.$$('.nt-sec.nk-text .nt-sec-t, .nt-sec.nk-text .nt-h', root).some(function (el) { var tx = SP.lc(el.textContent.trim()); if (tx && (tx === wl || tx.indexOf(wl) >= 0 || wl.indexOf(tx) >= 0)) { target = el.closest('.nt-sec-head') || el; return true; } return false; });
       } else if (it.whereSi != null) target = document.getElementById('lx-s' + it.whereSi);
       showBack();
       if (!target) { SP.toast(SP.t('notes.whereNone'), 'info'); return; }
@@ -577,7 +625,9 @@
     });
   }
 
-  SP.notes = { forSubject: forSubject, lecStats: lecStats, continueOf: continueOf, href: lecHref, has: has };
+  SP.notes = { forSubject: forSubject, lecStats: lecStats, continueOf: continueOf, href: lecHref, has: has, visuals: renderVisuals,
+    /* свой конспект добавили, изменили или удалили — список и открытый конспект перечитать */
+    reload: function () { index = null; docs = {}; extras = {}; idxAsked = false; cur = null; return loadIndex().then(function () { SP.emit('notes-index'); }); } };
   SP.views.register('notes', {
     titleKey: 'nav.notes',
     mount: function (el) { root = el; },

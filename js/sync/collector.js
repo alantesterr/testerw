@@ -62,8 +62,15 @@
   async function platonus(h, cr, o) {
     var st = o.status || function () { };
     st('Вход на platonus.kgu.kz…');
-    check(await h('GET', PL + '/'), 'Platonus');
-    var r = json((await h('POST', PL + '/rest/api/login', { json: { login: cr.login, iin: null, icNumber: null, password: cr.pw }, headers: { language: '1' } })).text, 'Platonus');
+    var login = async function () {
+      check(await h('GET', PL + '/'), 'Platonus');
+      await sleep(400);   /* телефону нужно время сохранить cookie сессии */
+      return json((await h('POST', PL + '/rest/api/login', { json: { login: cr.login, iin: null, icNumber: null, password: cr.pw }, headers: { language: '1' } })).text, 'Platonus');
+    };
+    var r = await login();
+    /* самый первый вход на новом телефоне Platonus иногда отклоняет — сессия ещё не «запомнилась».
+       Пробуем ещё раз (один раз; при блокировке — не повторяем) */
+    if (r.login_status !== 'success' && r.login_status !== 'verificationCode' && !/блок/i.test(String(r.message || ''))) { await sleep(900); r = await login(); }
     if (r.login_status === 'verificationCode') {
       var code = o.ask ? await o.ask('На почту ' + (r.email || '') + ' отправлен код подтверждения. Введите 6 цифр:') : '';
       if (!code) throw new Error('Вход отменён: код не введён.');
@@ -209,10 +216,15 @@
   async function timetable(h, cr, o) {
     var st = o.status || function () { };
     st('Вход на timetable.kgu.kz…');
-    check(await h('GET', TT + '/index.php?page=login'), 'Timetable');
-    await h('POST', TT + '/index.php?page=login', { form: { language: '1', username: cr.login, password: cr.pw, subEnter: 'Войти' } });
-    var page = check(await h('GET', TT + '/index.php?page=student_timetable'), 'Timetable').text;
-    var sid = (page.match(/id="STstudentID"\s+value="(\d+)"/) || [])[1];
+    var ttLogin = async function () {
+      check(await h('GET', TT + '/index.php?page=login'), 'Timetable');
+      await sleep(300);
+      await h('POST', TT + '/index.php?page=login', { form: { language: '1', username: cr.login, password: cr.pw, subEnter: 'Войти' } });
+      return check(await h('GET', TT + '/index.php?page=student_timetable'), 'Timetable').text;
+    };
+    var page = await ttLogin(), sid = (page.match(/id="STstudentID"\s+value="(\d+)"/) || [])[1];
+    /* как и с Platonus: первый вход мог не пройти из-за сессии — ещё одна попытка */
+    if (!sid || sid === '0') { await sleep(900); page = await ttLogin(); sid = (page.match(/id="STstudentID"\s+value="(\d+)"/) || [])[1]; }
     if (!sid || sid === '0') throw new Error('Не удалось войти в Timetable: проверьте логин и пароль.');
     var pick = timetableWeeks(page, o.calendarData), weeks = [];
     for (var i = 0; i < pick.length; i++) {

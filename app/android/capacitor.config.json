@@ -1,0 +1,24 @@
+{
+  "appId": "kz.studyplay.app",
+  "appName": "StudyPlay",
+  "webDir": "www",
+  "server": {
+    "url": "https://alantesterr.github.io/testerw/?app=android",
+    "allowNavigation": ["alantesterr.github.io"]
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "CapacitorHttp": { "enabled": true },
+    "CapacitorCookies": { "enabled": true },
+    "BackgroundRunner": {
+      "label": "kz.studyplay.check",
+      "src": "runners/check.js",
+      "event": "check",
+      "repeat": true,
+      "interval": 30,
+      "autoStart": true
+    }
+  }
+}

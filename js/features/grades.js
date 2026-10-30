@@ -338,11 +338,13 @@
       r.readAsText(f, 'utf-8'); jf.value = '';
     };
     on('#jrMenu', function () {
-      var pl = !plHidden() && isWinPc(), items = [];
+      var pl = SP.pl.visible(), items = [];
       if (pl) items.push({ label: SP.t('jr.plRun'), icon: 'refresh-cw', onClick: function () { plClick('pl'); } },
         { label: SP.t('schedule.ttRun'), icon: 'calendar-days', onClick: function () { plClick('tt'); } });
       items.push({ label: SP.t('jr.dl'), icon: 'download', onClick: downloadDialog });
-      if (pl) items.push('-', { label: SP.t('jr.plSetupTitle'), icon: 'settings', onClick: setupModal });
+      if (pl && IS_APP) items.push('-', { label: SP.t('app.credsTitle'), icon: 'user', onClick: credsModal });
+      else if (pl) items.push('-', { label: SP.t('jr.plSetupTitle'), icon: 'settings', onClick: setupModal });
+      if (!plHidden() && !IS_APP) items.push({ label: SP.t('app.phoneTitle'), icon: 'smartphone', onClick: phoneModal });
       SP.menu(this, items);
     });
     on('#jrPl', function () {
@@ -440,6 +442,17 @@
     return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text().then(JSON.parse);
   }
   function show(params) {
+    /* iPhone (Scriptable): данные сжаты LZ-string — #/grades/lz/<данные> */
+    if (params && params[0] === 'lz' && params[1]) {
+      var lzData = params[1];
+      try { history.replaceState(null, '', location.pathname + location.search + '#/grades'); } catch (e) { /* ничего */ }
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js').then(function () {
+        var d = JSON.parse(window.LZString.decompressFromEncodedURIComponent(lzData) || 'null');
+        var res = importPlatonus(d); editing = null; render();
+        notifyNews(res.news);
+        withTimetable(d);
+      }).catch(function () { SP.toast(SP.t('jr.plBadLink'), 'danger'); });
+    }
     if (params && params[0] === 'pl' && params[1]) {
       var data = params[1];
       try { history.replaceState(null, '', location.pathname + location.search + '#/grades'); } catch (e) { /* ничего */ }
@@ -509,6 +522,7 @@
   function coolLeft(k) { var t = +SP.store.get(KIND[k].last, 0) || 0; return Math.max(0, t + COOL_MS - Date.now()); }
   function runProgram(quiet, k) {
     k = KIND[k] ? k : 'pl';
+    if (IS_APP) return appRun(quiet, k);   /* Android-приложение: сайт сам заходит в Platonus/Timetable */
     if (waitUntil) {   /* программа уже работает — встанем в очередь */
       if (waitKind !== k && queue.indexOf(k) < 0) queue.push(k);
       if (!quiet) SP.toast(SP.t('jr.plQueued'), 'info');
@@ -534,7 +548,7 @@
   }
   /* Нажатие кнопки: первый раз — инструкция, ночью для Platonus — вопрос «всё равно попробовать?» */
   function plClick(k) {
-    if (!SP.store.get('sp-pl-run-ok', false)) {
+    if (!IS_APP && !SP.store.get('sp-pl-run-ok', false)) {
       var m = SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') +
         '<div class="row" style="justify-content:flex-end;gap:var(--sp-2);margin-top:var(--sp-4)"><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a>' +
         '<button type="button" class="btn btn-primary" data-plgo>' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRunGo')) + '</span></button></div>' });
@@ -548,7 +562,118 @@
     runProgram(false, k);
   }
   function setupModal() { SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') + '<p><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a></p>' }); }
-  SP.pl = { visible: function () { return !plHidden() && isWinPc(); }, run: plClick };
+  SP.pl = { visible: function () { return !plHidden() && (isWinPc() || IS_APP); }, run: plClick, phone: phoneModal };
+
+  /* ---------- Приложение StudyPlay для Android ----------
+     Внутри приложения открыт этот же сайт, но у приложения нет браузерного запрета на чужие сайты:
+     сайт сам входит в Platonus и Timetable через общий сборщик js/sync/collector.js.
+     Логин и пароль хранятся только в защищённом хранилище телефона. */
+  var CAP = window.Capacitor, IS_APP = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform());
+  var CREDS_KEY = 'studyplay-creds', RUNNER = 'kz.studyplay.check';
+  function plug(n) { return CAP && CAP.Plugins && CAP.Plugins[n]; }
+  var scripts = {};
+  function loadScript(src) {
+    if (!scripts[src]) scripts[src] = new Promise(function (ok, no) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { delete scripts[src]; no(new Error('load')); }; document.head.appendChild(s); });
+    return scripts[src];
+  }
+  function appCreds() {
+    var ss = plug('SecureStoragePlugin');
+    var p = ss ? ss.get({ key: CREDS_KEY }).then(function (r) { return r && r.value; }, function () { return null; }) : Promise.resolve(SP.store.get(CREDS_KEY, null));
+    return p.then(function (v) { try { return typeof v === 'string' ? JSON.parse(v) : v; } catch (e) { return null; } });
+  }
+  function saveAppCreds(c) {
+    var ss = plug('SecureStoragePlugin');
+    var p = ss ? ss.set({ key: CREDS_KEY, value: JSON.stringify(c) }) : Promise.resolve(SP.store.set(CREDS_KEY, c));
+    return p.then(function () { return syncRunner(c); });
+  }
+  /* фоновая проверка оценок (раз в ~30 минут, даже когда приложение закрыто) получает логин и настройку уведомлений */
+  function syncRunner(c) {
+    var br = plug('BackgroundRunner'); if (!br) return Promise.resolve();
+    var details = c ? { login: c.login, pw: c.pw, notify: SP.settings.get('appNotify') !== false } : { notify: false };
+    return br.dispatchEvent({ label: RUNNER, event: 'setCreds', details: details }).catch(function () { /* старое приложение */ });
+  }
+  function credsModal() {
+    return appCreds().then(function (old) {
+      old = old || {};
+      return new Promise(function (done) {
+        var same = !old.tt;
+        var m = SP.modal({ title: SP.t('app.credsTitle'), body: '<p class="small muted">' + esc(SP.t('app.credsText')) + '</p>' +
+          '<div class="field"><label class="label" for="apL">' + esc(SP.t('app.login')) + '</label><input class="input" id="apL" autocomplete="username" value="' + esc(old.login || '') + '"></div>' +
+          '<div class="field"><label class="label" for="apP">' + esc(SP.t('app.password')) + '</label><input class="input" id="apP" type="password" autocomplete="current-password" value="' + esc(old.pw || '') + '"></div>' +
+          '<label class="row" style="gap:var(--sp-2)"><input type="checkbox" id="apSame"' + (same ? ' checked' : '') + '><span>' + esc(SP.t('app.same')) + '</span></label>' +
+          '<div id="apTt"' + (same ? ' hidden' : '') + '><div class="field"><label class="label" for="apTL">' + esc(SP.t('app.ttLogin')) + '</label><input class="input" id="apTL" value="' + esc((old.tt && old.tt.login) || '') + '"></div>' +
+          '<div class="field"><label class="label" for="apTP">' + esc(SP.t('app.ttPassword')) + '</label><input class="input" id="apTP" type="password" value="' + esc((old.tt && old.tt.pw) || '') + '"></div></div>',
+          actions: [{ label: SP.t('common.cancel'), onClick: function () { done(null); } }, { label: SP.t('common.save'), kind: 'primary', onClick: function () {
+            var g = function (id) { return SP.$('#' + id, m.el).value; };
+            var c = { login: g('apL').trim(), pw: g('apP') };
+            if (!SP.$('#apSame', m.el).checked) c.tt = { login: g('apTL').trim(), pw: g('apTP') };
+            if (!c.login || !c.pw) { SP.$('#apP', m.el).focus(); return false; }
+            saveAppCreds(c).then(function () { SP.toast(SP.t('settings.saved'), 'success'); done(c); });
+          } }] });
+        var cb = SP.$('#apSame', m.el); cb.onchange = function () { SP.$('#apTt', m.el).hidden = cb.checked; };
+      });
+    });
+  }
+  function askCode(text) { return Promise.resolve(window.prompt(text, '') || ''); }
+  function appRun(quiet, k) {
+    if (waitUntil) { if (waitKind !== k && queue.indexOf(k) < 0) queue.push(k); if (!quiet) SP.toast(SP.t('jr.plQueued'), 'info'); return; }
+    var left = coolLeft(k);
+    if (left > 0) {
+      if (quiet) { if (!retry[k]) retry[k] = setTimeout(function () { retry[k] = null; runProgram(true, k); }, left + 500); }
+      else SP.toast(SP.t(k === 'tt' ? 'jr.ttCool' : 'jr.plCool', { s: Math.ceil(left / 1000) }), 'warning');
+      return;
+    }
+    appCreds().then(function (cr) {
+      if (cr && cr.login && cr.pw) return cr;
+      if (quiet) return null;
+      return credsModal();
+    }).then(function (cr) {
+      if (!cr || waitUntil) return;
+      waitKind = k; waitUntil = Date.now() + 3 * 60 * 1000;
+      SP.store.set(KIND[k].last, Date.now());
+      busy(true);
+      if (!quiet) SP.toast(SP.t(k === 'tt' ? 'jr.ttRunToast' : 'app.runToast'), 'info');
+      return loadScript('js/sync/collector.js?v=' + ASSET_V).then(function () {
+        return window.SPCollect.collect({ http: window.SPCollect.fetchHttp(), creds: { pl: cr, tt: cr.tt || cr }, grades: k === 'pl', timetable: k === 'tt',
+          calendar: SP.hub.calendar(), ask: quiet ? null : askCode });
+      }).then(function (res) {
+        if (res.calendar) SP.hub.setCalendar(res.calendar);
+        var b = res.bundle;
+        if (k === 'pl' && b.hasGrades) { var r = importPlatonus(b); editing = null; render(); notifyNews(r.news); }
+        if (k === 'tt' && b.timetable) notifyTt(SP.hub.importTimetable(b.timetable));
+        /* ночью и без сети при автообновлении молчим; при нажатии — объясняем */
+        res.errors.forEach(function (e) { if (!quiet || !/не отвечает/.test(e.message)) SP.toast(esc(e.message), 'warning', { html: true, ms: 9000 }); });
+      });
+    }).catch(function (e) { if (!quiet) SP.toast(SP.t('app.fail'), 'danger'); }).then(function () { if (waitKind === k) waitDone(); });
+  }
+  /* версия файлов сайта (?v=… у скриптов) — чтобы сборщик обновлялся вместе с сайтом */
+  var ASSET_V = ((document.querySelector('script[src*="grades.js"]') || {}).src || '').split('v=')[1] || String(Date.now());
+  /* ссылки преподавателей и прочие внешние ссылки — в браузере телефона, а не внутри приложения */
+  if (IS_APP) document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[target="_blank"]'); if (!a || !/^https?:/i.test(a.href)) return;
+    if (a.host === location.host) return;
+    e.preventDefault(); location.href = a.href;
+  }, true);
+  SP.app = IS_APP ? { creds: credsModal, notify: function (on) {
+    SP.settings.set('appNotify', !!on);
+    var br = plug('BackgroundRunner');
+    var p = on && br && br.requestPermissions ? br.requestPermissions({ apis: ['notifications'] }).catch(function () { }) : Promise.resolve();
+    return p.then(function () { return appCreds(); }).then(syncRunner);
+  } } : null;
+
+  /* ---------- «StudyPlay на телефоне»: Android-приложение и iPhone (Scriptable) ---------- */
+  var APK_URL = 'https://github.com/alantesterr/testerw/releases/download/android-latest/StudyPlay.apk';
+  function phoneModal() {
+    var m = SP.modal({ title: SP.t('app.phoneTitle'), size: 'lg', body: SP.t('app.phoneHtml') +
+      '<div class="row" style="gap:var(--sp-2);flex-wrap:wrap;margin-top:var(--sp-3)">' +
+      '<a class="btn btn-primary" href="' + APK_URL + '">' + SP.icon('download') + '<span>' + esc(SP.t('app.apk')) + '</span></a>' +
+      '<button type="button" class="btn" data-ios>' + SP.icon('copy') + '<span>' + esc(SP.t('app.iosCopy')) + '</span></button>' +
+      '<a class="btn btn-ghost" href="downloads/StudyPlay-iPhone.js" download>' + SP.icon('file-text') + '<span>' + esc(SP.t('app.iosFile')) + '</span></a></div>' });
+    var b = SP.$('[data-ios]', m.el);
+    if (b) b.onclick = function () {
+      fetch('downloads/StudyPlay-iPhone.js', { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(SP.copyText).then(function () { SP.toast(SP.t('common.copied'), 'success'); }, function () { SP.toast(SP.t('app.fail'), 'danger'); });
+    };
+  }
   /* «Получить всё» в программе: расписание со ссылками едет вместе с оценками (ссылка, файл, буфер) */
   function withTimetable(d) {
     if (d && d.calendar) SP.hub.setCalendar(d.calendar);   /* академический календарь из Platonus */
@@ -614,7 +739,7 @@
      Вкладка не на экране — обновление откладывается до возвращения к ней. */
   var auto = { pl: { timer: null, due: false }, tt: { timer: null, due: false } };
   function autoMin(k) { var v = parseFloat(SP.settings.get(KIND[k].auto)); return v > 0 ? Math.max(1, v) : 0; }
-  function autoOn(k) { return autoMin(k) > 0 && !plHidden() && isWinPc(); }
+  function autoOn(k) { return autoMin(k) > 0 && !plHidden() && (isWinPc() || IS_APP); }
   /* Ночной перерыв Platonus: обычно не работает примерно с 23:00 до 7:00 (к Timetable не относится) */
   function plNight() { var h = new Date().getHours(); return h >= 23 || h < 7; }
   function autoRun(k) {

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StudyPlay</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; font: 16px/1.5 system-ui, sans-serif; background: #f5f7fb; color: #1c2433; padding: 16px; box-sizing: border-box; }
+  @media (prefers-color-scheme: dark) { body { background: #0e1116; color: #e8ecf5; } }
+  .box { max-width: 360px; text-align: center; }
+  button { font: inherit; padding: 10px 18px; border-radius: 10px; border: 0; background: #2563eb; color: #fff; }
+</style>
+</head>
+<body>
+<!-- Запасная страница: приложение открывает сайт StudyPlay; эта страница видна, только если нет интернета -->
+<div class="box">
+  <h1>StudyPlay</h1>
+  <p>Нет подключения к интернету. Проверьте сеть и попробуйте ещё раз.</p>
+  <button type="button" onclick="location.href='https://alantesterr.github.io/testerw/?app=android'">Повторить</button>
+</div>
+</body>
+</html>

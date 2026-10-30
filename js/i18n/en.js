@@ -544,3 +544,16 @@ Object.assign(SP.I18N.en, {
     '<p class="small"><b>Night break:</b> Platonus is usually offline about 23:00–7:00. This does not affect the schedule.</p>' +
     '<p class="small muted">From a phone: "File for StudyPlay" in the program, then here "Download" → "Load grades file" — both grades and the schedule with links arrive.</p>' });
 Object.assign(SP.I18N.en, { 'schedule.weekOf2': 'Week {n} of {t}', 'schedule.weekN': 'Semester week {n}' });
+
+/* StudyPlay на телефоне */
+Object.assign(SP.I18N.en, {
+  'app.credsTitle': 'Sign-in on this phone', 'app.credsHint': 'Platonus (and Timetable) login and password. Stored only in the phone\'s secure storage.',
+  'app.credsText': 'The app signs in to Platonus and Timetable by itself. The login and password are stored only on this phone.',
+  'app.login': 'Platonus login', 'app.password': 'Password', 'app.same': 'Same login and password in Timetable', 'app.ttLogin': 'Timetable login', 'app.ttPassword': 'Timetable password',
+  'app.runToast': 'Getting grades from Platonus…', 'app.fail': 'That did not work. Check the internet and try again.',
+  'app.notify': 'New grade notifications', 'app.notifyHint': 'About every half hour the app quietly checks Platonus (even when closed) and notifies you about new grades. Not at night (23:00–7:00).',
+  'app.phoneTitle': 'StudyPlay on your phone', 'app.apk': 'Download for Android (APK)', 'app.iosCopy': 'Copy the iPhone script', 'app.iosFile': 'Script file',
+  'app.phoneHtml': '<p><b>Android — the StudyPlay app.</b> The same site inside, but it fetches grades and the schedule with links by itself, without a computer, and notifies you about new grades.</p>' +
+    '<ol class="jr-steps"><li>Tap "Download for Android", open the file and allow installing from this source.</li><li>In the app: Settings → Tools → untick "Hide Platonus buttons" → "Sign-in on this phone".</li></ol>' +
+    '<p><b>iPhone — via the free Scriptable app.</b></p>' +
+    '<ol class="jr-steps"><li>Install <b>Scriptable</b> from the App Store.</li><li>Open this site on the iPhone → "Copy the iPhone script".</li><li>Scriptable → "+" → paste, name it <b>StudyPlay</b> → ▶.</li><li>Auto-update: Shortcuts → Automation → Time of Day → Scriptable "Run Script" → StudyPlay.</li></ol>' });

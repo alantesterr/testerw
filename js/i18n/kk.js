@@ -545,3 +545,16 @@ Object.assign(SP.I18N.kk, {
     '<p class="small muted">Телефоннан: бағдарламада «Файл для StudyPlay», мұнда «Жүктеу» → «Бағалар файлын жүктеу» — бағалар да, сілтемелері бар кесте де келеді.</p>' });
 Object.assign(SP.I18N.kk, { 'schedule.weekOf2': '{t} аптаның {n}-шісі', 'schedule.weekN': 'Семестрдің {n}-аптасы' });
 Object.assign(SP.I18N.kk, { 'schedule.weekOf2': '{n}-апта ({t} аптадан)' });
+
+/* StudyPlay на телефоне */
+Object.assign(SP.I18N.kk, {
+  'app.credsTitle': 'Осы телефонда кіру', 'app.credsHint': 'Platonus (және Timetable) логині мен құпия сөзі. Тек телефонның қорғалған қоймасында сақталады.',
+  'app.credsText': 'Қолданба Platonus пен Timetable-ға өзі кіреді. Логин мен құпия сөз тек осы телефонда сақталады.',
+  'app.login': 'Platonus логині', 'app.password': 'Құпия сөз', 'app.same': 'Timetable-да логин мен құпия сөз бірдей', 'app.ttLogin': 'Timetable логині', 'app.ttPassword': 'Timetable құпия сөзі',
+  'app.runToast': 'Platonus-тан бағалар алынуда…', 'app.fail': 'Болмады. Интернетті тексеріп, қайталаңыз.',
+  'app.notify': 'Жаңа бағалар туралы хабарландыру', 'app.notifyHint': 'Шамамен жарты сағат сайын қолданба Platonus-ты тексеріп, жаңа баға болса хабарлайды. Түнде (23:00–7:00) тексермейді.',
+  'app.phoneTitle': 'StudyPlay телефонда', 'app.apk': 'Android үшін жүктеу (APK)', 'app.iosCopy': 'iPhone скриптін көшіру', 'app.iosFile': 'Скрипт файлы',
+  'app.phoneHtml': '<p><b>Android — StudyPlay қолданбасы.</b> Ішінде сол сайт, бірақ бағалар мен сілтемелері бар кестені компьютерсіз өзі алады және жаңа бағалар туралы хабарлайды.</p>' +
+    '<ol class="jr-steps"><li>«Android үшін жүктеу» басып, файлды ашып, орнатуға рұқсат беріңіз.</li><li>Қолданбада: Баптаулар → Құралдар → «Platonus батырмаларын жасыру» белгісін алып → «Осы телефонда кіру».</li></ol>' +
+    '<p><b>iPhone — тегін Scriptable қолданбасы арқылы.</b></p>' +
+    '<ol class="jr-steps"><li>App Store-дан <b>Scriptable</b> орнатыңыз.</li><li>Осы сайтты iPhone-да ашып → «iPhone скриптін көшіру».</li><li>Scriptable → «+» → қойып, <b>StudyPlay</b> деп атаңыз → ▶.</li><li>Автожаңарту: «Командалар» → «Автоматтандыру» → «Тәулік уақыты» → Scriptable «Run Script» → StudyPlay.</li></ol>' });

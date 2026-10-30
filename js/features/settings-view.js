@@ -72,7 +72,10 @@
       setRow(SP.t('settings.plHide'), esc(SP.t('settings.plHideHint')), '<label class="switch"><input type="checkbox" id="sPlHide"' + (s.plHide !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.plHide')) + '</span></label>') +
       /* Автообновление — видно, только когда кнопки Platonus показаны */
       (s.plHide === false ? setRow(SP.t('settings.plAuto'), esc(SP.t('settings.plAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sPlAuto" min="0" max="1440" step="1" value="' + esc(s.plAuto || 0) + '" aria-label="' + esc(SP.t('settings.plAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') +
-        setRow(SP.t('settings.ttAuto'), esc(SP.t('settings.ttAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sTtAuto" min="0" max="1440" step="1" value="' + esc(s.ttAuto || 0) + '" aria-label="' + esc(SP.t('settings.ttAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') : ''));
+        setRow(SP.t('settings.ttAuto'), esc(SP.t('settings.ttAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sTtAuto" min="0" max="1440" step="1" value="' + esc(s.ttAuto || 0) + '" aria-label="' + esc(SP.t('settings.ttAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') +
+        /* Android-приложение: вход на этом телефоне и уведомления из фона */
+        (SP.app ? setRow(SP.t('app.credsTitle'), esc(SP.t('app.credsHint')), '<button type="button" class="btn" id="sAppCreds">' + SP.icon('user') + '<span>' + esc(SP.t('common.change')) + '</span></button>') +
+          setRow(SP.t('app.notify'), esc(SP.t('app.notifyHint')), '<label class="switch"><input type="checkbox" id="sAppNotify"' + (s.appNotify !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('app.notify')) + '</span></label>') : '') : ''));
 
     /* 4. Данные */
     var d = SP.hub.data(), base = SP.hub.base();
@@ -122,6 +125,8 @@
     var hk = $('#sHotkeys'); if (hk) hk.onchange = function () { SP.settings.set('hotkeys', hk.checked); };
     var sw = $('#sSw'); if (sw) sw.onchange = function () { SP.settings.set('stopwatch', sw.checked); };
     var ph = $('#sPlHide'); if (ph) ph.onchange = function () { SP.settings.set('plHide', ph.checked); SP.toast(SP.t('settings.saved'), 'success'); render(); var n = $('#sPlHide'); if (n) n.focus(); };
+    var ac = $('#sAppCreds'); if (ac) ac.onclick = function () { SP.app.creds(); };
+    var an = $('#sAppNotify'); if (an) an.onchange = function () { SP.app.notify(an.checked).then(function () { SP.toast(SP.t('settings.saved'), 'success'); }); };
     [['#sPlAuto', 'plAuto'], ['#sTtAuto', 'ttAuto']].forEach(function (p) {
       var pa = $(p[0]); if (pa) pa.onchange = function () { var v = Math.round(SP.clamp(parseFloat(pa.value) || 0, 0, 1440)); if (v > 0 && v < 1) v = 1;   /* не чаще раза в минуту */ pa.value = v; SP.settings.set(p[1], v); SP.toast(SP.t('settings.saved'), 'success'); };
     });

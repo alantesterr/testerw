@@ -344,6 +344,7 @@
       items.push({ label: SP.t('jr.dl'), icon: 'download', onClick: downloadDialog });
       if (pl && IS_APP) items.push('-', { label: SP.t('app.credsTitle'), icon: 'user', onClick: credsModal });
       else if (pl && !IS_IOS) items.push('-', { label: SP.t('jr.plSetupTitle'), icon: 'settings', onClick: setupModal });
+      if (pl && IS_WEBAPP) items.push({ label: SP.t('app.paste'), icon: 'copy', onClick: pasteUpdate });
       if (!plHidden() && !IS_APP) items.push({ label: SP.t('app.phoneTitle'), icon: 'smartphone', onClick: phoneModal });
       SP.menu(this, items);
     });
@@ -444,14 +445,8 @@
   function show(params) {
     /* iPhone (Scriptable): данные сжаты LZ-string — #/grades/lz/<данные> */
     if (params && params[0] === 'lz' && params[1]) {
-      var lzData = params[1];
       try { history.replaceState(null, '', location.pathname + location.search + '#/grades'); } catch (e) { /* ничего */ }
-      loadScript('https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js').then(function () {
-        var d = JSON.parse(window.LZString.decompressFromEncodedURIComponent(lzData) || 'null');
-        var res = importPlatonus(d); editing = null; render();
-        notifyNews(res.news);
-        withTimetable(d);
-      }).catch(function () { SP.toast(SP.t('jr.plBadLink'), 'danger'); });
+      importLz(params[1]).catch(function () { SP.toast(SP.t('jr.plBadLink'), 'danger'); });
     }
     if (params && params[0] === 'pl' && params[1]) {
       var data = params[1];
@@ -569,6 +564,43 @@
      Ссылка scriptable:///run/StudyPlay?mode=pl|tt открывает Scriptable; скрипт берёт оценки или расписание
      и сам возвращает в Safari на сайт с данными (#/grades/lz/…). Автообновления на iPhone с сайта нет —
      для этого «Команды» → «Автоматизация». */
+  /* данные от скрипта iPhone, сжатые LZ-string (из ссылки или из буфера обмена) */
+  function importLz(lzData) {
+    return loadScript('https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js').then(function () {
+      var d = JSON.parse(window.LZString.decompressFromEncodedURIComponent(lzData) || 'null');
+      var res = importPlatonus(d); editing = null; render();
+      notifyNews(res.news);
+      withTimetable(d);
+    });
+  }
+  /* Веб-приложение на экране «Домой» (iPhone): своя память, отдельная от Safari, и открыть его ссылкой нельзя.
+     Скрипт кладёт данные в буфер обмена, человек возвращается «◀ StudyPlay» и нажимает «Вставить обновление». */
+  var IS_WEBAPP = window.navigator.standalone === true;
+  var WAIT_IOS = 'sp-ios-wait', pasteBar = null;
+  function pasteUpdate() {
+    if (!navigator.clipboard || !navigator.clipboard.readText) { SP.toast(SP.t('app.pasteNone'), 'warning'); return; }
+    navigator.clipboard.readText().then(function (t) {
+      t = String(t || '').trim();
+      if (t.indexOf('studyplay-lz:') !== 0) { SP.toast(SP.t('app.pasteNone'), 'warning'); return; }
+      SP.store.del(WAIT_IOS); hidePasteBar();
+      return importLz(t.slice('studyplay-lz:'.length)).then(function () { try { navigator.clipboard.writeText(''); } catch (e) { /* ничего */ } });
+    }).catch(function () { SP.toast(SP.t('app.pasteNone'), 'warning'); });
+  }
+  function hidePasteBar() { if (pasteBar) { pasteBar.remove(); pasteBar = null; } }
+  function showPasteBar() {
+    if (pasteBar || !IS_WEBAPP) return;
+    var w = SP.store.get(WAIT_IOS, 0); if (!w || Date.now() - w > 10 * 60 * 1000) return;
+    pasteBar = SP.el('<div class="pl-paste" role="status"><span>' + esc(SP.t('app.pasteHint')) + '</span><button type="button" class="btn btn-primary btn-sm">' + SP.icon('copy') + '<span>' + esc(SP.t('app.paste')) + '</span></button><button type="button" class="btn btn-ghost btn-sm" aria-label="' + esc(SP.t('common.close')) + '">' + SP.icon('x') + '</button></div>');
+    var bs = pasteBar.querySelectorAll('button');
+    bs[0].onclick = pasteUpdate;
+    bs[1].onclick = function () { SP.store.del(WAIT_IOS); hidePasteBar(); };
+    document.body.appendChild(pasteBar);
+  }
+  if (IS_WEBAPP) {
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') showPasteBar(); });
+    window.addEventListener('focus', showPasteBar);
+    setTimeout(showPasteBar, 800);
+  }
   var IS_IOS = !(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1));
   function iosRun(quiet, k) {
     if (quiet) return;   /* открывать Scriptable само по себе не будем */
@@ -578,7 +610,8 @@
     SP.store.set(KIND[k].last, Date.now());
     SP.toast(SP.t('app.iosRun'), 'info');
     /* в каком браузере нажали — туда скрипт и вернёт (у каждого браузера своя память, данные должны прийти сюда) */
-    var ua = navigator.userAgent, br = /CriOS/.test(ua) ? 'chrome' : /FxiOS/.test(ua) ? 'firefox' : /EdgiOS/.test(ua) ? 'edge' : /YaBrowser/.test(ua) ? 'yandex' : 'safari';
+    var ua = navigator.userAgent, br = IS_WEBAPP ? 'webapp' : /CriOS/.test(ua) ? 'chrome' : /FxiOS/.test(ua) ? 'firefox' : /EdgiOS/.test(ua) ? 'edge' : /YaBrowser/.test(ua) ? 'yandex' : 'safari';
+    if (IS_WEBAPP) { SP.store.set(WAIT_IOS, Date.now()); hidePasteBar(); }
     var a = document.createElement('a'); a.href = 'scriptable:///run/StudyPlay?mode=' + k + '&browser=' + br; a.style.display = 'none';
     document.body.appendChild(a); a.click(); a.remove();
   }

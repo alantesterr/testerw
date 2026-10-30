@@ -982,3 +982,7 @@ a.tt-link:focus-visible, a.shk-link:focus-visible { outline: none; box-shadow: v
 /* Неделя семестра и РК по календарю Platonus — тихая строка над расписанием */
 .sch-cal { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin: 0.25rem 0 0.5rem; }
 .sch-cal b { font-weight: 600; color: var(--text); }
+
+/* Веб-приложение на iPhone: «Вставить обновление» после возврата из Scriptable */
+.pl-paste { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); z-index: 60; display: flex; align-items: center; gap: 0.5rem; width: min(560px, calc(100vw - 32px)); padding: 0.6rem 0.75rem; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 28px rgba(0,0,0,.18); font-size: 0.9rem; }
+.pl-paste > span { flex: 1; min-width: 0; }

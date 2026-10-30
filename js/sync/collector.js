@@ -287,7 +287,16 @@
     var wantGrades = arg !== 'tt', wantTt = arg !== 'pl';
     /* браузер, в котором нажали кнопку на сайте: туда и возвращаемся (запоминаем — для уведомлений тоже) */
     var K_BR = 'studyplay-browser', br = String(((env.args && env.args.queryParameters) || {}).browser || '').toLowerCase();
-    if (/^(safari|chrome|firefox|edge|yandex)$/.test(br)) save(K_BR, br); else br = load(K_BR) || 'safari';
+    if (/^(safari|chrome|firefox|edge|yandex|webapp)$/.test(br)) save(K_BR, br); else br = load(K_BR) || 'safari';
+    /* веб-приложение на экране «Домой»: открыть его ссылкой нельзя — данные кладём в буфер обмена,
+       а человек возвращается кнопкой «◀ StudyPlay» в левом верхнем углу */
+    var PB = env.Pasteboard || root.Pasteboard;
+    var toWebApp = async function (lzData, ok) {
+      if (PB && lzData) PB.copy('studyplay-lz:' + lzData);
+      var a = new Alert(); a.title = ok ? 'Готово' : 'StudyPlay';
+      a.message = ok ? 'Данные скопированы. Вернитесь в StudyPlay — кнопка «◀ StudyPlay» в левом верхнем углу — и нажмите «Вставить обновление».' : 'Новых данных нет. Вернитесь в StudyPlay кнопкой «◀ StudyPlay» в левом верхнем углу.';
+      a.addAction('OK'); await a.present();
+    };
     var inBrowser = function (url) {
       var bare = url.replace(/^https:\/\//, '');
       if (br === 'chrome') return 'googlechromes://' + bare;
@@ -339,7 +348,19 @@
     var b = res.bundle, last = load(K_LAST);
     var news = b.hasGrades ? gradeNews(last && last.subjects, b.subjects) : [];
     if (b.hasGrades) save(K_LAST, { subjects: b.subjects, at: b.taken });
-    var lz = env.LZString, link = SITE + '#/grades/lz/' + lz.compressToEncodedURIComponent(JSON.stringify(b));
+    var lz = env.LZString, lzData = lz.compressToEncodedURIComponent(JSON.stringify(b)), link = SITE + '#/grades/lz/' + lzData;
+    if (br === 'webapp') {
+      if (interactive) {
+        if (res.errors.length) { var e0 = new Alert(); e0.title = 'Не всё получилось'; e0.message = res.errors.map(function (x) { return x.message; }).join('\n\n'); e0.addAction('OK'); await e0.present(); }
+        await toWebApp(b.hasGrades || b.timetable ? lzData : '', !!(b.hasGrades || b.timetable));
+      } else if (news.length) {
+        if (PB) PB.copy('studyplay-lz:' + lzData);
+        var n0 = new env.Notification(); n0.title = news.length > 1 ? 'Новые оценки' : 'Новая оценка';
+        n0.body = news.slice(0, 4).join('\n') + '\nОткройте StudyPlay → «Вставить обновление».'; await n0.schedule();
+      }
+      if (env.Script && env.Script.complete) env.Script.complete();
+      return;
+    }
     if (interactive) {
       if (res.errors.length) { var e = new Alert(); e.title = 'Не всё получилось'; e.message = res.errors.map(function (x) { return x.message; }).join('\n\n'); e.addAction('OK'); await e.present(); }
       /* обратно на сайт: с данными, а если ничего не пришло — просто в «Оценки» */

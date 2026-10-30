@@ -92,7 +92,7 @@
     var d = SP.hub.data(), td = weekOff === 0 ? todayIdx() : -1;
     if (dayIdx === null) dayIdx = td >= 0 ? td : 0;
     var srcBadge = d.source ? '<span class="badge">' + SP.icon(d.source === 'course' ? 'users' : 'user') + esc(SP.t('schedule.src.' + d.source)) + '</span>' + (d.source === 'course' && d.baseVersion ? '<span class="subtle xsmall">' + esc(SP.t('schedule.version', { v: d.baseVersion })) + '</span>' : '') : '';
-    var html = SP.pageHead({ title: SP.t('nav.schedule'), sub: '<span class="row">' + srcBadge + '</span>', actions: sourceSwitch() });
+    var html = SP.pageHead({ title: SP.t('nav.schedule'), sub: '<span class="row">' + srcBadge + '</span>', actions: sourceSwitch() + ttRunBtn() });
     html += modeSwitch();
     var upd = SP.hub.pendingUpdate();
     if (upd && !updDismissed) {
@@ -128,12 +128,28 @@
           return '<button type="button" class="tt-l ' + kindCls(x.ab) + '" data-sid="' + esc(x.sid) + '" title="' + esc(SP.t('schedule.openFolder')) + '">' +
             '<b>' + esc(x.name) + '</b>' + (x.ab ? ' <span class="tt-ab">' + esc(x.ab) + '</span>' : '') +
             (x.room || x.building ? '<span class="tt-line">' + esc(ttRoom(x.room)) + (x.building ? ' (' + esc(ttBld(x.building)) + ')' : '') + '</span>' : '') +
-            (x.teacher ? '<span class="tt-line">' + esc(x.teacher) + '</span>' : '') + '</button>';
+            (x.teacher ? '<span class="tt-line">' + esc(x.teacher) + '</span>' : '') + '</button>' +
+            linkHtml(SP.hub.ttLink(addDays(mon, dd), s.start, l.name), 'tt-link');
         }).join('') + '</div></td>';
       }
       h += '</tr>';
     });
     return h + '</tbody></table></div></div></div>';
+  }
+  /* Ссылка преподавателя из Timetable (поле «Мессенджер: ID конференции») — только на ту дату, где её оставили */
+  function linkHtml(v, cls) {
+    v = String(v || '').trim(); if (!v) return '';
+    if (!/^https?:\/\//i.test(v)) return '<span class="' + cls + '" title="' + esc(SP.t('schedule.link')) + '">' + SP.icon('link', 'ic-sm') + '<span>' + esc(v) + '</span></span>';
+    var host = v; try { host = new URL(v).hostname.replace(/^www\./, ''); } catch (e) { /* как есть */ }
+    return '<a class="' + cls + '" href="' + esc(v) + '" target="_blank" rel="noopener noreferrer" title="' + esc(SP.t('schedule.link') + ': ' + v) + '">' + SP.icon('link', 'ic-sm') + '<span>' + esc(host) + '</span></a>';
+  }
+  function lessonLink(l, mon) {
+    var s = allSlots().filter(function (t) { return t.id === l.slotId; })[0];
+    return s ? SP.hub.ttLink(addDays(mon, +l.day || 0), s.start, l.name) : '';
+  }
+  /* Кнопка «Обновить расписание» — видна там же, где кнопки Platonus (Windows, галочка в Настройках снята) */
+  function ttRunBtn() {
+    return SP.pl && SP.pl.visible() ? '<button type="button" class="btn btn-sm" id="ttRun">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('schedule.ttRun')) + '</span></button>' : '';
   }
   /* Timetable: «Актовый зал (302)» → «302», «223 (спортзал)» → «223», «Главный корпус» → «Главка» */
   function ttRoom(r) {
@@ -166,7 +182,8 @@
     var place = [x.building, x.room].filter(Boolean).join(', ');
     return '<div class="shk-det"><button type="button" class="shk-back" id="shkBack">' + SP.icon('chevron-left') + '<span>' + esc(SP.t('nav.schedule')) + '</span></button>' +
       '<div class="shk-det-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</div><h2 class="shk-det-name">' + esc(x.name) + '</h2>' +
-      '<ul class="shk-det-list"><li>' + esc(when) + '</li>' + (place ? '<li>' + esc(place) + '</li>' : '') + (x.teacher ? '<li>' + esc(x.teacher) + '</li>' : '') + '</ul>' +
+      '<ul class="shk-det-list"><li>' + esc(when) + '</li>' + (place ? '<li>' + esc(place) + '</li>' : '') + (x.teacher ? '<li>' + esc(x.teacher) + '</li>' : '') +
+      (lessonLink(l, mon) ? '<li>' + linkHtml(lessonLink(l, mon), 'shk-link') + '</li>' : '') + '</ul>' +
       '<button type="button" class="btn btn-primary shk-det-go" data-sid="' + esc(x.sid) + '">' + SP.icon('folder') + '<span>' + esc(SP.t('schedule.openFolder')) + '</span></button></div>';
   }
 
@@ -212,7 +229,8 @@
       h += '<li class="shk-row' + (ls.length ? ' has' : '') + '"><div class="shk-time"><b>' + esc(String(s.start).slice(0, 5)) + '</b><span>' + esc(String(s.end).slice(0, 5)) + '</span></div><div class="shk-slot">';
       if (ls.length) h += ls.map(function (l) {
         var x = info(l);
-        return '<button type="button" class="shk-card" data-lid="' + SP.hub.data().schedule.indexOf(l) + '"><span class="shk-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</span><span class="shk-name">' + esc(x.name) + '</span></button>';
+        return '<button type="button" class="shk-card" data-lid="' + SP.hub.data().schedule.indexOf(l) + '"><span class="shk-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</span><span class="shk-name">' + esc(x.name) + '</span></button>' +
+          linkHtml(lessonLink(l, mon), 'shk-link');
       }).join('');
       else if (i > first && i < last) h += '<span class="shk-gap">' + esc(SP.t('schedule.gap', { m: toMin(s.end) - toMin(s.start) })) + '</span>';
       h += '</div></li>';
@@ -265,6 +283,7 @@
     var ug = q('#updGo'); if (ug) ug.onclick = function () { SP.hub.acceptUpdate(); };
     var ul = q('#updLater'); if (ul) ul.onclick = function () { updDismissed = true; render(); };
     var eu = q('#emUpload'); if (eu) eu.onclick = SP.schedule.upload;
+    var tr = q('#ttRun'); if (tr) tr.onclick = function () { SP.pl.run('tt'); };
     var eh = q('#emHelp'); if (eh) eh.onclick = SP.schedule.help;
     var days = q('.shk-days');
     if (days) days.onkeydown = function (e) {
@@ -348,5 +367,5 @@
     if (Date.now() - autoScroll < 4000 && window.scrollY < 40) toShk();
   });
   SP.on('hub-update', function () { updDismissed = false; if (root && SP.views.current() === 'schedule') render(); });
-  SP.on('settings', function (e) { if (e.key === 'theme' && root && SP.views.current() === 'schedule') render(); });
+  SP.on('settings', function (e) { if ((e.key === 'theme' || e.key === 'plHide') && root && SP.views.current() === 'schedule') render(); });
 })();

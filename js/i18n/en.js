@@ -509,3 +509,25 @@ Object.assign(SP.I18N.en, { 'jr.plNightTitle': 'Platonus night break', 'jr.plNig
   'jr.plNightText': 'Platonus is usually offline at night — roughly 23:00 to 7:00. Updating grades will most likely fail now.',
   'settings.plAutoHint': 'Every N minutes while the site is open, and right when it opens, the site presses "Update from Platonus" by itself. 0 — off, minimum 1 minute. Platonus is usually offline at night (about 23:00–7:00), so auto-update pauses then. Tick "Always allow" in the "Open application?" prompt so the browser stops asking.' });
 SP.I18N.en['jr.plSetupHtml'] = SP.I18N.en['jr.plSetupHtml'].replace('<p class="small muted">', '<p class="small"><b>Night break:</b> Platonus is usually offline from about 23:00 to 7:00 — grades cannot be updated then; auto-update waits for the morning.</p><p class="small muted">');
+/* Timetable schedule via the same "My grades" program */
+Object.assign(SP.I18N.en, { 'schedule.ttRun': 'Update schedule', 'schedule.link': 'Teacher\'s link',
+  'jr.ttRunToast': 'Getting the schedule from Timetable… It will update in a few seconds.',
+  'jr.plQueued': 'The program is already running — this update starts right after it.',
+  'jr.plBusy': 'Updating from Platonus / Timetable…',
+  'jr.ttFirst': 'Timetable schedule loaded: {n} classes a week. Teachers\' links show right in the schedule.',
+  'jr.ttNewLink': 'New link in the schedule', 'jr.ttNewLinks': 'New links in the schedule',
+  'jr.ttChanged': 'The Timetable schedule changed — updated.',
+  'jr.ttOld': 'To update the schedule, update the program: download it again, replace the files in its folder and run connect.bat once more. Grades were updated.',
+  'jr.ttBad': 'Could not read the Timetable schedule.',
+  'settings.ttAuto': 'Schedule auto-update',
+  'settings.ttAutoHint': 'Every N minutes (and right when the site opens) the program takes the schedule and teachers\' links from Timetable. 0 — only with the "Update schedule" button. The schedule rarely changes — 60 minutes is plenty.',
+  'jr.plSetupTitle': '"My grades" program: grades + schedule',
+  'jr.plSetupHtml': '<p>The "My grades" program runs on your computer and does two things: <b>grades</b> from Platonus ("Update from Platonus") and the <b>schedule with teachers\' links</b> from Timetable ("Update schedule"). One login and password, stored encrypted only on your computer — the site never sees them. Windows only.</p>' +
+    '<p><b>Setup (once):</b></p><ol class="jr-steps">' +
+    '<li>Download the program (button below) and unzip it into a permanent folder. If you already have it, just replace the files in its folder.</li>' +
+    '<li>Double-click <b>start.vbs</b>.</li>' +
+    '<li>Enter your Platonus login and password, tick <b>"Remember password"</b> and press <b>"Get grades"</b>. Close the window.</li>' +
+    '<li>Double-click <b>connect.bat</b>. After updating the program, run it again.</li></ol>' +
+    '<p class="small"><b>Night break:</b> Platonus is usually offline about 23:00–7:00. This does not affect the schedule.</p>' +
+    '<p class="small muted">To disconnect — disconnect.bat in the same folder. Details — README.txt in the archive.</p>' });
+Object.assign(SP.I18N.en, { 'jr.ttCool': 'Cooldown: {s} more sec. The schedule can be updated at most once a minute.' });

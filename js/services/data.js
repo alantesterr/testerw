@@ -15,7 +15,8 @@
 
   SP.data = {
     grades: function () { return SP.store.get(K_GR, null); },
-    timetable: function () { return null; }, /* автозагрузки из Timetable нет — расписание грузится файлом */
+    /* расписание с timetable.kgu.kz, которое принесла программа «Мои оценки» (см. hub.js → importTimetable) */
+    timetable: function () { return SP.store.get('sp-timetable-v1', null); },
     status: function () { return sync; },
     /* кнопка «обновить» ведёт к импорту файла; авто-обновления нет */
     refresh: function () { return Promise.resolve(false); },

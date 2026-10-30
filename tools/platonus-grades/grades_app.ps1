@@ -4,7 +4,9 @@
 
 param(
     [string]$TestJournal,   # только для проверки: показать сохранённый journal.json
-    [switch]$Auto           # запуск кнопкой с сайта StudyPlay: получить оценки, отдать сайту и закрыться
+    [switch]$Auto,          # запуск кнопкой с сайта StudyPlay: получить оценки, отдать сайту и закрыться
+    [switch]$Schedule,      # вместе с -Auto: вместо оценок взять расписание с timetable.kgu.kz
+    [switch]$TestTimetable  # проверка: войти в Timetable с сохранённым паролем и показать, что нашлось
 )
 
 $ErrorActionPreference = 'Stop'
@@ -138,15 +140,15 @@ function Build-Result($subjects, $marksBySubject, $year, $term) {
 # ---------- откат: не чаще 1 входа в Platonus в минуту (защита от блокировки) ----------
 $CoolSec  = 60
 $lastPath = Join-Path $Here 'last-run.txt'
-function Cooldown-Left {
+function Cooldown-Left([string]$path = $lastPath) {
     try {
-        $t = [long](Get-Content $lastPath -Raw -ErrorAction Stop).Trim()
+        $t = [long](Get-Content $path -Raw -ErrorAction Stop).Trim()
         $left = $CoolSec - ([DateTime]::UtcNow - [DateTime]::FromBinary($t)).TotalSeconds
         if ($left -gt 0) { return [int][math]::Ceiling($left) }
     } catch {}
     0
 }
-function Mark-Run { [IO.File]::WriteAllText($lastPath, [string][DateTime]::UtcNow.ToBinary()) }
+function Mark-Run([string]$path = $lastPath) { [IO.File]::WriteAllText($path, [string][DateTime]::UtcNow.ToBinary()) }
 
 function Fetch-Grades($login, $password, $status) {
     $left = Cooldown-Left
@@ -173,6 +175,49 @@ function Fetch-Grades($login, $password, $status) {
     }
     Build-Result $subjects $marks $year $term
 }
+
+# ---------- расписание с timetable.kgu.kz (логин и пароль те же, что в Platonus) ----------
+# Берём последние 8 недель и следующую: расписание сайт возьмёт с текущей недели,
+# а ссылки преподавателей (поле «Мессенджер») — со всех недель, по датам.
+$TT = 'https://timetable.kgu.kz'
+$ttLastPath = Join-Path $Here 'last-run-tt.txt'
+function Post-Form($url, $fields) {
+    $body = ($fields.GetEnumerator() | ForEach-Object { [uri]::EscapeDataString($_.Key) + '=' + [uri]::EscapeDataString([string]$_.Value) }) -join '&'
+    Read-Utf8 (Invoke-WebRequest -UseBasicParsing -WebSession $script:TtWeb -Method Post -Uri $url `
+        -ContentType 'application/x-www-form-urlencoded; charset=UTF-8' -Body ([Text.Encoding]::UTF8.GetBytes($body)))
+}
+function Timetable-Weeks($page) {
+    $today = (Get-Date).Date
+    $thisMon = $today.AddDays(-(([int]$today.DayOfWeek + 6) % 7))
+    $all = @([regex]::Matches($page, '<option[^>]*>(\d{2})-(\d{2})-(\d{4})</option>') | ForEach-Object {
+        New-Object DateTime ([int]$_.Groups[3].Value), ([int]$_.Groups[2].Value), ([int]$_.Groups[1].Value) })
+    $pick = @($all | Where-Object { $_ -ge $thisMon.AddDays(-56) -and $_ -le $thisMon.AddDays(7) } | Sort-Object)
+    if (-not $pick) { $pick = @($thisMon) }
+    $pick
+}
+function Fetch-Timetable($login, $password, $status) {
+    $left = Cooldown-Left $ttLastPath
+    if ($left -gt 0) { throw "Откат: ещё $left сек. Обновлять расписание можно не чаще раза в минуту." }
+    Mark-Run $ttLastPath
+    $status.Invoke('Вход на timetable.kgu.kz...')
+    Invoke-WebRequest -UseBasicParsing "$TT/index.php?page=login" -SessionVariable tw | Out-Null
+    $script:TtWeb = $tw
+    Post-Form "$TT/index.php?page=login" ([ordered]@{ language = '1'; username = $login; password = $password; subEnter = 'Войти' }) | Out-Null
+    $page = Read-Utf8 (Invoke-WebRequest -UseBasicParsing -WebSession $script:TtWeb "$TT/index.php?page=student_timetable")
+    $sid = [regex]::Match($page, 'id="STstudentID"\s+value="(\d+)"').Groups[1].Value
+    if (-not $sid -or $sid -eq '0') { throw 'Не удалось войти в Timetable: проверьте логин и пароль (они те же, что в Platonus).' }
+    $pick = Timetable-Weeks $page
+    $weeks = @(); $i = 0
+    foreach ($m in $pick) {
+        $i++; $status.Invoke("Загружаю расписание ($i из $($pick.Count))...")
+        $html = Post-Form "$TT/ajax/load_student_table.php" ([ordered]@{ studentID = $sid; begd = $m.ToString('dd'); begm = $m.ToString('MM'); begy = $m.ToString('yyyy') })
+        $weeks += [ordered]@{ monday = $m.ToString('yyyy-MM-dd'); html = (Slim-Html $html) }
+        Start-Sleep -Milliseconds 150
+    }
+    [ordered]@{ format = 'studyplay-timetable'; version = 1; taken = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss'); weeks = $weeks }
+}
+# Убираем из таблицы лишнее (скрипты кнопок, стили) — ссылка остаётся в value=""
+function Slim-Html($html) { ($html -replace '\s(onclick|style)="[^"]*"', '') -replace '\s{2,}', ' ' }
 
 # ---------- текст для мессенджера ----------
 function To-Text($res) {
@@ -228,8 +273,9 @@ function Find-Browser {
 
 # Открыть сайт StudyPlay и сразу передать оценки в ссылке (после #, на сервер не уходит)
 $SiteUrl = 'https://alantesterr.github.io/testerw/'
-function StudyPlay-B64($res) {
-    $bytes = [Text.Encoding]::UTF8.GetBytes((StudyPlay-Json $res))
+function StudyPlay-B64($res) { Pack-B64 (StudyPlay-Json $res) }
+function Pack-B64($json) {
+    $bytes = [Text.Encoding]::UTF8.GetBytes($json)
     $ms = New-Object IO.MemoryStream
     $z = New-Object IO.Compression.DeflateStream($ms, [IO.Compression.CompressionMode]::Compress)
     $z.Write($bytes, 0, $bytes.Length); $z.Close()
@@ -292,19 +338,52 @@ function To-DataTable($rows) {
 if ($Auto) {
     $c0 = Load-Config
     $pw0 = if ($c0.savedPassword) { Unprotect $c0.savedPassword } else { '' }
+    $top0 = New-Object Windows.Forms.Form; $top0.TopMost = $true   # чтобы сообщения не прятались за браузер
     if ($c0.login -and $pw0) {
-        if ((Cooldown-Left) -gt 0) { return }   # откат ещё идёт — тихо пропускаем, сайт попробует позже
+        if ((Cooldown-Left $(if ($Schedule) { $ttLastPath } else { $lastPath })) -gt 0) { return }   # откат ещё идёт — тихо пропускаем, сайт попробует позже
         try {
-            $script:Result = Fetch-Grades $c0.login $pw0 ([Action[string]]{ param($t) })
-            [Windows.Forms.Clipboard]::SetText('studyplay-grades:' + (StudyPlay-B64 $script:Result))
+            if ($Schedule) {
+                $tt = Fetch-Timetable $c0.login $pw0 ([Action[string]]{ param($t) })
+                [Windows.Forms.Clipboard]::SetText('studyplay-timetable:' + (Pack-B64 ($tt | ConvertTo-Json -Depth 6 -Compress)))
+            } else {
+                $script:Result = Fetch-Grades $c0.login $pw0 ([Action[string]]{ param($t) })
+                [Windows.Forms.Clipboard]::SetText('studyplay-grades:' + (StudyPlay-B64 $script:Result))
+            }
         } catch {
-            # Platonus не отвечает (ночной перерыв ~23:00–7:00, 502 и т. п.) — при запуске с сайта молчим
+            # сайт не отвечает (у Platonus ночной перерыв ~23:00–7:00, 502 и т. п.) — при запуске с сайта молчим
             if ($_.Exception.Message -match '\(50[234]\)|шлюз|недоступ|тайм-?аут|timed out|соедин|connect|resolve|разреш') { return }
-            $top0 = New-Object Windows.Forms.Form; $top0.TopMost = $true   # чтобы сообщение не спряталось за браузер
-            [Windows.Forms.MessageBox]::Show($top0, "Не удалось получить оценки: $($_.Exception.Message)", 'Мои оценки', 'OK', 'Warning') | Out-Null
+            $what = if ($Schedule) { 'расписание' } else { 'оценки' }
+            [Windows.Forms.MessageBox]::Show($top0, "Не удалось получить $($what): $($_.Exception.Message)", 'Мои оценки', 'OK', 'Warning') | Out-Null
         }
         return
     }
+    if ($Schedule) {   # пароль ещё не сохранён — расписанию нужен тот же вход
+        [Windows.Forms.MessageBox]::Show($top0, 'Сначала откройте программу (start.vbs), введите логин и пароль от Platonus, отметьте «Запомнить пароль» и нажмите «Получить оценки». После этого кнопка «Обновить расписание» заработает.', 'Мои оценки', 'OK', 'Information') | Out-Null
+        return
+    }
+}
+
+# ===== Проверка расписания (файл «проверить расписание.bat»): что программа видит в Timetable =====
+if ($TestTimetable) {
+    $c1 = Load-Config
+    $pw1 = if ($c1.savedPassword) { Unprotect $c1.savedPassword } else { '' }
+    $top1 = New-Object Windows.Forms.Form; $top1.TopMost = $true
+    if (-not $c1.login -or -not $pw1) {
+        [Windows.Forms.MessageBox]::Show($top1, 'Пароль не сохранён. Откройте start.vbs, введите логин и пароль, отметьте «Запомнить пароль» и нажмите «Получить оценки».', 'Проверка расписания') | Out-Null
+        return
+    }
+    try {
+        $tt = Fetch-Timetable $c1.login $pw1 ([Action[string]]{ param($t) })
+        $out = Join-Path $Here 'timetable-test.json'
+        [IO.File]::WriteAllText($out, ($tt | ConvertTo-Json -Depth 6), (New-Object Text.UTF8Encoding($false)))
+        $lessons = 0; $links = 0
+        foreach ($w in $tt.weeks) { $lessons += ([regex]::Matches($w.html, 'class="text_conf"')).Count; $links += ([regex]::Matches($w.html, 'class="text_conf"[^>]*value="[^"]+"')).Count }
+        $first = $tt.weeks[0].monday; $last = $tt.weeks[-1].monday
+        [Windows.Forms.MessageBox]::Show($top1, "Вход в Timetable — успешно.`n`nНедель: $($tt.weeks.Count) (с $first по $last)`nЗанятий: $lessons`nСсылок от преподавателей: $links`n`nВсё сохранено в timetable-test.json рядом с программой (пароля там нет).", 'Проверка расписания', 'OK', 'Information') | Out-Null
+    } catch {
+        [Windows.Forms.MessageBox]::Show($top1, "Не получилось: $($_.Exception.Message)", 'Проверка расписания', 'OK', 'Warning') | Out-Null
+    }
+    return
 }
 
 # ================= ОКНО =================

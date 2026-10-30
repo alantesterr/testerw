@@ -970,3 +970,11 @@ code, pre, .code, kbd { font-variant-ligatures: none; font-feature-settings: "li
 @keyframes pl-spin { to { transform: rotate(360deg); } }
 @media (max-width: 767px) { .pl-busy { bottom: calc(5rem + env(safe-area-inset-bottom)); left: var(--sp-3); right: auto; } }
 @media (prefers-reduced-motion: reduce) { .pl-busy.on .ic { animation-duration: 3s; } }
+/* Ссылка преподавателя из Timetable (поле «Мессенджер») — под занятием, только в свою дату */
+.tt-link, .shk-link { display: inline-flex; align-items: center; gap: 0.3rem; max-width: 100%; flex: none; font-size: 0.75rem; line-height: 1.3; color: var(--accent-text); text-decoration: none; overflow-wrap: anywhere; }
+.tt-link span, .shk-link span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+a.tt-link:hover, a.shk-link:hover { text-decoration: underline; }
+a.tt-link:focus-visible, a.shk-link:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 3px; }
+.tt-link { padding: 0.1rem 0.25rem; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); }
+.shk-slot .shk-link { margin: 0.15rem 0 0.35rem 0.9rem; }
+.shk-det-list .shk-link { font-size: 1rem; }

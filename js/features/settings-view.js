@@ -71,7 +71,8 @@
       /* Кнопки Platonus в «Оценках» по умолчанию скрыты */
       setRow(SP.t('settings.plHide'), esc(SP.t('settings.plHideHint')), '<label class="switch"><input type="checkbox" id="sPlHide"' + (s.plHide !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.plHide')) + '</span></label>') +
       /* Автообновление — видно, только когда кнопки Platonus показаны */
-      (s.plHide === false ? setRow(SP.t('settings.plAuto'), esc(SP.t('settings.plAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sPlAuto" min="0" max="1440" step="1" value="' + esc(s.plAuto || 0) + '" aria-label="' + esc(SP.t('settings.plAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') : ''));
+      (s.plHide === false ? setRow(SP.t('settings.plAuto'), esc(SP.t('settings.plAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sPlAuto" min="0" max="1440" step="1" value="' + esc(s.plAuto || 0) + '" aria-label="' + esc(SP.t('settings.plAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') +
+        setRow(SP.t('settings.ttAuto'), esc(SP.t('settings.ttAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sTtAuto" min="0" max="1440" step="1" value="' + esc(s.ttAuto || 0) + '" aria-label="' + esc(SP.t('settings.ttAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') : ''));
 
     /* 4. Данные */
     var d = SP.hub.data(), base = SP.hub.base();
@@ -121,7 +122,9 @@
     var hk = $('#sHotkeys'); if (hk) hk.onchange = function () { SP.settings.set('hotkeys', hk.checked); };
     var sw = $('#sSw'); if (sw) sw.onchange = function () { SP.settings.set('stopwatch', sw.checked); };
     var ph = $('#sPlHide'); if (ph) ph.onchange = function () { SP.settings.set('plHide', ph.checked); SP.toast(SP.t('settings.saved'), 'success'); render(); var n = $('#sPlHide'); if (n) n.focus(); };
-    var pa = $('#sPlAuto'); if (pa) pa.onchange = function () { var v = Math.round(SP.clamp(parseFloat(pa.value) || 0, 0, 1440)); if (v > 0 && v < 1) v = 1;   /* не чаще раза в минуту */ pa.value = v; SP.settings.set('plAuto', v); SP.toast(SP.t('settings.saved'), 'success'); };
+    [['#sPlAuto', 'plAuto'], ['#sTtAuto', 'ttAuto']].forEach(function (p) {
+      var pa = $(p[0]); if (pa) pa.onchange = function () { var v = Math.round(SP.clamp(parseFloat(pa.value) || 0, 0, 1440)); if (v > 0 && v < 1) v = 1;   /* не чаще раза в минуту */ pa.value = v; SP.settings.set(p[1], v); SP.toast(SP.t('settings.saved'), 'success'); };
+    });
     on('#sHow', SP.auth.explain);
     var gi = $('#sGroup'); if (gi) SP.group.attach(gi, $('#sGroupErr'));
     on('#sLogout', function () { SP.auth.logout(); });

@@ -337,23 +337,10 @@
       };
       r.readAsText(f, 'utf-8'); jf.value = '';
     };
-    var runClick = function () {
-      /* Ночью Platonus обычно выключен — спросим, пробовать ли всё равно */
-      if (plNight() && SP.store.get('sp-pl-run-ok', false)) {
-        SP.confirm({ title: SP.t('jr.plNightTitle'), text: SP.t('jr.plNightText'), okLabel: SP.t('jr.plNightGo'), icon: 'clock' }).then(function (ok) { if (ok) runProgram(); });
-        return;
-      }
-      /* Первый раз — инструкция, как скачать и подключить программу */
-      if (SP.store.get('sp-pl-run-ok', false)) return runProgram();
-      var m = SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') +
-        '<div class="row" style="justify-content:flex-end;gap:var(--sp-2);margin-top:var(--sp-4)"><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a>' +
-        '<button type="button" class="btn btn-primary" data-plgo>' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRunGo')) + '</span></button></div>' });
-      var b = SP.$('[data-plgo]', m.el); if (b) b.onclick = function () { SP.store.set('sp-pl-run-ok', true); m.close(); runProgram(); };
-    };
-    var setupModal = function () { SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') + '<p><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a></p>' }); };
     on('#jrMenu', function () {
       var pl = !plHidden() && isWinPc(), items = [];
-      if (pl) items.push({ label: SP.t('jr.plRun'), icon: 'refresh-cw', onClick: runClick });
+      if (pl) items.push({ label: SP.t('jr.plRun'), icon: 'refresh-cw', onClick: function () { plClick('pl'); } },
+        { label: SP.t('schedule.ttRun'), icon: 'calendar-days', onClick: function () { plClick('tt'); } });
       items.push({ label: SP.t('jr.dl'), icon: 'download', onClick: downloadDialog });
       if (pl) items.push('-', { label: SP.t('jr.plSetupTitle'), icon: 'settings', onClick: setupModal });
       SP.menu(this, items);
@@ -501,31 +488,76 @@
     });
     jSave(st); return n;
   }
-  /* ---------- Кнопка «Обновить из Platonus» (Windows) ----------
-     Сайт запускает программу «Мои оценки» через ссылку studyplay-grades: (её подключает файл
-     «Подключить к StudyPlay.bat»). Программа сама входит в Platonus, кладёт оценки в буфер обмена
-     с меткой «studyplay-grades:» и закрывается; эта вкладка забирает их, когда вы к ней вернётесь. */
-  var PREFIX = 'studyplay-grades:', waitUntil = 0, waitTimer = null, clipWarned = false;
+  /* ---------- Кнопки «Обновить из Platonus» и «Обновить расписание» (Windows) ----------
+     Сайт запускает программу «Мои оценки» через ссылку studyplay-grades:… (её подключает connect.bat).
+     Программа сама входит в Platonus (оценки) или в Timetable (расписание), кладёт результат в буфер
+     обмена с меткой и закрывается; эта вкладка забирает его, когда вы к ней вернётесь.
+     За раз — одно задание; второе ждёт в очереди, чтобы ответы не перепутались в буфере. */
+  var PREFIX = 'studyplay-grades:', TT_PREFIX = 'studyplay-timetable:', waitUntil = 0, waitTimer = null, clipWarned = false, waitKind = '', queue = [];
+  /* pl — оценки из Platonus, tt — расписание из Timetable: у каждого свой откат и своя периодичность */
+  var KIND = {
+    pl: { arg: 'run', last: 'sp-pl-last', auto: 'plAuto', night: true, toast: 'jr.plRunToast' },
+    tt: { arg: 'schedule', last: 'sp-tt-last', auto: 'ttAuto', night: false, toast: 'jr.ttRunToast' }
+  };
   /* Кнопки Platonus скрыты, пока в Настройках → Инструменты не снята галочка */
   function plHidden() { return SP.settings.get('plHide') !== false; }
   function isWinPc() { return /Windows/i.test(navigator.userAgent) && !/Mobile|Phone/i.test(navigator.userAgent); }
-  /* Откат: не чаще 1 обновления из Platonus в минуту — общий для всех вкладок (и программа следит сама) */
-  var COOL_MS = 60000, LAST_KEY = 'sp-pl-last';
-  function coolLeft() { var t = +SP.store.get(LAST_KEY, 0) || 0; return Math.max(0, t + COOL_MS - Date.now()); }
-  function runProgram(quiet) {
-    var left = coolLeft();
-    if (left > 0) {
-      if (quiet) { autoDue = true; setTimeout(autoRun, left + 500); }   /* автообновление — тихо после отката */
-      else SP.toast(SP.t('jr.plCool', { s: Math.ceil(left / 1000) }), 'warning');
+  /* Откат: не чаще 1 входа в минуту на каждый сайт — общий для всех вкладок (и программа следит сама) */
+  var COOL_MS = 60000, retry = {};
+  function coolLeft(k) { var t = +SP.store.get(KIND[k].last, 0) || 0; return Math.max(0, t + COOL_MS - Date.now()); }
+  function runProgram(quiet, k) {
+    k = KIND[k] ? k : 'pl';
+    if (waitUntil) {   /* программа уже работает — встанем в очередь */
+      if (waitKind !== k && queue.indexOf(k) < 0) queue.push(k);
+      if (!quiet) SP.toast(SP.t('jr.plQueued'), 'info');
       return;
     }
-    SP.store.set(LAST_KEY, Date.now());
-    var a = document.createElement('a'); a.href = PREFIX + 'run'; a.style.display = 'none';
+    var left = coolLeft(k);
+    if (left > 0) {
+      if (quiet) { if (!retry[k]) retry[k] = setTimeout(function () { retry[k] = null; runProgram(true, k); }, left + 500); }   /* автообновление — тихо после отката */
+      else SP.toast(SP.t(k === 'tt' ? 'jr.ttCool' : 'jr.plCool', { s: Math.ceil(left / 1000) }), 'warning');
+      return;
+    }
+    SP.store.set(KIND[k].last, Date.now());
+    var a = document.createElement('a'); a.href = PREFIX + KIND[k].arg; a.style.display = 'none';
     document.body.appendChild(a); a.click(); a.remove();
-    if (!quiet) SP.toast(SP.t('jr.plRunToast'), 'info', { html: false });
-    busy(true);
-    waitUntil = Date.now() + 5 * 60 * 1000; clipWarned = false;
+    if (!quiet) SP.toast(SP.t(KIND[k].toast), 'info', { html: false });
+    busy(true); waitKind = k;
+    waitUntil = Date.now() + 3 * 60 * 1000; clipWarned = false;
     clearInterval(waitTimer); waitTimer = setInterval(checkClip, 1500);
+  }
+  function waitDone() {
+    waitUntil = 0; waitKind = ''; clearInterval(waitTimer); busy(false);
+    var n = queue.shift(); if (n) setTimeout(function () { runProgram(true, n); }, 1500);
+  }
+  /* Нажатие кнопки: первый раз — инструкция, ночью для Platonus — вопрос «всё равно попробовать?» */
+  function plClick(k) {
+    if (!SP.store.get('sp-pl-run-ok', false)) {
+      var m = SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') +
+        '<div class="row" style="justify-content:flex-end;gap:var(--sp-2);margin-top:var(--sp-4)"><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a>' +
+        '<button type="button" class="btn btn-primary" data-plgo>' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRunGo')) + '</span></button></div>' });
+      var b = SP.$('[data-plgo]', m.el); if (b) b.onclick = function () { SP.store.set('sp-pl-run-ok', true); m.close(); runProgram(false, k); };
+      return;
+    }
+    if (KIND[k].night && plNight()) {
+      SP.confirm({ title: SP.t('jr.plNightTitle'), text: SP.t('jr.plNightText'), okLabel: SP.t('jr.plNightGo'), icon: 'clock' }).then(function (ok) { if (ok) runProgram(false, k); });
+      return;
+    }
+    runProgram(false, k);
+  }
+  function setupModal() { SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') + '<p><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a></p>' }); }
+  SP.pl = { visible: function () { return !plHidden() && isWinPc(); }, run: plClick };
+  /* Сообщение после обновления расписания: только если что-то поменялось */
+  function notifyTt(res) {
+    var list = function (a) { return '<ul class="small" style="margin:.25rem 0 0;padding-left:1.1rem">' + a.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>'; };
+    if (res.first) return SP.toast(esc(SP.t('jr.ttFirst', { n: res.lessons })), 'success', { html: true, ms: 8000 });
+    if (res.news.length) {
+      var seen = {}, rows = res.news.filter(function (x) { var k = x.name + x.date; if (seen[k]) return false; seen[k] = 1; return true; }).slice(0, 6).map(function (x) {
+        return '<b>' + esc(x.name) + '</b> · ' + esc(x.date.slice(8, 10) + '.' + x.date.slice(5, 7));
+      });
+      return SP.toast('<b>' + esc(SP.t(res.news.length > 1 ? 'jr.ttNewLinks' : 'jr.ttNewLink')) + '</b>' + list(rows) + (res.changed ? '<div class="small">' + esc(SP.t('jr.ttChanged')) + '</div>' : ''), 'success', { html: true, ms: 12000 });
+    }
+    if (res.changed) SP.toast(esc(SP.t('jr.ttChanged')), 'success', { html: true, ms: 8000 });
   }
   /* Маленький крутящийся значок справа снизу, пока идёт обновление (не меньше 2 секунд, не дольше минуты) */
   var busyEl = null, busyAt = 0, busyMax = null;
@@ -546,48 +578,59 @@
     }
   }
   function checkClip() {
-    if (!waitUntil || Date.now() > waitUntil) { waitUntil = 0; clearInterval(waitTimer); busy(false); return; }
+    if (!waitUntil || Date.now() > waitUntil) { waitDone(); return; }
     if (!document.hasFocus() || !navigator.clipboard || !navigator.clipboard.readText) return;
     navigator.clipboard.readText().then(function (t) {
-      t = String(t || '').trim(); if (!waitUntil || t.indexOf(PREFIX) !== 0) return;
-      waitUntil = 0; clearInterval(waitTimer);
-      return fromLink(t.slice(PREFIX.length)).then(function (d) {
+      t = String(t || '').trim(); if (!waitUntil) return;
+      var isTt = t.indexOf(TT_PREFIX) === 0; if (!isTt && t.indexOf(PREFIX) !== 0) return;
+      var asked = waitKind; waitDone();
+      try { navigator.clipboard.writeText(''); } catch (e) { /* ничего */ }
+      fromLink(t.slice((isTt ? TT_PREFIX : PREFIX).length)).then(function (d) {
+        if (isTt) return notifyTt(SP.hub.importTimetable(d));
         var res = importPlatonus(d); editing = null; render();
         notifyNews(res.news);   /* сообщаем только о новых оценках */
-        busy(false);
-        try { navigator.clipboard.writeText(''); } catch (e) { /* ничего */ }
-      });
-    }).catch(function () {
+        /* просили расписание, а пришли оценки — программа подключена по-старому */
+        if (asked === 'tt') SP.toast(esc(SP.t('jr.ttOld')), 'warning', { html: true, ms: 15000 });
+      }).catch(function () { SP.toast(SP.t(isTt ? 'jr.ttBad' : 'jr.plBadLink'), 'danger'); });
+    }, function () {
       if (!clipWarned) { clipWarned = true; SP.toast(SP.t('jr.plClip'), 'warning'); }
     });
   }
   window.addEventListener('focus', function () { if (waitUntil) checkClip(); });
 
-  /* ---------- Автообновление из Platonus ----------
-     Настройки → Инструменты → «Автообновление из Platonus, мин» (0 — выключено).
-     Сайт сам «нажимает» «Обновить из Platonus»: сразу при открытии и дальше каждые N минут,
+  /* ---------- Автообновление ----------
+     Настройки → Инструменты: «Автообновление из Platonus, мин» и «Автообновление расписания, мин»
+     (0 — выключено). Сайт сам «нажимает» кнопку сразу при открытии и дальше каждые N минут,
      пока вкладка открыта. Работает только на Windows и когда кнопки Platonus не скрыты.
      Вкладка не на экране — обновление откладывается до возвращения к ней. */
-  var autoTimer = null, autoDue = false;
-  function autoMin() { var v = parseFloat(SP.settings.get('plAuto')); return v > 0 ? Math.max(1, v) : 0; }
-  function autoOn() { return autoMin() > 0 && !plHidden() && isWinPc(); }
-  /* Ночной перерыв Platonus: обычно не работает примерно с 23:00 до 7:00 */
+  var auto = { pl: { timer: null, due: false }, tt: { timer: null, due: false } };
+  function autoMin(k) { var v = parseFloat(SP.settings.get(KIND[k].auto)); return v > 0 ? Math.max(1, v) : 0; }
+  function autoOn(k) { return autoMin(k) > 0 && !plHidden() && isWinPc(); }
+  /* Ночной перерыв Platonus: обычно не работает примерно с 23:00 до 7:00 (к Timetable не относится) */
   function plNight() { var h = new Date().getHours(); return h >= 23 || h < 7; }
-  function autoRun() {
-    if (!autoOn() || plNight()) return;
-    if (document.visibilityState !== 'visible' || editing) { autoDue = true; return; }
-    if (waitUntil) return;              /* прошлое обновление ещё не пришло */
-    autoDue = false; runProgram(true);
+  function autoRun(k) {
+    if (!autoOn(k) || (KIND[k].night && plNight())) return;
+    if (document.visibilityState !== 'visible' || editing) { auto[k].due = true; return; }
+    auto[k].due = false; runProgram(true, k);
   }
   function autoSchedule() {
-    clearInterval(autoTimer); autoTimer = null;
-    if (autoOn()) autoTimer = setInterval(autoRun, autoMin() * 60000);
+    Object.keys(auto).forEach(function (k) {
+      clearInterval(auto[k].timer); auto[k].timer = null;
+      if (autoOn(k)) auto[k].timer = setInterval(function () { autoRun(k); }, autoMin(k) * 60000);
+    });
   }
-  document.addEventListener('visibilitychange', function () { if (autoDue && document.visibilityState === 'visible') autoRun(); });
-  SP.on('settings', function (e) { if (e && (e.key === 'plAuto' || e.key === 'plHide')) { autoSchedule(); if (e.key === 'plAuto' && autoOn()) autoRun(); } });
-  /* при открытии сайта — сразу */
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') Object.keys(auto).forEach(function (k) { if (auto[k].due) autoRun(k); });
+  });
+  SP.on('settings', function (e) {
+    if (!e || ['plAuto', 'ttAuto', 'plHide'].indexOf(e.key) < 0) return;
+    autoSchedule();
+    if (e.key === 'plAuto' && autoOn('pl')) autoRun('pl');
+    if (e.key === 'ttAuto' && autoOn('tt')) autoRun('tt');
+  });
+  /* при открытии сайта — сразу (сначала оценки, потом расписание) */
   var openedWithData = /\/pl\//.test(location.hash);   /* сайт открыла программа и уже принесла оценки */
-  window.addEventListener('load', function () { setTimeout(function () { autoSchedule(); if (!openedWithData) autoRun(); }, 2000); });
+  window.addEventListener('load', function () { setTimeout(function () { autoSchedule(); if (!openedWithData) autoRun('pl'); autoRun('tt'); }, 2000); });
   /* Оценки обновились в другой вкладке (например, её открыла программа) — эта вкладка перерисуется сама */
   window.addEventListener('storage', function (e) {
     if (!e.key || e.key.indexOf('sp-journal-v1') < 0 || !root || root.hidden || editing) return;

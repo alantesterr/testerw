@@ -276,7 +276,10 @@
       var walk = function (n) {
         if (n.nodeType === 3) { cur += n.nodeValue; return; }
         if (n.nodeType !== 1) return;
-        var tg = n.tagName; if (/^(SCRIPT|STYLE|BUTTON|SELECT|INPUT|TEXTAREA|SVG)$/.test(tg)) return;
+        var tg = n.tagName;
+        /* поле «Мессенджер: ID конференции» — там преподаватель оставляет ссылку */
+        if (tg === 'INPUT') { var v = String(n.getAttribute('value') || '').trim(); if (v && n.type !== 'hidden') { flush(); out.push(LINK_MARK + v); } return; }
+        if (/^(SCRIPT|STYLE|BUTTON|SELECT|TEXTAREA|SVG)$/.test(tg)) return;
         if (tg === 'BR') { flush(); return; }
         var blk = /^(DIV|P|LI|TR|TABLE|UL|OL|H\d)$/.test(tg); if (blk) flush();
         Array.prototype.forEach.call(n.childNodes, walk); if (blk) flush();
@@ -294,13 +297,17 @@
       var offset = cells.length - best.head.cells.length;
       best.cols.forEach(function (c) {
         var cell = cells[c.ci + offset]; if (!cell) return;
-        var ls = lines(cell).filter(function (x) { return !NOISE.test(x); }); if (!ls.length) return;
+        var ls = lines(cell).filter(function (x) { return x.charAt(0) === LINK_MARK || !NOISE.test(x); });
+        if (!ls.some(function (x) { return x.charAt(0) !== LINK_MARK; })) return;
         var groups = [];
-        ls.forEach(function (x) { if (!groups.length || (CODE.test(x) && groups[groups.length - 1].length > 1)) groups.push([x]); else groups[groups.length - 1].push(x); });
+        ls.forEach(function (x) { if (x.charAt(0) !== LINK_MARK && (!groups.length || (CODE.test(x) && groups[groups.length - 1].length > 1))) groups.push([x]); else if (groups.length) groups[groups.length - 1].push(x); });
         groups.forEach(function (g) {
-          var name = g[0], room = '', teacher = [];
-          g.slice(1).forEach(function (x) { if (!room && /\(.+\)|корпус|ауд|ғимарат/i.test(x) && !/\d+\s*\/\s*\d+\s*ч/.test(x)) room = x; else teacher.push(x); });
-          rows.push({ day: c.day, slotKey: key, name: name, room: room, teacher: teacher.join(' ') });
+          var name = g[0], room = '', teacher = [], link = '';
+          g.slice(1).forEach(function (x) {
+            if (x.charAt(0) === LINK_MARK) { if (!link) link = x.slice(1); return; }
+            if (!room && /\(.+\)|корпус|ауд|ғимарат/i.test(x) && !/\d+\s*\/\s*\d+\s*ч/.test(x)) room = x; else teacher.push(x);
+          });
+          rows.push({ day: c.day, slotKey: key, name: name, room: room, teacher: teacher.join(' '), link: link });
         });
       });
     });
@@ -315,7 +322,57 @@
       var slot = slots.filter(function (s) { return s.start + '|' + s.end === r.slotKey; })[0];
       return { id: 'lesson-' + (i + 1), day: r.day, slotId: slot.id, subjectId: sj.id, name: r.name, room: r.room, building: '', teacher: r.teacher };
     });
-    return { timeSlots: slots, subjects: subjects, schedule: schedule };
+    /* ссылки привязаны к конкретной неделе, поэтому идут отдельно от расписания */
+    var links = rows.filter(function (r) { return r.link; }).map(function (r) { return { day: r.day, start: r.slotKey.split('|')[0], name: r.name, url: r.link }; });
+    return { timeSlots: slots, subjects: subjects, schedule: schedule, links: links };
+  }
+  var LINK_MARK = '\u0001';
+
+  /* ---------- Слой «Timetable»: расписание и ссылки от программы «Мои оценки» ----------
+     Программа присылает несколько недель (HTML таблиц как на timetable.kgu.kz).
+     Расписание берём с текущей недели (или ближайшей, где есть пары), ссылки — со всех недель по датам. */
+  var TT_KEY = 'sp-timetable-v1';
+  function isoDay(d) { return d.getFullYear() + '-' + SP.pad2(d.getMonth() + 1) + '-' + SP.pad2(d.getDate()); }
+  function mondayOf(d) { var x = new Date(d); x.setHours(12, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+  function ttLinkKey(start, name) { return String(start).slice(0, 5) + '|' + lc(cleanName(name)); }
+  function importTimetable(payload) {
+    if (!payload || payload.format !== 'studyplay-timetable' || !Array.isArray(payload.weeks)) throw new Error('format');
+    var weeks = payload.weeks.map(function (w) {
+      var p; try { p = parseScheduleHtml(w.html); } catch (e) { p = { schedule: [], subjects: [], timeSlots: [], links: [] }; }
+      p.monday = String(w.monday || ''); return p;
+    }).filter(function (w) { return /^\d{4}-\d{2}-\d{2}$/.test(w.monday); }).sort(function (a, b) { return a.monday.localeCompare(b.monday); });
+    var now = isoDay(mondayOf(new Date())), full = weeks.filter(function (w) { return w.schedule.length; });
+    var pick = full.filter(function (w) { return w.monday === now; })[0] || full.filter(function (w) { return w.monday > now; })[0] || full[full.length - 1];
+    if (!pick) throw new Error('empty');
+    /* постоянные id предметов — чтобы папки и порядок не «прыгали» от обновления к обновлению */
+    var ids = {};
+    pick.subjects.forEach(function (s) { var nid = 'tt:' + lc(cleanName(s.name)); ids[s.id] = nid; s.id = nid; });
+    pick.schedule.forEach(function (l) { l.subjectId = ids[l.subjectId] || l.subjectId; });
+
+    var old = SP.store.get(TT_KEY, null), first = !old;
+    var sig = function (t) { if (!t) return ''; var st = {}; (t.timeSlots || []).forEach(function (s) { st[s.id] = s.start; }); return JSON.stringify((t.schedule || []).map(function (l) { return [l.day, st[l.slotId], l.name, l.room, l.teacher]; }).sort()); };
+    /* ссылки: недели, которые пришли, заменяем целиком; более старые остаются */
+    var links = Object.assign({}, old && old.links), news = [];
+    weeks.forEach(function (w) {
+      var m = new Date(w.monday + 'T12:00:00');
+      for (var d = 0; d < 6; d++) delete links[isoDay(new Date(m.getTime() + d * 864e5))];
+      w.links.forEach(function (k) {
+        var date = isoDay(new Date(m.getTime() + k.day * 864e5)), key = ttLinkKey(k.start, k.name);
+        (links[date] = links[date] || {})[key] = k.url;
+        var was = old && old.links && old.links[date] && old.links[date][key];
+        if (!first && was !== k.url) news.push({ date: date, name: cleanName(k.name).replace(ABBR_RE, '$1'), url: k.url });
+      });
+    });
+    var next = { at: new Date().toISOString(), monday: pick.monday, timeSlots: pick.timeSlots, subjects: pick.subjects, schedule: pick.schedule, links: links };
+    var changed = !first && sig(old) !== sig(next);
+    SP.store.set(TT_KEY, next);
+    if (first) { data.pref = 'timetable'; save(); }
+    applyLayers();
+    return { first: first, changed: changed, lessons: pick.schedule.length, news: news };
+  }
+  function ttLink(date, start, name) {
+    var t = SP.store.get(TT_KEY, null), day = t && t.links && t.links[isoDay(date)];
+    return day ? day[ttLinkKey(start, name)] || '' : '';
   }
 
   /* ---------- Импорт файлов расписания StudyPlay (JSON / HTML) ---------- */
@@ -517,7 +574,7 @@
     persistFile: persistFile, dropFile: dropFile, loadAllContent: loadAllContent, idb: IDB,
     base: function () { return base; },
     refreshBase: refreshBase, checkUpdate: checkUpdate, acceptUpdate: acceptUpdate, pendingUpdate: function () { return pendBase; },
-    fetchSite: fetchSite, parseScheduleHtml: parseScheduleHtml,
+    fetchSite: fetchSite, parseScheduleHtml: parseScheduleHtml, importTimetable: importTimetable, ttLink: ttLink,
     importFiles: importFiles, exportAll: exportAll, exportGithub: exportGithub,
     importShared: importShared, mateOf: mateOf, mergeAllShared: mergeAllShared,
     subjectNames: function () { var seen = {}; return data.subjects.map(function (x) { return cleanName(x.name); }).filter(function (n) { if (!n || seen[n]) return false; seen[n] = 1; return true; }); },

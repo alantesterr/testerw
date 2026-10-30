@@ -21,3 +21,5 @@ node_modules/
 config.json
 studyplay-*.json
 last-run.txt
+last-run-tt.txt
+timetable-test.json

@@ -53,7 +53,9 @@ jobs:
           sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"1.${{ github.run_number }}\"/" android/app/build.gradle
           # уведомления на Android 13+
           grep -q POST_NOTIFICATIONS android/app/src/main/AndroidManifest.xml || sed -i 's#</manifest>#    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
-          grep -n "versionCode\|versionName" android/app/build.gradle
+          # фоновой проверке (Background Runner) нужен её JS-движок из node_modules — по документации плагина
+          printf "\nrepositories {\n    flatDir {\n        dirs '../../node_modules/@capacitor/background-runner/android/src/main/libs', 'libs'\n    }\n}\n" >> android/app/build.gradle
+          grep -n "versionCode\|versionName\|flatDir" android/app/build.gradle
 
       - name: Build
         working-directory: app/android/android

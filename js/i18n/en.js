@@ -531,3 +531,15 @@ Object.assign(SP.I18N.en, { 'schedule.ttRun': 'Update schedule', 'schedule.link'
     '<p class="small"><b>Night break:</b> Platonus is usually offline about 23:00–7:00. This does not affect the schedule.</p>' +
     '<p class="small muted">To disconnect — disconnect.bat in the same folder. Details — README.txt in the archive.</p>' });
 Object.assign(SP.I18N.en, { 'jr.ttCool': 'Cooldown: {s} more sec. The schedule can be updated at most once a minute.' });
+
+/* программа одним окном */
+Object.assign(SP.I18N.en, {
+  'jr.ttOld': 'To update the schedule, update the program: download it again, replace the files in its folder, open StudyPlay.vbs and press "Обновить подключение" (update connection). Grades were updated.',
+  'jr.plSetupHtml': '<p>The program runs on your computer and does two things: <b>grades</b> from Platonus and the <b>schedule with teachers\' links</b> from Timetable. The password is stored encrypted only on your computer — the site never sees it. Windows only.</p>' +
+    '<p><b>Setup (once):</b></p><ol class="jr-steps">' +
+    '<li>Download the program (button below) and unzip it into a permanent folder. If you already have it, replace the files in its folder.</li>' +
+    '<li>Double-click <b>StudyPlay.vbs</b>.</li>' +
+    '<li>In the window: Platonus login and password, tick <b>"Remember password"</b>. If the Timetable password is different, untick "same login and password in Timetable" and enter it. Press <b>"Get all"</b>.</li>' +
+    '<li>In the same window press <b>"Connect"</b> — the site buttons will work in every browser.</li></ol>' +
+    '<p class="small"><b>Night break:</b> Platonus is usually offline about 23:00–7:00. This does not affect the schedule.</p>' +
+    '<p class="small muted">From a phone: "File for StudyPlay" in the program, then here "Download" → "Load grades file" — both grades and the schedule with links arrive.</p>' });

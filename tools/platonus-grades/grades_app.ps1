@@ -1,12 +1,11 @@
-﻿# Окно «Мои оценки»: получает актуальные оценки из Platonus (platonus.kgu.kz),
-# показывает их, сохраняет в Excel и копирует текстом для мессенджеров.
-# Запуск: двойной клик по «Оценки.bat»
+﻿# Программа «Мои оценки» для StudyPlay: оценки из Platonus + расписание со ссылками из Timetable.
+# Всё в одном окне: вход, подключение кнопок сайта, выбор браузера, «Получить всё».
+# Запуск: двойной щелчок по StudyPlay.vbs
 
 param(
     [string]$TestJournal,   # только для проверки: показать сохранённый journal.json
     [switch]$Auto,          # запуск кнопкой с сайта StudyPlay: получить оценки, отдать сайту и закрыться
-    [switch]$Schedule,      # вместе с -Auto: вместо оценок взять расписание с timetable.kgu.kz
-    [switch]$TestTimetable  # проверка: войти в Timetable с сохранённым паролем и показать, что нашлось
+    [switch]$Schedule       # вместе с -Auto: вместо оценок взять расписание с timetable.kgu.kz
 )
 
 $ErrorActionPreference = 'Stop'
@@ -15,31 +14,38 @@ Add-Type -AssemblyName System.Windows.Forms, System.Drawing, Microsoft.VisualBas
 [Windows.Forms.Application]::EnableVisualStyles()
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$Base    = 'https://platonus.kgu.kz'
-$Here    = Split-Path -Parent $MyInvocation.MyCommand.Path
-$cfgPath = Join-Path $Here 'config.json'
+$Base     = 'https://platonus.kgu.kz'
+$TT       = 'https://timetable.kgu.kz'
+$SiteUrl  = 'https://alantesterr.github.io/testerw/'
+$Here     = Split-Path -Parent $MyInvocation.MyCommand.Path
+$cfgPath  = Join-Path $Here 'config.json'
+$Launcher = Join-Path $Here 'StudyPlay.vbs'
+$NetRx    = '\(50[234]\)|шлюз|недоступ|тайм-?аут|timed out|соедин|connect|resolve|разреш'
 
-# ---------- настройки (логин и зашифрованный пароль) ----------
+# ---------- настройки: логины, зашифрованные пароли, браузер ----------
+# Пароли шифруются средствами Windows: расшифровать можно только под вашей учётной записью на этом ПК.
 function Load-Config {
     if (Test-Path $cfgPath) { try { return (Get-Content $cfgPath -Raw -Encoding UTF8 | ConvertFrom-Json) } catch {} }
     [pscustomobject]@{ login = '' }
 }
-function Save-Config($login, $password, $remember) {
-    $o = [ordered]@{ login = $login }
-    if ($remember -and $password) {
-        # шифруется средствами Windows: расшифровать можно только под вашей учётной записью на этом ПК
-        $o.savedPassword = ConvertTo-SecureString $password -AsPlainText -Force | ConvertFrom-SecureString
-    }
-    [IO.File]::WriteAllText($cfgPath, (([pscustomobject]$o) | ConvertTo-Json), (New-Object Text.UTF8Encoding($false)))
-}
+function Write-Config($o) { [IO.File]::WriteAllText($cfgPath, (([pscustomobject]$o) | ConvertTo-Json), (New-Object Text.UTF8Encoding($false))) }
+function Protect($pw) { ConvertTo-SecureString $pw -AsPlainText -Force | ConvertFrom-SecureString }
 function Unprotect($enc) {
+    if (-not $enc) { return '' }
     try {
         $sec = ConvertTo-SecureString $enc
         [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec))
     } catch { '' }
 }
+# Логин и пароль для Platonus и для Timetable (по умолчанию — одни и те же)
+function Get-Creds($c) {
+    $pl = @{ login = [string]$c.login; pw = (Unprotect $c.savedPassword) }
+    $tt = $pl
+    if ($c.ttSame -eq $false) { $tt = @{ login = [string]$c.ttLogin; pw = (Unprotect $c.ttSavedPassword) } }
+    @{ pl = $pl; tt = $tt }
+}
 
-# ---------- работа с сайтом ----------
+# ---------- работа с сайтами ----------
 function Read-Utf8($resp) {
     $ms = New-Object IO.MemoryStream
     $resp.RawContentStream.Position = 0
@@ -81,7 +87,29 @@ function Fmt($v) {
     }
     "$v"
 }
+function Friendly($msg, $site) {
+    if ($msg -match $NetRx) {
+        if ($site -eq 'pl') { return 'Platonus сейчас не отвечает. Обычно он не работает ночью — примерно с 23:00 до 7:00.' }
+        return 'Timetable сейчас не отвечает. Попробуйте позже.'
+    }
+    $msg
+}
 
+# ---------- откат: не чаще 1 входа в минуту на каждый сайт (защита от блокировки) ----------
+$CoolSec    = 60
+$lastPath   = Join-Path $Here 'last-run.txt'
+$ttLastPath = Join-Path $Here 'last-run-tt.txt'
+function Cooldown-Left([string]$path = $lastPath) {
+    try {
+        $t = [long](Get-Content $path -Raw -ErrorAction Stop).Trim()
+        $left = $CoolSec - ([DateTime]::UtcNow - [DateTime]::FromBinary($t)).TotalSeconds
+        if ($left -gt 0) { return [int][math]::Ceiling($left) }
+    } catch {}
+    0
+}
+function Mark-Run([string]$path = $lastPath) { [IO.File]::WriteAllText($path, [string][DateTime]::UtcNow.ToBinary()) }
+
+# ---------- Platonus: оценки ----------
 function Login-Platonus($login, $password) {
     Invoke-WebRequest -UseBasicParsing "$Base/" -SessionVariable Web | Out-Null
     $script:Web = $Web
@@ -137,19 +165,6 @@ function Build-Result($subjects, $marksBySubject, $year, $term) {
     [pscustomobject]@{ Year = $year; Term = $term; Taken = Get-Date; Summary = $summary; Current = $current }
 }
 
-# ---------- откат: не чаще 1 входа в Platonus в минуту (защита от блокировки) ----------
-$CoolSec  = 60
-$lastPath = Join-Path $Here 'last-run.txt'
-function Cooldown-Left([string]$path = $lastPath) {
-    try {
-        $t = [long](Get-Content $path -Raw -ErrorAction Stop).Trim()
-        $left = $CoolSec - ([DateTime]::UtcNow - [DateTime]::FromBinary($t)).TotalSeconds
-        if ($left -gt 0) { return [int][math]::Ceiling($left) }
-    } catch {}
-    0
-}
-function Mark-Run([string]$path = $lastPath) { [IO.File]::WriteAllText($path, [string][DateTime]::UtcNow.ToBinary()) }
-
 function Fetch-Grades($login, $password, $status) {
     $left = Cooldown-Left
     if ($left -gt 0) { throw "Откат: ещё $left сек. Обновлять из Platonus можно не чаще раза в минуту — это защита от блокировки." }
@@ -176,41 +191,44 @@ function Fetch-Grades($login, $password, $status) {
     Build-Result $subjects $marks $year $term
 }
 
-# ---------- расписание с timetable.kgu.kz (логин и пароль те же, что в Platonus) ----------
+# ---------- Timetable: расписание и ссылки преподавателей ----------
 # Берём последние 8 недель и следующую: расписание сайт возьмёт с текущей недели,
 # а ссылки преподавателей (поле «Мессенджер») — со всех недель, по датам.
-$TT = 'https://timetable.kgu.kz'
-$ttLastPath = Join-Path $Here 'last-run-tt.txt'
 function Post-Form($url, $fields) {
     $body = ($fields.GetEnumerator() | ForEach-Object { [uri]::EscapeDataString($_.Key) + '=' + [uri]::EscapeDataString([string]$_.Value) }) -join '&'
     Read-Utf8 (Invoke-WebRequest -UseBasicParsing -WebSession $script:TtWeb -Method Post -Uri $url `
         -ContentType 'application/x-www-form-urlencoded; charset=UTF-8' -Body ([Text.Encoding]::UTF8.GetBytes($body)))
 }
+function This-Monday { $t = (Get-Date).Date; $t.AddDays(-(([int]$t.DayOfWeek + 6) % 7)) }
 function Timetable-Weeks($page) {
-    $today = (Get-Date).Date
-    $thisMon = $today.AddDays(-(([int]$today.DayOfWeek + 6) % 7))
+    $thisMon = This-Monday
     $all = @([regex]::Matches($page, '<option[^>]*>(\d{2})-(\d{2})-(\d{4})</option>') | ForEach-Object {
         New-Object DateTime ([int]$_.Groups[3].Value), ([int]$_.Groups[2].Value), ([int]$_.Groups[1].Value) })
     $pick = @($all | Where-Object { $_ -ge $thisMon.AddDays(-56) -and $_ -le $thisMon.AddDays(7) } | Sort-Object)
     if (-not $pick) { $pick = @($thisMon) }
     $pick
 }
-function Fetch-Timetable($login, $password, $status) {
-    $left = Cooldown-Left $ttLastPath
-    if ($left -gt 0) { throw "Откат: ещё $left сек. Обновлять расписание можно не чаще раза в минуту." }
-    Mark-Run $ttLastPath
-    $status.Invoke('Вход на timetable.kgu.kz...')
+# Вход в Timetable; возвращает страницу «Студент сабақ кестесі» и ID студента
+function Login-Timetable($login, $password) {
     Invoke-WebRequest -UseBasicParsing "$TT/index.php?page=login" -SessionVariable tw | Out-Null
     $script:TtWeb = $tw
     Post-Form "$TT/index.php?page=login" ([ordered]@{ language = '1'; username = $login; password = $password; subEnter = 'Войти' }) | Out-Null
     $page = Read-Utf8 (Invoke-WebRequest -UseBasicParsing -WebSession $script:TtWeb "$TT/index.php?page=student_timetable")
     $sid = [regex]::Match($page, 'id="STstudentID"\s+value="(\d+)"').Groups[1].Value
-    if (-not $sid -or $sid -eq '0') { throw 'Не удалось войти в Timetable: проверьте логин и пароль (они те же, что в Platonus).' }
-    $pick = Timetable-Weeks $page
+    if (-not $sid -or $sid -eq '0') { throw 'Не удалось войти в Timetable: проверьте логин и пароль.' }
+    @{ page = $page; sid = $sid }
+}
+function Fetch-Timetable($login, $password, $status) {
+    $left = Cooldown-Left $ttLastPath
+    if ($left -gt 0) { throw "Откат: ещё $left сек. Обновлять расписание можно не чаще раза в минуту." }
+    Mark-Run $ttLastPath
+    $status.Invoke('Вход на timetable.kgu.kz...')
+    $li = Login-Timetable $login $password
+    $pick = Timetable-Weeks $li.page
     $weeks = @(); $i = 0
     foreach ($m in $pick) {
         $i++; $status.Invoke("Загружаю расписание ($i из $($pick.Count))...")
-        $html = Post-Form "$TT/ajax/load_student_table.php" ([ordered]@{ studentID = $sid; begd = $m.ToString('dd'); begm = $m.ToString('MM'); begy = $m.ToString('yyyy') })
+        $html = Post-Form "$TT/ajax/load_student_table.php" ([ordered]@{ studentID = $li.sid; begd = $m.ToString('dd'); begm = $m.ToString('MM'); begy = $m.ToString('yyyy') })
         $weeks += [ordered]@{ monday = $m.ToString('yyyy-MM-dd'); html = (Slim-Html $html) }
         Start-Sleep -Milliseconds 150
     }
@@ -218,6 +236,45 @@ function Fetch-Timetable($login, $password, $status) {
 }
 # Убираем из таблицы лишнее (скрипты кнопок, стили) — ссылка остаётся в value=""
 function Slim-Html($html) { ($html -replace '\s(onclick|style)="[^"]*"', '') -replace '\s{2,}', ' ' }
+
+# Разбор таблицы Timetable для окна: занятия текущей недели и все ссылки
+function Timetable-Rows($tt) {
+    $dec = { param($s) ([Net.WebUtility]::HtmlDecode([string]$s) -replace '\s+', ' ').Trim() }
+    $all = @()
+    foreach ($w in $tt.weeks) {
+        $mon = [datetime]::ParseExact($w.monday, 'yyyy-MM-dd', $null)
+        foreach ($tr in ([regex]::Split($w.html, '<tr>'))) {
+            $tm = [regex]::Match($tr, '^\s*<td>\s*(\d{1,2}:\d{2}):\d{2}\s*<br>\s*(\d{1,2}:\d{2})')
+            if (-not $tm.Success) { continue }
+            $cells = $tr -split '<td class="mycell"'
+            for ($d = 1; $d -lt $cells.Count -and $d -le 6; $d++) {
+                foreach ($blk in (($cells[$d] -split '<div title=') | Select-Object -Skip 1)) {
+                    $name = & $dec ([regex]::Match($blk, '(?s)<b>(.*?)</b>').Groups[1].Value)
+                    if (-not $name) { continue }
+                    $kind = & $dec ([regex]::Match($blk, '(?s)</b>([^<]*)<br>').Groups[1].Value)
+                    $all += [pscustomobject]@{
+                        Date = $mon.AddDays($d - 1); Start = $tm.Groups[1].Value; End = $tm.Groups[2].Value
+                        Name = ($name + ' ' + $kind).Trim()
+                        Room = & $dec ([regex]::Match($blk, '(?s)</b>[^<]*<br>([^<]*)<br>').Groups[1].Value)
+                        Teacher = & $dec ([regex]::Match($blk, '(?s)<input[^>]*>\s*<br>(.*?)<a').Groups[1].Value)
+                        Link = & $dec ([regex]::Match($blk, 'class="text_conf"[^>]*?value="([^"]*)"').Groups[1].Value)
+                    }
+                }
+            }
+        }
+    }
+    # неделя для показа — текущая, а если в ней пар нет — ближайшая следующая или последняя
+    $thisMon = This-Monday
+    $mons = @($all | ForEach-Object { $_.Date.AddDays(-(([int]$_.Date.DayOfWeek + 6) % 7)) } | Sort-Object -Unique)
+    $show = @($mons | Where-Object { $_ -eq $thisMon }) + @($mons | Where-Object { $_ -gt $thisMon }) + @($mons | Sort-Object -Descending) | Select-Object -First 1
+    $culture = [Globalization.CultureInfo]::GetCultureInfo('ru-RU')
+    $row = { param($x) [pscustomobject]([ordered]@{
+        'Дата' = $x.Date.ToString('dd.MM, ddd', $culture); 'Время' = "$($x.Start)–$($x.End)"; 'Предмет' = $x.Name
+        'Аудитория' = $x.Room; 'Преподаватель' = $x.Teacher; 'Ссылка' = $x.Link }) }
+    $week = @($all | Where-Object { $show -and $_.Date -ge $show -and $_.Date -lt $show.AddDays(7) } | Sort-Object Date, Start | ForEach-Object { & $row $_ })
+    $links = @($all | Where-Object { $_.Link } | Sort-Object @{ e = 'Date'; Descending = $true }, Start | ForEach-Object { & $row $_ })
+    @{ Week = $week; Links = $links }
+}
 
 # ---------- текст для мессенджера ----------
 function To-Text($res) {
@@ -237,43 +294,26 @@ function To-Text($res) {
     $sb.ToString().TrimEnd()
 }
 
-# ---------- файл для сайта StudyPlay ----------
-# Только оценки: логина, пароля и ID студента в файле нет.
-function Save-StudyPlay($res, $path) {
-    [IO.File]::WriteAllText($path, (StudyPlay-Json $res), (New-Object Text.UTF8Encoding($false)))
-}
-function StudyPlay-Json($res) {
-    $subs = foreach ($s in $res.Summary) {
+# ---------- данные для сайта StudyPlay ----------
+# Только оценки и расписание: логина, пароля и ID студента там нет.
+function StudyPlay-Json($res, $tt) {
+    $subs = foreach ($s in @($res.Summary)) {
+        if (-not $s) { continue }
         $ex = [ordered]@{}
         foreach ($p in $s.PSObject.Properties) { if ($p.Name -notin 'Предмет', 'Преподаватель' -and "$($p.Value)" -ne '') { $ex[$p.Name] = [string]$p.Value } }
         $cur = @($res.Current | Where-Object { $_.'Предмет' -eq $s.'Предмет' } | ForEach-Object {
             [ordered]@{ type = $_.'Вид занятия'; date = $_.'Дата'.ToString('yyyy-MM-dd'); mark = [string]$_.'Оценка' } })
         [ordered]@{ subject = $s.'Предмет'; tutor = [string]$s.'Преподаватель'; exams = $ex; current = $cur }
     }
+    $taken = if ($res) { $res.Taken } else { Get-Date }
     $o = [ordered]@{
         format = 'studyplay-grades'; version = 1
-        taken = $res.Taken.ToString('yyyy-MM-ddTHH:mm:ss'); year = [string]$res.Year; term = [string]$res.Term
+        taken = $taken.ToString('yyyy-MM-ddTHH:mm:ss'); year = [string]$res.Year; term = [string]$res.Term
         subjects = @($subs)
     }
+    if ($tt) { $o.timetable = $tt }   # расписание со ссылками — сайт подхватит его вместе с оценками
     $o | ConvertTo-Json -Depth 8 -Compress
 }
-# В каком браузере открыть сайт:
-# 1) где сейчас открыт StudyPlay (видно по заголовку окна);
-# 2) иначе — любой уже запущенный браузер; 3) иначе — браузер по умолчанию (вернёт $null).
-function Find-Browser {
-    $known = [ordered]@{ chrome = 'Google Chrome'; browser = 'Яндекс Браузер'; msedge = 'Microsoft Edge'; firefox = 'Firefox'; opera = 'Opera' }
-    $wins = foreach ($k in $known.Keys) {
-        Get-Process -Name $k -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -and $_.Path } |
-            ForEach-Object { [pscustomobject]@{ Name = $known[$k]; Path = $_.Path; Title = $_.MainWindowTitle } }
-    }
-    $hit = @($wins | Where-Object { $_.Title -like '*StudyPlay*' }) | Select-Object -First 1
-    if ($hit) { return $hit }
-    @($wins) | Select-Object -First 1
-}
-
-# Открыть сайт StudyPlay и сразу передать оценки в ссылке (после #, на сервер не уходит)
-$SiteUrl = 'https://alantesterr.github.io/testerw/'
-function StudyPlay-B64($res) { Pack-B64 (StudyPlay-Json $res) }
 function Pack-B64($json) {
     $bytes = [Text.Encoding]::UTF8.GetBytes($json)
     $ms = New-Object IO.MemoryStream
@@ -281,14 +321,45 @@ function Pack-B64($json) {
     $z.Write($bytes, 0, $bytes.Length); $z.Close()
     [Convert]::ToBase64String($ms.ToArray()).TrimEnd('=').Replace('+', '-').Replace('/', '_')
 }
-function StudyPlay-Link($res) {
-    $b64 = StudyPlay-B64 $res
-    # ?u=время — чтобы браузер точно открыл свежую версию сайта, а не старую из кэша
-    $SiteUrl + '?u=' + [DateTime]::Now.ToString('yyMMddHHmmss') + '#/grades/pl/' + $b64
+function StudyPlay-B64($res) { Pack-B64 (StudyPlay-Json $res $null) }
+
+# ---------- подключение кнопок сайта (ссылка studyplay-grades: → эта программа) ----------
+# Только для текущего пользователя Windows. Работает во всех браузерах сразу:
+# каждый браузер один раз спросит «Открыть приложение?».
+$ProtoKey = 'HKCU:\Software\Classes\studyplay-grades'
+function Link-Command { '"' + "$env:SystemRoot\System32\wscript.exe" + '" "' + $Launcher + '" -Auto "%1"' }
+function Link-State {
+    try { $cmd = (Get-ItemProperty "$ProtoKey\shell\open\command" -ErrorAction Stop).'(default)' } catch { return 'off' }
+    if ($cmd -eq (Link-Command)) { 'on' } else { 'old' }
+}
+function Link-On {
+    foreach ($k in $ProtoKey, "$ProtoKey\shell", "$ProtoKey\shell\open", "$ProtoKey\shell\open\command") { if (-not (Test-Path $k)) { New-Item -Path $k | Out-Null } }
+    Set-ItemProperty -Path $ProtoKey -Name '(default)' -Value 'URL:StudyPlay Grades'
+    New-ItemProperty -Path $ProtoKey -Name 'URL Protocol' -Value '' -PropertyType String -Force | Out-Null
+    Set-ItemProperty -Path "$ProtoKey\shell\open\command" -Name '(default)' -Value (Link-Command)
+}
+function Link-Off { if (Test-Path $ProtoKey) { Remove-Item -Path $ProtoKey -Recurse -Force } }
+
+# ---------- браузеры: установленные, и какие сейчас открыты ----------
+function Get-Browsers {
+    $list = @(); $seen = @{}
+    foreach ($root in 'HKCU:\SOFTWARE\Clients\StartMenuInternet', 'HKLM:\SOFTWARE\Clients\StartMenuInternet', 'HKLM:\SOFTWARE\WOW6432Node\Clients\StartMenuInternet') {
+        foreach ($k in @(Get-ChildItem $root -ErrorAction SilentlyContinue)) {
+            $cmd = (Get-ItemProperty (Join-Path $k.PSPath 'shell\open\command') -ErrorAction SilentlyContinue).'(default)'
+            if (-not $cmd) { continue }
+            $exe = if ($cmd -match '^\s*"([^"]+)"') { $Matches[1] } else { ($cmd -split '\s+')[0] }
+            if ($exe -match 'iexplore' -or -not (Test-Path $exe) -or $seen[$exe.ToLower()]) { continue }
+            $seen[$exe.ToLower()] = 1
+            $name = (Get-ItemProperty $k.PSPath -ErrorAction SilentlyContinue).'(default)'; if (-not $name) { $name = $k.PSChildName }
+            $wins = @(Get-Process -Name ([IO.Path]::GetFileNameWithoutExtension($exe)) -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle })
+            $list += [pscustomobject]@{ Name = $name; Path = $exe; Open = ($wins.Count -gt 0); HasSP = [bool]@($wins | Where-Object { $_.MainWindowTitle -like '*StudyPlay*' }).Count }
+        }
+    }
+    $list
 }
 
 # ---------- Excel ----------
-function Save-Excel($res, $path) {
+function Save-Excel($sheets, $path) {
     $fill = {
         param($ws, $rows)
         if (-not $rows) { $ws.Cells.Item(1, 1) = 'Нет данных'; return }
@@ -309,9 +380,9 @@ function Save-Excel($res, $path) {
     $xl.DisplayAlerts = $false
     try {
         $wb = $xl.Workbooks.Add()
-        while ($wb.Worksheets.Count -lt 2) { $wb.Worksheets.Add([Type]::Missing, $wb.Worksheets.Item($wb.Worksheets.Count)) | Out-Null }
-        $ws1 = $wb.Worksheets.Item(1); $ws1.Name = 'Итоговые'; & $fill $ws1 @($res.Summary)
-        $ws2 = $wb.Worksheets.Item(2); $ws2.Name = 'Текущие';  & $fill $ws2 @($res.Current)
+        while ($wb.Worksheets.Count -lt $sheets.Count) { $wb.Worksheets.Add([Type]::Missing, $wb.Worksheets.Item($wb.Worksheets.Count)) | Out-Null }
+        $i = 0
+        foreach ($s in $sheets) { $i++; $ws = $wb.Worksheets.Item($i); $ws.Name = $s.Name; & $fill $ws @($s.Rows) }
         $wb.SaveAs($path, 51); $wb.Close()
     } finally {
         $xl.Quit()
@@ -333,98 +404,114 @@ function To-DataTable($rows) {
 }
 
 # ===== Тихий запуск с сайта: пароль сохранён — окно не показываем =====
-# Получаем оценки, кладём их в буфер обмена для вкладки StudyPlay и выходим.
-# Если пароля нет — откроется обычное окно (ниже), а после «Получить оценки» оно закроется само.
+# Кнопка «Обновить из Platonus» — только оценки, «Обновить расписание» (-Schedule) — только расписание.
+# Результат кладётся в буфер обмена для вкладки StudyPlay, программа закрывается.
 if ($Auto) {
-    $c0 = Load-Config
-    $pw0 = if ($c0.savedPassword) { Unprotect $c0.savedPassword } else { '' }
+    $c0 = Load-Config; $cr0 = Get-Creds $c0
     $top0 = New-Object Windows.Forms.Form; $top0.TopMost = $true   # чтобы сообщения не прятались за браузер
-    if ($c0.login -and $pw0) {
-        if ((Cooldown-Left $(if ($Schedule) { $ttLastPath } else { $lastPath })) -gt 0) { return }   # откат ещё идёт — тихо пропускаем, сайт попробует позже
+    $who = if ($Schedule) { $cr0.tt } else { $cr0.pl }
+    if ($who.login -and $who.pw) {
+        if ((Cooldown-Left $(if ($Schedule) { $ttLastPath } else { $lastPath })) -gt 0) { return }   # откат ещё идёт — сайт попробует позже
         try {
             if ($Schedule) {
-                $tt = Fetch-Timetable $c0.login $pw0 ([Action[string]]{ param($t) })
+                $tt = Fetch-Timetable $who.login $who.pw ([Action[string]]{ param($t) })
                 [Windows.Forms.Clipboard]::SetText('studyplay-timetable:' + (Pack-B64 ($tt | ConvertTo-Json -Depth 6 -Compress)))
             } else {
-                $script:Result = Fetch-Grades $c0.login $pw0 ([Action[string]]{ param($t) })
-                [Windows.Forms.Clipboard]::SetText('studyplay-grades:' + (StudyPlay-B64 $script:Result))
+                $res = Fetch-Grades $who.login $who.pw ([Action[string]]{ param($t) })
+                [Windows.Forms.Clipboard]::SetText('studyplay-grades:' + (StudyPlay-B64 $res))
             }
         } catch {
             # сайт не отвечает (у Platonus ночной перерыв ~23:00–7:00, 502 и т. п.) — при запуске с сайта молчим
-            if ($_.Exception.Message -match '\(50[234]\)|шлюз|недоступ|тайм-?аут|timed out|соедин|connect|resolve|разреш') { return }
+            if ($_.Exception.Message -match $NetRx) { return }
             $what = if ($Schedule) { 'расписание' } else { 'оценки' }
-            [Windows.Forms.MessageBox]::Show($top0, "Не удалось получить $($what): $($_.Exception.Message)", 'Мои оценки', 'OK', 'Warning') | Out-Null
+            [Windows.Forms.MessageBox]::Show($top0, "Не удалось получить $($what): $($_.Exception.Message)", 'StudyPlay', 'OK', 'Warning') | Out-Null
         }
         return
     }
-    if ($Schedule) {   # пароль ещё не сохранён — расписанию нужен тот же вход
-        [Windows.Forms.MessageBox]::Show($top0, 'Сначала откройте программу (start.vbs), введите логин и пароль от Platonus, отметьте «Запомнить пароль» и нажмите «Получить оценки». После этого кнопка «Обновить расписание» заработает.', 'Мои оценки', 'OK', 'Information') | Out-Null
+    if ($Schedule) {   # пароль ещё не сохранён
+        [Windows.Forms.MessageBox]::Show($top0, 'Сначала откройте программу (StudyPlay.vbs), введите логин и пароль, отметьте «Запомнить пароль» и нажмите «Получить всё». После этого кнопка «Обновить расписание» заработает.', 'StudyPlay', 'OK', 'Information') | Out-Null
         return
     }
-}
-
-# ===== Проверка расписания (файл «проверить расписание.bat»): что программа видит в Timetable =====
-if ($TestTimetable) {
-    $c1 = Load-Config
-    $pw1 = if ($c1.savedPassword) { Unprotect $c1.savedPassword } else { '' }
-    $top1 = New-Object Windows.Forms.Form; $top1.TopMost = $true
-    if (-not $c1.login -or -not $pw1) {
-        [Windows.Forms.MessageBox]::Show($top1, 'Пароль не сохранён. Откройте start.vbs, введите логин и пароль, отметьте «Запомнить пароль» и нажмите «Получить оценки».', 'Проверка расписания') | Out-Null
-        return
-    }
-    try {
-        $tt = Fetch-Timetable $c1.login $pw1 ([Action[string]]{ param($t) })
-        $out = Join-Path $Here 'timetable-test.json'
-        [IO.File]::WriteAllText($out, ($tt | ConvertTo-Json -Depth 6), (New-Object Text.UTF8Encoding($false)))
-        $lessons = 0; $links = 0
-        foreach ($w in $tt.weeks) { $lessons += ([regex]::Matches($w.html, 'class="text_conf"')).Count; $links += ([regex]::Matches($w.html, 'class="text_conf"[^>]*value="[^"]+"')).Count }
-        $first = $tt.weeks[0].monday; $last = $tt.weeks[-1].monday
-        [Windows.Forms.MessageBox]::Show($top1, "Вход в Timetable — успешно.`n`nНедель: $($tt.weeks.Count) (с $first по $last)`nЗанятий: $lessons`nСсылок от преподавателей: $links`n`nВсё сохранено в timetable-test.json рядом с программой (пароля там нет).", 'Проверка расписания', 'OK', 'Information') | Out-Null
-    } catch {
-        [Windows.Forms.MessageBox]::Show($top1, "Не получилось: $($_.Exception.Message)", 'Проверка расписания', 'OK', 'Warning') | Out-Null
-    }
-    return
+    # оценки без сохранённого пароля — покажем окно (ниже), после «Получить всё» оно закроется само
 }
 
 # ================= ОКНО =================
 $cfg  = Load-Config
 $font = New-Object Drawing.Font('Segoe UI', 10)
+$blue = [Drawing.Color]::FromArgb(37, 99, 235)
 
 $form = New-Object Windows.Forms.Form
-$form.Text = 'Мои оценки — Platonus'
-$form.Size = New-Object Drawing.Size(1000, 640)
-$form.MinimumSize = New-Object Drawing.Size(760, 480)
+$form.Text = 'StudyPlay — оценки и расписание'
+$form.Size = New-Object Drawing.Size(1060, 760)
+$form.MinimumSize = New-Object Drawing.Size(860, 600)
 $form.StartPosition = 'CenterScreen'
 $form.Font = $font
 
-# верхняя панель: логин, пароль, кнопка
-$top = New-Object Windows.Forms.FlowLayoutPanel
-$top.Dock = 'Top'; $top.Height = 48; $top.Padding = New-Object Windows.Forms.Padding(8, 10, 8, 0); $top.WrapContents = $false
+function New-Label($text) { $l = New-Object Windows.Forms.Label; $l.Text = $text; $l.AutoSize = $true; $l.Margin = New-Object Windows.Forms.Padding(0, 7, 4, 0); $l }
+function New-Row { $p = New-Object Windows.Forms.FlowLayoutPanel; $p.AutoSize = $true; $p.WrapContents = $false; $p.Margin = New-Object Windows.Forms.Padding(0, 0, 0, 2); $p }
+function New-Btn($text, $enabled = $true) { $b = New-Object Windows.Forms.Button; $b.Text = $text; $b.AutoSize = $true; $b.Height = 30; $b.Enabled = $enabled; $b }
+function New-Group($text) {
+    $g = New-Object Windows.Forms.GroupBox; $g.Text = $text; $g.Dock = 'Top'
+    $g.Padding = New-Object Windows.Forms.Padding(10, 4, 10, 8)
+    $s = New-Object Windows.Forms.FlowLayoutPanel; $s.FlowDirection = 'TopDown'; $s.WrapContents = $false; $s.AutoSize = $true
+    $s.Location = New-Object Drawing.Point(10, 22)
+    $g.Controls.Add($s); $g.Tag = $s; $g
+}
+# высота рамки — по содержимому (без пустого места снизу)
+function Fit-Group($g) { $g.Height = $g.Tag.GetPreferredSize([Drawing.Size]::Empty).Height + 32
+}
 
-function New-Label($text) { $l = New-Object Windows.Forms.Label; $l.Text = $text; $l.AutoSize = $true; $l.Margin = New-Object Windows.Forms.Padding(0, 6, 4, 0); $l }
-$tbLogin = New-Object Windows.Forms.TextBox; $tbLogin.Width = 170; $tbLogin.Text = $cfg.login
-$tbPass  = New-Object Windows.Forms.TextBox; $tbPass.Width = 130; $tbPass.UseSystemPasswordChar = $true
-$cbRemember = New-Object Windows.Forms.CheckBox; $cbRemember.Text = 'Запомнить пароль'; $cbRemember.AutoSize = $true; $cbRemember.Margin = New-Object Windows.Forms.Padding(8, 5, 8, 0)
-if ($cfg.savedPassword) { $tbPass.Text = Unprotect $cfg.savedPassword; $cbRemember.Checked = [bool]$tbPass.Text }
+# --- 1. Вход ---
+$grpLogin = New-Group '1. Вход'
+$tbLogin = New-Object Windows.Forms.TextBox; $tbLogin.Width = 180; $tbLogin.Text = $cfg.login
+$tbPass  = New-Object Windows.Forms.TextBox; $tbPass.Width = 140; $tbPass.UseSystemPasswordChar = $true
+$tbPass.Text = Unprotect $cfg.savedPassword
+$cbRemember = New-Object Windows.Forms.CheckBox; $cbRemember.Text = 'Запомнить пароль'; $cbRemember.AutoSize = $true; $cbRemember.Margin = New-Object Windows.Forms.Padding(10, 6, 0, 0)
+$cbRemember.Checked = [bool]$tbPass.Text -or -not $cfg.login
+$r1 = New-Row; $r1.Controls.AddRange(@((New-Label 'Platonus — логин:'), $tbLogin, (New-Label 'пароль:'), $tbPass, $cbRemember))
+$cbSame = New-Object Windows.Forms.CheckBox; $cbSame.Text = 'В Timetable тот же логин и пароль'; $cbSame.AutoSize = $true; $cbSame.Margin = New-Object Windows.Forms.Padding(3, 4, 0, 0)
+$cbSame.Checked = -not ($cfg.ttSame -eq $false)
+$tbTtLogin = New-Object Windows.Forms.TextBox; $tbTtLogin.Width = 180; $tbTtLogin.Text = [string]$cfg.ttLogin
+$tbTtPass  = New-Object Windows.Forms.TextBox; $tbTtPass.Width = 140; $tbTtPass.UseSystemPasswordChar = $true
+$tbTtPass.Text = Unprotect $cfg.ttSavedPassword
+$rTt = New-Row; $rTt.Controls.AddRange(@((New-Label 'Timetable — логин:'), $tbTtLogin, (New-Label 'пароль:'), $tbTtPass)); $rTt.Visible = -not $cbSame.Checked
+$btnCheck = New-Btn 'Проверить вход'
+$lblCheck = New-Label ''
+$r3 = New-Row; $r3.Controls.AddRange(@($cbSame, $btnCheck, $lblCheck))
+$grpLogin.Tag.Controls.AddRange(@($r1, $r3, $rTt))
 
-$btnFetch = New-Object Windows.Forms.Button; $btnFetch.Text = '🔄 Получить оценки'; $btnFetch.AutoSize = $true; $btnFetch.Height = 30
-$btnFetch.BackColor = [Drawing.Color]::FromArgb(37, 99, 235); $btnFetch.ForeColor = [Drawing.Color]::White; $btnFetch.FlatStyle = 'Flat'
-$top.Controls.AddRange(@((New-Label 'Логин:'), $tbLogin, (New-Label 'Пароль:'), $tbPass, $cbRemember, $btnFetch))
+# --- 2. Связь с сайтом ---
+$grpLink = New-Group '2. Связь с сайтом StudyPlay'
+$lblLink = New-Label ''; $lblLink.Font = New-Object Drawing.Font('Segoe UI', 10, [Drawing.FontStyle]::Bold)
+$btnLink = New-Btn ''
+$btnLnk  = New-Btn 'Ярлык на рабочий стол'
+$rl1 = New-Row; $rl1.Controls.AddRange(@((New-Label 'Кнопки на сайте:'), $lblLink, $btnLink, $btnLnk))
+$cbBrowser = New-Object Windows.Forms.ComboBox; $cbBrowser.DropDownStyle = 'DropDownList'; $cbBrowser.Width = 330
+$btnBrRefresh = New-Btn '↻'; $btnBrRefresh.Width = 34
+$btnOpen = New-Btn 'Открыть StudyPlay'
+$btnOpen.BackColor = $blue; $btnOpen.ForeColor = [Drawing.Color]::White; $btnOpen.FlatStyle = 'Flat'
+$rl2 = New-Row; $rl2.Controls.AddRange(@((New-Label 'Открывать StudyPlay в:'), $cbBrowser, $btnBrRefresh, $btnOpen))
+$lblLinkHint = New-Label 'Кнопки «Обновить из Platonus» и «Обновить расписание» работают во всех браузерах — каждый один раз спросит «Открыть приложение?».'
+$lblLinkHint.ForeColor = [Drawing.Color]::DimGray; $lblLinkHint.Margin = New-Object Windows.Forms.Padding(3, 2, 0, 2)
+$grpLink.Tag.Controls.AddRange(@($rl1, $rl2, $lblLinkHint))
 
-# нижняя панель: сохранить, скопировать, показать файл + статус
+# --- 3. Получить всё ---
+$act = New-Object Windows.Forms.FlowLayoutPanel; $act.Dock = 'Top'; $act.Height = 46; $act.WrapContents = $false; $act.Padding = New-Object Windows.Forms.Padding(8, 8, 8, 0)
+$btnFetch = New-Btn 'Получить всё (оценки + расписание)'
+$btnFetch.BackColor = $blue; $btnFetch.ForeColor = [Drawing.Color]::White; $btnFetch.FlatStyle = 'Flat'
+$lblStatus = New-Label 'Введите логин и пароль и нажмите «Получить всё».'; $lblStatus.Margin = New-Object Windows.Forms.Padding(12, 7, 0, 0)
+$act.Controls.AddRange(@($btnFetch, $lblStatus))
+
+# --- нижняя панель ---
 $bottom = New-Object Windows.Forms.FlowLayoutPanel
-$bottom.Dock = 'Bottom'; $bottom.Height = 48; $bottom.Padding = New-Object Windows.Forms.Padding(8, 8, 8, 0); $bottom.WrapContents = $false
-function New-Btn($text) { $b = New-Object Windows.Forms.Button; $b.Text = $text; $b.AutoSize = $true; $b.Height = 30; $b.Enabled = $false; $b }
-$btnSave = New-Btn '💾 Сохранить в Excel'
-$btnCopy = New-Btn '📋 Скопировать текстом'
-$btnShow = New-Btn '📂 Показать файл'
-$btnSP   = New-Btn '🎓 Сохранить для StudyPlay'
-$btnOpen = New-Btn '🌐 Открыть в StudyPlay'
-$btnOpen.BackColor = [Drawing.Color]::FromArgb(37, 99, 235); $btnOpen.ForeColor = [Drawing.Color]::White; $btnOpen.FlatStyle = 'Flat'
-$lblStatus = New-Label 'Введите пароль и нажмите «Получить оценки».'; $lblStatus.Margin = New-Object Windows.Forms.Padding(12, 6, 0, 0)
-$bottom.Controls.AddRange(@($btnOpen, $btnSP, $btnSave, $btnCopy, $btnShow, $lblStatus))
+$bottom.Dock = 'Bottom'; $bottom.Height = 46; $bottom.Padding = New-Object Windows.Forms.Padding(8, 8, 8, 0); $bottom.WrapContents = $false
+$btnSP   = New-Btn 'Файл для StudyPlay' $false
+$btnSave = New-Btn 'Сохранить в Excel' $false
+$btnCopy = New-Btn 'Скопировать оценки текстом' $false
+$btnShow = New-Btn 'Показать файл' $false
+$bottom.Controls.AddRange(@($btnSP, $btnSave, $btnCopy, $btnShow))
 
-# вкладки с таблицами
+# --- вкладки с таблицами ---
 $tabs = New-Object Windows.Forms.TabControl; $tabs.Dock = 'Fill'
 function New-Grid {
     $g = New-Object Windows.Forms.DataGridView
@@ -434,29 +521,112 @@ function New-Grid {
     $g.ColumnHeadersDefaultCellStyle.Font = New-Object Drawing.Font('Segoe UI', 10, [Drawing.FontStyle]::Bold)
     $g
 }
-$gridSum = New-Grid; $gridCur = New-Grid
-$tab1 = New-Object Windows.Forms.TabPage; $tab1.Text = 'Итоговые (РК, экзамен)'; $tab1.Controls.Add($gridSum)
-$tab2 = New-Object Windows.Forms.TabPage; $tab2.Text = 'Текущие оценки';         $tab2.Controls.Add($gridCur)
-$tabs.TabPages.AddRange(@($tab1, $tab2))
-
-$form.Controls.Add($tabs); $form.Controls.Add($top); $form.Controls.Add($bottom)
-$form.AcceptButton = $btnFetch
-
-$script:Result = $null
-$script:LastFile = $null
-$setStatus = [Action[string]]{ param($t) $lblStatus.Text = $t; $form.Refresh(); [Windows.Forms.Application]::DoEvents() }
-
-function Show-Result($res) {
-    $script:Result = $res
-    $gridSum.DataSource = (To-DataTable @($res.Summary))
-    $gridCur.DataSource = (To-DataTable @($res.Current))
-    $btnSave.Enabled = $true; $btnCopy.Enabled = $true; $btnSP.Enabled = $true; $btnOpen.Enabled = $true
-    $lblStatus.Text = "Обновлено $($res.Taken.ToString('dd.MM.yyyy HH:mm')) · $($res.Year) г., период $($res.Term) · предметов: $(@($res.Summary).Count)"
+$gridSum = New-Grid; $gridCur = New-Grid; $gridTt = New-Grid; $gridLinks = New-Grid
+foreach ($p in @(@('Итоговые (РК, экзамен)', $gridSum), @('Текущие оценки', $gridCur), @('Расписание (неделя)', $gridTt), @('Ссылки преподавателей', $gridLinks))) {
+    $tp = New-Object Windows.Forms.TabPage; $tp.Text = $p[0]; $tp.Controls.Add($p[1]); $tabs.TabPages.Add($tp)
 }
 
-# Запуск с сайта: оценки кладутся в буфер обмена, вкладка StudyPlay забирает их, когда вы к ней вернётесь
+# порядок важен: последний добавленный «Top» оказывается выше всех
+$form.Controls.Add($tabs); $form.Controls.Add($bottom); $form.Controls.Add($act); $form.Controls.Add($grpLink); $form.Controls.Add($grpLogin)
+$form.AcceptButton = $btnFetch
+
+$script:Result = $null; $script:Tt = $null; $script:TtRows = $null; $script:LastFile = $null; $script:Browsers = @()
+$setStatus = [Action[string]]{ param($t) $lblStatus.Text = $t; $form.Refresh(); [Windows.Forms.Application]::DoEvents() }
+
+# --- сохранение настроек из окна ---
+function Save-Ui {
+    $o = [ordered]@{ login = $tbLogin.Text.Trim(); ttSame = $cbSame.Checked }
+    if ($cbRemember.Checked -and $tbPass.Text) { $o.savedPassword = Protect $tbPass.Text }
+    if (-not $cbSame.Checked) {
+        $o.ttLogin = $tbTtLogin.Text.Trim()
+        if ($cbRemember.Checked -and $tbTtPass.Text) { $o.ttSavedPassword = Protect $tbTtPass.Text }
+    }
+    $b = Selected-Browser; if ($b) { $o.browser = $b.Path }
+    Write-Config $o
+}
+function Ui-Creds {
+    $pl = @{ login = $tbLogin.Text.Trim(); pw = $tbPass.Text }
+    $tt = if ($cbSame.Checked) { $pl } else { @{ login = $tbTtLogin.Text.Trim(); pw = $tbTtPass.Text } }
+    @{ pl = $pl; tt = $tt }
+}
+$cbSame.Add_CheckedChanged({ $rTt.Visible = -not $cbSame.Checked; Fit-Group $grpLogin; if (-not $cbSame.Checked -and -not $tbTtLogin.Text) { $tbTtLogin.Text = $tbLogin.Text } })
+
+# --- связь с сайтом ---
+function Show-LinkState {
+    switch (Link-State) {
+        'on'  { $lblLink.Text = '● подключены'; $lblLink.ForeColor = [Drawing.Color]::ForestGreen; $btnLink.Text = 'Отключить' }
+        'old' { $lblLink.Text = '● подключены по-старому'; $lblLink.ForeColor = [Drawing.Color]::DarkOrange; $btnLink.Text = 'Обновить подключение' }
+        default { $lblLink.Text = '● не подключены'; $lblLink.ForeColor = [Drawing.Color]::Firebrick; $btnLink.Text = 'Подключить' }
+    }
+}
+$btnLink.Add_Click({
+    try {
+        if ((Link-State) -eq 'on') { Link-Off; $lblStatus.Text = 'Кнопки на сайте отключены.' }
+        else { Link-On; $lblStatus.Text = 'Готово! Теперь на сайте работают «Обновить из Platonus» и «Обновить расписание».' }
+    } catch { [Windows.Forms.MessageBox]::Show("Не получилось: $($_.Exception.Message)", 'StudyPlay', 'OK', 'Warning') | Out-Null }
+    Show-LinkState
+})
+$btnLnk.Add_Click({
+    try {
+        $ws = New-Object -ComObject WScript.Shell
+        $lnk = $ws.CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) 'StudyPlay — оценки и расписание.lnk'))
+        $lnk.TargetPath = "$env:SystemRoot\System32\wscript.exe"; $lnk.Arguments = '"' + $Launcher + '"'
+        $lnk.WorkingDirectory = $Here; $lnk.IconLocation = "$env:SystemRoot\System32\imageres.dll,109"; $lnk.Save()
+        $lblStatus.Text = 'Ярлык «StudyPlay — оценки и расписание» добавлен на рабочий стол.'
+    } catch { [Windows.Forms.MessageBox]::Show("Не получилось: $($_.Exception.Message)", 'StudyPlay', 'OK', 'Warning') | Out-Null }
+})
+
+# --- браузер: где открыт StudyPlay — тот и выбран ---
+function Fill-Browsers {
+    $keep = Selected-Browser
+    $script:Browsers = @(Get-Browsers)
+    $cbBrowser.Items.Clear(); [void]$cbBrowser.Items.Add('Браузер по умолчанию')
+    foreach ($b in $script:Browsers) { [void]$cbBrowser.Items.Add($b.Name + $(if ($b.HasSP) { ' — открыт StudyPlay' } elseif ($b.Open) { ' — открыт' } else { '' })) }
+    $want = if ($keep) { $keep.Path } else { [string]$cfg.browser }
+    $idx = 0
+    for ($i = 0; $i -lt $script:Browsers.Count; $i++) { if ($want -and $script:Browsers[$i].Path -eq $want) { $idx = $i + 1 } }
+    if (-not $want) {
+        $sp = [Array]::FindIndex([object[]]$script:Browsers, [Predicate[object]]{ param($b) $b.HasSP })
+        $op = [Array]::FindIndex([object[]]$script:Browsers, [Predicate[object]]{ param($b) $b.Open })
+        if ($sp -ge 0) { $idx = $sp + 1 } elseif ($op -ge 0) { $idx = $op + 1 }
+    }
+    $cbBrowser.SelectedIndex = $idx
+}
+function Selected-Browser { $i = $cbBrowser.SelectedIndex; if ($i -ge 1 -and $i -le $script:Browsers.Count) { $script:Browsers[$i - 1] } else { $null } }
+function Open-Url($url) {
+    $b = Selected-Browser
+    if ($b) { Start-Process -FilePath $b.Path -ArgumentList ('"' + $url + '"') } else { Start-Process $url }
+}
+$btnBrRefresh.Add_Click({ Fill-Browsers })
+$cbBrowser.Add_SelectionChangeCommitted({ try { Save-Ui } catch {} })
+
+# --- показ результата ---
+function Show-Result {
+    if ($script:Result) {
+        $gridSum.DataSource = (To-DataTable @($script:Result.Summary))
+        $gridCur.DataSource = (To-DataTable @($script:Result.Current))
+    }
+    if ($script:Tt) {
+        $script:TtRows = Timetable-Rows $script:Tt
+        $gridTt.DataSource = (To-DataTable @($script:TtRows.Week))
+        $gridLinks.DataSource = (To-DataTable @($script:TtRows.Links))
+    }
+    $any = [bool]($script:Result -or $script:Tt)
+    $btnSP.Enabled = $any; $btnSave.Enabled = $any; $btnCopy.Enabled = [bool]$script:Result
+}
+# двойной щелчок по ссылке — открыть её
+foreach ($g in $gridTt, $gridLinks) {
+    $g.Add_CellDoubleClick({ param($s, $e)
+        if ($e.RowIndex -lt 0 -or $e.ColumnIndex -lt 0) { return }
+        if ($s.Columns[$e.ColumnIndex].Name -ne 'Ссылка') { return }
+        $v = [string]$s.Rows[$e.RowIndex].Cells[$e.ColumnIndex].Value
+        if ($v -match '^https?://') { Open-Url $v }
+    })
+}
+
+# Запуск с сайта без сохранённого пароля: оценки кладутся в буфер обмена, вкладка StudyPlay забирает их сама
 function Send-ToSite {
-    [Windows.Forms.Clipboard]::SetText('studyplay-grades:' + (StudyPlay-B64 $script:Result))
+    [Windows.Forms.Clipboard]::SetText('studyplay-grades:' + (Pack-B64 (StudyPlay-Json $script:Result $script:Tt)))
     $lblStatus.Text = 'Готово! Возвращаю вас в StudyPlay…'
     $script:CloseTimer = New-Object Windows.Forms.Timer; $script:CloseTimer.Interval = 1500
     $script:CloseTimer.Add_Tick({ $script:CloseTimer.Stop(); $form.Close() }); $script:CloseTimer.Start()
@@ -464,38 +634,72 @@ function Send-ToSite {
 if ($Auto) {
     $form.Add_Shown({
         if ($tbLogin.Text -and $tbPass.Text) { $btnFetch.PerformClick() }
-        else { $lblStatus.Text = 'Введите логин и пароль, отметьте «Запомнить пароль» и нажмите «Получить оценки».' }
+        else { $lblStatus.Text = 'Введите логин и пароль, отметьте «Запомнить пароль» и нажмите «Получить всё».' }
     })
 }
 
 $btnFetch.Add_Click({
-    if (-not $tbLogin.Text -or -not $tbPass.Text) { [Windows.Forms.MessageBox]::Show('Введите логин и пароль.', 'Мои оценки') | Out-Null; return }
+    $cr = Ui-Creds
+    if (-not $cr.pl.login -or -not $cr.pl.pw -or -not $cr.tt.login -or -not $cr.tt.pw) { [Windows.Forms.MessageBox]::Show('Введите логин и пароль.', 'StudyPlay') | Out-Null; return }
     $btnFetch.Enabled = $false; $form.Cursor = 'WaitCursor'
+    $errs = @()
     try {
-        $res = Fetch-Grades $tbLogin.Text.Trim() $tbPass.Text $setStatus
-        Save-Config $tbLogin.Text.Trim() $tbPass.Text $cbRemember.Checked
-        Show-Result $res
-        if ($Auto) { Send-ToSite }
-    } catch {
-        $lblStatus.Text = 'Ошибка.'
-        $msg = $_.Exception.Message
-        if ($msg -match '\(50[234]\)|шлюз|недоступ|тайм-?аут|timed out|соедин|connect|resolve|разреш') {
-            $msg = "Platonus сейчас не отвечает.`n`nОбычно он не работает ночью — примерно с 23:00 до 7:00 (ночной перерыв). Попробуйте позже.`n`n($msg)"
-        }
-        [Windows.Forms.MessageBox]::Show($msg, 'Не получилось', 'OK', 'Warning') | Out-Null
+        try { $script:Result = Fetch-Grades $cr.pl.login $cr.pl.pw $setStatus } catch { $errs += 'Оценки: ' + (Friendly $_.Exception.Message 'pl') }
+        try { $script:Tt = Fetch-Timetable $cr.tt.login $cr.tt.pw $setStatus } catch { $errs += 'Расписание: ' + (Friendly $_.Exception.Message 'tt') }
+        if ($errs.Count -lt 2) { Save-Ui }
+        Show-Result
+        $parts = @()
+        if ($script:Result) { $parts += "предметов: $(@($script:Result.Summary).Count)" }
+        if ($script:TtRows) { $parts += "занятий в неделю: $(@($script:TtRows.Week).Count), ссылок: $(@($script:TtRows.Links).Count)" }
+        $lblStatus.Text = 'Обновлено ' + (Get-Date).ToString('dd.MM.yyyy HH:mm') + $(if ($parts) { ' · ' + ($parts -join ' · ') } else { '' })
+        if ($errs) { [Windows.Forms.MessageBox]::Show(($errs -join "`n`n"), 'Не всё получилось', 'OK', 'Warning') | Out-Null }
+        if ($Auto -and $script:Result) { Send-ToSite }
     } finally { $btnFetch.Enabled = $true; $form.Cursor = 'Default' }
+})
+
+$btnCheck.Add_Click({
+    $cr = Ui-Creds
+    if (-not $cr.pl.login -or -not $cr.pl.pw) { [Windows.Forms.MessageBox]::Show('Введите логин и пароль.', 'StudyPlay') | Out-Null; return }
+    $form.Cursor = 'WaitCursor'; $lblCheck.Text = 'Проверяю…'; $form.Refresh()
+    $out = @()
+    $l = Cooldown-Left
+    if ($l -gt 0) { $out += "Platonus: подождите $l сек" }
+    else { try { Mark-Run; Login-Platonus $cr.pl.login $cr.pl.pw; $out += 'Platonus ✓' } catch { $out += 'Platonus ✗ ' + (Friendly $_.Exception.Message 'pl') } }
+    $l = Cooldown-Left $ttLastPath
+    if ($l -gt 0) { $out += "Timetable: подождите $l сек" }
+    else { try { Mark-Run $ttLastPath; [void](Login-Timetable $cr.tt.login $cr.tt.pw); $out += 'Timetable ✓' } catch { $out += 'Timetable ✗ ' + (Friendly $_.Exception.Message 'tt') } }
+    $lblCheck.Text = $out -join '   '
+    if (($out -join ' ') -notmatch '✗') { try { Save-Ui } catch {} }
+    $form.Cursor = 'Default'
+})
+
+$btnOpen.Add_Click({
+    try {
+        if ($script:Result -or $script:Tt) {
+            # оценки и расписание едут в ссылке после # — эта часть никуда не отправляется
+            $url = $SiteUrl + '?u=' + [DateTime]::Now.ToString('yyMMddHHmmss') + '#/grades/pl/' + (Pack-B64 (StudyPlay-Json $script:Result $script:Tt))
+            if ($url.Length -gt 30000) { $url = $SiteUrl + '?u=' + [DateTime]::Now.ToString('yyMMddHHmmss') + '#/grades/pl/' + (Pack-B64 (StudyPlay-Json $script:Result $null)) }
+            Open-Url $url
+            $lblStatus.Text = 'Открываю StudyPlay… Данные загрузятся сами.'
+        } else { Open-Url $SiteUrl }
+    } catch {
+        [Windows.Forms.MessageBox]::Show("Не удалось открыть сайт: $($_.Exception.Message)", 'Ошибка', 'OK', 'Warning') | Out-Null
+    }
 })
 
 $btnSave.Add_Click({
     $dlg = New-Object Windows.Forms.SaveFileDialog
     $dlg.Filter = 'Книга Excel (*.xlsx)|*.xlsx'
-    $dlg.FileName = 'Оценки_' + $script:Result.Taken.ToString('yyyy-MM-dd') + '.xlsx'
+    $dlg.FileName = 'StudyPlay_' + (Get-Date).ToString('yyyy-MM-dd') + '.xlsx'
     $dlg.InitialDirectory = [Environment]::GetFolderPath('MyDocuments')
     if ($dlg.ShowDialog($form) -ne 'OK') { return }
     $form.Cursor = 'WaitCursor'
     try {
         $setStatus.Invoke('Сохраняю в Excel...')
-        Save-Excel $script:Result $dlg.FileName
+        $sheets = @()
+        if ($script:Result) { $sheets += @{ Name = 'Итоговые'; Rows = $script:Result.Summary }, @{ Name = 'Текущие'; Rows = $script:Result.Current } }
+        if ($script:TtRows) { $sheets += @{ Name = 'Расписание'; Rows = $script:TtRows.Week }, @{ Name = 'Ссылки'; Rows = $script:TtRows.Links } }
+        Save-Excel $sheets $dlg.FileName
         $script:LastFile = $dlg.FileName; $btnShow.Enabled = $true
         $lblStatus.Text = "Сохранено: $($dlg.FileName)"
     } catch {
@@ -503,29 +707,16 @@ $btnSave.Add_Click({
     } finally { $form.Cursor = 'Default' }
 })
 
-$btnOpen.Add_Click({
-    try {
-        $url = StudyPlay-Link $script:Result
-        if ($url.Length -gt 30000) { throw 'Оценок слишком много для ссылки — используйте «Сохранить для StudyPlay».' }
-        $br = Find-Browser
-        if ($br) { Start-Process -FilePath $br.Path -ArgumentList ('"' + $url + '"'); $name = $br.Name }
-        else { Start-Process $url; $name = 'браузер по умолчанию' }
-        $lblStatus.Text = "Открываю StudyPlay ($name)… Оценки загрузятся сами."
-    } catch {
-        [Windows.Forms.MessageBox]::Show("Не удалось открыть сайт: $($_.Exception.Message)", 'Ошибка', 'OK', 'Warning') | Out-Null
-    }
-})
-
 $btnSP.Add_Click({
     $dlg = New-Object Windows.Forms.SaveFileDialog
     $dlg.Filter = 'Файл для StudyPlay (*.json)|*.json'
-    $dlg.FileName = 'studyplay-оценки_' + $script:Result.Taken.ToString('yyyy-MM-dd') + '.json'
+    $dlg.FileName = 'studyplay_' + (Get-Date).ToString('yyyy-MM-dd') + '.json'
     $dlg.InitialDirectory = [Environment]::GetFolderPath('Desktop')
     if ($dlg.ShowDialog($form) -ne 'OK') { return }
     try {
-        Save-StudyPlay $script:Result $dlg.FileName
+        [IO.File]::WriteAllText($dlg.FileName, (StudyPlay-Json $script:Result $script:Tt), (New-Object Text.UTF8Encoding($false)))
         $script:LastFile = $dlg.FileName; $btnShow.Enabled = $true
-        $lblStatus.Text = 'Готово! На сайте: Оценки → «Загрузить из Platonus» → выберите этот файл.'
+        $lblStatus.Text = 'Готово! На сайте (и на телефоне): Оценки → Скачать → «Загрузить файл оценок» → этот файл.'
     } catch {
         [Windows.Forms.MessageBox]::Show("Не удалось сохранить: $($_.Exception.Message)", 'Ошибка', 'OK', 'Warning') | Out-Null
     }
@@ -540,10 +731,14 @@ $btnShow.Add_Click({
     if ($script:LastFile -and (Test-Path $script:LastFile)) { Start-Process explorer.exe "/select,`"$($script:LastFile)`"" }
 })
 
+Show-LinkState
+Fill-Browsers
+Fit-Group $grpLogin; Fit-Group $grpLink
+
 if ($TestJournal) {
     # режим проверки: показать сохранённые данные без входа на сайт
     $subjects = Json-Array ([IO.File]::ReadAllText($TestJournal, [Text.Encoding]::UTF8).TrimStart([char]0xFEFF))
-    $form.Add_Shown({ Show-Result (Build-Result $subjects @{} '2026' '1') })
+    $form.Add_Shown({ $script:Result = Build-Result $subjects @{} '2026' '1'; Show-Result })
 }
 
 [void]$form.ShowDialog()

@@ -330,7 +330,7 @@
         try {
           var d = JSON.parse(String(r.result).replace(/^﻿/, ''));
           /* Файл программы «Мои оценки» («Сохранить для StudyPlay») тоже подходит */
-          if (d && d.format === 'studyplay-grades') { var res = importPlatonus(d); editing = null; render(); notifyNews(res.news); SP.toast(SP.t('jr.jDone', { n: res.upd + res.added }), 'success'); return; }
+          if (d && d.format === 'studyplay-grades') { var res = importPlatonus(d); editing = null; render(); notifyNews(res.news); if (d.subjects.length) SP.toast(SP.t('jr.jDone', { n: res.upd + res.added }), 'success'); withTimetable(d); return; }
           var n = importJournal(d);
           editing = null; render(); SP.toast(SP.t('jr.jDone', { n: n }), 'success');
         } catch (e) { SP.toast(SP.t('jr.jBad'), 'danger'); }
@@ -362,9 +362,10 @@
       var r = new FileReader();
       r.onload = function () {
         try {
-          var res = importPlatonus(JSON.parse(String(r.result).replace(/^﻿/, '')));
+          var pd = JSON.parse(String(r.result).replace(/^﻿/, '')), res = importPlatonus(pd);
           editing = null; render();
           notifyNews(res.news);   /* сообщаем только о новых оценках */
+          withTimetable(pd);
         } catch (e) { SP.toast(SP.t('jr.plBad'), 'danger'); }
       };
       r.onerror = function () { SP.toast(SP.t('jr.plBad'), 'danger'); };
@@ -445,6 +446,7 @@
       fromLink(data).then(function (d) {
         var res = importPlatonus(d); editing = null; render();
         notifyNews(res.news);   /* сообщаем только о новых оценках */
+        withTimetable(d);
       }).catch(function (e) { SP.toast(e && e.message === 'old' ? SP.t('jr.plOld') : SP.t('jr.plBadLink'), 'danger'); });
     }
     render();
@@ -489,7 +491,7 @@
     jSave(st); return n;
   }
   /* ---------- Кнопки «Обновить из Platonus» и «Обновить расписание» (Windows) ----------
-     Сайт запускает программу «Мои оценки» через ссылку studyplay-grades:… (её подключает connect.bat).
+     Сайт запускает программу «Мои оценки» через ссылку studyplay-grades:… (её подключает кнопка «Подключить» в окне программы).
      Программа сама входит в Platonus (оценки) или в Timetable (расписание), кладёт результат в буфер
      обмена с меткой и закрывается; эта вкладка забирает его, когда вы к ней вернётесь.
      За раз — одно задание; второе ждёт в очереди, чтобы ответы не перепутались в буфере. */
@@ -547,6 +549,11 @@
   }
   function setupModal() { SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') + '<p><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a></p>' }); }
   SP.pl = { visible: function () { return !plHidden() && isWinPc(); }, run: plClick };
+  /* «Получить всё» в программе: расписание со ссылками едет вместе с оценками (ссылка, файл, буфер) */
+  function withTimetable(d) {
+    if (!d || !d.timetable) return;
+    try { notifyTt(SP.hub.importTimetable(d.timetable)); } catch (e) { SP.toast(SP.t('jr.ttBad'), 'danger'); }
+  }
   /* Сообщение после обновления расписания: только если что-то поменялось */
   function notifyTt(res) {
     var list = function (a) { return '<ul class="small" style="margin:.25rem 0 0;padding-left:1.1rem">' + a.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>'; };
@@ -589,8 +596,9 @@
         if (isTt) return notifyTt(SP.hub.importTimetable(d));
         var res = importPlatonus(d); editing = null; render();
         notifyNews(res.news);   /* сообщаем только о новых оценках */
+        withTimetable(d);
         /* просили расписание, а пришли оценки — программа подключена по-старому */
-        if (asked === 'tt') SP.toast(esc(SP.t('jr.ttOld')), 'warning', { html: true, ms: 15000 });
+        if (asked === 'tt' && !d.timetable) SP.toast(esc(SP.t('jr.ttOld')), 'warning', { html: true, ms: 15000 });
       }).catch(function () { SP.toast(SP.t(isTt ? 'jr.ttBad' : 'jr.plBadLink'), 'danger'); });
     }, function () {
       if (!clipWarned) { clipWarned = true; SP.toast(SP.t('jr.plClip'), 'warning'); }

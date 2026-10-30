@@ -8,7 +8,7 @@
   var SP = window.SP, esc = SP.esc;
   var root = null;
   var VERSION = '3.0.0';
-  var SECTIONS = [['appearance', 'type'], ['language', 'languages'], ['account', 'user'], ['testerPlayer', 'list-checks'], ['tools', 'timer'], ['data', 'database'], ['author', 'square-pen'], ['about', 'info']];
+  var SECTIONS = [['appearance', 'type'], ['language', 'languages'], ['sync', 'refresh-cw'], ['account', 'user'], ['testerPlayer', 'list-checks'], ['tools', 'timer'], ['data', 'database'], ['author', 'square-pen'], ['about', 'info']];
 
   function choice(group, val, cur, inner, label) {
     return '<button type="button" class="choice" role="radio" data-' + group + '="' + val + '" aria-checked="' + (cur === val) + '" aria-label="' + esc(label) + '">' + inner + '<span>' + esc(label) + '</span></button>';
@@ -45,7 +45,22 @@
     html += section('language', 'languages', '<div class="choice-grid" role="radiogroup" aria-label="' + esc(SP.t('settings.language')) + '">' +
       SP.LANGS.map(function (l) { return choice('lang', l.code, s.lang, '<span class="sample" style="font-size:1.4rem">' + l.short + '</span>', l.name); }).join('') + '</div>');
 
-    /* 3. Аккаунт (локальный профиль) */
+    /* 3. Оценки и расписание: автообновление (мастер настройки, кнопки, как часто, вход в приложении) */
+    var kind = SP.pl && SP.pl.kind ? SP.pl.kind() : '';
+    html += section('sync', 'refresh-cw',
+      /* тот же мастер, что после регистрации, — шаги для этого устройства */
+      setRow(SP.t('settings.setupTitle'), esc(SP.t('settings.setupHint')), '<button type="button" class="btn" id="sSetup">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('settings.setupBtn')) + '</span></button>') +
+      /* кнопки «Обновить оценки» / «Обновить расписание»: включаются сами после настройки, здесь — вручную */
+      (/^(win|app|ios)$/.test(kind) ? setRow(SP.t('settings.plShow'), esc(SP.t('settings.plShowHint')), '<label class="switch"><input type="checkbox" id="sPlShow"' + (s.plHide === false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.plShow')) + '</span></label>') : '') +
+      /* как часто — там, где сайт умеет обновлять сам (ПК и Android-приложение); на iPhone — «Команды» */
+      (s.plHide === false && /^(win|app)$/.test(kind) ? setRow(SP.t('settings.plAuto'), esc(SP.t('settings.plAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sPlAuto" min="0" max="1440" step="1" value="' + esc(s.plAuto || 0) + '" aria-label="' + esc(SP.t('settings.plAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') +
+        setRow(SP.t('settings.ttAuto'), esc(SP.t('settings.ttAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sTtAuto" min="0" max="1440" step="1" value="' + esc(s.ttAuto || 0) + '" aria-label="' + esc(SP.t('settings.ttAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') : '') +
+      /* Android-приложение: вход на этом телефоне и уведомления из фона */
+      (SP.app && s.plHide === false ? setRow(SP.t('app.credsTitle'), esc(SP.t('app.credsHint')), '<button type="button" class="btn" id="sAppCreds">' + SP.icon('user') + '<span>' + esc(SP.t('common.change')) + '</span></button>') +
+        setRow(SP.t('app.notify'), esc(SP.t('app.notifyHint')), '<label class="switch"><input type="checkbox" id="sAppNotify"' + (s.appNotify !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('app.notify')) + '</span></label>') : '') +
+      (!SP.app ? setRow(SP.t('app.phoneRow'), esc(SP.t('app.phoneRowHint')), '<button type="button" class="btn btn-ghost" id="sPhone">' + SP.icon('smartphone') + '<span>' + esc(SP.t('common.open')) + '</span></button>') : ''));
+
+    /* 4. Аккаунт (локальный профиль) */
     var nm = u.name && u.nameSet ? u.name : SP.t('auth.guestName');
     var acc = '<div class="profile-strip"><span class="avatar">' + SP.icon('user') + '</span><div class="grow"><b>' + esc(nm) + '</b><div class="small muted">' + esc(u.group || SP.t('auth.noGroup')) + '</div></div></div>';
     acc += '<div class="alert alert-info">' + SP.icon('info') + '<div class="alert-body"><span>' + esc(SP.t('settings.localText')) + '</span><div class="alert-actions"><button type="button" class="btn btn-ghost btn-sm" id="sHow">' + SP.icon('shield-check') + '<span>' + esc(SP.t('auth.how')) + '</span></button></div></div></div>';
@@ -66,20 +81,8 @@
       setRow(SP.t('settings.playerMore'), esc(SP.t('settings.playerMoreHint')), '<a class="btn btn-ghost" href="#/player">' + SP.icon('circle-play') + '<span>' + esc(SP.t('nav.player')) + '</span></a>'));
 
     /* 6. Инструменты */
-    var kind = SP.pl && SP.pl.kind ? SP.pl.kind() : '';
     html += section('tools', 'timer',
-      setRow(SP.t('stopwatch.title'), esc(SP.t('settings.stopwatchHint')), '<label class="switch"><input type="checkbox" id="sSw"' + (s.stopwatch ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('stopwatch.title')) + '</span></label>') +
-      /* Автообновление оценок и расписания: тот же мастер, что после регистрации, — шаги для этого устройства */
-      setRow(SP.t('settings.setupTitle'), esc(SP.t('settings.setupHint')), '<button type="button" class="btn" id="sSetup">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('settings.setupBtn')) + '</span></button>') +
-      /* кнопки «Обновить оценки» / «Обновить расписание»: включаются сами после настройки, здесь — вручную */
-      (/^(win|app|ios)$/.test(kind) ? setRow(SP.t('settings.plShow'), esc(SP.t('settings.plShowHint')), '<label class="switch"><input type="checkbox" id="sPlShow"' + (s.plHide === false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.plShow')) + '</span></label>') : '') +
-      (!SP.app ? setRow(SP.t('app.phoneRow'), esc(SP.t('app.phoneRowHint')), '<button type="button" class="btn btn-ghost" id="sPhone">' + SP.icon('smartphone') + '<span>' + esc(SP.t('common.open')) + '</span></button>') : '') +
-      /* интервалы — там, где сайт умеет обновлять сам (ПК и Android-приложение); на iPhone — «Команды» */
-      (s.plHide === false && /^(win|app)$/.test(kind) ? setRow(SP.t('settings.plAuto'), esc(SP.t('settings.plAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sPlAuto" min="0" max="1440" step="1" value="' + esc(s.plAuto || 0) + '" aria-label="' + esc(SP.t('settings.plAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') +
-        setRow(SP.t('settings.ttAuto'), esc(SP.t('settings.ttAutoHint')), '<div class="row row-nowrap"><input class="input input-num" type="number" id="sTtAuto" min="0" max="1440" step="1" value="' + esc(s.ttAuto || 0) + '" aria-label="' + esc(SP.t('settings.ttAuto')) + '"><span class="small muted">' + esc(SP.t('settings.min')) + '</span></div>') +
-        /* Android-приложение: вход на этом телефоне и уведомления из фона */
-        (SP.app ? setRow(SP.t('app.credsTitle'), esc(SP.t('app.credsHint')), '<button type="button" class="btn" id="sAppCreds">' + SP.icon('user') + '<span>' + esc(SP.t('common.change')) + '</span></button>') +
-          setRow(SP.t('app.notify'), esc(SP.t('app.notifyHint')), '<label class="switch"><input type="checkbox" id="sAppNotify"' + (s.appNotify !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('app.notify')) + '</span></label>') : '') : ''));
+      setRow(SP.t('stopwatch.title'), esc(SP.t('settings.stopwatchHint')), '<label class="switch"><input type="checkbox" id="sSw"' + (s.stopwatch ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('stopwatch.title')) + '</span></label>'));
 
     /* 4. Данные */
     var d = SP.hub.data(), base = SP.hub.base();

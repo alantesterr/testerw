@@ -687,7 +687,7 @@
       }).then(function (res) {
         if (res.calendar) SP.hub.setCalendar(res.calendar);
         var b = res.bundle;
-        if (k === 'pl' && b.hasGrades) { var r = importPlatonus(b); editing = null; render(); notifyNews(r.news); }
+        if (k === 'pl' && b.hasGrades) { var r = importPlatonus(b); editing = null; render(); notifyNews(r.news); askAutoOnce(); }
         if (k === 'tt' && b.timetable) notifyTt(SP.hub.importTimetable(b.timetable));
         /* ночью и без сети при автообновлении молчим; при нажатии — объясняем */
         res.errors.forEach(function (e) { if (!quiet || !/не отвечает/.test(e.message)) SP.toast(esc(e.message), 'warning', { html: true, ms: 9000 }); });
@@ -739,12 +739,12 @@
         if (!SP.$('#wzSame', m.el).checked) c.tt = { login: g('wzTL').trim(), pw: g('wzTP') };
         if (!c.login || !c.pw) { SP.$(c.login ? '#wzP' : '#wzL', m.el).focus(); return false; }
         SP.settings.set('appNotify', SP.$('#wzNotify', m.el).checked);
-        enable();
+        SP.store.set(ASK_AUTO, true); enable();
         saveAppCreds(c).then(function () { return SP.app.notify(SP.$('#wzNotify', m.el) ? SP.$('#wzNotify', m.el).checked : true); }).then(function () { runProgram(false, 'pl'); });
       } }];
     } else if (kind === 'win') {
       body += '<p><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a></p>';
-      acts = [{ label: SP.t('setup.skip'), onClick: done }, { label: SP.t('setup.doneCheck'), kind: 'primary', onClick: function () { SP.store.set('sp-pl-run-ok', true); enable(); runProgram(false, 'pl'); } }];
+      acts = [{ label: SP.t('setup.skip'), onClick: done }, { label: SP.t('setup.doneCheck'), kind: 'primary', onClick: function () { SP.store.set('sp-pl-run-ok', true); SP.store.set(ASK_AUTO, true); enable(); runProgram(false, 'pl'); } }];
     } else if (kind === 'ios') {
       body += '<p class="row" style="gap:var(--sp-2);flex-wrap:wrap"><button type="button" class="btn" data-ios>' + SP.icon('copy') + '<span>' + esc(SP.t('app.iosCopy')) + '</span></button></p>';
       acts = [{ label: SP.t('setup.skip'), onClick: done }, { label: SP.t('setup.doneCheck'), kind: 'primary', onClick: function () { SP.store.set('sp-ios-ok', true); enable(); iosRun(false, 'pl'); } }];
@@ -772,6 +772,42 @@
     setTimeout(tick, 1500);
   })();
   SP.pl.setup = setupWizard; SP.pl.kind = deviceKind;
+
+  /* ---------- «Как часто обновлять?» — один раз, сразу после первого удачного обновления из мастера ----------
+     Только там, где сайт умеет обновлять сам: ПК с Windows и Android-приложение
+     (на iPhone — «Команды», в браузере телефона — нечем). */
+  var ASK_AUTO = 'sp-ask-auto', quietKick = false;
+  function askAutoOnce() {
+    if (!SP.store.get(ASK_AUTO, false) || !/^(win|app)$/.test(deviceKind())) return;
+    SP.store.del(ASK_AUTO);
+    setTimeout(autoModal, 1500);   /* сначала пусть человек увидит свои оценки */
+  }
+  function autoModal() {
+    var pick = { pl: SP.settings.get('plAuto') || 30, tt: SP.settings.get('ttAuto') || 180 };
+    var seg = function (k, opts) {
+      return '<div class="segmented seg-wrap" role="group" data-auto="' + k + '">' + opts.map(function (o) {
+        return '<button type="button" data-v="' + o[0] + '" aria-pressed="' + (+pick[k] === o[0]) + '">' + esc(SP.t(o[1])) + '</button>';
+      }).join('') + '</div>';
+    };
+    var m = SP.modal({ title: SP.t('setup.autoTitle'), body:
+      '<p>' + esc(SP.t('setup.autoText')) + '</p>' +
+      '<div class="stack-sm"><div class="label">' + esc(SP.t('setup.autoGrades')) + '</div>' + seg('pl', [[0, 'setup.never'], [15, 'setup.m15'], [30, 'setup.m30'], [60, 'setup.h1'], [180, 'setup.h3']]) + '</div>' +
+      '<div class="stack-sm" style="margin-top:var(--sp-3)"><div class="label">' + esc(SP.t('setup.autoTt')) + '</div>' + seg('tt', [[0, 'setup.byButton'], [60, 'setup.h1'], [180, 'setup.h3'], [360, 'setup.h6'], [1440, 'setup.day']]) + '</div>' +
+      '<p class="small muted" style="margin-top:var(--sp-3)">' + esc(SP.t(IS_APP ? 'setup.autoNoteApp' : 'setup.autoNotePc')) + '</p>',
+      actions: [{ label: SP.t('common.save'), kind: 'primary', onClick: function () {
+        quietKick = true;   /* только что обновились — сразу второй раз в Platonus не идём */
+        SP.settings.set('plAuto', pick.pl); SP.settings.set('ttAuto', pick.tt);
+        quietKick = false;
+        SP.toast(SP.t('settings.saved'), 'success');
+      } }] });
+    SP.$$('[data-auto]', m.el).forEach(function (g) {
+      g.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-v]'); if (!b) return;
+        pick[g.getAttribute('data-auto')] = +b.getAttribute('data-v');
+        SP.$$('[data-v]', g).forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+      });
+    });
+  }
 
   /* ---------- «StudyPlay на телефоне»: Android-приложение и iPhone (Scriptable) ---------- */
   var APK_URL = 'https://github.com/alantesterr/testerw/releases/download/android-latest/StudyPlay.apk';
@@ -836,6 +872,7 @@
         var res = importPlatonus(d); editing = null; render();
         notifyNews(res.news);   /* сообщаем только о новых оценках */
         withTimetable(d);
+        askAutoOnce();
         /* просили расписание, а пришли оценки — программа подключена по-старому */
         if (asked === 'tt' && !d.timetable) SP.toast(esc(SP.t('jr.ttOld')), 'warning', { html: true, ms: 15000 });
       }).catch(function () { SP.toast(SP.t(isTt ? 'jr.ttBad' : 'jr.plBadLink'), 'danger'); });
@@ -873,6 +910,7 @@
     if (!e || ['plAuto', 'ttAuto', 'plHide'].indexOf(e.key) < 0) return;
     autoSchedule();
     if (e.key === 'plHide' && root && !root.hidden && !editing) render();   /* кнопка «Обновить оценки» появилась/исчезла */
+    if (quietKick) return;
     if (e.key === 'plAuto' && autoOn('pl')) autoRun('pl');
     if (e.key === 'ttAuto' && autoOn('tt')) autoRun('tt');
   });

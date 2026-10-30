@@ -579,3 +579,14 @@ Object.assign(SP.I18N.en, {
 
 ['app.phoneHtml','settings.plAutoHint','settings.ttAutoHint'].forEach(function (k) { if (SP.I18N.en[k]) SP.I18N.en[k] = SP.I18N.en[k].split('Update from Platonus').join('Update grades'); });
 Object.assign(SP.I18N.en, { 'app.shareTitle': 'Save or open the file' });
+
+Object.assign(SP.I18N.en, {
+  'settings.sync': 'Grades and schedule',
+  'setup.autoTitle': 'How often to update automatically?',
+  'setup.autoText': 'Everything works! Choose how often StudyPlay takes new grades and the schedule by itself. You can change it later in Settings → "Grades and schedule".',
+  'setup.autoGrades': 'Grades', 'setup.autoTt': 'Schedule and teachers\' links',
+  'setup.never': 'Do not update', 'setup.byButton': 'Button only', 'setup.m15': '15 min', 'setup.m30': '30 min', 'setup.h1': '1 hour', 'setup.h3': '3 hours', 'setup.h6': '6 hours', 'setup.day': 'Once a day',
+  'setup.autoNotePc': 'Updates while the site is open and right when it opens. Platonus is offline at night (23:00–7:00).',
+  'setup.autoNoteApp': 'While the app is open — by this choice. A closed app checks grades about every half hour and notifies you about new ones.'
+});
+Object.assign(SP.I18N.en, { 'settings.plAuto': 'Grades auto-update' });

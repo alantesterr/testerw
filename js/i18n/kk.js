@@ -580,3 +580,14 @@ Object.assign(SP.I18N.kk, {
 
 ['app.phoneHtml','settings.plAutoHint','settings.ttAutoHint'].forEach(function (k) { if (SP.I18N.kk[k]) SP.I18N.kk[k] = SP.I18N.kk[k].split('Platonus-тан жаңарту').join('Бағаларды жаңарту'); });
 Object.assign(SP.I18N.kk, { 'app.shareTitle': 'Файлды сақтау немесе ашу' });
+
+Object.assign(SP.I18N.kk, {
+  'settings.sync': 'Бағалар мен кесте',
+  'setup.autoTitle': 'Қаншалықты жиі автожаңарту керек?',
+  'setup.autoText': 'Бәрі жұмыс істейді! StudyPlay жаңа бағалар мен кестені қаншалықты жиі алатынын таңдаңыз. Кейін Баптаулар → «Бағалар мен кесте» бөлімінде өзгертуге болады.',
+  'setup.autoGrades': 'Бағалар', 'setup.autoTt': 'Кесте және оқытушылардың сілтемелері',
+  'setup.never': 'Өзі жаңартпасын', 'setup.byButton': 'Тек батырмамен', 'setup.m15': '15 мин', 'setup.m30': '30 мин', 'setup.h1': '1 сағат', 'setup.h3': '3 сағат', 'setup.h6': '6 сағат', 'setup.day': 'Күніне бір рет',
+  'setup.autoNotePc': 'Сайт ашық тұрғанда және ашқанда бірден жаңарады. Түнде (23:00–7:00) Platonus жұмыс істемейді.',
+  'setup.autoNoteApp': 'Қолданба ашық тұрғанда — осы таңдау бойынша. Жабық қолданба шамамен жарты сағат сайын бағаларды тексеріп, жаңалары туралы хабарлайды.'
+});
+Object.assign(SP.I18N.kk, { 'settings.plAuto': 'Бағаларды автожаңарту' });

@@ -598,3 +598,10 @@ Object.assign(SP.I18N.en, {
   'mn.empty': 'No notes here yet. Press "Add notes": the site gives a ready prompt for an AI; paste the answer and you get notes like in StudyPlay.',
   'mn.imgHere': 'Image here:', 'mn.editTitle': 'Notes editor'
 });
+
+/* анкета и «Доработать» */
+Object.assign(SP.I18N.en, {
+  'mn.s1': 'Answer a few questions and copy the prompt', 'mn.q.subject': 'Subject', 'mn.q.goal': 'Preparing for', 'mn.q.depth': 'How detailed',
+  'mn.depth.short': 'Short', 'mn.depth.medium': 'Medium', 'mn.depth.full': 'Detailed', 'mn.q.want': 'Also make', 'mn.want.qs': 'Q&A', 'mn.want.test': 'Test', 'mn.want.cards': 'Cards',
+  'mn.q.tasks': 'Tasks with solutions', 'mn.q.testSrc': 'Whose test', 'mn.q.split': 'How to split', 'mn.q.lang': 'Language', 'mn.q.fmt': 'Answer format', 'mn.impCopy': 'Copy prompt'
+});

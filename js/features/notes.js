@@ -511,7 +511,10 @@
   function startQuiz() {
     var meta = cur.meta, lec = cur.d.lectures[cur.li], tests = lec._m.tests, t = tests[Math.min(cur.test || 0, tests.length - 1)];
     var card = SP.$('.nt-quiz', root); SP.$('.nt-quiz-start', card).hidden = true;
-    quiz = SP.Quiz(SP.$('.nt-quiz-host', card), t.qs, {
+    /* тест сразу показывает «верно / неверно», когда знает число верных вариантов (n).
+       В конспектах поле n значило другое (сколько раз вопрос повторяется в базе ★) — пересчитываем */
+    var qs = t.qs.map(function (q) { var o = q.opts || []; return Object.assign({}, q, { type: q.type || 'choice', n: o.filter(function (x) { return x.right; }).length || 1 }); });
+    quiz = SP.Quiz(SP.$('.nt-quiz-host', card), qs, {
       title: lec.label + ' · ' + SP.t('notes.test'),
       onExit: function () { stopQuiz(); render(true); },
       onFinish: function (r) { var b = getS('best', meta.id); if (b[t.key] == null || r.pct > b[t.key]) { b[t.key] = r.pct; setS('best', meta.id, b); } }

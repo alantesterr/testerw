@@ -1040,3 +1040,18 @@ a.tt-link:focus-visible, a.shk-link:focus-visible { outline: none; box-shadow: v
 .nt-mm pre { text-align: left; white-space: pre-wrap; font-size: .8rem; margin: 0; }
 .nt-doc .nt-table, .lx-card .nt-table { max-width: 100%; overflow-x: auto; }
 .nt-doc mark { background: color-mix(in srgb, #facc15 45%, transparent); color: inherit; padding: 0 .15em; border-radius: 3px; }
+
+/* анкета перед промтом и «Доработать» */
+.mn-quiz { display: flex; flex-direction: column; gap: 10px; }
+.mn-qrow { display: grid; grid-template-columns: 170px 1fr; gap: 6px 12px; align-items: center; }
+.mn-ql { font-size: .85rem; font-weight: 600; display: flex; flex-direction: column; gap: 2px; }
+.mn-qc { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.mn-qc .input { width: 100%; }
+@media (max-width: 640px) { .mn-qrow { grid-template-columns: 1fr; } }
+.mn-chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
+.mn-bank { margin-top: 6px; }
+.mn-bank textarea { width: 100%; }
+.mn-fmt-note { display: flex; gap: .4rem; align-items: flex-start; padding: .5rem .65rem; border-radius: 10px; background: var(--surface-2, rgba(127,127,127,.08)); color: var(--text-2); }
+.mn-imp { margin-top: .75rem; padding: .65rem .75rem; border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; gap: 6px; }
+.mn-imp-h { display: flex; align-items: center; gap: .4rem; }
+.mn-imp-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }

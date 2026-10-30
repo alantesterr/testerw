@@ -125,14 +125,14 @@
     var t = plain(text).replace(/^#+\s*/, '');
     var m = t.match(/^((?:лекция|тема|занятие|семинар|практика|урок|глава|модуль|дәріс|тақырып|сабақ|lecture|topic|lesson|chapter|unit)\s*№?\s*([\dIVXLC]+(?:[.-][\dIVXLC]+)*))\s*[.:—–-]?\s*(.*)$/i);
     if (m) return { label: m[1].replace(/\s+/g, ' ').replace(/^./, function (c) { return c.toUpperCase(); }), n: m[2], title: m[3] || m[1] };
-    return { label: 'Лекция ' + (idx + 1), n: String(idx + 1), title: t };
+    return { label: 'Лекция ' + (idx + 1), n: String(idx + 1), title: t, auto: true };
   }
 
   /* ---------- текстовая разметка ---------- */
   function parseMarkup(src, ctx) {
     var lines = unwrap(String(src || '').replace(/\r/g, '').replace(/ /g, ' ')).split('\n');
     var res = { subject: '', title: '', lectures: [] }, terms = [], sum = {}, warn = [], cur = null, part = null, buf = [], partTitle = '', inFence = false;
-    var newLec = function (h) { flush(); var hd = lectureHead(h, res.lectures.length); cur = { id: 'l' + (res.lectures.length + 1), n: hd.n, label: hd.label, title: hd.title, sections: [], cards: [], _sum: [] }; res.lectures.push(cur); part = 'text'; partTitle = ''; };
+    var newLec = function (h) { flush(); var hd = lectureHead(h, res.lectures.length); cur = { id: 'l' + (res.lectures.length + 1), n: hd.n, label: hd.label, title: hd.title, sections: [], cards: [], _sum: [], _auto: !!hd.auto }; res.lectures.push(cur); part = 'text'; partTitle = ''; };
     var need = function () { if (!cur) newLec(res.title || 'Лекция 1'); };
     function flush() {
       if (!buf.length) return;
@@ -262,7 +262,7 @@
       if (!q) return;
       if (q.opts.length < 2) warn.push(lec.label + ', тест: у вопроса «' + q.q.slice(0, 60) + '» меньше двух вариантов');
       else if (!q.opts.some(function (o) { return o.right; })) warn.push(lec.label + ', тест: у вопроса «' + q.q.slice(0, 60) + '» не отмечен верный ответ (+)');
-      else out.push({ q: q.q, opts: q.opts });
+      else out.push({ q: q.q, type: 'choice', opts: q.opts, n: q.opts.filter(function (o) { return o.right; }).length });
       q = null;
     };
     lines.forEach(function (l) {
@@ -294,6 +294,19 @@
       }
     }
   }
+  /* все JSON-объекты верхнего уровня { … } подряд (кавычки и экранирование учитываются); последний может быть оборван */
+  function jsonChunks(s) {
+    var out = [], depth = 0, start = -1, inStr = false, escp = false;
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charAt(i);
+      if (inStr) { if (escp) escp = false; else if (c === '\\') escp = true; else if (c === '"') inStr = false; continue; }
+      if (c === '"') { inStr = depth > 0; continue; }
+      if (c === '{') { if (depth === 0) start = i; depth++; }
+      else if (c === '}' && depth > 0) { depth--; if (depth === 0) { out.push(s.slice(start, i + 1)); start = -1; } }
+    }
+    if (start >= 0) out.push(s.slice(start));   /* оборванный кусок — looseJson объяснит, что делать */
+    return out.length ? out : [s];
+  }
   function md(x) { return Array.isArray(x) ? x.join('\n') : String(x == null ? '' : x); }
   function parseJson(obj, ctx) {
     /* внутренний формат сайта (как data/…/notes/*.json) — берём как есть */
@@ -304,7 +317,7 @@
     var res = { subject: obj.subject || '', title: obj.title || '', lectures: [] }, terms = [], warn = [];
     obj.lectures.forEach(function (L, li) {
       var hd = lectureHead(L.title || L.name || ('Лекция ' + (li + 1)), li);
-      var lec = { id: 'l' + (li + 1), n: hd.n, label: L.label || hd.label, title: hd.title, sections: [], cards: [], _sum: (L.summary || L.main || []).map(plain) };
+      var lec = { id: 'l' + (li + 1), n: hd.n, label: L.label || hd.label, title: hd.title, sections: [], cards: [], _sum: (L.summary || L.main || []).map(plain), _auto: !L.label && !!hd.auto };
       var textLines = md(L.text || L.content || L.konspekt).split('\n').map(function (l) { var h = l.trim().match(/^#{2,6}\s+(.+)$/); return h ? '\u0002' + h[1] : l; });
       textSections(textLines, ctx, lec, '');
       (L.terms || []).forEach(function (t) { if (t && (t.term || t[0])) terms.push([plain(t.term || t[0]), plain(t.def || t.definition || t[1] || '')]); });
@@ -318,7 +331,7 @@
         var cor = [].concat(q.correct != null ? q.correct : q.answer != null ? q.answer : []);
         cor.forEach(function (c) { if (typeof c === 'number' && opts[c]) opts[c].right = true; else if (typeof c === 'string') opts.forEach(function (o) { if (o.t === plain(c)) o.right = true; }); });
         if (!opts.some(function (o) { return o.right; })) { warn.push(lec.label + ', тест: не отмечен верный ответ у «' + plain(q.q || q.question).slice(0, 60) + '»'); return null; }
-        return { q: plain(q.q || q.question || ''), opts: opts };
+        return { q: plain(q.q || q.question || ''), type: 'choice', opts: opts, n: opts.filter(function (o) { return o.right; }).length };
       }).filter(Boolean);
       if (tq.length) lec.sections.push({ kind: 'test', title: 'Тест', blocks: [{ t: 'quiz', questions: tq }] });
       res.lectures.push(lec);
@@ -329,6 +342,45 @@
   /* ---------- общий конец: «Главное», термины, проверки ---------- */
   function finish(res, terms, warn) {
     var sum = {}, seen = {};
+    /* одна и та же лекция могла прийти кусками (обрыв → «дальше», кнопка «Доработать») — склеиваем по названию «Лекция N» */
+    var byLabel = {}, merged = [];
+    res.lectures.forEach(function (l) {
+      var k = l._auto ? null : SP.lc(l.label), t = k && byLabel[k];
+      if (!t) { if (k) byLabel[k] = l; merged.push(l); return; }
+      /* текст пришёл заново с «Суть простыми словами» — это переписанная версия (кнопка «Доработать»): заменяет старый */
+      var newText = l.sections.filter(function (x) { return x.kind === 'text'; });
+      if (newText.length && /суть простыми словами|қарапайым тілмен|in simple words/i.test(newText[0].title || '')) t.sections = t.sections.filter(function (x) { return x.kind !== 'text'; });
+      t.sections = t.sections.concat(l.sections); t.cards = t.cards.concat(l.cards);
+      l._sum.forEach(function (s) { if (t._sum.indexOf(s) < 0) t._sum.push(s); });
+      if ((!t.title || t.title === t.label) && l.title) t.title = l.title;
+    });
+    res.lectures = merged;
+    /* в лекции один раздел вопросов, один задач, один тест (дописанное добавляется в конец) */
+    res.lectures.forEach(function (l) {
+      var out = [], one = {};
+      l.sections.forEach(function (s) {
+        if (s.kind === 'text') { out.push(s); return; }
+        var t = one[s.kind];
+        if (!t) { one[s.kind] = s; out.push(s); return; }
+        if (s.kind === 'test') t.blocks[0].questions = t.blocks[0].questions.concat(s.blocks[0].questions);
+        else t.blocks = t.blocks.concat(s.blocks);
+      });
+      /* одинаковые вопросы (прислали заново с «@ Где:» и т. п.) — остаётся последняя версия на месте первой */
+      var dedupe = function (arr, key) {
+        var pos = {}, res = [];
+        arr.forEach(function (x) { var k = key(x); if (k && pos[k] != null) res[pos[k]] = x; else { if (k) pos[k] = res.length; res.push(x); } });
+        return res;
+      };
+      var qk = function (b) { return SP.lc(plain(String(typeof b.q === 'string' ? b.q : '').replace(/<[^>]+>/g, ''))); };
+      out.forEach(function (s) {
+        if (s.kind === 'qa') s.blocks = dedupe(s.blocks, qk);
+        if (s.kind === 'test') s.blocks[0].questions = dedupe(s.blocks[0].questions, function (q) { return SP.lc(q.q); });
+      });
+      l.cards = dedupe(l.cards, function (c) { return SP.lc(plain(String(c.q).replace(/<[^>]+>/g, ''))); });
+      /* текст — всегда перед вопросами и тестом */
+      l.sections = out.filter(function (s) { return s.kind === 'text'; }).concat(out.filter(function (s) { return s.kind !== 'text'; }));
+      delete l._auto;
+    });
     res.lectures = res.lectures.filter(function (l) { return l.sections.length || l._sum.length || l.cards.length; });
     res.lectures.forEach(function (l, i) { l.id = 'l' + (i + 1); if (l._sum.length) sum[l.id] = l._sum; delete l._sum; if (!l.sections.some(function (s) { return s.kind === 'text'; })) warn.push(l.label + ': нет текста лекции (раздел «### Конспект»)'); });
     /* термин: основа слова для подчёркивания в тексте (без окончания) */
@@ -339,9 +391,16 @@
     return { doc: res, extra: { sum: sum, terms: tl }, warn: warn };
   }
   function stats(r) {
-    var s = { lectures: 0, qs: 0, tasks: 0, tests: 0, cards: 0, terms: (r.extra.terms || []).length, imgsNeeded: [], imgs: 0, schemes: 0, formulas: 0 };
+    var s = { lectures: 0, qs: 0, tasks: 0, tests: 0, cards: 0, terms: (r.extra.terms || []).length, imgsNeeded: [], imgs: 0, schemes: 0, formulas: 0, per: [] };
     (r.doc.lectures || []).forEach(function (l) {
       s.lectures++; s.cards += (l.cards || []).length;
+      /* по лекции — для кнопок «Доработать»: чего не хватает */
+      var p = { label: l.label, title: l.title, sum: ((r.extra.sum || {})[l.id] || []).length, text: 0, parts: 0, qs: 0, noWhere: 0, tests: 0, cards: (l.cards || []).length, tasks: 0 };
+      l.sections.forEach(function (sec) {
+        if (sec.kind === 'text') { p.parts++; p.text += JSON.stringify(sec.blocks || []).replace(/<[^>]+>|"[a-z]+":/g, '').length; }
+        (sec.blocks || []).forEach(function (b) { if (b.t === 'qa') { if (b.task || sec.kind === 'tasks') p.tasks++; else { p.qs++; if (!b.where && !b.src) p.noWhere++; } } if (b.t === 'quiz') p.tests += b.questions.length; });
+      });
+      s.per.push(p);
       var walk = function (bs) { (bs || []).forEach(function (b) { if (b.t === 'img') { if (b.ph || !b.src) s.imgsNeeded.push(b.cap || ''); else s.imgs++; } if (b.t === 'mermaid') s.schemes++; if (b.t === 'math') s.formulas++; if (b.a) walk(b.a); if (Array.isArray(b.q)) walk(b.q); }); };
       l.sections.forEach(function (sec) {
         walk(sec.blocks);
@@ -357,7 +416,14 @@
     var s = String(src || '').trim();
     if (!s) throw new Error('Пусто: вставьте ответ ИИ.');
     var body = s.replace(/^```[\w-]*\s*\n?/, '').trim();
-    var r = /^\{/.test(body) ? parseJson(looseJson(s), ctx) : parseMarkup(s, ctx);
+    var r;
+    if (/^\{/.test(body)) {
+      /* JSON может прийти несколькими объектами (первый ответ + «Доработать») — читаем все и объединяем лекции */
+      var objs = jsonChunks(s).map(looseJson);
+      var first = objs[0], all = { format: first.format, subject: first.subject, title: first.title, lectures: [] };
+      objs.forEach(function (o) { if (o && Array.isArray(o.lectures)) all.lectures = all.lectures.concat(o.lectures); });
+      r = objs.length === 1 && !(first.lectures || []).some(function (l) { return !Array.isArray(l.sections); }) ? parseJson(first, ctx) : parseJson(all, ctx);
+    } else r = parseMarkup(s, ctx);
     if (!r.doc.lectures || !r.doc.lectures.length) throw new Error('Не нашёл ни одной лекции. Проверьте, что ИИ ответил в формате из промта (заголовок «## Лекция 1. …»).');
     r.stats = stats(r);
     return r;

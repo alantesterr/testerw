@@ -285,6 +285,17 @@
     var arg = String((env.args && (env.args.shortcutParameter || (env.args.queryParameters || {}).mode)) || '').toLowerCase();
     var interactive = !!(env.config && env.config.runsInApp) || /^(open|setup|pl|tt)$/.test(arg);
     var wantGrades = arg !== 'tt', wantTt = arg !== 'pl';
+    /* браузер, в котором нажали кнопку на сайте: туда и возвращаемся (запоминаем — для уведомлений тоже) */
+    var K_BR = 'studyplay-browser', br = String(((env.args && env.args.queryParameters) || {}).browser || '').toLowerCase();
+    if (/^(safari|chrome|firefox|edge|yandex)$/.test(br)) save(K_BR, br); else br = load(K_BR) || 'safari';
+    var inBrowser = function (url) {
+      var bare = url.replace(/^https:\/\//, '');
+      if (br === 'chrome') return 'googlechromes://' + bare;
+      if (br === 'firefox') return 'firefox://open-url?url=' + encodeURIComponent(url);
+      if (br === 'edge') return 'microsoft-edge-https://' + bare;
+      if (br === 'yandex') return 'yandexbrowser-open-url://' + encodeURIComponent(url);
+      return url;
+    };
 
     async function askCreds() {
       var a = new Alert(); a.title = 'StudyPlay'; a.message = 'Логин и пароль от Platonus. Хранятся только на этом iPhone (в связке ключей).';
@@ -330,9 +341,9 @@
     if (interactive) {
       if (res.errors.length) { var e = new Alert(); e.title = 'Не всё получилось'; e.message = res.errors.map(function (x) { return x.message; }).join('\n\n'); e.addAction('OK'); await e.present(); }
       /* обратно на сайт: с данными, а если ничего не пришло — просто в «Оценки» */
-      env.Safari.open(b.hasGrades || b.timetable ? link : SITE + '#/grades');
+      env.Safari.open(inBrowser(b.hasGrades || b.timetable ? link : SITE + '#/grades'));
     } else if (news.length) {
-      var n = new env.Notification(); n.title = news.length > 1 ? 'Новые оценки' : 'Новая оценка'; n.body = news.slice(0, 4).join('\n'); n.openURL = link; await n.schedule();
+      var n = new env.Notification(); n.title = news.length > 1 ? 'Новые оценки' : 'Новая оценка'; n.body = news.slice(0, 4).join('\n'); n.openURL = inBrowser(link); await n.schedule();
     }
     if (env.Script && env.Script.complete) env.Script.complete();
   }

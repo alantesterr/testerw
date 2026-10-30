@@ -577,7 +577,9 @@
     if (!SP.store.get('sp-ios-ok', false)) return iosSetup(k);
     SP.store.set(KIND[k].last, Date.now());
     SP.toast(SP.t('app.iosRun'), 'info');
-    var a = document.createElement('a'); a.href = 'scriptable:///run/StudyPlay?mode=' + k; a.style.display = 'none';
+    /* в каком браузере нажали — туда скрипт и вернёт (у каждого браузера своя память, данные должны прийти сюда) */
+    var ua = navigator.userAgent, br = /CriOS/.test(ua) ? 'chrome' : /FxiOS/.test(ua) ? 'firefox' : /EdgiOS/.test(ua) ? 'edge' : /YaBrowser/.test(ua) ? 'yandex' : 'safari';
+    var a = document.createElement('a'); a.href = 'scriptable:///run/StudyPlay?mode=' + k + '&browser=' + br; a.style.display = 'none';
     document.body.appendChild(a); a.click(); a.remove();
   }
   /* первый раз — как поставить Scriptable и скрипт; «Уже настроено» — и сразу обновить */

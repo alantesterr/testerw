@@ -280,8 +280,11 @@
     var Alert = env.Alert, Keychain = env.Keychain;
     var load = function (k) { try { return Keychain.contains(k) ? JSON.parse(Keychain.get(k)) : null; } catch (e) { return null; } };
     var save = function (k, v) { Keychain.set(k, JSON.stringify(v)); };
+    /* mode: pl — только оценки, tt — только расписание (кнопки на сайте в Safari: scriptable:///run/StudyPlay?mode=pl),
+       open — всё и открыть сайт, setup — сменить логин; без mode из «Команд» по расписанию — тихая проверка */
     var arg = String((env.args && (env.args.shortcutParameter || (env.args.queryParameters || {}).mode)) || '').toLowerCase();
-    var interactive = !!(env.config && env.config.runsInApp) || arg === 'open' || arg === 'setup';
+    var interactive = !!(env.config && env.config.runsInApp) || /^(open|setup|pl|tt)$/.test(arg);
+    var wantGrades = arg !== 'tt', wantTt = arg !== 'pl';
 
     async function askCreds() {
       var a = new Alert(); a.title = 'StudyPlay'; a.message = 'Логин и пароль от Platonus. Хранятся только на этом iPhone (в связке ключей).';
@@ -311,7 +314,7 @@
       }, function (e) { throw new Error(String((e && e.message) || e)); });
     });
     var ask = async function (text) { var a = new Alert(); a.title = 'Platonus'; a.message = text; a.addTextField('Код', ''); a.addAction('OK'); a.addCancelAction('Отмена'); return (await a.present()) === -1 ? '' : a.textFieldValue(0); };
-    var run = function (c) { return collect({ http: http, creds: { pl: c, tt: c.tt || c }, grades: true, timetable: true, calendar: load(K_CAL), ask: interactive ? ask : null }); };
+    var run = function (c) { return collect({ http: http, creds: { pl: c, tt: c.tt || c }, grades: wantGrades, timetable: wantTt, calendar: load(K_CAL), ask: interactive ? ask : null }); };
     var res = await run(cr);
     /* пароль сменился — при ручном запуске спросим новый и попробуем ещё раз */
     if (interactive && res.errors.some(function (x) { return /Не удалось войти/.test(x.message); })) {
@@ -326,7 +329,8 @@
     var lz = env.LZString, link = SITE + '#/grades/lz/' + lz.compressToEncodedURIComponent(JSON.stringify(b));
     if (interactive) {
       if (res.errors.length) { var e = new Alert(); e.title = 'Не всё получилось'; e.message = res.errors.map(function (x) { return x.message; }).join('\n\n'); e.addAction('OK'); await e.present(); }
-      if (b.hasGrades || b.timetable) env.Safari.open(link);
+      /* обратно на сайт: с данными, а если ничего не пришло — просто в «Оценки» */
+      env.Safari.open(b.hasGrades || b.timetable ? link : SITE + '#/grades');
     } else if (news.length) {
       var n = new env.Notification(); n.title = news.length > 1 ? 'Новые оценки' : 'Новая оценка'; n.body = news.slice(0, 4).join('\n'); n.openURL = link; await n.schedule();
     }

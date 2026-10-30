@@ -343,7 +343,7 @@
         { label: SP.t('schedule.ttRun'), icon: 'calendar-days', onClick: function () { plClick('tt'); } });
       items.push({ label: SP.t('jr.dl'), icon: 'download', onClick: downloadDialog });
       if (pl && IS_APP) items.push('-', { label: SP.t('app.credsTitle'), icon: 'user', onClick: credsModal });
-      else if (pl) items.push('-', { label: SP.t('jr.plSetupTitle'), icon: 'settings', onClick: setupModal });
+      else if (pl && !IS_IOS) items.push('-', { label: SP.t('jr.plSetupTitle'), icon: 'settings', onClick: setupModal });
       if (!plHidden() && !IS_APP) items.push({ label: SP.t('app.phoneTitle'), icon: 'smartphone', onClick: phoneModal });
       SP.menu(this, items);
     });
@@ -523,6 +523,7 @@
   function runProgram(quiet, k) {
     k = KIND[k] ? k : 'pl';
     if (IS_APP) return appRun(quiet, k);   /* Android-приложение: сайт сам заходит в Platonus/Timetable */
+    if (IS_IOS) return iosRun(quiet, k);   /* iPhone: кнопку выполняет скрипт StudyPlay в Scriptable */
     if (waitUntil) {   /* программа уже работает — встанем в очередь */
       if (waitKind !== k && queue.indexOf(k) < 0) queue.push(k);
       if (!quiet) SP.toast(SP.t('jr.plQueued'), 'info');
@@ -548,7 +549,7 @@
   }
   /* Нажатие кнопки: первый раз — инструкция, ночью для Platonus — вопрос «всё равно попробовать?» */
   function plClick(k) {
-    if (!IS_APP && !SP.store.get('sp-pl-run-ok', false)) {
+    if (!IS_APP && !IS_IOS && !SP.store.get('sp-pl-run-ok', false)) {
       var m = SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') +
         '<div class="row" style="justify-content:flex-end;gap:var(--sp-2);margin-top:var(--sp-4)"><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a>' +
         '<button type="button" class="btn btn-primary" data-plgo>' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('jr.plRunGo')) + '</span></button></div>' });
@@ -562,7 +563,31 @@
     runProgram(false, k);
   }
   function setupModal() { SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') + '<p><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a></p>' }); }
-  SP.pl = { visible: function () { return !plHidden() && (isWinPc() || IS_APP); }, run: plClick, phone: phoneModal };
+  SP.pl = { visible: function () { return !plHidden() && (isWinPc() || IS_APP || IS_IOS); }, run: plClick, phone: phoneModal };
+
+  /* ---------- iPhone / iPad: кнопки на сайте запускают скрипт StudyPlay в Scriptable ----------
+     Ссылка scriptable:///run/StudyPlay?mode=pl|tt открывает Scriptable; скрипт берёт оценки или расписание
+     и сам возвращает в Safari на сайт с данными (#/grades/lz/…). Автообновления на iPhone с сайта нет —
+     для этого «Команды» → «Автоматизация». */
+  var IS_IOS = !(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1));
+  function iosRun(quiet, k) {
+    if (quiet) return;   /* открывать Scriptable само по себе не будем */
+    var left = coolLeft(k);
+    if (left > 0) { SP.toast(SP.t(k === 'tt' ? 'jr.ttCool' : 'jr.plCool', { s: Math.ceil(left / 1000) }), 'warning'); return; }
+    if (!SP.store.get('sp-ios-ok', false)) return iosSetup(k);
+    SP.store.set(KIND[k].last, Date.now());
+    SP.toast(SP.t('app.iosRun'), 'info');
+    var a = document.createElement('a'); a.href = 'scriptable:///run/StudyPlay?mode=' + k; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  /* первый раз — как поставить Scriptable и скрипт; «Уже настроено» — и сразу обновить */
+  function iosSetup(k) {
+    phoneModal(function (m) {
+      var row = SP.el('<div class="row" style="justify-content:flex-end;margin-top:var(--sp-3)"><button type="button" class="btn btn-primary">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('app.iosReady')) + '</span></button></div>');
+      row.querySelector('button').onclick = function () { SP.store.set('sp-ios-ok', true); m.close(); iosRun(false, k); };
+      SP.$('.modal-body', m.el) ? SP.$('.modal-body', m.el).appendChild(row) : m.el.appendChild(row);
+    });
+  }
 
   /* ---------- Приложение StudyPlay для Android ----------
      Внутри приложения открыт этот же сайт, но у приложения нет браузерного запрета на чужие сайты:
@@ -663,7 +688,7 @@
 
   /* ---------- «StudyPlay на телефоне»: Android-приложение и iPhone (Scriptable) ---------- */
   var APK_URL = 'https://github.com/alantesterr/testerw/releases/download/android-latest/StudyPlay.apk';
-  function phoneModal() {
+  function phoneModal(after) {
     var m = SP.modal({ title: SP.t('app.phoneTitle'), size: 'lg', body: SP.t('app.phoneHtml') +
       '<div class="row" style="gap:var(--sp-2);flex-wrap:wrap;margin-top:var(--sp-3)">' +
       '<a class="btn btn-primary" href="' + APK_URL + '">' + SP.icon('download') + '<span>' + esc(SP.t('app.apk')) + '</span></a>' +
@@ -673,6 +698,7 @@
     if (b) b.onclick = function () {
       fetch('downloads/StudyPlay-iPhone.js', { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(SP.copyText).then(function () { SP.toast(SP.t('common.copied'), 'success'); }, function () { SP.toast(SP.t('app.fail'), 'danger'); });
     };
+    if (typeof after === 'function') after(m);
   }
   /* «Получить всё» в программе: расписание со ссылками едет вместе с оценками (ссылка, файл, буфер) */
   function withTimetable(d) {

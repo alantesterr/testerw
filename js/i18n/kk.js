@@ -558,3 +558,5 @@ Object.assign(SP.I18N.kk, {
     '<ol class="jr-steps"><li>«Android үшін жүктеу» басып, файлды ашып, орнатуға рұқсат беріңіз.</li><li>Қолданбада: Баптаулар → Құралдар → «Platonus батырмаларын жасыру» белгісін алып → «Осы телефонда кіру».</li></ol>' +
     '<p><b>iPhone — тегін Scriptable қолданбасы арқылы.</b></p>' +
     '<ol class="jr-steps"><li>App Store-дан <b>Scriptable</b> орнатыңыз.</li><li>Осы сайтты iPhone-да ашып → «iPhone скриптін көшіру».</li><li>Scriptable → «+» → қойып, <b>StudyPlay</b> деп атаңыз → ▶.</li><li>Автожаңарту: «Командалар» → «Автоматтандыру» → «Тәулік уақыты» → Scriptable «Run Script» → StudyPlay.</li></ol>' });
+Object.assign(SP.I18N.kk, { 'app.iosRun': 'Scriptable ашылуда… Бірнеше секундтан кейін жаңа деректермен осында қайтарады.', 'app.iosReady': 'Скрипт орнатылған — жаңарту' });
+SP.I18N.kk['app.phoneHtml'] = SP.I18N.kk['app.phoneHtml'].replace('<li>Автожаңарту:', '<li>Safari-дағы сайтта «Platonus-тан жаңарту» және «Кестені жаңарту» батырмалары скриптті өзі іске қосып, деректермен қайтарады.</li><li>Автожаңарту:');

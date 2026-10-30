@@ -986,3 +986,10 @@ a.tt-link:focus-visible, a.shk-link:focus-visible { outline: none; box-shadow: v
 /* Веб-приложение на iPhone: «Вставить обновление» после возврата из Scriptable */
 .pl-paste { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); z-index: 60; display: flex; align-items: center; gap: 0.5rem; width: min(560px, calc(100vw - 32px)); padding: 0.6rem 0.75rem; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 28px rgba(0,0,0,.18); font-size: 0.9rem; }
 .pl-paste > span { flex: 1; min-width: 0; }
+
+/* Просмотр PDF внутри Android-приложения (js/core/app.js) */
+.pdfv-wrap { min-height: 50vh; }
+.pdfv { display: flex; flex-direction: column; gap: 8px; }
+.pdfv-pg { position: relative; width: 100%; background: #fff; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.18); overflow: hidden; }
+.pdfv-pg canvas { display: block; width: 100%; height: auto; }
+.pdfv-n { position: absolute; right: 6px; bottom: 6px; font-size: 11px; color: #555; background: rgba(255,255,255,.85); padding: 1px 6px; border-radius: 8px; }

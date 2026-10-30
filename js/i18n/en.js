@@ -578,3 +578,4 @@ Object.assign(SP.I18N.en, {
 });
 
 ['app.phoneHtml','settings.plAutoHint','settings.ttAutoHint'].forEach(function (k) { if (SP.I18N.en[k]) SP.I18N.en[k] = SP.I18N.en[k].split('Update from Platonus').join('Update grades'); });
+Object.assign(SP.I18N.en, { 'app.shareTitle': 'Save or open the file' });

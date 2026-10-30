@@ -696,12 +696,7 @@
   }
   /* версия файлов сайта (?v=… у скриптов) — чтобы сборщик обновлялся вместе с сайтом */
   var ASSET_V = ((document.querySelector('script[src*="grades.js"]') || {}).src || '').split('v=')[1] || String(Date.now());
-  /* ссылки преподавателей и прочие внешние ссылки — в браузере телефона, а не внутри приложения */
-  if (IS_APP) document.addEventListener('click', function (e) {
-    var a = e.target.closest && e.target.closest('a[target="_blank"]'); if (!a || !/^https?:/i.test(a.href)) return;
-    if (a.host === location.host) return;
-    e.preventDefault(); location.href = a.href;
-  }, true);
+  /* ссылки и файлы внутри приложения открывает js/core/app.js (встроенная вкладка браузера, просмотр PDF) */
   SP.app = IS_APP ? { creds: credsModal, notify: function (on) {
     SP.settings.set('appNotify', !!on);
     var br = plug('BackgroundRunner');

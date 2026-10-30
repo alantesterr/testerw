@@ -579,3 +579,4 @@ Object.assign(SP.I18N.kk, {
 });
 
 ['app.phoneHtml','settings.plAutoHint','settings.ttAutoHint'].forEach(function (k) { if (SP.I18N.kk[k]) SP.I18N.kk[k] = SP.I18N.kk[k].split('Platonus-тан жаңарту').join('Бағаларды жаңарту'); });
+Object.assign(SP.I18N.kk, { 'app.shareTitle': 'Файлды сақтау немесе ашу' });

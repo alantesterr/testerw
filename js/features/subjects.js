@@ -382,7 +382,9 @@
       var blob = SP.dataURLtoBlob(x.content, x.type);
       if (!blob) { body.innerHTML = fallback(); return; }
       var ext = (x.name.split('.').pop() || '').toLowerCase(); url = URL.createObjectURL(blob);
-      if (ext === 'pdf') body.innerHTML = '<iframe class="pv-frame" title="' + esc(x.name) + '" src="' + url + '"></iframe>';
+      /* в Android-приложении PDF во «фрейме» не показывается — рисуем страницы сами */
+      if (ext === 'pdf' && SP.isApp) SP.pdfRender(body, blob).catch(function () { body.innerHTML = fallback(); });
+      else if (ext === 'pdf') body.innerHTML = '<iframe class="pv-frame" title="' + esc(x.name) + '" src="' + url + '"></iframe>';
       else if (/^(png|jpe?g|webp|gif|svg)$/.test(ext)) body.innerHTML = '<img class="pv-img" src="' + url + '" alt="' + esc(x.name) + '">';
       else if (/^(txt|md|rtf|csv|json)$/.test(ext)) blob.text().then(function (t) { body.innerHTML = '<pre class="pv-text">' + esc(t) + '</pre>'; });
       else if (ext === 'docx' && window.mammoth) {

@@ -294,6 +294,8 @@
       if (br === 'firefox') return 'firefox://open-url?url=' + encodeURIComponent(url);
       if (br === 'edge') return 'microsoft-edge-https://' + bare;
       if (br === 'yandex') return 'yandexbrowser-open-url://' + encodeURIComponent(url);
+      /* обычная https-ссылка ушла бы в браузер по умолчанию — Safari открываем своей ссылкой (iOS 17+) */
+      if (br === 'safari') return 'x-safari-https://' + bare;
       return url;
     };
 

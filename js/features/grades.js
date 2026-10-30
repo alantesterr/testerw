@@ -250,6 +250,7 @@
     html += journalHtml();
     root.innerHTML = '<div class="page">' + html + '</div>';
     wire();
+    if (SP.ui2) SP.ui2.grades(root);
   }
   function wire() { wireJournal(); dragCards(); }
 
@@ -415,11 +416,10 @@
     SP.$$('[data-del]', root).forEach(function (b) {
       b.onclick = function () {
         var id = b.getAttribute('data-del');
-        SP.confirm({ title: SP.t('grades.delSubject'), text: SP.t('jr.delText'), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) {
-          if (!ok) return; var st = jState(), gone = st.items.filter(function (x) { return x.id === id; })[0];
-          if (gone && gone.name) { st.hidden = st.hidden || []; st.hidden.push(gone.name); } /* не возвращать из расписания */
-          st.items = st.items.filter(function (x) { return x.id !== id; }); jSave(st); editing = null; render();
-        });
+        var st = jState(), before = JSON.parse(JSON.stringify(st)), gone = st.items.filter(function (x) { return x.id === id; })[0];
+        if (gone && gone.name) { st.hidden = st.hidden || []; st.hidden.push(gone.name); } /* не возвращать из расписания */
+        st.items = st.items.filter(function (x) { return x.id !== id; }); jSave(st); editing = null; render();
+        SP.undo(SP.t('jr.deleted', { name: gone ? gone.name : '' }), function () { jSave(before); render(); });
       };
     });
     SP.$$('.jr-edit input', root).forEach(function (i) { i.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); var s = i.closest('.jr-card').querySelector('[data-save]'); if (s) s.click(); } else if (e.key === 'Escape') { var c = i.closest('.jr-card').querySelector('[data-cancel]'); if (c) c.click(); } }); });

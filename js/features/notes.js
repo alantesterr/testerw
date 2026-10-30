@@ -611,7 +611,7 @@
     if (!want) { SP.navigate('subjects'); return; }
     if (cur && cur.meta.id === want && li === cur.li && SP.$('.lx', root)) return;
     document.documentElement.classList.add('lx-on');
-    root.innerHTML = '<div class="page"><p class="muted">' + SP.icon('loader-circle', 'spin') + ' ' + esc(SP.t('notes.loading')) + '</p></div>';
+    root.innerHTML = '<div class="page">' + SP.skeleton(5) + '</div>';
     loadIndex().then(function () {
       var meta = index.filter(function (m) { return m.id === want; })[0];
       if (!meta) { SP.navigate('subjects'); return; }

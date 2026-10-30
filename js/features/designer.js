@@ -163,7 +163,8 @@
       var done = function () { renderList(); tabs(); SP.bank.syncLater(); };
       if (a === 'delq') {
         if (!String(q.q).trim()) { st().dz.splice(i, 1); done(); return; }
-        SP.confirm({ title: SP.t('designer.delQ'), text: SP.t('designer.delQText'), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) { if (ok) { st().dz.splice(i, 1); done(); } });
+        var arr = st().dz; arr.splice(i, 1); done();
+        SP.undo(SP.t('designer.qDeleted'), function () { arr.splice(Math.min(i, arr.length), 0, q); done(); });
         return;
       }
       if (a === 'delo') { if (q.opts.length <= 2) { SP.toast(SP.t('designer.min2'), 'warning'); return; } q.opts.splice(+b.closest('.oprow').getAttribute('data-o'), 1); }

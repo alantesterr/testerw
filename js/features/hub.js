@@ -605,17 +605,21 @@
     availableSources: availableSources,
     setPref: function (p) { data.pref = p; save(); applyLayers(); },
     /* Удалить папки: свои — совсем, папки курса/Timetable — запомнить как удалённые */
-    removeSubjects: function (ids) {
+    /* keep — массив: файлы не стираются сразу, а складываются туда (для «Отменить») */
+    removeSubjects: function (ids, keep) {
       var set = {}; ids.forEach(function (i) { set[i] = 1; });
       data.subjects.forEach(function (s) {
         if (!set[s.id]) return;
-        (s.materials || []).concat(s.tests || []).forEach(dropFile);
+        (s.materials || []).concat(s.tests || []).forEach(function (f) { if (keep) keep.push(f); else dropFile(f); });
         if (s.base) data.removed[lc(cleanName(s.name))] = 1;
       });
       data.subjects = data.subjects.filter(function (s) { return !set[s.id]; });
       if (data.own) data.own.schedule = data.own.schedule.filter(function (x) { return !set[x.subjectId]; });
       save(); applyLayers();
     },
+    /* снимок папок до удаления и возврат к нему («Удалено · Отменить») */
+    snapshot: function () { return { subjects: data.subjects.slice(), own: data.own ? JSON.parse(JSON.stringify(data.own)) : null, removed: Object.assign({}, data.removed) }; },
+    restore: function (sn) { data.subjects = sn.subjects; data.own = sn.own; data.removed = sn.removed; save(); applyLayers(); },
     restoreRemoved: function () { data.removed = {}; save(); applyLayers(); },
     clearOwn: function () { data.own = null; if (data.pref === 'own') data.pref = 'auto'; save(); applyLayers(); },
     setOwn: function (timeSlots, schedule) { data.own = { timeSlots: timeSlots, schedule: schedule }; data.pref = 'own'; save(); applyLayers(); },

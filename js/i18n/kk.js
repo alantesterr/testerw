@@ -613,3 +613,7 @@ Object.assign(SP.I18N.kk, {
   'mn.bCopy1': 'Промтты көшіру', 'mn.bCopyN': 'Промтты көшіру', 'mn.bAdd': 'Конспектіге қосу', 'mn.bPaste': 'ЖИ жауабы', 'mn.bNextT': 'Дайын! Тағы не қосамыз?', 'mn.bSaveNow': 'Сақтап, ашу', 'mn.bMoreLec': 'Тағы дәрістер'
 });
 Object.assign(SP.I18N.kk, { 'mn.o.ai': 'ЖИ шешеді', 'mn.o.self': 'Өзім айтамын', 'mn.step.all': 'Бәрі бірден', 'mn.step.view': 'Қарау', 'mn.bAllBtn': 'Қалғанының бәрін бірден жасау', 'mn.v.fix': 'ЖИ-мен түзету', 'mn.v.edit': 'Мәтінді түзету' });
+
+Object.assign(SP.I18N.kk, { 'ui2.view': 'Көрініс', 'ui2.tab.look': 'Көрініс', 'ui2.tab.study': 'Оқу', 'ui2.tab.data': 'Деректер', 'ui2.tab.guide': 'Анықтама', 'ui2.updated': 'Жаңартылды {when}', 'ui2.newsT': 'Не жаңа', 'ui2.skip': 'Өткізу', 'ui2.next': 'Әрі қарай', 'ui2.done': 'Дайын' });
+
+Object.assign(SP.I18N.kk, { 'common.undo': 'Болдырмау', 'common.undone': 'Қайтарылды', 'ui2.copyAll': 'ЖИ үшін бәрін көшіру', 'ui2.guide': 'Анықтама' });

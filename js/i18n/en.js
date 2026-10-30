@@ -612,3 +612,7 @@ Object.assign(SP.I18N.en, {
   'mn.bCopy1': 'Copy prompt', 'mn.bCopyN': 'Copy prompt', 'mn.bAdd': 'Add to notes', 'mn.bPaste': 'AI answer', 'mn.bNextT': 'Done! What next?', 'mn.bSaveNow': 'Save and open', 'mn.bMoreLec': 'More lectures'
 });
 Object.assign(SP.I18N.en, { 'mn.o.ai': 'AI decides', 'mn.o.self': 'I will say', 'mn.step.all': 'All at once', 'mn.step.view': 'Preview', 'mn.bAllBtn': 'Make everything else at once', 'mn.v.fix': 'Fix with AI', 'mn.v.edit': 'Edit text' });
+
+Object.assign(SP.I18N.en, { 'ui2.view': 'View', 'ui2.tab.look': 'Look', 'ui2.tab.study': 'Study', 'ui2.tab.data': 'Data', 'ui2.tab.guide': 'Guide', 'ui2.updated': 'Updated {when}', 'ui2.newsT': 'What is new', 'ui2.skip': 'Skip', 'ui2.next': 'Next', 'ui2.done': 'Done' });
+
+Object.assign(SP.I18N.en, { 'common.undo': 'Undo', 'common.undone': 'Restored', 'ui2.copyAll': 'Copy all for AI', 'ui2.guide': 'Guide' });

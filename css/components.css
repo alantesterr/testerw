@@ -400,3 +400,17 @@ html.modal-open, html.modal-open body { overflow: hidden; }
   .modal, .modal-lg, .modal-xl { max-height: 92dvh; }
   .modal .quiz-foot { bottom: 0; padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom)); background: var(--surface); }
 }
+/* «Удалено · Отменить»: кнопка в уведомлении и полоска-таймер 10 секунд */
+.toast { position: relative; overflow: hidden; }
+.toast-undo { margin-top: var(--sp-2); align-self: flex-start; }
+.toast-body:has(.toast-undo) { display: flex; flex-direction: column; align-items: flex-start; }
+.toast-timer { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--success); transform-origin: left; animation: toast-timer linear forwards; }
+@keyframes toast-timer { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* серые заготовки при загрузке: страница не прыгает */
+.sk-wrap { display: flex; flex-direction: column; gap: var(--sp-3); }
+.sk { background: linear-gradient(90deg, var(--surface-3) 25%, var(--hover) 50%, var(--surface-3) 75%); background-size: 200% 100%; animation: sk-move 1.2s infinite linear; border-radius: 10px; height: 1rem; }
+.sk.h { height: 1.6rem; width: 45%; }
+.sk.card { height: 4.5rem; border-radius: 14px; }
+@keyframes sk-move { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .sk, .toast-timer { animation: none; } }

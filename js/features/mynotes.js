@@ -222,7 +222,8 @@
           dt.addEventListener('toggle', function () { if (dt.open && !body.innerHTML) { body.innerHTML = lecPreview(l, sum[l.id]); if (SP.notes && SP.notes.visuals) SP.notes.visuals(body); } });
           var replace = function (txt) { var g2 = groups(st.src); if (txt.trim()) g2.map[key] = [txt.trim()]; else { delete g2.map[key]; } setSrc(joinGroups(g2), txt.trim() ? i : null); };
           var bd = SP.$('[data-vdel]', dt); if (bd) bd.onclick = function () {
-            SP.confirm({ title: SP.t('mn.v.delT'), text: SP.t('mn.v.delText', { t: l.label + '. ' + l.title }), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) { if (ok) replace(''); });
+            var old = st.src; replace('');
+            SP.undo(SP.t('mn.v.deleted', { t: l.label + '. ' + l.title }), function () { setSrc(old, i); });
           };
           var be = SP.$('[data-vedit]', dt); if (be) be.onclick = function () {
             panel.hidden = false;
@@ -445,7 +446,12 @@
         '<details class="mn-tips"><summary>' + esc(SP.t('mn.cheatT')) + '</summary>' + SP.t('mn.cheatHtml') + '</details></div>';
       var m = SP.modal({ title: SP.t('mn.editTitle'), size: 'xl', body: body, actions: [
         { label: SP.t('common.delete'), icon: 'trash-2', close: false, onClick: function () {
-          SP.confirm({ title: SP.t('mn.delTitle'), text: SP.t('mn.delText', { t: r.title }), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) { if (ok) remove(id).then(function () { m.close(); SP.toast(SP.t('mn.deleted'), 'success'); }); });
+          /* сразу удаляем; 10 секунд можно вернуть — запись целиком (текст и картинки) остаётся в памяти */
+          var keep = Object.assign({}, r), kMeta = { subject: r.subject, title: r.title, short: meta.short || r.subject };
+          remove(id).then(function () {
+            m.close();
+            SP.undo(SP.t('mn.deletedT', { t: r.title }), function () { saveRec(id, keep, kMeta); });
+          });
           return false; } },
         { label: SP.t('mn.download'), icon: 'download', close: false, onClick: function () { persist(false).then(function () { return exportFile(id); }); return false; } },
         { label: SP.t('mn.forSite'), icon: 'users', close: false, onClick: function () { persist(false).then(function () { return authorExport(id); }); return false; } },

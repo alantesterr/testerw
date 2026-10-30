@@ -114,6 +114,7 @@
     else html += ui.mode === 'shokan' ? shokan(td) : timetable(td);
     root.innerHTML = '<div class="page wide sch-page mode-' + ui.mode + '">' + html + '</div>';
     wire();
+    if (SP.ui2) SP.ui2.schedule(root);
   }
 
   /* ===== Режим «Timetable» (структура и стиль как на timetable.kgu.kz) ===== */
@@ -363,6 +364,20 @@
       });
     }
   };
+
+  /* Горячие клавиши на ПК: ← → — неделя (Timetable, Shokan «Неделя») или день (Shokan «День») */
+  document.addEventListener('keydown', function (e) {
+    if (!root || SP.views.current() !== 'schedule' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    var t = e.target; if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
+    if (document.querySelector('.modal-backdrop, .ui2-tour') || detail) return;
+    var d = e.key === 'ArrowLeft' ? -1 : 1;
+    if (ui.mode === 'shokan' && ui.view !== 'week') {
+      dayIdx = (dayIdx || 0) + d;
+      if (dayIdx < 0) { dayIdx = 5; weekOff--; } else if (dayIdx > 5) { dayIdx = 0; weekOff++; }
+    } else weekOff += d;
+    e.preventDefault(); render();
+  });
 
   SP.views.register('schedule', {
     titleKey: 'nav.schedule',

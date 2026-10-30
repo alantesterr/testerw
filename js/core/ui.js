@@ -32,6 +32,31 @@
     return { close: close };
   };
 
+  /* Серые заготовки вместо крутилки: n строк-карточек (cards) или заголовок + строки текста */
+  SP.skeleton = function (n, cards) {
+    var h = '<div class="sk-wrap" aria-busy="true" aria-label="' + SP.esc(SP.t('notes.loading')) + '">' + (cards ? '' : '<div class="sk h"></div>');
+    for (var i = 0; i < (n || 3); i++) h += cards ? '<div class="sk card"></div>' : '<div class="sk" style="width:' + (92 - (i % 3) * 14) + '%"></div>';
+    return h + '</div>';
+  };
+
+  /* «Удалено · Отменить»:вместо вопроса «Вы уверены?» — сразу удаляем, 10 секунд можно вернуть.
+     undoFn — вернуть как было; commitFn — окончательно стереть (файлы из хранилища) после 10 секунд. */
+  SP.undo = function (text, undoFn, commitFn) {
+    var done = false, MS = 10000, t = SP.toast(text, 'success', { ms: MS }), el = region().lastElementChild;
+    var b = SP.el('<button type="button" class="btn btn-sm toast-undo">' + SP.icon('undo-2', 'ic-sm') + '<span>' + SP.esc(SP.t('common.undo')) + '</span></button>');
+    el.querySelector('.toast-body').appendChild(b);
+    el.appendChild(SP.el('<span class="toast-timer" style="animation-duration:' + MS + 'ms"></span>'));
+    var commit = function () { if (done) return; done = true; if (commitFn) commitFn(); };
+    var timer = setTimeout(commit, MS);
+    window.addEventListener('pagehide', commit, { once: true });
+    b.onclick = function () {
+      if (done) return; done = true; clearTimeout(timer); t.close();
+      if (undoFn) undoFn(); SP.toast(SP.t('common.undone'), 'info', { ms: 2500 });
+    };
+    b.focus({ preventScroll: true });
+    return { close: t.close };
+  };
+
   /* ---------------- Модальные окна ---------------- */
   var openModals = [];
   SP.modal = function (o) {

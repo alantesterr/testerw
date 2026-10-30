@@ -108,7 +108,7 @@
       h += '<div class="row sj-tab-acts"><button type="button" class="btn btn-sm" id="sjUpTest">' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('sj.upload')) + '</span></button></div>' +
         (tests.length ? listHtml(s, 'test') : '<p class="subtle small">' + esc(SP.t('subjects.noTests')) + '</p>');
     } else {
-      h += '<div id="sjLecs"><p class="muted small">' + SP.icon('loader-circle', 'spin') + ' ' + esc(SP.t('notes.loading')) + '</p></div>';
+      h += '<div id="sjLecs">' + SP.skeleton(3, true) + '</div>';
     }
     return h + '</div></section>';
   }
@@ -211,12 +211,11 @@
     };
     var ds = q('#sjDelSel'); if (ds) ds.onclick = function () {
       var ids = Object.keys(selSet); if (!ids.length) return;
-      SP.confirm({ title: SP.t('subjects.delFoldersTitle', { n: ids.length }), text: SP.t('subjects.delFoldersText'), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) {
-        if (!ok) return;
-        if (selSet[selected]) selected = null;
-        SP.hub.removeSubjects(ids); selSet = {}; selMode = false;
-        SP.toast(SP.t('subjects.delFoldersDone', { n: ids.length }), 'success'); SP.navigate('subjects'); render();
-      });
+      if (selSet[selected]) selected = null;
+      var snap = SP.hub.snapshot(), files = [];
+      SP.hub.removeSubjects(ids, files); selSet = {}; selMode = false;
+      SP.navigate('subjects'); render();
+      SP.undo(SP.t('subjects.delFoldersDone', { n: ids.length }), function () { SP.hub.restore(snap); render(); }, function () { files.forEach(SP.hub.dropFile); });
     };
     var se = q('#sjSearch'); if (se) se.oninput = SP.debounce(function () { query = se.value; render(); var n = SP.$('#sjSearch', root); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 150);
     SP.$$('[data-sub]', root).forEach(function (b) { b.onclick = function () { SP.navigate('subjects', [b.getAttribute('data-sub')]); }; });
@@ -270,9 +269,9 @@
     items.push({ label: SP.t(isHidden(f) ? 'subjects.unhide' : 'subjects.hide'), icon: isHidden(f) ? 'eye' : 'eye-off', onClick: function () { toggleHide(f); } });
     items.push('-');
     items.push({ label: SP.t(f.base ? 'subjects.cantDelete' : 'common.delete'), icon: 'trash-2', danger: true, disabled: !!f.base, onClick: function () {
-      SP.confirm({ title: SP.t('common.deleteQ'), text: SP.t('subjects.deleteFile', { name: f.name }), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) {
-        if (!ok) return; SP.hub.dropFile(f); arr.splice(i, 1); SP.hub.save(); render();
-      });
+      /* сразу убираем, 10 секунд можно вернуть; из хранилища файл стирается только потом */
+      arr.splice(i, 1); SP.hub.save(); render();
+      SP.undo(SP.t('subjects.fileDeleted', { name: f.name }), function () { arr.splice(Math.min(i, arr.length), 0, f); SP.hub.save(); render(); }, function () { SP.hub.dropFile(f); });
     } });
     SP.menu(btn, items);
   }
@@ -311,9 +310,9 @@
         '<div class="field"><label class="label" for="seTeacher">' + esc(SP.t('subjects.teacher')) + '</label><input class="input" id="seTeacher" value="' + esc(edit ? s.teacher || '' : '') + '"></div>' +
         '<div class="error-text" id="seErr" role="alert"></div>',
       actions: (edit ? [{ label: SP.t('subjects.deleteSubject'), kind: 'danger', icon: 'trash-2', close: false, onClick: function (api) {
-        SP.confirm({ title: SP.t('common.deleteQ'), text: SP.t('subjects.deleteSubjectText'), okLabel: SP.t('common.delete'), danger: true, icon: 'trash-2' }).then(function (ok) {
-          if (!ok) return; SP.hub.removeSubjects([s.id]); api.close(); selected = null; SP.navigate('subjects');
-        });
+        var snap = SP.hub.snapshot(), files = [], sid = s.id;
+        SP.hub.removeSubjects([sid], files); api.close(); selected = null; SP.navigate('subjects'); render();
+        SP.undo(SP.t('subjects.folderDeleted', { name: s.name }), function () { SP.hub.restore(snap); selected = sid; SP.navigate('subjects', [sid]); render(); }, function () { files.forEach(SP.hub.dropFile); });
         return false;
       } }] : []).concat([
         { label: SP.t('common.cancel') },

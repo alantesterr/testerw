@@ -1,0 +1,216 @@
+/* =====================================================================
+   НОВЫЙ ВИД (ui2): мягкие карточки + спокойные цвета разделов,
+   кнопки по смыслу, «Вид» в расписании, настройки в 4 раздела.
+   Всё здесь работает только при <html class="ui2"> (флаг в ui2.js).
+   Оценки, Shokan и Timetable не перекрашиваются — меняются только кнопки над ними.
+   ===================================================================== */
+
+/* ---------- цвет каждого раздела ---------- */
+html.ui2 { --sec: var(--accent); --sec-soft: var(--accent-soft); --sec-text: var(--accent-text); }
+html.ui2, html.ui2[data-theme="light"] {
+  --c-schedule: #2563eb; --c-schedule-soft: #e6eefe; --c-schedule-text: #1d4ed8;
+  --c-subjects: #c27c00; --c-subjects-soft: #fdf1df; --c-subjects-text: #92400e;
+  --c-tester: #7c3aed;   --c-tester-soft: #efe9fe;   --c-tester-text: #6d28d9;
+  --c-grades: #15803d;   --c-grades-soft: #e3f5ea;   --c-grades-text: #166534;
+  --c-player: #db2777;   --c-player-soft: #fde7f1;   --c-player-text: #be185d;
+  --c-settings: #64748b; --c-settings-soft: #eef1f5; --c-settings-text: #475569;
+}
+html.ui2[data-theme="dark"] {
+  --c-schedule: #5b9bff; --c-schedule-soft: #17253d; --c-schedule-text: #8fb8ff;
+  --c-subjects: #f0b43c; --c-subjects-soft: #2e2412; --c-subjects-text: #f5c96a;
+  --c-tester: #a78bfa;   --c-tester-soft: #241b3d;   --c-tester-text: #c4b5fd;
+  --c-grades: #4cc07a;   --c-grades-soft: #142a1d;   --c-grades-text: #7fd8a0;
+  --c-player: #f472b6;   --c-player-soft: #36152a;   --c-player-text: #f9a8d4;
+  --c-settings: #94a3b8; --c-settings-soft: #222833; --c-settings-text: #cbd5e1;
+}
+html.ui2[data-route="schedule"] { --sec: var(--c-schedule); --sec-soft: var(--c-schedule-soft); --sec-text: var(--c-schedule-text); }
+html.ui2[data-route="subjects"], html.ui2[data-route="notes"] { --sec: var(--c-subjects); --sec-soft: var(--c-subjects-soft); --sec-text: var(--c-subjects-text); }
+html.ui2[data-route="tester"], html.ui2[data-route="designer"] { --sec: var(--c-tester); --sec-soft: var(--c-tester-soft); --sec-text: var(--c-tester-text); }
+html.ui2[data-route="grades"] { --sec: var(--c-grades); --sec-soft: var(--c-grades-soft); --sec-text: var(--c-grades-text); }
+html.ui2[data-route="player"] { --sec: var(--c-player); --sec-soft: var(--c-player-soft); --sec-text: var(--c-player-text); }
+html.ui2[data-route="settings"] { --sec: var(--c-settings); --sec-soft: var(--c-settings-soft); --sec-text: var(--c-settings-text); }
+
+/* ---------- боковая и нижняя панель: иконка всегда в цвете раздела ---------- */
+html.ui2 [data-route="schedule"] { --nc: var(--c-schedule); --ns: var(--c-schedule-soft); --nt: var(--c-schedule-text); }
+html.ui2 [data-route="subjects"] { --nc: var(--c-subjects); --ns: var(--c-subjects-soft); --nt: var(--c-subjects-text); }
+html.ui2 [data-route="tester"] { --nc: var(--c-tester); --ns: var(--c-tester-soft); --nt: var(--c-tester-text); }
+html.ui2 [data-route="grades"] { --nc: var(--c-grades); --ns: var(--c-grades-soft); --nt: var(--c-grades-text); }
+html.ui2 [data-route="player"] { --nc: var(--c-player); --ns: var(--c-player-soft); --nt: var(--c-player-text); }
+html.ui2 [data-route="settings"] { --nc: var(--c-settings); --ns: var(--c-settings-soft); --nt: var(--c-settings-text); }
+html.ui2 .nav-item[data-route] .ic, html.ui2 .bn-item[data-route] .ic { color: var(--nc); transition: transform var(--dur) var(--ease); }
+html.ui2 .nav-item[data-route]:hover .ic { transform: scale(1.12); }
+html.ui2 .nav-item[aria-current="page"] { background: var(--ns); color: var(--nt); }
+html.ui2 .nav-item[aria-current="page"]::before { background: var(--nc); }
+html.ui2 .bn-item[aria-current="page"] { color: var(--nt); }
+html.ui2 .bn-item[aria-current="page"] .bn-pill { background: var(--ns); }
+html.ui2 .bn-item:active .bn-pill { transform: scale(.92); }
+
+/* ---------- шапка страницы: цветной кружок с иконкой раздела ---------- */
+html.ui2 .page-head h1 { display: flex; align-items: center; gap: .6rem; }
+html.ui2 .ph-ic { width: 2.4rem; height: 2.4rem; border-radius: 50%; display: inline-grid; place-items: center; background: var(--sec-soft); color: var(--sec); flex: none; }
+html.ui2 .ph-ic .ic { width: 1.3rem; height: 1.3rem; }
+html.ui2 .ui2-upd { display: inline-flex; align-items: center; gap: .4rem; font-size: var(--fs-xs); color: var(--text-3); }
+html.ui2 .ui2-upd::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--success); }
+html.ui2 .ui2-upd.old::before { background: var(--warning-solid); }
+html.ui2 .ui2-upd.none::before { background: var(--border-strong); }
+
+/* ---------- мягкие карточки (кроме Оценок, Shokan и Timetable) ---------- */
+html.ui2 .view:not(.view-grades) .card { border-radius: 18px; border-color: transparent; box-shadow: var(--shadow-sm); }
+html.ui2[data-theme="dark"] .view:not(.view-grades) .card { border-color: color-mix(in srgb, var(--border) 60%, transparent); box-shadow: none; }
+html.ui2 .view:not(.view-grades) .card-title > .ic:first-child {
+  width: 2rem; height: 2rem; padding: .4rem; border-radius: 50%; background: var(--sec-soft); color: var(--sec); box-sizing: border-box; flex: none;
+}
+
+/* ---------- кнопки по смыслу ----------
+   синяя — главное действие (одна на экран) · зелёная — сохранить/готово · жёлтая рамка — осторожно ·
+   красная рамка — удалить/выйти · обычная — открыть/настроить · тихая — на мягком фоне, чтобы не путать с текстом */
+html.ui2 .btn { border-radius: 12px; transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease); }
+html.ui2 .btn .ic { transition: transform var(--dur) var(--ease); }
+@media (hover: hover) {
+  html.ui2 .btn:not(:disabled):hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  html.ui2 .btn:not(:disabled):hover .ic:first-child { transform: translateX(1px) scale(1.08); }
+  html.ui2 .btn-danger:not(:disabled):hover .ic:first-child, html.ui2 .btn-danger-outline:not(:disabled):hover .ic:first-child { transform: rotate(-10deg) scale(1.08); }
+  html.ui2 .btn-success:not(:disabled):hover .ic:first-child { transform: scale(1.2); }
+}
+html.ui2 .btn:not(:disabled):active { transform: scale(.97); box-shadow: none; }
+html.ui2 .btn { --btn-border: color-mix(in srgb, var(--text) 22%, transparent); }
+html.ui2 .btn-primary, html.ui2 .btn-success, html.ui2 .btn-danger, html.ui2 .btn-soft { --btn-border: transparent; }
+html.ui2 .btn-ghost { --btn-bg: var(--surface-3); --btn-bg-hover: var(--hover); --btn-fg: var(--text); --btn-border: transparent; }
+html.ui2 .btn-warning-outline { --btn-bg: transparent; --btn-bg-hover: var(--warning-soft); --btn-fg: var(--warning-text); --btn-border: color-mix(in srgb, var(--warning-solid) 60%, transparent); }
+html.ui2 .btn-danger-outline { --btn-border: color-mix(in srgb, var(--danger) 60%, transparent); }
+html.ui2 .link-btn:hover { text-decoration: underline; }
+html.ui2 .segmented { border-radius: 999px; }
+html.ui2 .segmented button { border-radius: 999px; }
+
+/* ---------- «Вид»: всё лишнее из расписания в одном окошке ---------- */
+html.ui2 .ui2-viewbtn[aria-expanded="true"] { border-color: var(--sec); color: var(--sec-text); background: var(--sec-soft); }
+html.ui2 .ui2-pop-host { position: relative; }
+html.ui2 .ui2-pop {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: var(--z-popover); width: min(23rem, 92vw);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-lg);
+  padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-3);
+  animation: ui2-in var(--dur) var(--ease);
+}
+html.ui2 .ui2-pop[hidden] { display: none; }
+html.ui2 .ui2-pop-sec { display: flex; flex-direction: column; gap: var(--sp-2); }
+html.ui2 .ui2-pop-sec + .ui2-pop-sec { border-top: 1px solid var(--border); padding-top: var(--sp-3); }
+html.ui2 .ui2-pop-t { font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--text-3); text-transform: none; display: flex; align-items: center; gap: .4rem; }
+html.ui2 .ui2-pop .sch-modes { margin: 0; }
+html.ui2 .ui2-pop .sch-mode-hint { display: none; }
+html.ui2 .ui2-pop .tt-zm { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+html.ui2 .ui2-pop .tt-zm input[type=range] { flex: 1; min-width: 6rem; }
+html.ui2 .ui2-pop .tt-cust { display: flex !important; flex-direction: column; gap: .4rem; border: 0; padding: 0; background: none; }
+html.ui2 .ui2-pop .tt-cust label { display: flex; align-items: center; gap: .4rem; }
+html.ui2 .ui2-pop .tt-cust input[type=range] { flex: 1; }
+html.ui2 .ui2-pop #ttCust { display: none; }
+html.ui2 .ui2-pop .segmented { width: 100%; display: flex; }
+html.ui2 .ui2-pop .segmented button { flex: 1; }
+html.ui2 .ui2-back { display: none; }
+@keyframes ui2-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes ui2-up { from { transform: translateY(100%); } to { transform: none; } }
+@media (max-width: 767px) {
+  html.ui2 .ui2-back:not([hidden]) { display: block; position: fixed; inset: 0; background: var(--overlay); z-index: calc(var(--z-modal) - 1); animation: ui2-fade var(--dur) var(--ease); }
+  html.ui2 .ui2-pop { position: fixed; left: 0; right: 0; top: auto; bottom: 0; width: auto; z-index: var(--z-modal); border-radius: 22px 22px 0 0; padding: var(--sp-4) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom)); max-height: 80vh; overflow: auto; animation: ui2-up var(--dur-slow) var(--ease); }
+  html.ui2 .ui2-pop::before { content: ""; width: 2.5rem; height: 4px; border-radius: 2px; background: var(--border-strong); align-self: center; margin-bottom: var(--sp-1); }
+}
+@keyframes ui2-fade { from { opacity: 0; } }
+
+/* расписание: меньше строк над сеткой */
+html.ui2 .sch-page > .sch-modes { display: none; }
+html.ui2 .sch-page .tt-form { gap: var(--sp-2); }
+html.ui2 .sch-page .tt-form .tt-zm, html.ui2 .sch-page > .tt-wrap > .tt-cust { display: none; }
+
+/* ---------- Настройки: 4 раздела вкладками ---------- */
+html.ui2 .ui2-tabs { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+html.ui2 .ui2-tab {
+  display: inline-flex; align-items: center; gap: .5rem; padding: .55rem 1rem; border-radius: 999px; border: 1px solid var(--border-strong);
+  background: var(--surface); color: var(--text); font-weight: var(--fw-medium); font-size: var(--fs-sm); cursor: pointer;
+  transition: background-color var(--dur-fast), border-color var(--dur-fast), transform var(--dur) var(--ease);
+}
+html.ui2 .ui2-tab .ic { color: var(--tc); }
+html.ui2 .ui2-tab:hover { transform: translateY(-1px); border-color: var(--tc); }
+html.ui2 .ui2-tab[aria-selected="true"] { background: var(--ts); border-color: transparent; color: var(--tt); }
+html.ui2 .ui2-tab[data-tab="look"] { --tc: var(--c-player); --ts: var(--c-player-soft); --tt: var(--c-player-text); }
+html.ui2 .ui2-tab[data-tab="study"] { --tc: var(--c-grades); --ts: var(--c-grades-soft); --tt: var(--c-grades-text); }
+html.ui2 .ui2-tab[data-tab="data"] { --tc: var(--c-subjects); --ts: var(--c-subjects-soft); --tt: var(--c-subjects-text); }
+html.ui2 .ui2-tab[data-tab="guide"] { --tc: var(--c-tester); --ts: var(--c-tester-soft); --tt: var(--c-tester-text); }
+html.ui2 .view-settings .set-nav { display: none; }
+html.ui2 .view-settings .settings-sec[hidden] { display: none; }
+html.ui2 .ui2-danger { border: 1.5px solid color-mix(in srgb, var(--danger) 50%, transparent) !important; }
+html.ui2 .ui2-danger .card-title > .ic:first-child { background: var(--danger-soft) !important; color: var(--danger-text) !important; }
+
+/* справочник */
+html.ui2 .ui2-guide { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--sp-3); }
+html.ui2 .ui2-ch { display: flex; gap: .7rem; align-items: flex-start; padding: var(--sp-3); border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border); text-align: left; color: var(--text); cursor: pointer; font: inherit; transition: transform var(--dur) var(--ease), border-color var(--dur-fast); }
+html.ui2 .ui2-ch:hover { transform: translateY(-2px); border-color: var(--cc, var(--sec)); }
+html.ui2 .ui2-ch .ph-ic { width: 2.2rem; height: 2.2rem; background: var(--cs, var(--sec-soft)); color: var(--cc, var(--sec)); }
+html.ui2 .ui2-ch b { display: block; font-size: var(--fs-sm); }
+html.ui2 .ui2-ch small { color: var(--text-3); font-size: var(--fs-xs); }
+html.ui2 .ui2-new { display: flex; gap: .7rem; align-items: center; padding: var(--sp-3); border-radius: 16px; background: var(--success-soft); color: var(--success-text); }
+
+/* ---------- «Что нового» ---------- */
+html.ui2 .ui2-news { display: flex; flex-direction: column; gap: var(--sp-3); }
+html.ui2 .ui2-news li { display: flex; gap: .7rem; align-items: flex-start; list-style: none; }
+html.ui2 .ui2-news ul { padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+html.ui2 .ui2-news .ph-ic { width: 2.2rem; height: 2.2rem; }
+
+/* ---------- тур для новичков ---------- */
+.ui2-tour { position: fixed; inset: 0; z-index: calc(var(--z-modal) + 2); pointer-events: none; }
+.ui2-tour-hole { position: fixed; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(4, 6, 10, .72), 0 0 0 3px var(--sec, #2563eb); pointer-events: none; }
+.ui2-tour-dot { position: fixed; width: 14px; height: 14px; border-radius: 50%; background: var(--sec, #2563eb); pointer-events: none; }
+.ui2-tour-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: ui2-pulse 1.4s infinite; }
+@keyframes ui2-pulse { 0% { transform: scale(1); opacity: .9; } 70% { transform: scale(2.6); opacity: 0; } 100% { opacity: 0; } }
+.ui2-tour-tip {
+  position: fixed; width: min(20rem, calc(100vw - 2rem)); background: var(--surface); color: var(--text); border-radius: 18px; padding: var(--sp-4);
+  box-shadow: var(--shadow-lg); pointer-events: auto; animation: ui2-in var(--dur-slow) var(--ease); display: flex; flex-direction: column; gap: var(--sp-2);
+}
+.ui2-tour-tip .t-step { font-size: var(--fs-xs); color: var(--text-3); }
+.ui2-tour-tip .t-dots { display: flex; gap: 4px; }
+.ui2-tour-tip .t-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); }
+.ui2-tour-tip .t-dots i.on { background: var(--sec, #2563eb); width: 16px; border-radius: 3px; }
+.ui2-tour-tip .t-acts { display: flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-1); }
+
+/* ---------- серые заготовки при загрузке ---------- */
+html.ui2 .sk { background: linear-gradient(90deg, var(--surface-3) 25%, var(--hover) 50%, var(--surface-3) 75%); background-size: 200% 100%; animation: ui2-sk 1.2s infinite linear; border-radius: 10px; }
+@keyframes ui2-sk { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  html.ui2 *, .ui2-tour * { animation: none !important; }
+  html.ui2 .btn:hover { transform: none !important; }
+}
+
+/* выбранное в разделе — цветом раздела (вкладки, предмет в списке, вкладки конспекта) */
+html.ui2 .view:not(.view-grades):not(.view-schedule) .tab[aria-selected="true"] { color: var(--sec-text); border-bottom-color: var(--sec); }
+html.ui2 .view:not(.view-grades):not(.view-schedule) .tab[aria-selected="true"] .count { color: var(--sec-text); }
+html.ui2 .sj-item[aria-current="true"] { background: var(--sec-soft); }
+html.ui2 .sj-item[aria-current="true"] .meta b { color: var(--sec-text); }
+html.ui2 .lx-tabs button[aria-selected="true"] { color: var(--sec-text); border-bottom-color: var(--sec); }
+html.ui2 .lx-tabs button[aria-selected="true"] .n { background: var(--sec-soft); color: var(--sec-text); }
+html.ui2 .view:not(.view-grades) .segmented button[aria-pressed="true"] { color: var(--sec-text); }
+/* телефон: заголовок в шапке (как раньше), перед ним — точка цвета раздела */
+@media (max-width: 767px) {
+  html.ui2 .page-head h1 { display: none; }
+  html.ui2 .mobile-bar .title { display: flex; align-items: center; gap: .55rem; }
+  html.ui2 .mobile-bar .title::before { content: ""; width: .7rem; height: .7rem; border-radius: 50%; background: var(--sec); box-shadow: 0 0 0 4px var(--sec-soft); flex: none; }
+  html.ui2 .ui2-viewbtn span { display: inline; }
+}
+html.ui2 .ui2-shk-view { background: none; border: 0; margin-left: auto; }
+html.ui2 .ui2-shk-view + .shk-cal { margin-left: 0; }
+html.ui2 .ui2-shk-view:hover { background: var(--hover); }
+html.ui2 .shk-head .shk-cal { flex: none; }
+html.ui2 .shk-head .shk-title { min-width: 0; }
+@media (max-width: 767px) { html.ui2 .ui2-tabs { display: grid; grid-template-columns: 1fr 1fr; } html.ui2 .ui2-tab { justify-content: center; } }
+
+/* справочник: поиск, найденные пункты, глава в окне */
+html.ui2 .ui2-gsearch { position: relative; display: block; }
+html.ui2 .ui2-gsearch > .ic { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); color: var(--text-3); pointer-events: none; }
+html.ui2 .ui2-gsearch .input { padding-left: 2.4rem; border-radius: 999px; }
+html.ui2 .ui2-hits { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+html.ui2 .ui2-hit { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; padding: var(--sp-2) var(--sp-3); border-radius: 12px; border: 1px solid var(--border); border-left: 4px solid var(--cc); background: var(--surface-2); color: var(--text); font: inherit; cursor: pointer; }
+html.ui2 .ui2-hit:hover { border-color: var(--cc); }
+html.ui2 .ui2-hit b { font-size: var(--fs-xs); color: var(--text-3); font-weight: var(--fw-semibold); }
+html.ui2 .ui2-hit span { font-size: var(--fs-sm); }
+.ui2-chap h3 { font-size: var(--fs-md); margin: var(--sp-4) 0 var(--sp-2); display: flex; align-items: center; gap: .5rem; }
+.ui2-chap h3::before { content: ""; width: .55rem; height: .55rem; border-radius: 50%; background: var(--cc); box-shadow: 0 0 0 4px var(--cs); flex: none; }
+.ui2-chap ul { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: .35rem; }
+.ui2-chap li { line-height: 1.5; }

@@ -115,6 +115,7 @@
 
     root.innerHTML = '<div class="page">' + html + '</div>';
     wire();
+    if (SP.ui2) SP.ui2.settings(root);
   }
 
   function wire() {

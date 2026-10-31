@@ -54,13 +54,13 @@
       '</aside>' +
       '<button type="button" class="sb-restore" id="sbRestore" data-i18n-attr="aria-label:nav.showPanel;data-tip:nav.showPanel">' + SP.icon('menu') + '</button>' +
       '<main class="main" id="main">' +
-      '  <header class="mobile-bar"><span class="title" id="mobileTitle"></span>' +
-      '    <div class="lang-sw" id="mbLang" role="group"></div>' +
-      '    <a class="btn btn-ghost btn-icon" href="#/settings" id="mbSettings" data-i18n-attr="aria-label:nav.settings">' + SP.icon('settings') + '</a>' +
-      '  </header>' +
+      /* телефон: сверху только название раздела (язык — в Настройках → Вид, сами Настройки — в нижней панели) */
+      '  <header class="mobile-bar"><span class="title" id="mobileTitle"></span></header>' +
       '  <div id="views"></div>' +
       '</main>' +
-      '<nav class="bottom-nav" data-i18n-attr="aria-label:nav.main">' + MAIN.map(function (x) { return navItem(x, true); }).join('') + '</nav>';
+      '<nav class="bottom-nav" id="bottomNav" data-i18n-attr="aria-label:nav.main"></nav>';
+    paintBottom();
+    SP.on('settings', function (e) { if (e.key === 'phonePlayer') { paintBottom(); markCurrent(); } });
 
     SP.$('#sbToggle').onclick = function () {
       SP.settings.set('sidebar', SP.settings.get('sidebar') === 'collapsed' ? 'expanded' : 'collapsed');
@@ -73,6 +73,24 @@
     SP.on('settings', function (e) { if (e.key === 'sidebar') paintToggle(); });
     SP.on('lang', function () { paintToggle(); renderUser(); setTitle(); paintLang(); Object.keys(mounted).forEach(function (id) { if (views[id].refresh) views[id].refresh(); }); });
     SP.on('auth', renderUser);
+  }
+
+  /* Нижняя панель (телефон): Расписание · Папки · Тестер · Оценки · Настройки;
+     «Плеер» — только если включён в Настройках → Вид (тогда 6 вкладок, Плеер перед Настройками) */
+  var SETTINGS_TAB = { id: 'settings', icon: 'settings', key: 'nav.settings' };
+  function paintBottom() {
+    var nav = SP.$('#bottomNav'); if (!nav) return;
+    var items = MAIN.filter(function (x) { return x.id !== 'player' || SP.settings.get('phonePlayer'); }).concat([SETTINGS_TAB]);
+    nav.style.setProperty('--bn-n', items.length);
+    nav.innerHTML = items.map(function (x) { return navItem(x, true); }).join('');
+    SP.applyI18n(nav);
+  }
+  function markCurrent() {
+    var id = current;
+    SP.$$('[data-route]').forEach(function (a) {
+      var on = a.getAttribute('data-route') === id || (id === 'designer' && a.getAttribute('data-route') === 'settings') || (id === 'notes' && a.getAttribute('data-route') === 'subjects');
+      if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
   }
 
   /* Переключатель языка RU / KZ / EN (панель и мобильная шапка), синхронизирован с Настройками */
@@ -132,10 +150,7 @@
     var changed = current !== r.id;
     current = r.id;
     if (views[r.id].show) views[r.id].show(r.params);
-    SP.$$('[data-route]').forEach(function (a) {
-      var on = a.getAttribute('data-route') === r.id || (r.id === 'designer' && a.getAttribute('data-route') === 'settings') || (r.id === 'notes' && a.getAttribute('data-route') === 'subjects');
-      if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
-    });
+    markCurrent();
     setTitle();
     if (changed) window.scrollTo(0, 0);
   }

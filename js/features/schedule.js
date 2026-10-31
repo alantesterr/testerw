@@ -112,11 +112,18 @@
     }
     if (!d.schedule.length) html += emptyState();
     else html += ui.mode === 'shokan' ? shokan(td) : timetable(td);
+    /* перерисовка не сбрасывает прокрутку; если шапка Shokan была прижата к верху — остаётся прижатой */
+    var phoneNow = window.innerWidth < 768 && SP.views.current() === 'schedule', oldHead = phoneNow && SP.$('.shk-head', root);
+    var keepY = phoneNow ? window.scrollY : 0, pinned = !!(oldHead && oldHead.getBoundingClientRect().top <= 2);
     root.innerHTML = '<div class="page wide sch-page mode-' + ui.mode + '">' + html + '</div>';
     /* телефон, Shokan: как в приложении — при входе сразу шапка Shokan у верхнего края, шапка сайта — выше (потянуть вниз) */
     document.documentElement.classList.toggle('shk-full', ui.mode === 'shokan');
     wire();
     if (SP.ui2) SP.ui2.schedule(root);
+    shkSpace();
+    var shkNow = SP.$('.shk', root);
+    if (pinned && shkNow && ui.mode === 'shokan') window.scrollTo(0, Math.round(shkNow.getBoundingClientRect().top + window.scrollY));
+    else if (keepY && Math.abs(window.scrollY - keepY) > 1) window.scrollTo(0, keepY);
   }
 
   /* ===== Режим «Timetable» (структура и стиль как на timetable.kgu.kz) ===== */
@@ -331,13 +338,29 @@
 
   /* Телефон, режим Shokan: экран начинается сразу с «День / Неделя», как в приложении (переключатели — выше, если пролистать вверх) */
   /* ПК, режим Timetable: страница сразу прокручена к таблице — строка с днями вверху экрана, как на сайте Timetable */
+  function shkSpace() {
+    var e = root && SP.$('.shk', root), page = e && e.closest('.sch-page');
+    if (!page) return;
+    page.style.minHeight = '';
+    if (ui.mode !== 'shokan' || window.innerWidth >= 768) return;
+    /* высота экрана на телефоне «плавает» (строка адреса браузера прячется) — берём наибольшую и запас 100 px */
+    var vh = Math.max(window.innerHeight, document.documentElement.clientHeight, window.visualViewport ? window.visualViewport.height : 0);
+    var need = (e.getBoundingClientRect().top - page.getBoundingClientRect().top) + vh + 100;
+    if (page.offsetHeight < need) page.style.minHeight = Math.ceil(need) + 'px';
+  }
   function toShk() {
     var e = null;
     if (ui.mode === 'shokan' && window.innerWidth < 768) e = SP.$('.shk', root);
     else if (ui.mode !== 'shokan' && window.innerWidth >= 768) e = SP.$('.tt-scroll', root);
     if (!e) return;
-    /* сразу и ещё раз чуть позже (после отрисовки) — без requestAnimationFrame: в фоне он может не сработать */
-    var go = function () { if (!e.isConnected) return; var y = e.getBoundingClientRect().top + window.scrollY; window.scrollTo(0, Math.max(0, Math.round(y))); };
+    /* сразу и ещё раз чуть позже (после отрисовки) — без requestAnimationFrame: в фоне он может не сработать.
+       Телефон, Shokan: страница должна быть не ниже «верх Shokan + экран», иначе шапку Shokan не поднять к самому верху
+       (Shokan может быть уменьшен настройкой размера — считаем по факту, а не в CSS). */
+    var go = function () {
+      if (!e.isConnected) return;
+      shkSpace();
+      var y = e.getBoundingClientRect().top + window.scrollY; window.scrollTo(0, Math.max(0, Math.round(y)));
+    };
     go(); setTimeout(go, 80);
   }
   function wire() {

@@ -619,3 +619,5 @@ Object.assign(SP.I18N.kk, { 'ui2.view': 'Көрініс', 'ui2.tab.look': 'Кө�
 Object.assign(SP.I18N.kk, { 'common.undo': 'Болдырмау', 'common.undone': 'Қайтарылды', 'ui2.copyAll': 'ЖИ үшін бәрін көшіру', 'ui2.guide': 'Анықтама' });
 
 Object.assign(SP.I18N.kk, { 'schedule.hasLinks': 'сілтемелер: {l}', 'schedule.lkJoin': '{s} кіру', 'schedule.lkOpen': '{s} ашу' });
+
+Object.assign(SP.I18N.kk, { 'nav.settingsShort': 'Баптаулар', 'settings.phonePlayer': 'Төменгі панельдегі ойнатқыш (телефон)' });

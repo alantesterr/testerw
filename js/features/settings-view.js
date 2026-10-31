@@ -39,7 +39,9 @@
           [['std', 1], ['sm', 0.87], ['xs', 0.77]].map(function (v) { return '<button type="button" class="choice" role="radio" data-sch="' + g[0] + '" data-v="' + v[0] + '" aria-checked="' + (s[g[0]] === v[0]) + '"><span class="sample" style="font-size:' + (1.6 * v[1]) + 'rem">Аа</span><span>' + esc(SP.t('settings.sch.' + v[0])) + '</span></button>'; }).join('') + '</div></div>';
       }).join('') +
       '<p class="xsmall subtle">' + esc(SP.t('settings.schHint')) + '</p>' +
-      setRow(SP.t('settings.sidebar'), esc(SP.t('settings.sidebarHint')), '<div class="segmented" role="group" aria-label="' + esc(SP.t('settings.sidebar')) + '">' + ['expanded', 'collapsed', 'hidden'].map(function (v) { return '<button type="button" data-sidebar="' + v + '" aria-pressed="' + (s.sidebar === v) + '">' + esc(SP.t('settings.sb.' + v)) + '</button>'; }).join('') + '</div>'));
+      setRow(SP.t('settings.sidebar'), esc(SP.t('settings.sidebarHint')), '<div class="segmented" role="group" aria-label="' + esc(SP.t('settings.sidebar')) + '">' + ['expanded', 'collapsed', 'hidden'].map(function (v) { return '<button type="button" data-sidebar="' + v + '" aria-pressed="' + (s.sidebar === v) + '">' + esc(SP.t('settings.sb.' + v)) + '</button>'; }).join('') + '</div>') +
+      /* телефон: вкладка «Плеер» в нижней панели (по умолчанию её нет, на её месте — Настройки) */
+      setRow(SP.t('settings.phonePlayer'), esc(SP.t('settings.phonePlayerHint')), '<label class="switch"><input type="checkbox" id="sPhonePlayer"' + (s.phonePlayer ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.phonePlayer')) + '</span></label>'));
 
     /* 2. Язык */
     html += section('language', 'languages', '<div class="choice-grid" role="radiogroup" aria-label="' + esc(SP.t('settings.language')) + '">' +
@@ -125,6 +127,7 @@
     SP.$$('[data-theme]', root).forEach(function (b) { b.onclick = function () { SP.settings.set('theme', b.getAttribute('data-theme')); render(); }; });
     SP.$$('[data-font]', root).forEach(function (b) { b.onclick = function () { SP.settings.set('font', b.getAttribute('data-font')); render(); SP.$('[data-font="' + b.getAttribute('data-font') + '"]', root).focus(); }; });
     SP.$$('[data-sidebar]', root).forEach(function (b) { b.onclick = function () { SP.settings.set('sidebar', b.getAttribute('data-sidebar')); render(); }; });
+    var pp = $('#sPhonePlayer'); if (pp) pp.onchange = function () { SP.settings.set('phonePlayer', pp.checked); SP.toast(SP.t(pp.checked ? 'settings.phonePlayerOn' : 'settings.phonePlayerOff'), 'success'); };
     SP.$$('[data-lang]', root).forEach(function (b) { b.onclick = function () { SP.settings.set('lang', b.getAttribute('data-lang')); }; });
     SP.$$('[data-trlang]', root).forEach(function (b) { b.onclick = function () { SP.settings.set('trLang', b.getAttribute('data-trlang')); render(); }; });
     var w = $('#sWarn'); if (w) w.onchange = function () { var v = SP.clamp(parseInt(w.value, 10) || 30, 5, 300); w.value = v; SP.settings.set('warnSec', v); SP.toast(SP.t('settings.saved'), 'success'); };

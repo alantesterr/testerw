@@ -618,3 +618,5 @@ Object.assign(SP.I18N.en, { 'ui2.view': 'View', 'ui2.tab.look': 'Look', 'ui2.tab
 Object.assign(SP.I18N.en, { 'common.undo': 'Undo', 'common.undone': 'Restored', 'ui2.copyAll': 'Copy all for AI', 'ui2.guide': 'Guide' });
 
 Object.assign(SP.I18N.en, { 'schedule.hasLinks': 'links: {l}', 'schedule.lkJoin': 'Join {s}', 'schedule.lkOpen': 'Open {s}' });
+
+Object.assign(SP.I18N.en, { 'nav.settingsShort': 'Settings', 'settings.phonePlayer': 'Player in the bottom bar (phone)' });

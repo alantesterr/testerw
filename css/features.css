@@ -1191,7 +1191,14 @@ a.lk-btn:active { background: color-mix(in srgb, var(--lk) 10%, var(--shk-fill, 
   html.shk-full .sch-page.mode-shokan .shk { overflow: visible; }
   html.shk-full .sch-page.mode-shokan .shk-head { position: sticky; top: 0; z-index: calc(var(--z-header) - 1); background: var(--shk-page);
     padding-top: calc(3px + env(safe-area-inset-top, 0px)); border-radius: var(--r-lg) var(--r-lg) 0 0; }
-  /* чтобы всегда можно было докрутить шапку Shokan до верха, даже если пар мало */
-  html.shk-full .sch-page.mode-shokan .shk { min-height: calc(100dvh - 4.25rem - env(safe-area-inset-bottom, 0px)); }
 }
 @media (prefers-reduced-motion: reduce) { .shk-run.busy .shk-run-ring .ic { animation-duration: 2.5s; } }
+/* Телефон, Расписание (Shokan): шапка Shokan на месте верхней полосы сайта — как в приложении.
+   Полосы сайта нет вовсе; «Своё · обновлено», «N-я неделя», «Вид» — выше, если потянуть вниз. */
+@media (max-width: 767px) {
+  html.shk-full .mobile-bar { display: none; }
+  html.shk-full .sch-page.mode-shokan .shk-title { display: none; }
+  html.shk-full .sch-page.mode-shokan .shk-head { min-height: 2.75rem; padding: calc(4px + env(safe-area-inset-top, 0px)) 8px 4px; gap: 6px; }
+  html.shk-full .sch-page.mode-shokan .shk-head { border-radius: 0; }
+  /* запас снизу (чтобы шапку Shokan можно было поднять к самому верху) считает schedule.js → toShk */
+}

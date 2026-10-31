@@ -129,7 +129,7 @@
 
   .bottom-nav {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-header);
-    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+    display: grid; grid-template-columns: repeat(var(--bn-n, 5), minmax(0, 1fr));
     padding: var(--sp-1) var(--sp-1) calc(var(--sp-1) + env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--surface) 95%, transparent); backdrop-filter: blur(10px);
     border-top: 1px solid var(--border);

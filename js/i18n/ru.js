@@ -1274,3 +1274,5 @@ Object.assign(SP.I18N.ru, {
 Object.assign(SP.I18N.ru, { 'ui2.ts2T': 'Неделя и день', 'ui2.ts2': 'На компьютере листайте стрелками ← →, на телефоне — жестом от края экрана: от левого назад, от правого вперёд.' });
 
 Object.assign(SP.I18N.ru, { 'schedule.hasLinks': 'есть ссылки: {l}', 'schedule.lkJoin': 'Войти в {s}', 'schedule.lkOpen': 'Открыть {s}' });
+
+Object.assign(SP.I18N.ru, { 'nav.settingsShort': 'Настройки', 'settings.phonePlayer': 'Плеер в нижней панели (телефон)', 'settings.phonePlayerHint': 'По умолчанию на телефоне вкладки «Плеер» нет — на её месте Настройки. Включите, если пользуетесь плеером: вкладок станет 6.', 'settings.phonePlayerOn': 'Плеер добавлен в нижнюю панель', 'settings.phonePlayerOff': 'Плеер убран из нижней панели' });

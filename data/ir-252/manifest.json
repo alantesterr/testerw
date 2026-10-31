@@ -1,5 +1,5 @@
 {
-    "version":  "2026-10-31.2",
+    "version":  "2026-10-31.3",
     "files":  [
                   {
                       "subject":  "Философия",
@@ -42,6 +42,15 @@
                       "name":  "C_questions_English.txt",
                       "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C_questions_English.txt",
                       "size":  40420
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "material",
+                      "name":  "Cpp_OOP_lekcii_1-15.pdf",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/Cpp_OOP_lekcii_1-15.pdf",
+                      "type":  "application/pdf",
+                      "size":  11391514,
+                      "note":  "Конспект: лекции 1–15, задачи с решениями, все тесты и итог"
                   },
                   {
                       "subject":  "Object-Oriented Programming (Borland C ++ Builder)",

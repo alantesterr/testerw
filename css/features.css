@@ -54,33 +54,33 @@
 .shk-head { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); }
 .shk-seg { display: inline-flex; padding: 2px; border-radius: 9px; background: var(--shk-seg); }
 .shk-seg button {
-  min-height: 2.5rem; min-width: 6rem; padding: 0 var(--sp-4); border: 0; border-radius: 7px;
-  background: transparent; color: var(--shk-text); font-size: 1rem; font-weight: 500; cursor: pointer;
+  min-height: calc(2.5rem * var(--shk-z, 1)); min-width: calc(6rem * var(--shk-z, 1)); padding: 0 calc(1rem * var(--shk-z, 1)); border: 0; border-radius: 7px;
+  background: transparent; color: var(--shk-text); font-size: calc(1rem * var(--shk-z, 1)); font-weight: 500; cursor: pointer;
 }
 .shk-seg button[aria-selected="true"] { background: var(--shk-seg-on); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); }
 .shk-seg button:hover:not([aria-selected="true"]) { background: color-mix(in srgb, var(--shk-seg-on) 45%, transparent); }
 .shk-seg button:active { transform: scale(0.98); }
 .shk-seg button:focus-visible { box-shadow: var(--focus-ring); }
-.shk-title { flex: 1; font-size: 1.375rem; font-weight: 600; color: var(--shk-text); }
-.shk-cal { position: relative; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: var(--r-md); color: var(--shk-accent); cursor: pointer; }
-.shk-cal .ic { width: 1.6rem; height: 1.6rem; }
+.shk-title { flex: 1; font-size: calc(1.375rem * var(--shk-z, 1)); font-weight: 600; color: var(--shk-text); }
+.shk-cal { position: relative; display: grid; place-items: center; width: calc(2.75rem * var(--shk-z, 1)); height: calc(2.75rem * var(--shk-z, 1)); border-radius: var(--r-md); color: var(--shk-accent); cursor: pointer; }
+.shk-cal .ic { width: calc(1.6rem * var(--shk-z, 1)); height: calc(1.6rem * var(--shk-z, 1)); }
 .shk-cal:hover { background: var(--shk-empty); }
 .shk-cal:focus-within { box-shadow: var(--focus-ring); }
 .shk-date { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-@media (max-width: 767px) { .shk-title { visibility: hidden; } .shk-seg button { min-width: 5rem; } }
+@media (max-width: 767px) { .shk-title { visibility: hidden; } .shk-seg button { min-width: calc(5rem * var(--shk-z, 1)); } }
 
 /* Неделя */
 .shk-week { overflow-x: auto; border-top: 1px solid var(--shk-line); }
-.shk-grid { width: 100%; min-width: 22rem; border-collapse: collapse; table-layout: fixed; }
+.shk-grid { width: 100%; min-width: calc(22rem * var(--shk-z, 1)); border-collapse: collapse; table-layout: fixed; }
 .shk-grid th, .shk-grid td { border-right: 1px solid var(--shk-line); border-bottom: 1px solid var(--shk-line); padding: 0; }
 .shk-grid thead th { background: var(--shk-fill); text-align: center; padding: var(--sp-2) 2px; font-weight: 400; }
-.shk-dl { display: block; font-size: 0.9375rem; color: var(--shk-sub); }
-.shk-dn { display: block; font-size: 1rem; color: var(--shk-text); }
-.shk-tcol { width: 3.75rem; background: var(--shk-fill); }
+.shk-dl { display: block; font-size: calc(0.9375rem * var(--shk-z, 1)); color: var(--shk-sub); }
+.shk-dn { display: block; font-size: calc(1rem * var(--shk-z, 1)); color: var(--shk-text); }
+.shk-tcol { width: calc(3.75rem * var(--shk-z, 1)); background: var(--shk-fill); }
 .shk-grid tbody th.shk-tcol { text-align: center; vertical-align: middle; padding: 0 2px; }
-.shk-t1 { display: block; font-size: 0.9375rem; color: var(--shk-text); font-variant-numeric: tabular-nums; font-weight: 500; }
-.shk-t2 { display: block; font-size: 0.8125rem; color: var(--shk-sub); font-variant-numeric: tabular-nums; }
-.shk-grid tbody tr { height: 4.25rem; }
+.shk-t1 { display: block; font-size: calc(0.9375rem * var(--shk-z, 1)); color: var(--shk-text); font-variant-numeric: tabular-nums; font-weight: 500; }
+.shk-t2 { display: block; font-size: calc(0.8125rem * var(--shk-z, 1)); color: var(--shk-sub); font-variant-numeric: tabular-nums; }
+.shk-grid tbody tr { height: calc(4.25rem * var(--shk-z, 1)); }
 .shk-empty { background: var(--shk-empty); }
 .shk-fill { background: var(--shk-fill); vertical-align: top; }
 .shk-wl {
@@ -91,13 +91,13 @@
 .shk-wl:active { background: color-mix(in srgb, var(--shk-accent) 14%, var(--shk-fill)); }
 .shk-wl:focus-visible { box-shadow: inset 0 0 0 2px var(--shk-accent); }
 .shk-wn, .shk-wk { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.shk-wn { font-size: 0.9375rem; }
-.shk-wk { font-size: 0.8125rem; color: var(--shk-accent); }
+.shk-wn { font-size: calc(0.9375rem * var(--shk-z, 1)); }
+.shk-wk { font-size: calc(0.8125rem * var(--shk-z, 1)); color: var(--shk-accent); }
 
 /* День */
 .shk-strip { display: flex; align-items: center; gap: var(--sp-1); padding: 0 var(--sp-2); border-top: 1px solid var(--shk-line); border-bottom: 1px solid var(--shk-line); background: var(--shk-fill); }
-.shk-arr { width: 2.75rem; height: 3.25rem; display: grid; place-items: center; border: 0; background: transparent; color: var(--shk-accent); cursor: pointer; border-radius: var(--r-sm); flex: none; }
-.shk-arr .ic { width: 1.5rem; height: 1.5rem; stroke-width: 2.5; }
+.shk-arr { width: calc(2.75rem * var(--shk-z, 1)); height: calc(3.25rem * var(--shk-z, 1)); display: grid; place-items: center; border: 0; background: transparent; color: var(--shk-accent); cursor: pointer; border-radius: var(--r-sm); flex: none; }
+.shk-arr .ic { width: calc(1.5rem * var(--shk-z, 1)); height: calc(1.5rem * var(--shk-z, 1)); stroke-width: 2.5; }
 .shk-arr:hover { background: var(--shk-empty); }
 .shk-arr:focus-visible { box-shadow: var(--focus-ring); }
 .shk-days { flex: 1; display: grid; grid-template-columns: repeat(6, 1fr); }
@@ -107,17 +107,17 @@
 }
 .shk-day:hover { background: var(--shk-empty); }
 .shk-day:focus-visible { box-shadow: inset var(--focus-ring); }
-.shk-dot { width: 0.35rem; height: 0.35rem; border-radius: 50%; background: transparent; }
+.shk-dot { width: calc(0.35rem * var(--shk-z, 1)); height: calc(0.35rem * var(--shk-z, 1)); border-radius: 50%; background: transparent; }
 .shk-dot.on { background: var(--shk-accent); }
 .shk-day[aria-selected="true"]::after { content: ""; position: absolute; left: 20%; right: 20%; bottom: 0; height: 3px; border-radius: 2px; background: var(--shk-accent); }
-.shk-band { padding: var(--sp-4) var(--sp-4) var(--sp-3); background: var(--shk-band); color: var(--shk-sub); font-size: 0.9375rem; letter-spacing: 0.04em; border-bottom: 1px solid var(--shk-line); }
+.shk-band { padding: var(--sp-4) var(--sp-4) var(--sp-3); background: var(--shk-band); color: var(--shk-sub); font-size: calc(0.9375rem * var(--shk-z, 1)); letter-spacing: 0.04em; border-bottom: 1px solid var(--shk-line); }
 .shk-list { list-style: none; margin: 0; padding: 0; }
-.shk-row { display: grid; grid-template-columns: 4.5rem 1fr; border-bottom: 1px solid var(--shk-line); background: var(--shk-empty); min-height: 4.25rem; }
+.shk-row { display: grid; grid-template-columns: calc(4.5rem * var(--shk-z, 1)) 1fr; border-bottom: 1px solid var(--shk-line); background: var(--shk-empty); min-height: calc(4.25rem * var(--shk-z, 1)); }
 .shk-row + .shk-row { margin-top: 0; }
 .shk-row.has { background: var(--shk-fill); }
 .shk-time { display: flex; flex-direction: column; align-items: center; padding: var(--sp-4) var(--sp-1); background: var(--shk-fill); border-right: 1px solid var(--shk-line); font-variant-numeric: tabular-nums; }
-.shk-time b { font-size: 1rem; font-weight: 600; color: var(--shk-text); }
-.shk-time span { font-size: 0.9375rem; color: var(--shk-sub); }
+.shk-time b { font-size: calc(1rem * var(--shk-z, 1)); font-weight: 600; color: var(--shk-text); }
+.shk-time span { font-size: calc(0.9375rem * var(--shk-z, 1)); color: var(--shk-sub); }
 .shk-slot { display: flex; flex-direction: column; min-width: 0; }
 .shk-card {
   display: flex; flex-direction: column; gap: var(--sp-2); width: 100%; padding: var(--sp-4) var(--sp-4) var(--sp-5);
@@ -127,24 +127,24 @@
 .shk-card:hover { background: color-mix(in srgb, var(--shk-accent) 6%, var(--shk-fill)); }
 .shk-card:active { background: color-mix(in srgb, var(--shk-accent) 12%, var(--shk-fill)); }
 .shk-card:focus-visible { box-shadow: inset 0 0 0 2px var(--shk-accent); }
-.shk-kind { font-size: 0.875rem; font-weight: 500; letter-spacing: 0.03em; color: var(--shk-accent); }
-.shk-name { font-size: 1.0625rem; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.shk-kind { font-size: calc(0.875rem * var(--shk-z, 1)); font-weight: 500; letter-spacing: 0.03em; color: var(--shk-accent); }
+.shk-name { font-size: calc(1.0625rem * var(--shk-z, 1)); font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
 .shk-det { font-size: 0.9375rem; color: var(--shk-sub); line-height: 1.4; overflow-wrap: anywhere; }
-.shk-gap { align-self: flex-start; margin: auto var(--sp-4); font-size: 0.8125rem; color: var(--shk-sub); }
+.shk-gap { align-self: flex-start; margin: auto var(--sp-4); font-size: calc(0.8125rem * var(--shk-z, 1)); color: var(--shk-sub); }
 .shk-free { padding: var(--sp-6); text-align: center; color: var(--shk-sub); }
 @media (max-width: 767px) {
   .mode-shokan .shk { border-radius: 0; border-left: 0; border-right: 0; margin: 0 calc(var(--page-pad) * -1); }
   .shk-grid { min-width: 0; }
   /* пропорции как в приложении Shokan на iPhone (размер «меньше»: колонка времени ≈ 39px, строка ≈ 47px, шапка дней ≈ 39px) */
-  .shk-tcol { width: 3rem; }
+  .shk-tcol { width: calc(3rem * var(--shk-z, 1)); }
   .shk-grid thead th { padding: 4px 2px; line-height: 1.25; }
   .shk-head { padding: 3px var(--sp-3); }
-  .shk-cal { width: 2.5rem; height: 2.5rem; }
-  .shk-grid tbody tr { height: 3.6rem; }
-  .shk-wl { min-height: 3.6rem; padding: 6px 5px; gap: 4px; }
-  .shk-wn { font-size: 0.875rem; }
-  .shk-wk { font-size: 0.75rem; }
-  .mode-shokan .shk { scroll-margin-top: 3.5rem; }
+  .shk-cal { width: calc(2.5rem * var(--shk-z, 1)); height: calc(2.5rem * var(--shk-z, 1)); }
+  .shk-grid tbody tr { height: calc(3.6rem * var(--shk-z, 1)); }
+  .shk-wl { min-height: calc(3.6rem * var(--shk-z, 1)); padding: 6px 5px; gap: 4px; }
+  .shk-wn { font-size: calc(0.875rem * var(--shk-z, 1)); }
+  .shk-wk { font-size: calc(0.75rem * var(--shk-z, 1)); }
+  .mode-shokan .shk { scroll-margin-top: calc(3.5rem * var(--shk-z, 1)); }
 }
 
 /* ===================== ЖУРНАЛ (стиль Shokan) ===================== */
@@ -349,7 +349,8 @@ html[data-sch-tt="xs"] { --sch-k-tt: 0.77; }
 html[data-sch-shk="sm"] { --sch-k-shk: 0.87; }
 html[data-sch-shk="xs"] { --sch-k-shk: 0.77; }
 .sch-page.mode-timetable .tt-wrap { zoom: var(--sch-k-tt); }
-.sch-page.mode-shokan .shk { zoom: var(--sch-k-shk); }
+/* Shokan: размер «Меньше / Ещё меньше» — не через zoom (Safari на iPhone сжимал им и ширину), а множителем --shk-z у всех размеров Shokan */
+.sch-page.mode-shokan .shk { --shk-z: var(--sch-k-shk, 1); font-size: calc(1rem * var(--shk-z)); }
 /* Карточка пары в Timetable — на ступень мельче дней, дат и времени */
 .tt-l { font-size: 0.75rem; }
 .choice-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -1142,8 +1143,8 @@ a.tt-link:focus-visible, a.shk-link:focus-visible { outline: none; box-shadow: v
 .shk .lk-badge { background: color-mix(in srgb, var(--lk) 18%, var(--shk-fill)); }
 .lk-badge .ic { width: 0.68rem; height: 0.68rem; stroke-width: 2.5; }
 .lk-badge b { font-size: 0.66rem; font-weight: 700; line-height: 1; }
-.shk-wl.has-lk .shk-wn { padding-right: 1.05rem; }
-.shk-card.has-lk { padding-right: 2.2rem; }
+.shk-wl.has-lk .shk-wn { padding-right: calc(1.05rem * var(--shk-z, 1)); }
+.shk-card.has-lk { padding-right: calc(2.2rem * var(--shk-z, 1)); }
 .shk-card.has-lk .lk-badge { top: 50%; right: 0.75rem; transform: translateY(-50%); width: 1.4rem; height: 1.4rem; }
 .shk-card.has-lk .lk-badge .ic { width: 0.8rem; height: 0.8rem; }
 .tt-l.has-lk > b { padding-right: 1.2rem; }
@@ -1178,10 +1179,10 @@ a.lk-btn:active { background: color-mix(in srgb, var(--lk) 10%, var(--shk-fill, 
    шапка сайта (RU/KZ/EN, настройки) и строки над расписанием — выше, видны, если потянуть экран вниз. */
 .shk-run { margin-left: auto; background: none; border: 0; padding: 0; }
 .shk-head .shk-run + .shk-cal { margin-left: 0; }
-.shk-run-ring { width: 1.95rem; height: 1.95rem; border-radius: 50%; display: grid; place-items: center;
+.shk-run-ring { width: calc(1.95rem * var(--shk-z, 1)); height: calc(1.95rem * var(--shk-z, 1)); border-radius: 50%; display: grid; place-items: center;
   border: 1.5px solid var(--shk-accent); color: var(--shk-accent); background: color-mix(in srgb, var(--shk-accent) 14%, transparent);
   transition: transform .15s, background-color .2s, border-color .2s, color .2s; }
-.shk-run-ring .ic { width: 1.05rem; height: 1.05rem; }
+.shk-run-ring .ic { width: calc(1.05rem * var(--shk-z, 1)); height: calc(1.05rem * var(--shk-z, 1)); }
 .shk-run:active .shk-run-ring { transform: scale(.9); }
 @media (hover: hover) { .shk-run:hover .shk-run-ring { background: color-mix(in srgb, var(--shk-accent) 26%, transparent); } }
 .shk-run.busy .shk-run-ring .ic { animation: sp-spin .9s linear infinite; }
@@ -1198,7 +1199,7 @@ a.lk-btn:active { background: color-mix(in srgb, var(--lk) 10%, var(--shk-fill, 
 @media (max-width: 767px) {
   html.shk-full .mobile-bar { display: none; }
   html.shk-full .sch-page.mode-shokan .shk-title { display: none; }
-  html.shk-full .sch-page.mode-shokan .shk-head { min-height: 2.75rem; padding: calc(4px + env(safe-area-inset-top, 0px)) 8px 4px; gap: 6px; }
+  html.shk-full .sch-page.mode-shokan .shk-head { min-height: calc(2.75rem * var(--shk-z, 1)); padding: calc(4px + env(safe-area-inset-top, 0px)) 8px 4px; gap: 6px; }
   html.shk-full .sch-page.mode-shokan .shk-head { border-radius: 0; }
   /* запас снизу (чтобы шапку Shokan можно было поднять к самому верху) считает schedule.js → toShk */
 }
@@ -1207,4 +1208,12 @@ a.lk-btn:active { background: color-mix(in srgb, var(--lk) 10%, var(--shk-fill, 
   html.shk-full .sch-page.mode-shokan { padding-left: 0; padding-right: 0; }
   html.shk-full .sch-page.mode-shokan > :not(.shk) { margin-left: var(--page-pad); margin-right: var(--page-pad); }
   html.shk-full .sch-page.mode-shokan .shk { border-radius: 0; border-left: 0; border-right: 0; margin-left: 0; margin-right: 0; }
+}
+
+/* iPhone: при листании недель страница не «уезжает» вбок (анимация сдвига и жест не дают странице прокручиваться по горизонтали) */
+html, body { overflow-x: clip; }
+.sch-page { overflow-x: clip; }
+@media (max-width: 767px) {
+  html.shk-full, html.shk-full body { overscroll-behavior-x: none; }
+  .sch-page.mode-shokan { touch-action: pan-y; }
 }

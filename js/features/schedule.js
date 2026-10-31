@@ -114,7 +114,8 @@
     else html += ui.mode === 'shokan' ? shokan(td) : timetable(td);
     /* перерисовка не сбрасывает прокрутку; если шапка Shokan была прижата к верху — остаётся прижатой */
     var phoneNow = window.innerWidth < 768 && SP.views.current() === 'schedule', oldHead = phoneNow && SP.$('.shk-head', root);
-    var keepY = phoneNow ? window.scrollY : 0, pinned = !!(oldHead && oldHead.getBoundingClientRect().top <= 2);
+    /* прижата к верху — или человек ещё сам не листал после входа (данные догрузились позже) */
+    var keepY = phoneNow ? window.scrollY : 0, pinned = phoneNow && (!!(oldHead && oldHead.getBoundingClientRect().top <= 2) || !userMoved);
     root.innerHTML = '<div class="page wide sch-page mode-' + ui.mode + '">' + html + '</div>';
     /* телефон, Shokan: как в приложении — при входе сразу шапка Shokan у верхнего края, шапка сайта — выше (потянуть вниз) */
     document.documentElement.classList.toggle('shk-full', ui.mode === 'shokan');
@@ -344,7 +345,7 @@
      Меряем, что получилось, и растягиваем блок до ширины страницы — одинаково в любом браузере. */
   function fitZoom() {
     if (!root) return;
-    ['.sch-page.mode-shokan .shk', '.sch-page.mode-timetable .tt-wrap'].forEach(function (sel) {
+    ['.sch-page.mode-timetable .tt-wrap'].forEach(function (sel) {   // Shokan zoom больше не использует
       var el = SP.$(sel, root); if (!el) return;
       el.style.width = '';
       var page = el.parentNode, cs = getComputedStyle(page);
@@ -359,6 +360,9 @@
     });
   }
   window.addEventListener('resize', SP.debounce(function () { if (root && SP.views.current() === 'schedule') { fitZoom(); shkSpace(); } }, 150));
+  /* листал ли человек сам после входа в Расписание (тогда не прыгаем к шапке Shokan при перерисовке) */
+  var userMoved = false;
+  ['touchmove', 'wheel'].forEach(function (ev) { window.addEventListener(ev, function () { if (SP.views.current && SP.views.current() === 'schedule') userMoved = true; }, { passive: true }); });
   function shkSpace() {
     var e = root && SP.$('.shk', root), page = e && e.closest('.sch-page');
     if (!page) return;
@@ -555,7 +559,7 @@
   SP.views.register('schedule', {
     titleKey: 'nav.schedule',
     mount: function (el) { root = el; autoScroll = Date.now(); render(); setTimeout(toShk, 60); },
-    show: function () { autoScroll = Date.now(); render(); toShk(); SP.hub.checkUpdate(); nativeEdges(true); },
+    show: function () { autoScroll = Date.now(); userMoved = false; render(); toShk(); SP.hub.checkUpdate(); nativeEdges(true); },
     hide: function () { document.documentElement.classList.remove('shk-full'); },
     refresh: render
   });

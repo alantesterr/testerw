@@ -616,3 +616,5 @@ Object.assign(SP.I18N.en, { 'mn.o.ai': 'AI decides', 'mn.o.self': 'I will say', 
 Object.assign(SP.I18N.en, { 'ui2.view': 'View', 'ui2.tab.look': 'Look', 'ui2.tab.study': 'Study', 'ui2.tab.data': 'Data', 'ui2.tab.guide': 'Guide', 'ui2.updated': 'Updated {when}', 'ui2.newsT': 'What is new', 'ui2.skip': 'Skip', 'ui2.next': 'Next', 'ui2.done': 'Done' });
 
 Object.assign(SP.I18N.en, { 'common.undo': 'Undo', 'common.undone': 'Restored', 'ui2.copyAll': 'Copy all for AI', 'ui2.guide': 'Guide' });
+
+Object.assign(SP.I18N.en, { 'schedule.hasLinks': 'links: {l}', 'schedule.lkJoin': 'Join {s}', 'schedule.lkOpen': 'Open {s}' });

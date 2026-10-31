@@ -1133,3 +1133,43 @@ a.tt-link:focus-visible, a.shk-link:focus-visible { outline: none; box-shadow: v
 @keyframes sch-in-l { from { opacity: .35; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
 @keyframes sch-in-r { from { opacity: .35; transform: translateX(28px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .sch-in-l, .sch-in-r { animation: none; } }
+/* ---------- Ссылки у пары: синий кружок справа сверху (значок по типу; несколько — цифра) ---------- */
+:root { --lk: var(--accent); }
+.shk { --lk: var(--shk-accent); }
+.shk-wl.has-lk, .shk-card.has-lk, .tt-l.has-lk { position: relative; }
+.lk-badge { position: absolute; top: 3px; right: 3px; z-index: 1; width: 1.15rem; height: 1.15rem; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--lk) 16%, var(--surface)); border: 1.5px solid var(--lk); color: var(--lk); pointer-events: none; }
+.shk .lk-badge { background: color-mix(in srgb, var(--lk) 18%, var(--shk-fill)); }
+.lk-badge .ic { width: 0.68rem; height: 0.68rem; stroke-width: 2.5; }
+.lk-badge b { font-size: 0.66rem; font-weight: 700; line-height: 1; }
+.shk-wl.has-lk .shk-wn { padding-right: 1.05rem; }
+.shk-card.has-lk { padding-right: 2.2rem; }
+.shk-card.has-lk .lk-badge { top: 50%; right: 0.75rem; transform: translateY(-50%); width: 1.4rem; height: 1.4rem; }
+.shk-card.has-lk .lk-badge .ic { width: 0.8rem; height: 0.8rem; }
+.tt-l.has-lk > b { padding-right: 1.2rem; }
+.lk-chips { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.shk-chips { margin: 0.1rem 0 0.45rem 0.9rem; }
+.tt-chips { margin-top: 0.25rem; }
+.lk-chip { display: inline-flex; align-items: center; gap: 0.25rem; max-width: 100%; padding: 0.12rem 0.5rem; border-radius: 999px; font-size: 0.72rem; line-height: 1.3;
+  border: 1px solid color-mix(in srgb, var(--lk) 45%, transparent); background: color-mix(in srgb, var(--lk) 10%, transparent); color: var(--lk); text-decoration: none; }
+.lk-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lk-chip .ic { flex: none; }
+a.lk-chip:hover { background: color-mix(in srgb, var(--lk) 20%, transparent); text-decoration: none; }
+a.lk-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.lk-text { border-style: dashed; }
+/* карточка пары: кнопки «Войти в Zoom», «Открыть Google Диск» */
+.lk-btns { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.25rem 0 1rem; }
+.lk-btn { display: flex; align-items: center; gap: 0.65rem; padding: 0.7rem 0.85rem; border-radius: 12px; text-decoration: none; font-size: 1rem;
+  border: 1px solid var(--shk-line, var(--border)); background: var(--shk-fill, var(--surface)); color: var(--shk-text, var(--text)); }
+.lk-btn .lk-btxt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.lk-btn > .ic:last-child { color: var(--shk-sub, var(--text-3)); flex: none; }
+a.lk-btn:hover { border-color: var(--lk); text-decoration: none; }
+a.lk-btn:active { background: color-mix(in srgb, var(--lk) 10%, var(--shk-fill, var(--surface))); }
+.lk-badge.lk-static { position: static; flex: none; width: 1.75rem; height: 1.75rem; }
+.lk-badge.lk-static .ic { width: 0.95rem; height: 0.95rem; }.lk-badge b { text-indent: 0; padding: 0; }
+.tt-lw { position: relative; flex: none; }
+.tt-lw > .lk-badge { top: 4px; right: 4px; }
+.lk-badge.lk-tap { pointer-events: auto; cursor: pointer; text-decoration: none; transition: transform .15s, background-color .15s; }
+.lk-badge.lk-tap:hover { transform: scale(1.18); background: var(--lk); color: #fff; }
+.lk-badge.lk-tap:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.tt-box > * + .tt-lw > .tt-l { border-top: 1px solid var(--border); margin-top: 0.3rem; padding-top: 0.45rem; }

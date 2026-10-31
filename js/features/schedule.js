@@ -136,24 +136,66 @@
       h += '<tr><td class="tt-time">' + esc(String(s.start).slice(0, 5)) + '<br>' + esc(String(s.end).slice(0, 5)) + '</td>';
       for (var dd = 0; dd < 6; dd++) {
         h += '<td class="tt-cell' + (dd === td ? ' tt-today' : '') + '"><div class="tt-box">' + lessonsAt(dd, s.id).map(function (l) {
-          var x = info(l);
-          return '<button type="button" class="tt-l ' + kindCls(x.ab) + '" data-sid="' + esc(x.sid) + '" title="' + esc(SP.t('schedule.openFolder')) + '">' +
+          var x = info(l), lk = lessonLinks(SP.hub.ttLink(addDays(mon, dd), s.start, l.name));
+          var btn = '<button type="button" class="tt-l ' + kindCls(x.ab) + (lk.length ? ' has-lk' : '') + '" data-sid="' + esc(x.sid) + '" title="' + esc(SP.t('schedule.openFolder')) + '">' +
             '<b>' + esc(x.name) + '</b>' + (x.ab ? ' <span class="tt-ab">' + esc(x.ab) + '</span>' : '') +
             (x.room || x.building ? '<span class="tt-line">' + esc(ttRoom(x.room)) + (x.building ? ' (' + esc(ttBld(x.building)) + ')' : '') + '</span>' : '') +
-            (x.teacher ? '<span class="tt-line">' + esc(x.teacher) + '</span>' : '') + '</button>' +
-            linkHtml(SP.hub.ttLink(addDays(mon, dd), s.start, l.name), 'tt-link');
+            (x.teacher ? '<span class="tt-line">' + esc(x.teacher) + '</span>' : '') + '</button>';
+          if (!lk.length) return btn;
+          /* на ПК кружок можно нажать: одна ссылка — сразу открывается, несколько — метки под парой */
+          var one = lk.length === 1 && lk[0].url;
+          return '<div class="tt-lw">' + btn + (one ? '<a class="lk-badge lk-tap" href="' + esc(lk[0].url) + '" target="_blank" rel="noopener noreferrer" title="' + esc(SP.t(lk[0].kind === 'video' ? 'schedule.lkJoin' : 'schedule.lkOpen', { s: lk[0].label })) + '">' + SP.icon(lk[0].icon) + '</a>' : linkBadge(lk)) + '</div>' +
+            linkChips(lk, 'tt-chips');
         }).join('') + '</div></td>';
       }
       h += '</tr>';
     });
     return h + '</tbody></table></div></div></div>';
   }
-  /* Ссылка преподавателя из Timetable (поле «Мессенджер: ID конференции») — только на ту дату, где её оставили */
-  function linkHtml(v, cls) {
-    v = String(v || '').trim(); if (!v) return '';
-    if (!/^https?:\/\//i.test(v)) return '<span class="' + cls + '" title="' + esc(SP.t('schedule.link')) + '">' + SP.icon('link', 'ic-sm') + '<span>' + esc(v) + '</span></span>';
-    var host = v; try { host = new URL(v).hostname.replace(/^www\./, ''); } catch (e) { /* как есть */ }
-    return '<a class="' + cls + '" href="' + esc(v) + '" target="_blank" rel="noopener noreferrer" title="' + esc(SP.t('schedule.link') + ': ' + v) + '">' + SP.icon('link', 'ic-sm') + '<span>' + esc(host) + '</span></a>';
+  /* Ссылка преподавателя из Timetable (поле «Мессенджер: ID конференции») — только на ту дату, где её оставили;
+     показ — lessonLinks / linkBadge / linkChips / linkButtons ниже */
+  /* ---------- Ссылки у пары: синий кружок справа сверху, внутри значок по типу ----------
+     видеосвязь (камера) · файлы и диски (папка) · чаты (самолётик) · другое (скрепка); несколько ссылок — цифра.
+     В поле Timetable может быть одна ссылка, несколько или просто текст (например, ID конференции). */
+  var LK = [
+    ['video', 'video', /(^|\.)(zoom\.us|zoom\.com)$/, 'Zoom'], ['video', 'video', /^meet\.google\.com$/, 'Meet'], ['video', 'video', /(^|\.)teams\.(microsoft|live)\.com$/, 'Teams'],
+    ['video', 'video', /(^|\.)webex\.com$/, 'Webex'], ['video', 'video', /(^|\.)(meet\.jit\.si|jitsi\.org)$/, 'Jitsi'], ['video', 'video', /(^|\.)skype\.com$/, 'Skype'],
+    ['files', 'folder', /^docs\.google\.com$/, 'Google Docs'], ['files', 'folder', /^(drive\.google\.com|drive\.usercontent\.google\.com)$/, 'Google Диск'], ['files', 'folder', /^classroom\.google\.com$/, 'Classroom'],
+    ['files', 'folder', /(^|\.)(disk\.yandex\.\w+|yadi\.sk)$/, 'Яндекс Диск'], ['files', 'folder', /(^|\.)(onedrive\.live\.com|1drv\.ms|sharepoint\.com)$/, 'OneDrive'], ['files', 'folder', /(^|\.)dropbox\.com$/, 'Dropbox'],
+    ['chat', 'send', /^(t\.me|telegram\.me|telegram\.org)$/, 'Telegram'], ['chat', 'send', /(^|\.)(wa\.me|whatsapp\.com)$/, 'WhatsApp']
+  ];
+  function lessonLinks(v) {
+    v = String(v || '').trim(); if (!v) return [];
+    var urls = v.match(/https?:\/\/[^\s<>"']+/gi) || [];
+    if (!urls.length) return [{ kind: 'other', icon: 'link', label: v.length > 40 ? v.slice(0, 38) + '…' : v, text: v, url: '' }];
+    return urls.map(function (u) {
+      u = u.replace(/[).,;]+$/, '');
+      var host = ''; try { host = new URL(u).hostname.replace(/^www\./, '').toLowerCase(); } catch (e) { host = u; }
+      var m = LK.filter(function (k) { return k[2].test(host); })[0];
+      return m ? { kind: m[0], icon: m[1], label: m[3], url: u, text: u } : { kind: 'other', icon: 'link', label: host, url: u, text: u };
+    });
+  }
+  /* кружок: один тип — его значок; несколько ссылок — их число */
+  function linkBadge(list) {
+    if (!list.length) return '';
+    var tip = list.map(function (k) { return k.label; }).join(', ');
+    return '<span class="lk-badge" title="' + esc(SP.t('schedule.hasLinks', { l: tip })) + '" aria-hidden="true">' + (list.length > 1 ? '<b>' + list.length + '</b>' : SP.icon(list[0].icon)) + '</span>';
+  }
+  /* метки-ссылки под парой (день Shokan, Timetable) */
+  function linkChips(list, cls) {
+    return list.length ? '<span class="lk-chips ' + (cls || '') + '">' + list.map(function (k) {
+      var inner = SP.icon(k.icon, 'ic-sm') + '<span>' + esc(k.label) + '</span>';
+      return k.url ? '<a class="lk-chip" href="' + esc(k.url) + '" target="_blank" rel="noopener noreferrer" title="' + esc(k.url) + '">' + inner + '</a>'
+        : '<span class="lk-chip lk-text" title="' + esc(k.text) + '">' + inner + '</span>';
+    }).join('') + '</span>' : '';
+  }
+  /* кнопки в карточке пары: «Войти в Zoom», «Открыть Google Диск»… */
+  function linkButtons(list) {
+    return list.map(function (k) {
+      var lbl = k.url ? SP.t(k.kind === 'video' ? 'schedule.lkJoin' : 'schedule.lkOpen', { s: k.label }) : k.text;
+      var inner = '<span class="lk-badge lk-static" aria-hidden="true">' + SP.icon(k.icon) + '</span><span class="lk-btxt">' + esc(lbl) + '</span>' + (k.url ? SP.icon('external-link', 'ic-sm') : '');
+      return k.url ? '<a class="lk-btn" href="' + esc(k.url) + '" target="_blank" rel="noopener noreferrer">' + inner + '</a>' : '<div class="lk-btn lk-text">' + inner + '</div>';
+    }).join('');
   }
   function lessonLink(l, mon) {
     var s = allSlots().filter(function (t) { return t.id === l.slotId; })[0];
@@ -195,7 +237,7 @@
     return '<div class="shk-det"><button type="button" class="shk-back" id="shkBack">' + SP.icon('chevron-left') + '<span>' + esc(SP.t('nav.schedule')) + '</span></button>' +
       '<div class="shk-det-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</div><h2 class="shk-det-name">' + esc(x.name) + '</h2>' +
       '<ul class="shk-det-list"><li>' + esc(when) + '</li>' + (place ? '<li>' + esc(place) + '</li>' : '') + (x.teacher ? '<li>' + esc(x.teacher) + '</li>' : '') +
-      (lessonLink(l, mon) ? '<li>' + linkHtml(lessonLink(l, mon), 'shk-link') + '</li>' : '') + '</ul>' +
+      '</ul>' + (function (lk) { return lk.length ? '<div class="lk-btns">' + linkButtons(lk) + '</div>' : ''; })(lessonLinks(lessonLink(l, mon))) +
       '<button type="button" class="btn btn-primary shk-det-go" data-sid="' + esc(x.sid) + '">' + SP.icon('folder') + '<span>' + esc(SP.t('schedule.openFolder')) + '</span></button></div>';
   }
 
@@ -220,8 +262,8 @@
       days.forEach(function (d) {
         var ls = lessonsAt(d, s.id);
         if (!ls.length) { h += '<td class="shk-empty"></td>'; return; }
-        var x = info(ls[0]);
-        h += '<td class="shk-fill"><button type="button" class="shk-wl" data-lid="' + weekLessons().indexOf(ls[0]) + '" title="' + esc(x.name + (kindLong(x.ab) ? ' · ' + kindLong(x.ab) : '')) + '"><span class="shk-wn">' + esc(x.name) + '</span><span class="shk-wk">' + esc(kindLong(x.ab) || x.ab) + (ls.length > 1 ? ' +' + (ls.length - 1) : '') + '</span></button></td>';
+        var x = info(ls[0]), lk = [].concat.apply([], ls.map(function (l) { return lessonLinks(lessonLink(l, mon)); }));
+        h += '<td class="shk-fill"><button type="button" class="shk-wl' + (lk.length ? ' has-lk' : '') + '" data-lid="' + weekLessons().indexOf(ls[0]) + '" title="' + esc(x.name + (kindLong(x.ab) ? ' · ' + kindLong(x.ab) : '') + (lk.length ? ' · ' + SP.t('schedule.hasLinks', { l: lk.map(function (k) { return k.label; }).join(', ') }) : '')) + '">' + linkBadge(lk) + '<span class="shk-wn">' + esc(x.name) + '</span><span class="shk-wk">' + esc(kindLong(x.ab) || x.ab) + (ls.length > 1 ? ' +' + (ls.length - 1) : '') + '</span></button></td>';
       });
       h += '</tr>';
     });
@@ -240,9 +282,9 @@
       var ls = lessonsAt(dayIdx, s.id);
       h += '<li class="shk-row' + (ls.length ? ' has' : '') + '"><div class="shk-time"><b>' + esc(String(s.start).slice(0, 5)) + '</b><span>' + esc(String(s.end).slice(0, 5)) + '</span></div><div class="shk-slot">';
       if (ls.length) h += ls.map(function (l) {
-        var x = info(l);
-        return '<button type="button" class="shk-card" data-lid="' + weekLessons().indexOf(l) + '"><span class="shk-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</span><span class="shk-name">' + esc(x.name) + '</span></button>' +
-          linkHtml(lessonLink(l, mon), 'shk-link');
+        var x = info(l), lk = lessonLinks(lessonLink(l, mon));
+        return '<button type="button" class="shk-card' + (lk.length ? ' has-lk' : '') + '" data-lid="' + weekLessons().indexOf(l) + '">' + linkBadge(lk) + '<span class="shk-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</span><span class="shk-name">' + esc(x.name) + '</span></button>' +
+          linkChips(lk, 'shk-chips');
       }).join('');
       else if (i > first && i < last) h += '<span class="shk-gap">' + esc(SP.t('schedule.gap', { m: toMin(s.end) - toMin(s.start) })) + '</span>';
       h += '</div></li>';

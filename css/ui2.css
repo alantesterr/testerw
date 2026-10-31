@@ -213,4 +213,4 @@ html.ui2 .ui2-hit span { font-size: var(--fs-sm); }
 .ui2-chap h3 { font-size: var(--fs-md); margin: var(--sp-4) 0 var(--sp-2); display: flex; align-items: center; gap: .5rem; }
 .ui2-chap h3::before { content: ""; width: .55rem; height: .55rem; border-radius: 50%; background: var(--cc); box-shadow: 0 0 0 4px var(--cs); flex: none; }
 .ui2-chap ul { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: .35rem; }
-.ui2-chap li { line-height: 1.5; }
+.ui2-chap li { line-height: 1.5; }html.ui2 .shk-head .shk-run ~ .ui2-shk-view { margin-left: 0; }

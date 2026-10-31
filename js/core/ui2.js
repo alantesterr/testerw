@@ -74,7 +74,7 @@
     var set = function (v) { schOpen = v; pop.hidden = !v; back.hidden = !v; btn.setAttribute('aria-expanded', String(v)); };
     btn.onclick = function (e) { e.stopPropagation(); set(!schOpen); };
     /* Shokan: шапка как в приложении — рядом с календарём маленькая кнопка «Вид» */
-    var cal = SP.$('.shk-head .shk-cal', page);
+    var cal = SP.$('.shk-head label.shk-cal', page);
     if (cal) {
       var sb = SP.el('<button type="button" class="shk-cal ui2-shk-view" aria-label="' + esc(SP.t('ui2.view')) + '" data-tip="' + esc(SP.t('ui2.view')) + '">' + SP.icon('layers') + '</button>');
       cal.before(sb);

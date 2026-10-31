@@ -113,6 +113,8 @@
     if (!d.schedule.length) html += emptyState();
     else html += ui.mode === 'shokan' ? shokan(td) : timetable(td);
     root.innerHTML = '<div class="page wide sch-page mode-' + ui.mode + '">' + html + '</div>';
+    /* телефон, Shokan: как в приложении — при входе сразу шапка Shokan у верхнего края, шапка сайта — выше (потянуть вниз) */
+    document.documentElement.classList.toggle('shk-full', ui.mode === 'shokan');
     wire();
     if (SP.ui2) SP.ui2.schedule(root);
   }
@@ -241,13 +243,33 @@
       '<button type="button" class="btn btn-primary shk-det-go" data-sid="' + esc(x.sid) + '">' + SP.icon('folder') + '<span>' + esc(SP.t('schedule.openFolder')) + '</span></button></div>';
   }
 
+  /* «Обновить расписание» в шапке Shokan — синий кружок между «День / Неделя» и значками.
+     Только там, где обновление работает (приложение, iPhone со Scriptable, ПК с программой — после настройки).
+     Пока обновляется — крутится; закончилось — 2 секунды зелёная галочка. */
+  var runDoneAt = 0;
+  function shkRunBtn() {
+    if (!(SP.pl && SP.pl.visible())) return '';
+    var busy = SP.pl.busy && SP.pl.busy('tt'), done = !busy && Date.now() - runDoneAt < 2000;
+    return '<button type="button" class="shk-cal shk-run' + (busy ? ' busy' : '') + (done ? ' done' : '') + '" id="shkRun" aria-label="' + esc(SP.t('schedule.ttRun')) + '" data-tip="' + esc(SP.t('schedule.ttRun')) + '"' + (busy ? ' aria-busy="true"' : '') + '>' +
+      '<span class="shk-run-ring">' + SP.icon(done ? 'check' : 'refresh-cw') + '</span></button>';
+  }
+  function paintRun() {
+    var b = root && SP.$('#shkRun', root); if (!b) return;
+    var tmp = SP.el(shkRunBtn()); if (tmp) { b.replaceWith(tmp); tmp.onclick = function () { SP.pl.run('tt'); }; }
+  }
+  SP.on('pl-busy', function (e) {
+    if (!e || e.k !== 'tt') return;
+    if (!e.on) { runDoneAt = Date.now(); setTimeout(paintRun, 2100); }
+    paintRun();
+  });
+
   /* ===== Режим «Shokan» (как в приложении Shokan University) ===== */
   function shokan(td) {
     var mon = monday(weekOff);
     if (detail) return '<div class="shk">' + shokanDetail(detail) + '</div>';
     var h = '<div class="shk"><div class="shk-head">' +
       '<div class="shk-seg" role="tablist">' + ['day', 'week'].map(function (v) { return '<button type="button" role="tab" data-view="' + v + '" aria-selected="' + (ui.view === v) + '">' + esc(SP.t('schedule.' + v)) + '</button>'; }).join('') + '</div>' +
-      '<h2 class="shk-title">' + esc(SP.t('nav.schedule')) + '</h2>' +
+      '<h2 class="shk-title">' + esc(SP.t('nav.schedule')) + '</h2>' + shkRunBtn() +
       '<label class="shk-cal" data-tip="' + esc(SP.t('schedule.pickDate')) + '">' + SP.icon('calendar-days') + '<span class="sr-only">' + esc(SP.t('schedule.pickDate')) + '</span><input type="date" id="shkDate" class="shk-date"></label></div>';
     h += ui.view === 'week' ? shokanWeek(mon) : shokanDay(mon, td);
     return h + '</div>';
@@ -314,7 +336,9 @@
     if (ui.mode === 'shokan' && window.innerWidth < 768) e = SP.$('.shk', root);
     else if (ui.mode !== 'shokan' && window.innerWidth >= 768) e = SP.$('.tt-scroll', root);
     if (!e) return;
-    requestAnimationFrame(function () { e.scrollIntoView({ block: 'start' }); });
+    /* сразу и ещё раз чуть позже (после отрисовки) — без requestAnimationFrame: в фоне он может не сработать */
+    var go = function () { if (!e.isConnected) return; var y = e.getBoundingClientRect().top + window.scrollY; window.scrollTo(0, Math.max(0, Math.round(y))); };
+    go(); setTimeout(go, 80);
   }
   function wire() {
     var q = function (s) { return SP.$(s, root); };
@@ -338,6 +362,7 @@
     var ul = q('#updLater'); if (ul) ul.onclick = function () { updDismissed = true; render(); };
     var eu = q('#emUpload'); if (eu) eu.onclick = SP.schedule.upload;
     var tr = q('#ttRun'); if (tr) tr.onclick = function () { SP.pl.run('tt'); };
+    var sr = q('#shkRun'); if (sr) sr.onclick = function () { SP.pl.run('tt'); };
     var eh = q('#emHelp'); if (eh) eh.onclick = SP.schedule.help;
     var days = q('.shk-days');
     if (days) days.onkeydown = function (e) {
@@ -487,6 +512,7 @@
     titleKey: 'nav.schedule',
     mount: function (el) { root = el; autoScroll = Date.now(); render(); setTimeout(toShk, 60); },
     show: function () { autoScroll = Date.now(); render(); toShk(); SP.hub.checkUpdate(); nativeEdges(true); },
+    hide: function () { document.documentElement.classList.remove('shk-full'); },
     refresh: render
   });
   /* расписание догрузилось после открытия — один раз прокручиваем к таблице, если человек ещё не листал сам */

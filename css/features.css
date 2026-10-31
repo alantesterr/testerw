@@ -1173,3 +1173,25 @@ a.lk-btn:active { background: color-mix(in srgb, var(--lk) 10%, var(--shk-fill, 
 .lk-badge.lk-tap:hover { transform: scale(1.18); background: var(--lk); color: #fff; }
 .lk-badge.lk-tap:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .tt-box > * + .tt-lw > .tt-l { border-top: 1px solid var(--border); margin-top: 0.3rem; padding-top: 0.45rem; }
+/* ---------- Shokan на телефоне: как в приложении ----------
+   При входе в Расписание шапка Shokan («День / Неделя», значки) сразу у верхнего края и закреплена;
+   шапка сайта (RU/KZ/EN, настройки) и строки над расписанием — выше, видны, если потянуть экран вниз. */
+.shk-run { margin-left: auto; background: none; border: 0; padding: 0; }
+.shk-head .shk-run + .shk-cal { margin-left: 0; }
+.shk-run-ring { width: 1.95rem; height: 1.95rem; border-radius: 50%; display: grid; place-items: center;
+  border: 1.5px solid var(--shk-accent); color: var(--shk-accent); background: color-mix(in srgb, var(--shk-accent) 14%, transparent);
+  transition: transform .15s, background-color .2s, border-color .2s, color .2s; }
+.shk-run-ring .ic { width: 1.05rem; height: 1.05rem; }
+.shk-run:active .shk-run-ring { transform: scale(.9); }
+@media (hover: hover) { .shk-run:hover .shk-run-ring { background: color-mix(in srgb, var(--shk-accent) 26%, transparent); } }
+.shk-run.busy .shk-run-ring .ic { animation: sp-spin .9s linear infinite; }
+.shk-run.done .shk-run-ring { border-color: var(--success); color: var(--success); background: color-mix(in srgb, var(--success) 16%, transparent); }
+@media (max-width: 767px) {
+  html.shk-full .mobile-bar { position: static; }
+  html.shk-full .sch-page.mode-shokan .shk { overflow: visible; }
+  html.shk-full .sch-page.mode-shokan .shk-head { position: sticky; top: 0; z-index: calc(var(--z-header) - 1); background: var(--shk-page);
+    padding-top: calc(3px + env(safe-area-inset-top, 0px)); border-radius: var(--r-lg) var(--r-lg) 0 0; }
+  /* чтобы всегда можно было докрутить шапку Shokan до верха, даже если пар мало */
+  html.shk-full .sch-page.mode-shokan .shk { min-height: calc(100dvh - 4.25rem - env(safe-area-inset-bottom, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { .shk-run.busy .shk-run-ring .ic { animation-duration: 2.5s; } }

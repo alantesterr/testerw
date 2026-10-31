@@ -527,7 +527,7 @@
     var a = document.createElement('a'); a.href = PREFIX + KIND[k].arg; a.style.display = 'none';
     document.body.appendChild(a); a.click(); a.remove();
     if (!quiet) SP.toast(SP.t(KIND[k].toast), 'info', { html: false });
-    busy(true); waitKind = k;
+    waitKind = k; busy(true);
     waitUntil = Date.now() + 3 * 60 * 1000; clipWarned = false;
     clearInterval(waitTimer); waitTimer = setInterval(checkClip, 1500);
   }
@@ -546,7 +546,8 @@
     runProgram(false, k);
   }
   function setupModal() { SP.modal({ title: SP.t('jr.plSetupTitle'), size: 'lg', body: SP.t('jr.plSetupHtml') + '<p><a class="btn" href="downloads/studyplay-grades.zip" download>' + SP.icon('download') + '<span>' + esc(SP.t('jr.plDownload')) + '</span></a></p>' }); }
-  SP.pl = { visible: function () { return !plHidden() && (isWinPc() || IS_APP || IS_IOS); }, run: plClick, phone: phoneModal };
+  SP.pl = { visible: function () { return !plHidden() && (isWinPc() || IS_APP || IS_IOS); }, run: plClick, phone: phoneModal,
+    busy: function (k) { return !!waitUntil && Date.now() < waitUntil && waitKind === k; } };
 
   /* ---------- iPhone / iPad: кнопки на сайте запускают скрипт StudyPlay в Scriptable ----------
      Ссылка scriptable:///run/StudyPlay?mode=pl|tt открывает Scriptable; скрипт берёт оценки или расписание
@@ -842,9 +843,12 @@
     if (res.changed) SP.toast(esc(SP.t('jr.ttChanged')), 'success', { html: true, ms: 8000 });
   }
   /* Маленький крутящийся значок справа снизу, пока идёт обновление (не меньше 2 секунд, не дольше минуты) */
-  var busyEl = null, busyAt = 0, busyMax = null;
+  var busyEl = null, busyAt = 0, busyMax = null, busyKind = '';
   function busy(on) {
     clearTimeout(busyMax);
+    /* кнопка «Обновить» в шапке Shokan крутится, пока идёт обновление расписания */
+    if (on) busyKind = waitKind;
+    SP.emit('pl-busy', { on: !!on, k: busyKind });
     if (on) {
       if (!busyEl) {
         busyEl = document.createElement('div'); busyEl.className = 'pl-busy'; busyEl.setAttribute('role', 'status');

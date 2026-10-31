@@ -120,6 +120,7 @@
     document.documentElement.classList.toggle('shk-full', ui.mode === 'shokan');
     wire();
     if (SP.ui2) SP.ui2.schedule(root);
+    fitZoom();
     shkSpace();
     var shkNow = SP.$('.shk', root);
     if (pinned && shkNow && ui.mode === 'shokan') window.scrollTo(0, Math.round(shkNow.getBoundingClientRect().top + window.scrollY));
@@ -338,6 +339,26 @@
 
   /* Телефон, режим Shokan: экран начинается сразу с «День / Неделя», как в приложении (переключатели — выше, если пролистать вверх) */
   /* ПК, режим Timetable: страница сразу прокручена к таблице — строка с днями вверху экрана, как на сайте Timetable */
+  /* Размер расписания «Меньше / Ещё меньше» — это CSS zoom. Chrome и Android растягивают блок на всю ширину,
+     а Safari (iPhone: браузер и веб-приложение) сжимает и ширину — справа оставалась пустая полоса.
+     Меряем, что получилось, и растягиваем блок до ширины страницы — одинаково в любом браузере. */
+  function fitZoom() {
+    if (!root) return;
+    ['.sch-page.mode-shokan .shk', '.sch-page.mode-timetable .tt-wrap'].forEach(function (sel) {
+      var el = SP.$(sel, root); if (!el) return;
+      el.style.width = '';
+      var page = el.parentNode, cs = getComputedStyle(page);
+      var want = page.getBoundingClientRect().width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      /* до трёх шагов: браузеры по-разному считают ширину у блока с zoom — подгоняем по факту */
+      for (var i = 0; i < 3; i++) {
+        var got = el.getBoundingClientRect().width;
+        if (!(got > 0) || Math.abs(want - got) <= 2) break;
+        var base = parseFloat(el.style.width) || el.offsetWidth;
+        el.style.width = (base * want / got) + 'px';
+      }
+    });
+  }
+  window.addEventListener('resize', SP.debounce(function () { if (root && SP.views.current() === 'schedule') { fitZoom(); shkSpace(); } }, 150));
   function shkSpace() {
     var e = root && SP.$('.shk', root), page = e && e.closest('.sch-page');
     if (!page) return;

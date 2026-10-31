@@ -1202,3 +1202,9 @@ a.lk-btn:active { background: color-mix(in srgb, var(--lk) 10%, var(--shk-fill, 
   html.shk-full .sch-page.mode-shokan .shk-head { border-radius: 0; }
   /* запас снизу (чтобы шапку Shokan можно было поднять к самому верху) считает schedule.js → toShk */
 }
+/* Телефон, Shokan: от края до края, как в приложении (без боковых отступов страницы и рамки) */
+@media (max-width: 767px) {
+  html.shk-full .sch-page.mode-shokan { padding-left: 0; padding-right: 0; }
+  html.shk-full .sch-page.mode-shokan > :not(.shk) { margin-left: var(--page-pad); margin-right: var(--page-pad); }
+  html.shk-full .sch-page.mode-shokan .shk { border-radius: 0; border-left: 0; border-right: 0; margin-left: 0; margin-right: 0; }
+}

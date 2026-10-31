@@ -1,5 +1,5 @@
 {
-    "version":  "2026-10-31.4",
+    "version":  "2026-10-31.5",
     "files":  [
                   {
                       "subject":  "Философия",
@@ -28,13 +28,6 @@
                       "name":  "studyplay-all.txt",
                       "path":  "data/ir-252/files/Информационно-коммуникационные технологии/studyplay-all.txt",
                       "size":  74408
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C++ question-final kaz testing_фик211,мик211.docx",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ question-final kaz testing_фик211,мик211.docx",
-                      "size":  60832
                   },
                   {
                       "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
@@ -87,6 +80,14 @@
                       "type":  "application/pdf",
                       "size":  2304554,
                       "note":  "Учебник-тетрадь к РК: 15 тем, задачи с решениями"
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "test",
+                      "name":  "Доп тесты C++.txt",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/Доп тесты C++.txt",
+                      "size":  33786,
+                      "note":  "164 дополнительных вопроса из конспекта (лекции 1–15)"
                   }
               ]
 }

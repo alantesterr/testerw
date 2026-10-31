@@ -49,6 +49,8 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+          # своё главное окно: края экрана в Расписании — для листания недель (app/android/native/MainActivity.java)
+          cp native/MainActivity.java native/SPGesturesPlugin.java android/app/src/main/java/kz/studyplay/app/
           # номер версии растёт с каждой сборкой — телефон поставит её поверх старой
           sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"1.${{ github.run_number }}\"/" android/app/build.gradle
           # уведомления на Android 13+

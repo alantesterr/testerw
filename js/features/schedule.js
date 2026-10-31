@@ -387,9 +387,17 @@
 
   /* Жест на телефоне (как в Shokan): тянете от левого края — прошлая неделя (день), от правого — следующая.
      Появляется круглая стрелка у края; дотянули — стрелка становится синей, отпустили — листается.
-     В Shokan можно тянуть с любого места (страница вбок не прокручивается), в Timetable — только от края,
-     потому что сетка сама прокручивается вбок. */
+     Тянуть можно с любого места: у самого края экрана Android (жесты) и Safari иногда забирают движение себе
+     как «Назад». В Timetable сетка сама прокручивается вбок — листаем, только когда она уже у своего края.
+     В приложении на время Расписания середина краёв экрана отдаётся сайту (плагин SPGestures, app/android/native). */
   var sw = null, bub = null, EDGE = 40, NEED = 80;
+  function nativeEdges(on) {
+    try {
+      var p = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SPGestures;
+      if (p && p.set) { var r = p.set({ on: !!on }); if (r && r.catch) r.catch(function () { }); }
+    } catch (e) { /* старое приложение без плагина — просто листаем не от самого края */ }
+  }
+  window.addEventListener('hashchange', function () { var h = (location.hash || '').replace(/^#\/?/, '').split('/')[0]; nativeEdges(!h || h === 'schedule'); });
   function bubble(dir, x, y, p) {
     if (!bub) { bub = SP.el('<div class="sch-swipe" aria-hidden="true">' + SP.icon(dir < 0 ? 'chevron-left' : 'chevron-right') + '</div>'); document.body.appendChild(bub); }
     bub.innerHTML = SP.icon(dir < 0 ? 'chevron-left' : 'chevron-right');
@@ -405,8 +413,7 @@
     if (!root || SP.views.current() !== 'schedule' || detail || e.touches.length !== 1 || !root.contains(e.target)) return;
     if (e.target.closest('input, select, textarea, .ui2-pop, .modal-backdrop, .tt-cust, .tt-zm')) return;
     var t = e.touches[0], edge = t.clientX < EDGE ? -1 : t.clientX > innerWidth - EDGE ? 1 : 0;
-    if (ui.mode !== 'shokan' && !edge) return;
-    sw = { x: t.clientX, y: t.clientY, edge: edge, lock: null };
+    sw = { x: t.clientX, y: t.clientY, edge: edge, lock: null, sc: ui.mode !== 'shokan' ? e.target.closest('.tt-scroll') : null };
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
     if (!sw) return;
@@ -415,6 +422,11 @@
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
       sw.lock = Math.abs(dx) > Math.abs(dy) * 1.3 ? 'h' : 'v';
       if (sw.lock === 'v') { sw = null; return; }
+      /* Timetable: пока сетку можно прокрутить в эту сторону — это прокрутка, а не листание */
+      if (sw.sc && !sw.edge) {
+        var max = sw.sc.scrollWidth - sw.sc.clientWidth;
+        if ((dx > 0 && sw.sc.scrollLeft > 2) || (dx < 0 && sw.sc.scrollLeft < max - 2)) { sw = null; return; }
+      }
     }
     var dir = dx > 0 ? -1 : 1;
     if (sw.edge && sw.edge !== dir) { dropBubble(); sw.dir = 0; return; } // от левого края тянут вправо, от правого — влево
@@ -432,7 +444,7 @@
   SP.views.register('schedule', {
     titleKey: 'nav.schedule',
     mount: function (el) { root = el; autoScroll = Date.now(); render(); setTimeout(toShk, 60); },
-    show: function () { autoScroll = Date.now(); render(); toShk(); SP.hub.checkUpdate(); },
+    show: function () { autoScroll = Date.now(); render(); toShk(); SP.hub.checkUpdate(); nativeEdges(true); },
     refresh: render
   });
   /* расписание догрузилось после открытия — один раз прокручиваем к таблице, если человек ещё не листал сам */

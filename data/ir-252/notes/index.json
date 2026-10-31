@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-31.1",
+  "version": "2026-10-31.2",
   "notes": [
     { "id": "cpp15", "subject": "Object-Oriented Programming (Borland C ++ Builder)", "short": "C++ · лекции 1–15", "title": "C++ и Borland C++ Builder: лекции 1–15 (полный курс, задачи, все тесты)", "file": "cpp15.json", "pdf": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/Cpp_OOP_lekcii_1-15.pdf" },
     { "id": "io", "subject": "Исследование операций", "short": "Исследование операций", "title": "Исследование операций: подготовка к РК (15 тем, 56 задач с решением, пробный РК)", "file": "io.json", "pdf": "data/ir-252/files/Исследование операций/IO_RK_uchebnik.pdf" },

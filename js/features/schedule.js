@@ -365,19 +365,69 @@
     }
   };
 
-  /* Горячие клавиши на ПК: ← → — неделя (Timetable, Shokan «Неделя») или день (Shokan «День») */
+  /* Шаг назад/вперёд: неделя (Timetable, Shokan «Неделя») или день (Shokan «День»), с лёгким сдвигом */
+  function step(d) {
+    if (ui.mode === 'shokan' && ui.view !== 'week') {
+      dayIdx = (dayIdx || 0) + d;
+      if (dayIdx < 0) { dayIdx = 5; weekOff--; } else if (dayIdx > 5) { dayIdx = 0; weekOff++; }
+    } else weekOff += d;
+    render();
+    var box = SP.$('.shk-list, .shk-week, .shk > :last-child, .tt-scroll', root);
+    if (box) { box.classList.remove('sch-in-l', 'sch-in-r'); void box.offsetWidth; box.classList.add(d < 0 ? 'sch-in-l' : 'sch-in-r'); }
+  }
+
+  /* Горячие клавиши на ПК: ← → */
   document.addEventListener('keydown', function (e) {
     if (!root || SP.views.current() !== 'schedule' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
     var t = e.target; if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
     if (document.querySelector('.modal-backdrop, .ui2-tour') || detail) return;
-    var d = e.key === 'ArrowLeft' ? -1 : 1;
-    if (ui.mode === 'shokan' && ui.view !== 'week') {
-      dayIdx = (dayIdx || 0) + d;
-      if (dayIdx < 0) { dayIdx = 5; weekOff--; } else if (dayIdx > 5) { dayIdx = 0; weekOff++; }
-    } else weekOff += d;
-    e.preventDefault(); render();
+    e.preventDefault(); step(e.key === 'ArrowLeft' ? -1 : 1);
   });
+
+  /* Жест на телефоне (как в Shokan): тянете от левого края — прошлая неделя (день), от правого — следующая.
+     Появляется круглая стрелка у края; дотянули — стрелка становится синей, отпустили — листается.
+     В Shokan можно тянуть с любого места (страница вбок не прокручивается), в Timetable — только от края,
+     потому что сетка сама прокручивается вбок. */
+  var sw = null, bub = null, EDGE = 40, NEED = 80;
+  function bubble(dir, x, y, p) {
+    if (!bub) { bub = SP.el('<div class="sch-swipe" aria-hidden="true">' + SP.icon(dir < 0 ? 'chevron-left' : 'chevron-right') + '</div>'); document.body.appendChild(bub); }
+    bub.innerHTML = SP.icon(dir < 0 ? 'chevron-left' : 'chevron-right');
+    var off = -46 + Math.min(1, p) * 62;
+    bub.style.top = Math.max(60, Math.min(innerHeight - 110, y - 22)) + 'px';
+    bub.style.left = dir < 0 ? off + 'px' : 'auto'; bub.style.right = dir > 0 ? off + 'px' : 'auto';
+    bub.style.opacity = String(Math.min(1, p * 1.6));
+    bub.classList.toggle('ready', p >= 1);
+  }
+  function dropBubble() { if (!bub) return; var b = bub; bub = null; b.classList.add('gone'); setTimeout(function () { b.remove(); }, 200); }
+  document.addEventListener('touchstart', function (e) {
+    sw = null;
+    if (!root || SP.views.current() !== 'schedule' || detail || e.touches.length !== 1 || !root.contains(e.target)) return;
+    if (e.target.closest('input, select, textarea, .ui2-pop, .modal-backdrop, .tt-cust, .tt-zm')) return;
+    var t = e.touches[0], edge = t.clientX < EDGE ? -1 : t.clientX > innerWidth - EDGE ? 1 : 0;
+    if (ui.mode !== 'shokan' && !edge) return;
+    sw = { x: t.clientX, y: t.clientY, edge: edge, lock: null };
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (!sw) return;
+    var t = e.touches[0], dx = t.clientX - sw.x, dy = t.clientY - sw.y;
+    if (!sw.lock) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      sw.lock = Math.abs(dx) > Math.abs(dy) * 1.3 ? 'h' : 'v';
+      if (sw.lock === 'v') { sw = null; return; }
+    }
+    var dir = dx > 0 ? -1 : 1;
+    if (sw.edge && sw.edge !== dir) { dropBubble(); sw.dir = 0; return; } // от левого края тянут вправо, от правого — влево
+    sw.dir = dir; sw.p = Math.abs(dx) / NEED;
+    bubble(dir, t.clientX, t.clientY, sw.p);
+  }, { passive: true });
+  function endSwipe() {
+    var s = sw; sw = null;
+    if (s && s.dir && s.p >= 1) { if (navigator.vibrate) try { navigator.vibrate(8); } catch (er) { } step(s.dir); }
+    dropBubble();
+  }
+  document.addEventListener('touchend', endSwipe);
+  document.addEventListener('touchcancel', function () { sw = null; dropBubble(); });
 
   SP.views.register('schedule', {
     titleKey: 'nav.schedule',

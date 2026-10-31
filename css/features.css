@@ -1119,3 +1119,17 @@ a.tt-link:focus-visible, a.shk-link:focus-visible { outline: none; box-shadow: v
 .mnv-cards > div p { margin: .2rem 0 0; color: var(--text-2); }
 @media (max-width: 720px) { .mnb-view { margin-top: 0; border-top: 0; padding-top: .35rem; } .mnv-body { max-height: none; } }
 .mnb-next .btn { white-space: normal; text-align: left; min-width: 0; height: auto; min-height: 40px; }
+
+/* Жест «листать от края» в расписании (как в Shokan): круглая стрелка у края */
+.sch-swipe { position: fixed; z-index: var(--z-popover); width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface-3); color: var(--text); box-shadow: var(--shadow-md); pointer-events: none;
+  transition: background-color .15s, color .15s, transform .15s, opacity .2s; }
+.sch-swipe .ic { width: 1.4rem; height: 1.4rem; }
+.sch-swipe.ready { background: var(--accent); color: #fff; transform: scale(1.12); }
+.sch-swipe.gone { opacity: 0 !important; transform: scale(.7); }
+.sch-page.mode-shokan .shk { touch-action: pan-y; }
+.sch-in-l { animation: sch-in-l .26s var(--ease); }
+.sch-in-r { animation: sch-in-r .26s var(--ease); }
+@keyframes sch-in-l { from { opacity: .35; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+@keyframes sch-in-r { from { opacity: .35; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .sch-in-l, .sch-in-r { animation: none; } }

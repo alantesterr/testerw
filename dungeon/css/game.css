@@ -121,3 +121,83 @@ pre.code{background:#100e17;color:#9FE1CB;border-radius:8px;padding:10px 14px;ma
   .btn{width:100%}
   .kb{flex-direction:column}
 }
+
+/* ---------- кнопки-значки в окне вопроса ---------- */
+.ico-btn{width:44px;height:40px;border-radius:10px;border:2px solid var(--line2);background:var(--card2);display:inline-flex;align-items:center;justify-content:center;padding:0}
+.ico-btn svg{width:24px;height:24px}
+.ico-btn.book{background:#3C3489;border-color:var(--violet)}
+.ico-btn:hover{border-color:var(--teal2)}
+
+/* ---------- режим «на весь экран» ---------- */
+#app.focus:not(.peek) #sceneWrap{display:none}
+#app.focus #panel{min-height:calc(100dvh - 60px);padding:22px max(18px,calc((100% - 1000px)/2)) 28px}
+#app.focus .qtext{font-size:24px}
+#app.focus pre.code{font-size:17px;padding:14px 18px}
+#app.focus .opt{font-size:19px;min-height:64px}
+#app.focus .kb input{font-size:20px;min-height:58px}
+#app.focus.peek #panel{min-height:0}
+
+/* ---------- книжка ---------- */
+body.book-open{overflow:hidden}
+#book{position:fixed;inset:0;z-index:30;background:rgba(6,4,12,.82);display:flex;align-items:center;justify-content:center;padding:14px}
+#book[hidden]{display:none}
+.bk-wrap{width:min(1180px,100%);height:min(860px,100%);background:#6b3d14;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.bk-top{display:flex;align-items:center;gap:10px;color:#FAEEDA}
+.bk-title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk-top select{max-width:42%;padding:8px 10px;border-radius:10px;border:2px solid #BA7517;background:#F1E4C8;color:#3d2a12;font:inherit;font-size:14px}
+.bk-x{min-height:40px;padding:6px 12px;color:#FAEEDA;border-color:#BA7517}
+.bk-altar{background:#EEEDFE;color:#26215C;border-radius:10px;padding:10px 14px;font-size:15px}
+.bk-spread{flex:1;min-height:0;display:grid;grid-template-columns:1fr;gap:10px;overflow:auto}
+.bk-spread.two{grid-template-columns:1fr 1fr}
+.bk-page{background:#F7EEDB;color:#3d2a12;border-radius:8px;padding:20px 26px 14px;overflow:auto;position:relative;line-height:1.6;font-size:16px}
+.bk-spread.two .bk-page:first-child{background:linear-gradient(90deg,#F7EEDB 92%,#e8dcc2)}
+.bk-spread.two .bk-page:last-child{background:linear-gradient(270deg,#F4E8CF 92%,#e3d5b8)}
+.bk-page h3{margin:0 0 10px;color:#633806;font-size:21px}.bk-page h3 span{color:#BA7517}
+.bk-page h4{margin:14px 0 6px;color:#633806}
+.bk-page p{margin:8px 0}.bk-page ul,.bk-page ol{margin:6px 0;padding-left:22px}
+.bk-page code{font-family:Consolas,monospace;background:rgba(186,117,23,.15);padding:0 4px;border-radius:4px}
+.bk-here{display:inline-block;background:#E1F5EE;color:#0F6E56;border:2px solid #1D9E75;border-radius:8px;padding:3px 10px;font-weight:700;font-size:13px;margin-bottom:8px}
+.bk-here.room{background:#EEEDFE;color:#3C3489;border-color:#7F77DD}
+.bk-code{margin:10px 0}.bk-code figcaption,.bk-out figcaption{font-size:12px;font-weight:700;color:#854F0B;margin-bottom:2px}
+.bk-code pre,.bk-out pre,.scheme{margin:0;background:#14121b;color:#9FE1CB;border-radius:6px;padding:10px 14px;font:14px/1.5 Consolas,monospace;overflow-x:auto;white-space:pre}
+.bk-code.bad pre{border-left:4px solid #e0303a}.bk-code.good pre{border-left:4px solid #1D9E75}
+.bk-out pre{background:#efe6d2;color:#3d2a12;border-left:4px solid #8aa0c6}
+.scheme{background:#efe6d2;color:#3d2a12}
+.bk-note{border-radius:8px;padding:8px 12px;margin:10px 0;border:1px solid}
+.n-note{background:#E6F1FB;border-color:#B5D4F4}.n-warn{background:#FAEEDA;border-color:#FAC775}.n-tip{background:#EAF3DE;border-color:#C0DD97}.n-trick{background:#EEEDFE;border-color:#CECBF6}.n-err{background:#FCEBEB;border-color:#F7C1C1}
+.bk-table{overflow-x:auto;margin:10px 0}.bk-table table{border-collapse:collapse;width:100%;font-size:14px}.bk-table td,.bk-table th{border:1px solid #d9c9a6;padding:5px 8px;text-align:left;vertical-align:top}.bk-table th{background:#efe2c4}
+.bk-num{text-align:right;color:#a07a44;font-size:12px;margin-top:10px}
+.bk-foot{display:flex;gap:10px;justify-content:space-between}
+.bk-foot .btn{min-height:46px}.bk-foot .btn.ghost{color:#FAEEDA;border-color:#BA7517}.bk-foot .btn[disabled]{opacity:.4}
+
+/* ---------- итог комнаты ---------- */
+.sum-head{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.sum-stars{color:var(--gold);font-size:26px;letter-spacing:4px}
+.sum-cards{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto}
+.sum-cards div{min-width:86px;background:var(--card);border:2px solid var(--line);border-radius:12px;padding:8px 12px;text-align:center}
+.sum-cards b{display:block;font-size:22px}.sum-cards span{color:var(--mute);font-size:12px}
+.sum-cards .iq{border-color:var(--violet2);background:#26215C}
+.sum-bar{display:flex;align-items:center;gap:12px;margin:14px 0 6px;flex-wrap:wrap;color:var(--mute)}
+.mbar{position:relative;flex:1;min-width:160px;height:12px;border-radius:6px;background:#2f2b38;overflow:hidden}
+.mbar i{position:absolute;top:0;height:100%}.mbar .was{left:0;background:#0F6E56}.mbar .now{background:#5DCAA5;animation:grow .9s ease-out}
+@keyframes grow{from{transform:scaleX(0);transform-origin:left}}
+.sum-mist{background:var(--redbg);border:1px solid #6b2a2a;border-radius:12px;padding:10px 14px;margin-top:10px}
+.sum-mist ul{margin:6px 0 0;padding-left:20px}.sum-mist li{margin:6px 0}.sum-mist li span{display:block}.sum-mist em{color:#9FE1CB;font-style:normal;font-family:Consolas,monospace;font-size:14px}
+
+@media (max-width:760px){
+  #book{padding:0}
+  .bk-wrap{border-radius:0;height:100%;padding:8px}
+  .bk-page{padding:14px 16px;font-size:15px}
+  .bk-top select{max-width:48%}
+  .bk-foot .btn{flex:1;padding:10px 8px;font-size:14px}
+  .bk-foot .btn kbd{display:none}
+  .sum-cards{margin-left:0}
+  #app.focus .qtext{font-size:18px}#app.focus .opt{font-size:16px}
+}
+.bk-top .bk-x{flex:0 0 auto;width:auto!important}
+.bk-top select{flex:0 1 auto}
+
+.sum-mist .mq pre.code{font-size:13px;padding:6px 10px;margin:4px 0}
+.sum-mist .mq{margin-bottom:2px}
+
+@media (max-width:760px){.sum-cards{display:grid;grid-template-columns:repeat(4,1fr);width:100%}.sum-cards div{min-width:0;padding:6px 4px}.sum-cards b{font-size:18px}}

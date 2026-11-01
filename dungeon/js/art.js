@@ -180,6 +180,25 @@
     for (var i = 0; i < max; i++) A.tile(c, i < n ? 'ui_heart_full' : 'ui_heart_empty', x0 + i * w, y, 0.9);
   };
 
+  /* ---------- алтарь знаний: каменная подставка и парящая книга ---------- */
+  A.altar = function (c, x, y, t, used) {
+    var bob = Math.round(Math.sin(t / 400) * 2);
+    if (!used) {
+      var g = c.createRadialGradient(x, y - 44, 4, x, y - 44, 46);
+      g.addColorStop(0, 'rgba(160,150,255,' + (0.45 + 0.1 * Math.sin(t / 300)) + ')'); g.addColorStop(1, 'rgba(127,119,221,0)');
+      c.fillStyle = g; c.fillRect(x - 50, y - 92, 100, 100);
+    }
+    c.fillStyle = '#3a3742'; c.fillRect(x - 16, y - 6, 32, 6);
+    c.fillStyle = '#5c5966'; c.fillRect(x - 11, y - 30, 22, 24);
+    c.fillStyle = '#4a4752'; c.fillRect(x - 11, y - 22, 22, 2); c.fillRect(x - 11, y - 14, 22, 2);
+    c.fillStyle = '#6e6b78'; c.fillRect(x - 15, y - 34, 30, 5);
+    var by = y - 52 + bob;
+    c.fillStyle = used ? '#4a4370' : '#3C3489'; c.fillRect(x - 13, by, 26, 14);
+    c.fillStyle = used ? '#b9b2a0' : '#F1E4C8'; c.fillRect(x - 11, by + 1, 10, 11); c.fillRect(x + 1, by + 1, 10, 11);
+    c.fillStyle = used ? '#7d7a92' : '#7F77DD'; for (var i = 0; i < 4; i++) { c.fillRect(x - 9, by + 3 + i * 2, 6, 1); c.fillRect(x + 3, by + 3 + i * 2, 6, 1); }
+    if (!used && Math.floor(t / 180) % 4 === 0) { c.fillStyle = '#CECBF6'; c.fillRect(x - 18 + (Math.floor(t / 90) % 36), by - 6, 1, 1); }
+  };
+
   /* ---------- факел ---------- */
   A.torch = function (c, x, y, t) {
     var f = Math.sin(t / 90) + Math.sin(t / 37) * 0.5;

@@ -52,6 +52,25 @@
   function overlap(a, b) { var n = 0; for (var k in a) if (b[k]) n += k.charAt(0) === '#' ? 0.5 : (/[a-z]/.test(k) ? 2 : 1); return n; }
   D.toks = toks; D.overlap = overlap;
 
+  /* блоки лекции для книжки — полноценная вёрстка: таблицы, заметки, код и вывод */
+  var NOTE_CLS = { 'Запомни': 'n-note', 'Важно': 'n-warn', 'Совет': 'n-tip', 'Нюанс': 'n-trick', 'Частая ошибка': 'n-err', 'Ошибка': 'n-err', 'Ловушка': 'n-err' };
+  D.bookHtml = function (bl) {
+    return (bl || []).map(function (b) {
+      switch (b.t) {
+        case 'p': return '<p>' + b.html + '</p>';
+        case 'h': return '<h4>' + b.html + '</h4>';
+        case 'code':
+          if (b.cap === 'Схема') return '<pre class="scheme">' + esc(b.text) + '</pre>';
+          return '<figure class="bk-code' + (b.cap === 'Неправильно' ? ' bad' : b.cap === 'Правильно' ? ' good' : '') + '">' + (b.cap && b.cap !== 'Код' ? '<figcaption>' + esc(b.cap) + '</figcaption>' : '') + '<pre>' + esc(b.text) + '</pre></figure>';
+        case 'out': return '<figure class="bk-out"><figcaption>Вывод программы</figcaption><pre>' + esc(b.text) + '</pre></figure>';
+        case 'ul': case 'ol': return '<' + b.t + '>' + b.items.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</' + b.t + '>';
+        case 'note': return '<aside class="bk-note ' + (NOTE_CLS[b.kind] || 'n-note') + '"><b>' + esc(b.kind || 'Запомни') + '.</b> ' + b.html + '</aside>';
+        case 'table': return '<div class="bk-table"><table>' + b.rows.map(function (r, i) { var tg = b.head && i === 0 ? 'th' : 'td'; return '<tr>' + r.map(function (c2) { return '<' + tg + '>' + c2 + '</' + tg + '>'; }).join('') + '</tr>'; }).join('') + '</table></div>';
+        default: return b.html ? '<p>' + b.html + '</p>' : '';
+      }
+    }).join('');
+  };
+
   function hash(s) { var h = 5381; for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return 'q' + (h >>> 0).toString(36); }
 
   /* сложность вопроса: 0 — простой (теория), 1 — средний, 2 — сложный (код) */

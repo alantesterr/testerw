@@ -134,6 +134,7 @@
   function buildRoom(f, k) {
     var room = f.rooms[k], r = rnd(f.n * 131 + k * 17 + 7), tier = f.n <= 3 ? 0 : f.n <= 6 ? 1 : f.n <= 10 ? 2 : 3;
     var n = room.boss ? 0 : 2 + (k >= f.rooms.length / 2 ? 1 : 0), objs = [], ros = ROSTER[tier];
+    if (!room.boss && room.secs && room.secs.length) objs.push({ type: 'altar' });
     var depth = k / Math.max(1, f.rooms.length - 1);
     for (var i = 0; i < n; i++) {
       var key = ros[Math.floor(r() * ros.length)], strong = i === n - 1 && depth > 0.3 && !!A.MON[key].lm;
@@ -143,42 +144,45 @@
     if (room.boss) { objs.push({ type: 'mon', key: ros[0], hp: 2 + tier, max: 2 + tier }); objs.push({ type: 'mon', key: BOSS[Math.min(2, Math.floor(f.n / 6))], hp: 7 + tier, max: 7 + tier, strong: true, boss: true }); }
     else objs.push({ type: 'chest' });
     objs.push({ type: 'exit' });
-    var span = 330, x0 = 140; objs.forEach(function (o, i) { o.x = o.type === 'exit' ? 448 : Math.round(x0 + i * span / Math.max(1, objs.length - 1) * 0.92); o.state = 'idle'; o.st = now(); });
+    var x0 = objs[0].type === 'altar' ? 104 : 140, span = 448 - x0; objs.forEach(function (o, i) { o.x = o.type === 'exit' ? 448 : Math.round(x0 + i * span / Math.max(1, objs.length - 1) * 0.94); o.state = 'idle'; o.st = now(); });
     var info = roomInfo(f, k);
     info.cleared.forEach(function (i) { if (objs[i]) { objs[i].dead = true; objs[i].hp = 0; } });
     if (info.chest) objs.forEach(function (o) { if (o.type === 'chest') o.open = true; });
+    if (info.altar) objs.forEach(function (o) { if (o.type === 'altar') o.used = true; });
     return objs;
   }
   function enterRoom(a) {
     var f = D.floors[a.f - 1], room = f.rooms[a.k];
     show(true); where((f.final ? 'Финал' : 'Этаж ' + f.n) + ' · ' + (room.boss ? 'Босс' : 'Комната ' + (a.k + 1)));
     S.at = { f: f.n, k: a.k }; D.persist();
-    G.room = { floor: f.n, f: f, k: a.k, room: room, objs: buildRoom(f, a.k), idx: -1, combo: 1, recent: [], turns: 0, right: 0, wrong: 0, iq: 0, briefOpen: true, mon: null };
+    G.room = { floor: f.n, f: f, k: a.k, room: room, objs: buildRoom(f, a.k), idx: -1, combo: 1, recent: [], turns: 0, right: 0, wrong: 0, iq: 0, briefOpen: true, mon: null, m0: D.mastery(room.qs), mistakes: [] };
     G.hero.x = 36; G.hero.dir = 1;
     roomIdle();
   }
-  function nextObj() { var R = G.room; for (var i = 0; i < R.objs.length; i++) { var o = R.objs[i]; if ((o.type === 'mon' && !o.dead) || (o.type === 'chest' && !o.open) || o.type === 'exit') return i; } return R.objs.length - 1; }
+  function nextObj() { var R = G.room; for (var i = 0; i < R.objs.length; i++) { var o = R.objs[i]; if ((o.type === 'mon' && !o.dead) || (o.type === 'chest' && !o.open) || (o.type === 'altar' && !o.used) || o.type === 'exit') return i; } return R.objs.length - 1; }
   function roomSummary() {
     var R = G.room, mons = R.objs.filter(function (o) { return o.type === 'mon' && !o.dead; }).length, chest = R.objs.some(function (o) { return o.type === 'chest' && !o.open; });
-    return 'В комнате: ' + (mons ? mons + ' ' + (mons === 1 ? 'монстр' : mons < 5 ? 'монстра' : 'монстров') : 'монстров не осталось') + (chest ? ' · сундук' : '') + ' · выход';
+    var altar = R.objs.some(function (o) { return o.type === 'altar' && !o.used; });
+    return 'В комнате: ' + (altar ? 'алтарь знаний · ' : '') + (mons ? mons + ' ' + (mons === 1 ? 'монстр' : mons < 5 ? 'монстра' : 'монстров') : 'монстров не осталось') + (chest ? ' · сундук' : '') + ' · выход';
   }
   function monTop(o) { return A.FLOOR_Y + 8 - A.monHeight(o.key) - (A.MON[o.key].fly ? 40 : 6); }
-  function roomLabels() { var R = G.room; if (!R) return; labels(R.objs.filter(function (o) { return o.type === 'mon' && !o.dead; }).map(function (o) { return { text: A.MON[o.key].name, x: o.x, y: monTop(o) - 14, color: o.boss ? '#F09595' : o.strong ? '#FAC775' : '#e8e4f8' }; }).concat(R.objs.filter(function (o) { return o.type === 'chest' && !o.open; }).map(function (o) { return { text: 'Сундук', x: o.x, y: A.FLOOR_Y - 36, color: '#FAC775' }; }))); }
+  function roomLabels() { var R = G.room; if (!R) return; labels(R.objs.filter(function (o) { return o.type === 'mon' && !o.dead; }).map(function (o) { return { text: A.MON[o.key].name, x: o.x, y: monTop(o) - 14, color: o.boss ? '#F09595' : o.strong ? '#FAC775' : '#e8e4f8' }; }).concat(R.objs.filter(function (o) { return o.type === 'chest' && !o.open; }).map(function (o) { return { text: 'Сундук', x: o.x, y: A.FLOOR_Y - 36, color: '#FAC775' }; })).concat(R.objs.filter(function (o) { return o.type === 'altar' && !o.used; }).map(function (o) { return { text: 'Алтарь знаний', x: o.x, y: A.FLOOR_Y - 70, color: '#CECBF6' }; }))); }
   function roomIdle() {
-    roomLabels();
+    focusOn(false); roomLabels();
     var R = G.room, i = nextObj(), o = R.objs[i];
-    var what = o.type === 'mon' ? (o.boss ? 'босс «' + A.MON[o.key].name + '»' : A.MON[o.key].name + (o.strong ? ' (сильный)' : '')) : o.type === 'chest' ? 'сундук' : 'выход';
+    var what = o.type === 'mon' ? (o.boss ? 'босс «' + A.MON[o.key].name + '»' : A.MON[o.key].name + (o.strong ? ' (сильный)' : '')) : o.type === 'chest' ? 'сундук' : o.type === 'altar' ? 'алтарь знаний (прочитать раздел лекции)' : 'выход';
     var sec = R.room.sec;
     setPanel('<div class="row"><span class="tag">' + esc(R.room.boss ? 'Босс этажа' : 'Комната ' + (R.k + 1)) + '</span>' + (sec ? '<span class="tag teal">' + esc(sec.title) + '</span>' : '') + '</div><p class="msg">' + esc(roomSummary()) + '. Дальше — ' + esc(what) + '.</p>',
-      [btn('Идти дальше', 'primary', 'Enter', function () { approach(i); })]);
+      [btn('Идти дальше', 'primary', 'Enter', function () { approach(i); }), btn('Книжка', 'ghost', 'B', function () { openBookRoom(); })]);
   }
   function approach(i) {
     var R = G.room, o = R.objs[i]; R.idx = i;
-    var stop = o.type === 'mon' ? o.x - (A.MON[o.key].lm ? 62 : A.MON[o.key].boss ? 66 : 50) : o.type === 'chest' ? o.x - 34 : o.x - 26;
+    var stop = o.type === 'mon' ? o.x - (A.MON[o.key].lm ? 62 : A.MON[o.key].boss ? 66 : 50) : o.type === 'chest' ? o.x - 34 : o.type === 'altar' ? o.x - 30 : o.x - 26;
     setPanel('<p class="msg">Идём…</p>');
     walkTo(stop, function () {
       if (o.type === 'mon') { R.mon = o; R.monTurn = 0; ask(); }
       else if (o.type === 'chest') openChest(o);
+      else if (o.type === 'altar') useAltar(o);
       else exitRoom();
     });
   }
@@ -188,6 +192,7 @@
     var R = G.room, secs = R.room.secs && R.room.secs.length ? R.room.secs : R.f.texts, sec = null, best = -1;
     var qt = D.toks(q.q + ' ' + (q.opts || []).map(function (o) { return o.t; }).join(' '));
     secs.forEach(function (s) { if (!s.tok) s.tok = D.toks(s.title + ' ' + D.blocks(s.blocks)); var sc = D.overlap(qt, s.tok); if (sc > best) { best = sc; sec = s; } });
+    R.briefSec = sec;
     if (!sec || (R.room.boss && best < 2)) return '';
     var txt = '';
     (sec.blocks || []).some(function (b) {
@@ -201,7 +206,8 @@
     var R = G.room, m = R.mon, M = A.MON[m.key];
     R.monTurn++;
     var useTask = m.strong && R.f.tasks.length && R.monTurn % 3 === 2;
-    var head = '<div class="row"><span class="tag ' + (m.boss || m.strong ? 'gold' : 'red') + '">' + esc(M.name) + (m.boss ? ' · босс' : m.strong ? ' · сильный' : '') + '</span><span class="tag teal">' + (useTask ? 'Задание' : 'Тест') + '</span><span class="tag">Лекция ' + R.f.n + '</span></div>';
+    focusOn(true);
+    var head = '<div class="row"><span class="tag ' + (m.boss || m.strong ? 'gold' : 'red') + '">' + esc(M.name) + (m.boss ? ' · босс' : m.strong ? ' · сильный' : '') + '</span><span class="tag teal">' + (useTask ? 'Задание' : 'Тест') + '</span><span class="tag">Лекция ' + R.f.n + '</span><span class="grow"></span>' + icoBtns() + '</div>';
     if (useTask) return askTask(head);
     var q = D.pick(R.f, R.room, R.recent); R.q = q; R.recent.push(q.id); if (R.recent.length > 6) R.recent.shift();
     var h = head + briefHtml(q) + '<div class="qtext">' + D.md(q.q) + '</div>';
@@ -212,7 +218,7 @@
       h += '<div class="opts">' + order.map(function (oi, n) { return '<button class="opt" data-o="' + oi + '"><span class="n">' + (n + 1) + '</span><span>' + D.md(q.opts[oi].t) + '</span></button>'; }).join('') + '</div>';
     }
     h += '<div class="hint">Клавиши: ' + (q.type === 'keyboard' ? 'Enter — ответить' : '1–' + q.opts.length + ' — выбрать ответ') + '</div>';
-    setPanel(h);
+    setPanel(h); wireIco();
     var det = panel.querySelector('details.brief'); if (det) det.ontoggle = function () { R.briefOpen = det.open; };
     G.buttons = [];
     if (q.type === 'keyboard') { var inp = $('kbIn'); $('kbGo').onclick = function () { answer(norm(inp.value) === norm(q.answer), inp.value); }; inp.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('kbGo').click(); } }; if (matchMedia('(pointer:fine)').matches) setTimeout(function () { inp.focus({ preventScroll: true }); }, 50); }
@@ -223,7 +229,7 @@
     var R = G.room, list = R.f.tasks, t = list[(R.turns + R.monTurn) % list.length]; R.task = t; R.taskAnswered = false;
     setPanel(head + '<div class="qtext">Задание' + (t.title ? ': ' + esc(t.title.replace(/\s·\s(лёгкая|средняя|сложная)$/, '')) : '') + '</div><div class="task-box rich">' + D.blocks(t.q) + '</div>' +
       '<div class="sol" id="sol">▸ Показать решение</div><p class="hint">Реши в голове или на бумаге, потом открой решение и честно отметь. «Знал» бьёт сильнее (×2).</p>',
-      [btn('Не знал', 'warn', null, function () { taskDone(false); }), btn('Знал', 'primary', null, function () { taskDone(true); })]);
+      [btn('Не знал', 'warn', null, function () { taskDone(false); }), btn('Знал', 'primary', null, function () { taskDone(true); })]); wireIco();
     $('sol').onclick = function () { var s = $('sol'); if (s.classList.contains('open')) return; s.classList.add('open'); s.innerHTML = '<div class="rich">' + D.blocks(t.a) + '</div>'; };
   }
   function taskDone(ok) {
@@ -231,11 +237,13 @@
     panel.querySelectorAll('[data-b]').forEach(function (b) { b.disabled = true; }); G.buttons = [];
     var s = $('sol'); if (s && !s.classList.contains('open')) s.click();
     panel.insertAdjacentHTML('beforeend', '<div class="verdict ' + (ok ? 'ok' : 'bad') + '">' + (ok ? 'Отлично! Двойной удар.' : 'Не страшно: решение перед тобой, разберись в нём. Это задание вернётся позже.') + '</div>');
+    if (!ok) R.mistakes.push({ q: 'Задание: ' + (R.task.title || '').replace(/\s·\s(лёгкая|средняя|сложная)$/, ''), a: 'разбери решение в книжке / в задании' });
     D.record(R.task.id, ok); resolve(ok, ok ? 2 : 0, 'task');
   }
 
   function answer(ok, pickedIdx) {
     var R = G.room, q = R.q; D.record(q.id, ok);
+    if (!ok) R.mistakes.push({ q: shortQ(q.q), md: q.q, a: q.type === 'keyboard' ? q.answer : D.strip(D.md((q.opts.filter(function (o) { return o.right; })[0] || {}).t || '')) });
     if (q.type === 'keyboard') {
       var inp = $('kbIn'); inp.disabled = true; $('kbGo').disabled = true;
       panel.querySelector('.kb').insertAdjacentHTML('afterend', '<div class="verdict ' + (ok ? 'ok' : 'bad') + '">' + (ok ? 'Верно!' : 'Неверно. Правильный ответ: <code>' + esc(q.answer) + '</code>') + '</div>');
@@ -246,7 +254,7 @@
     resolve(ok, 1, 'q');
   }
   function resolve(ok, power, kind) {
-    var R = G.room, m = R.mon;
+    var R = G.room, m = R.mon; peek();
     R.turns++;
     if (D.touchStreak()) floater('Огонёк +1 день!', 240, 40, '#FF9600');
     if (ok) {
@@ -292,22 +300,102 @@
     floater('+' + gain + ' IQ', o.x, 150, '#CECBF6');
     setPanel('<div class="qtext">Сундук открыт!</div><p class="msg">Внутри ' + gain + ' IQ. В следующих версиях в сундуках будут ещё зелья, свитки и оружие.</p>', [btn('Идти дальше', 'primary', 'Enter', roomIdle)]);
   }
+  function stars(m) { return m >= 85 ? '★★★' : m >= 50 ? '★★☆' : m > 0 ? '★☆☆' : '☆☆☆'; }
   function exitRoom() {
+    focusOn(false);
     var R = G.room, f = R.f, info = roomInfo(f, R.k), first = !info.done;
     info.done = true; S.rooms[rkey(f, R.k)] = info; var bonus = first ? 10 : 3; S.iq += bonus; R.iq += bonus; D.persist(); hud();
-    var m = D.mastery(R.room.qs), next = f.rooms[R.k + 1];
-    setPanel('<div class="qtext">Комната пройдена!</div><p class="msg">Верных ответов: ' + R.right + ', ошибок: ' + R.wrong + '. Получено IQ: ' + R.iq + '. Освоение вопросов этой комнаты: ' + m + '%.' + (R.wrong ? ' Вопросы с ошибками вернутся в следующих комнатах — так они запомнятся.' : '') + '</p>',
-      (next ? [btn('Следующая комната', 'primary', 'Enter', function () { go('room', { f: f.n, k: R.k + 1 }); })] : [btn(f.n < D.floors.length ? 'Этаж пройден! На следующий' : 'Подземелье пройдено!', 'primary', 'Enter', function () { if (f.n < D.floors.length) go('floor', f.n + 1); else go('path'); })])
-        .concat([btn('К этажу', 'ghost', null, function () { go('floor', f.n); })]));
+    var m = D.mastery(R.room.qs), next = f.rooms[R.k + 1], acc = R.right + R.wrong ? Math.round(R.right / (R.right + R.wrong) * 100) : 100;
+    var h = '<div class="sum-head"><div><div class="qtext">' + (R.room.boss ? 'Босс этажа повержен!' : 'Комната пройдена!') + '</div><div class="sum-stars">' + stars(m) + '</div></div>' +
+      '<div class="sum-cards"><div><b>' + R.right + '</b><span>верно</span></div><div><b>' + R.wrong + '</b><span>ошибок</span></div><div><b>' + acc + '%</b><span>точность</span></div><div class="iq"><b>+' + R.iq + '</b><span>IQ</span></div></div></div>' +
+      '<div class="sum-bar"><span>Освоение темы комнаты</span><div class="mbar"><i class="was" style="width:' + R.m0 + '%"></i><i class="now" style="width:' + Math.max(0, m - R.m0) + '%;left:' + R.m0 + '%"></i></div><span>' + R.m0 + '% → <b>' + m + '%</b></span></div>';
+    if (R.mistakes.length) {
+      h += '<div class="sum-mist"><b>Повтори — здесь были ошибки</b><ul>' + R.mistakes.slice(0, 6).map(function (x) { return '<li><div class="mq">' + (x.md ? D.md(x.md) : esc(x.q)) + '</div><em>Ответ: ' + esc(x.a) + '</em></li>'; }).join('') + '</ul><p class="hint">Эти вопросы вернутся в следующих комнатах — через пару других, чтобы закрепиться.</p></div>';
+    } else h += '<p class="msg">Ни одной ошибки — отлично! Следующие комнаты будут сложнее.</p>';
+    setPanel(h, (next ? [btn('Следующая комната', 'primary', 'Enter', function () { go('room', { f: f.n, k: R.k + 1 }); })] : [btn(f.n < D.floors.length ? 'Этаж пройден! На следующий' : 'Подземелье пройдено!', 'primary', 'Enter', function () { if (f.n < D.floors.length) go('floor', f.n + 1); else go('path'); })])
+      .concat([btn('Книжка', 'ghost', 'B', openBookRoom), btn('К этажу', 'ghost', null, function () { go('floor', f.n); })]));
   }
   function defeat() {
+    focusOn(false);
     setPanel('<div class="qtext">Тебя одолели…</div><p class="msg">Сердечки закончились. Ничего страшного: все ответы и освоение тем сохранены, побеждённые монстры не вернутся. Отдохни в домике — сердечки восстановятся.</p>',
       [btn('Вернуться домой', 'primary', 'Enter', function () { S.hp = S.maxHp; D.persist(); go('house'); })]);
+  }
+  function shortQ(s) { s = String(s || '').split('```')[0].replace(/`/g, '').trim(); return s.length > 110 ? s.slice(0, 107) + '…' : s; }
+
+  /* ---------- режим «на весь экран» ---------- */
+  var appEl = $('app');
+  function focusOn(on) { appEl.classList.toggle('focus', !!(on && S.focus)); appEl.classList.remove('peek'); }
+  function peek() { if (appEl.classList.contains('focus')) { appEl.classList.add('peek'); window.scrollTo(0, 0); } }
+  function toggleFocus() { S.focus = !S.focus; D.persist(); if (G.room && G.room.mon) { appEl.classList.toggle('focus', S.focus); appEl.classList.remove('peek'); var b = panel.querySelector('[data-ico="focus"]'); if (b) b.title = S.focus ? 'Свернуть (F)' : 'На весь экран (F)'; } }
+  var ICO_BOOK = '<svg viewBox="0 0 24 24"><path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z" fill="#F1E4C8"/><path d="M12 6v14" stroke="#3C3489" stroke-width="2"/><path d="M5 9h5M5 12h5M14 9h5M14 12h5" stroke="#7F77DD" stroke-width="1.5"/></svg>';
+  var ICO_FULL = '<svg viewBox="0 0 24 24" fill="none" stroke="#e8e4f8" stroke-width="2.4" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+  var ICO_MIN = '<svg viewBox="0 0 24 24" fill="none" stroke="#e8e4f8" stroke-width="2.4" stroke-linecap="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+  function icoBtns() { return '<button class="ico-btn book" data-ico="book" title="Книжка — вся лекция (B)" aria-label="Книжка">' + ICO_BOOK + '</button><button class="ico-btn" data-ico="focus" title="' + (S.focus ? 'Свернуть (F)' : 'На весь экран (F)') + '" aria-label="На весь экран">' + (S.focus ? ICO_MIN : ICO_FULL) + '</button>'; }
+  function wireIco() {
+    var b = panel.querySelector('[data-ico="book"]'), f = panel.querySelector('[data-ico="focus"]');
+    if (b) b.onclick = openBookRoom;
+    if (f) f.onclick = function () { toggleFocus(); f.innerHTML = S.focus ? ICO_MIN : ICO_FULL; };
+  }
+
+  /* ---------- КНИЖКА: вся лекция, открывается на нужной странице ---------- */
+  var BK = null;
+  function openBookRoom() {
+    var R = G.room; if (!R) return;
+    var sec = (R.mon && R.briefSec) || R.room.sec || (R.room.secs || [])[0];
+    var idx = Math.max(0, R.f.texts.indexOf(sec));
+    openBook({ f: R.f, start: idx, mark: (R.room.secs || []).map(function (s) { return s.id; }), cur: sec ? sec.id : null });
+  }
+  function openBook(o) {
+    var el = $('book'); if (!el) { el = document.createElement('div'); el.id = 'book'; document.body.appendChild(el); }
+    BK = o; BK.page = o.start || 0; el.hidden = false; document.body.classList.add('book-open'); renderBook();
+  }
+  function closeBook() {
+    var el = $('book'); if (!el || !BK) return; var o = BK; BK = null; el.hidden = true; document.body.classList.remove('book-open');
+    if (o.onClose) o.onClose();
+  }
+  function renderBook() {
+    var o = BK, f = o.f, T = f.texts, wide = innerWidth >= 960, step = wide ? 2 : 1;
+    if (wide && o.page % 2 && o.page === T.length - 1) o.page--;
+    var pages = [T[o.page], wide ? T[o.page + 1] : null].filter(Boolean);
+    var pg = function (s) {
+      var i = T.indexOf(s), here = o.cur === s.id, inRoom = o.mark && o.mark.indexOf(s.id) >= 0;
+      return '<article class="bk-page">' + (here ? '<div class="bk-here">★ Ты здесь: об этом сейчас вопросы</div>' : inRoom ? '<div class="bk-here room">◆ Раздел твоей комнаты</div>' : '') +
+        '<h3><span>' + esc(s.id) + '</span> ' + esc(s.title) + '</h3><div class="bk-body">' + D.bookHtml(s.blocks) + '</div><div class="bk-num">стр. ' + (i + 1) + ' из ' + T.length + '</div></article>';
+    };
+    var toc = '<select id="bkToc" aria-label="Оглавление">' + T.map(function (s, i) { return '<option value="' + i + '"' + (i === o.page ? ' selected' : '') + '>' + esc(s.id + ' ' + s.title) + (o.mark && o.mark.indexOf(s.id) >= 0 ? ' ◆' : '') + '</option>'; }).join('') + '</select>';
+    var close = o.altar ? 'Прочитал — забрать награду' : (G.room && G.room.mon ? 'Вернуться в бой' : 'Закрыть книжку');
+    $('book').innerHTML = '<div class="bk-wrap" role="dialog" aria-label="Книжка">' +
+      '<header class="bk-top"><div class="bk-title">' + (o.altar ? '<span class="tag">Алтарь знаний</span> ' : '') + '<b>' + esc(f.final ? 'Итог курса' : 'Лекция ' + f.n) + '</b> · ' + esc(f.title) + '</div>' + toc + '<button class="btn ghost bk-x" id="bkX" aria-label="Закрыть">✕</button></header>' +
+      (o.altar ? '<div class="bk-altar">Алтарь открыл разделы этой комнаты целиком. Прочитай их спокойно — потом монстрам будет проще отвечать. За первое прочтение: <b>+5 IQ</b> и <b>+1 ♥</b>.</div>' : '') +
+      '<div class="bk-spread' + (pages.length > 1 ? ' two' : '') + '">' + pages.map(pg).join('') + '</div>' +
+      '<footer class="bk-foot"><button class="btn ghost" id="bkPrev"' + (o.page <= 0 ? ' disabled' : '') + '>◀ Назад</button><button class="btn primary" id="bkClose">' + esc(close) + '<kbd>Esc</kbd></button><button class="btn ghost" id="bkNext"' + (o.page + step >= T.length ? ' disabled' : '') + '>Дальше ▶</button></footer></div>';
+    $('bkPrev').onclick = function () { flip(-1); }; $('bkNext').onclick = function () { flip(1); };
+    $('bkClose').onclick = closeBook; $('bkX').onclick = closeBook;
+    $('bkToc').onchange = function () { o.page = +this.value; if (wide && o.page % 2) o.page--; renderBook(); };
+    var body = $('book').querySelector('.bk-spread'); if (body) body.scrollTop = 0;
+  }
+  function flip(d) { if (!BK) return; var step = innerWidth >= 960 ? 2 : 1, n = BK.f.texts.length; var p = BK.page + d * step; if (p < 0 || p >= n) return; BK.page = p; renderBook(); }
+  addEventListener('resize', function () { if (BK) renderBook(); });
+
+  /* ---------- АЛТАРЬ ЗНАНИЙ ---------- */
+  function useAltar(o) {
+    var R = G.room, secs = R.room.secs || [], first = !o.used;
+    setPanel('<div class="qtext">Алтарь знаний</div><p class="msg">Над камнем парит книга. Она откроет разделы этой комнаты целиком: «' + esc(secs.map(function (s) { return s.title; }).join('», «')) + '». Прочитай — и монстры станут понятнее.</p>',
+      [btn('Открыть книгу', 'primary', 'Enter', function () {
+        openBook({ f: R.f, start: Math.max(0, R.f.texts.indexOf(secs[0])), mark: secs.map(function (s) { return s.id; }), cur: null, altar: first, onClose: function () {
+          if (!o.used) { o.used = true; var info = roomInfo(R.f, R.k); info.altar = true; S.rooms[rkey(R.f, R.k)] = info; S.iq += 5; R.iq += 5; var healed = S.hp < S.maxHp; if (healed) S.hp++; D.persist(); hud();
+            floater('+5 IQ', o.x, 120, '#CECBF6'); if (healed) floater('+1 ♥', o.x, 150, '#9FE1CB'); }
+          roomIdle();
+        } });
+      }), btn('Пропустить', 'ghost', null, function () { o.used = true; roomIdle(); })]);
   }
 
   /* ---------- клавиатура ---------- */
   document.addEventListener('keydown', function (e) {
-    if (e.target && e.target.tagName === 'INPUT') return;
+    if (BK) { if (e.key === 'Escape') { e.preventDefault(); closeBook(); } else if (e.key === 'ArrowRight') flip(1); else if (e.key === 'ArrowLeft') flip(-1); else if (e.key === 'Enter' && e.target.tagName !== 'SELECT') { e.preventDefault(); closeBook(); } return; }
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
+    if ((e.key === 'b' || e.key === 'B' || e.key === 'и' || e.key === 'И') && G.scene === 'room') { e.preventDefault(); openBookRoom(); return; }
+    if ((e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') && G.scene === 'room' && G.room && G.room.mon) { e.preventDefault(); var fb = panel.querySelector('[data-ico="focus"]'); if (fb) fb.click(); else toggleFocus(); return; }
     if (e.key === 'Enter' && G.buttons && G.buttons.length) { e.preventDefault(); var b = G.buttons.filter(function (x) { return x.key === 'Enter'; })[0] || G.buttons[0]; b.fn(); return; }
     if (/^[1-9]$/.test(e.key)) { var opts = panel.querySelectorAll('.opt:not([disabled])'); var el = opts[+e.key - 1]; if (el) { e.preventDefault(); el.click(); } }
     if (e.key === 'Escape' || e.key === 'Backspace') { if (G.scene !== 'room' || !G.room || !G.room.mon) $('hudBack').click(); }
@@ -330,6 +418,7 @@
     var fy = A.FLOOR_Y + 8;
     /* объекты комнаты */
     if (G.scene === 'room' && G.room) G.room.objs.forEach(function (o) {
+      if (o.type === 'altar') { A.altar(c, o.x, fy, t, o.used); return; }
       if (o.type === 'chest') {
         var fr = A.anim[o.open ? 'chest_full_open' : 'chest_full_open'] || [], k = o.open ? Math.min(2, Math.floor((t - (o.openAt || 0)) / 120)) : 0;
         A.frame(c, fr[o.open ? (o.openAt ? k : 2) : 0], o.x - 20, fy - 40, 2.5);

@@ -1,0 +1,4 @@
+﻿Graphics credits (all CC0 1.0 — public domain, free for any use):
+- "Monsters Creatures Fantasy" by Luiz Melo — https://luizmelo.itch.io/monsters-creatures-fantasy
+- "16x16 DungeonTileset II" by 0x72 (Robert) — https://0x72.itch.io/dungeontileset-ii
+Hero sprite, torches, scenes and UI: drawn for StudyPlay.

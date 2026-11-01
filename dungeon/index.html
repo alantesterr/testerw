@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14121c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Подземелье знаний · StudyPlay</title>
+<link rel="stylesheet" href="css/game.css?v=6">
+</head>
+<body>
+<div id="app">
+  <header id="hud" hidden>
+    <button class="hud-btn" id="hudBack" aria-label="Назад">‹</button>
+    <div class="hud-hearts" id="hudHearts" aria-label="Сердечки"></div>
+    <div class="hud-flame" id="hudFlame" title="Дней подряд"><span class="flame-ic" aria-hidden="true"></span><b id="hudStreak">0</b></div>
+    <div class="hud-iq" title="IQ — награда за ответы"><span>IQ</span><b id="hudIq">0</b></div>
+    <div class="hud-where" id="hudWhere"></div>
+    <div class="hud-combo" id="hudCombo" hidden><span>КОМБО</span><b id="hudComboV">×1.0</b></div>
+  </header>
+
+  <main id="stage">
+    <div id="sceneWrap">
+      <canvas id="scene" width="480" height="270" aria-label="Игровая сцена"></canvas>
+      <div id="floaters" aria-hidden="true"></div>
+    </div>
+    <section id="panel" aria-live="polite"></section>
+  </main>
+
+  <section id="screen" hidden></section>
+  <div id="loading"><div class="ld-flame"></div><div>Загружаем подземелье…</div></div>
+</div>
+<script src="js/data.js?v=6"></script>
+<script src="js/art.js?v=6"></script>
+<script src="js/game.js?v=6"></script>
+</body>
+</html>

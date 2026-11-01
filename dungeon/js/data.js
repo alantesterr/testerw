@@ -1,0 +1,154 @@
+/* =====================================================================
+   ДАННЫЕ: лекции, вопросы и задачи берутся из конспекта StudyPlay
+   (data/ir-252/notes/cpp15.json). Здесь же — повторение (какой вопрос
+   задать следующим) и сохранение прогресса на устройстве.
+   ===================================================================== */
+(function () {
+  'use strict';
+  var D = window.DG = window.DG || {};
+  var SAVE_KEY = 'sp-dungeon-v1';
+
+  var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  D.esc = esc;
+  var strip = function (h) { var d = document.createElement('div'); d.innerHTML = h || ''; return (d.textContent || '').replace(/\s+/g, ' ').trim(); };
+  D.strip = strip;
+
+  /* мини-markdown для вопросов: ```cpp блоки и `код` */
+  D.md = function (s) {
+    s = String(s || '');
+    var out = '', parts = s.split(/```(?:\w+)?\n?/);
+    parts.forEach(function (p, i) {
+      if (i % 2) out += '<pre class="code">' + esc(p.replace(/\n$/, '')) + '</pre>';
+      else out += esc(p).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\n/g, ' ');
+    });
+    return out;
+  };
+  /* блоки конспекта (p, code, out, ul, ol, note, table, h) → HTML */
+  D.blocks = function (bl) {
+    return (bl || []).map(function (b) {
+      switch (b.t) {
+        case 'p': return '<p>' + b.html + '</p>';
+        case 'h': return '<p><b>' + b.html + '</b></p>';
+        case 'code': return (b.cap && !/^(Код|Схема)$/.test(b.cap) ? '<p><i>' + esc(b.cap) + '</i></p>' : '') + '<pre class="code">' + esc(b.text) + '</pre>';
+        case 'out': return '<pre class="code" style="color:#FAC775">' + esc(b.text) + '</pre>';
+        case 'ul': case 'ol': return '<' + b.t + '>' + b.items.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</' + b.t + '>';
+        case 'note': return '<p><b>' + esc(b.kind || '') + '.</b> ' + b.html + '</p>';
+        case 'table': return '<pre class="code" style="color:#ece8f6">' + esc(b.rows.map(function (r) { return r.map(strip).join(' | '); }).join('\n')) + '</pre>';
+        default: return b.html ? '<p>' + b.html + '</p>' : '';
+      }
+    }).join('');
+  };
+
+  /* ключевые слова: идентификаторы кода, значки операций, русские слова (по корню) */
+  var STOP = { the: 1, is: 1, of: 1, what: 1, which: 1, and: 1, in: 1, to: 1, a: 1, an: 1, be: 1, are: 1, for: 1, with: 1, this: 1, that: 1, output: 1, correct: 1, answer: 1, no: 1, value: 1, following: 1, used: 1, called: 1, does: 1, int: 1, cout: 1, endl: 1, return: 1, main: 1,
+    'является': 1, 'который': 1, 'которые': 1, 'можно': 1, 'нельзя': 1, 'вывод': 1, 'программ': 1, 'значен': 1, 'перемен': 1 };
+  function toks(s) {
+    s = String(s || '').replace(/<[^>]+>/g, ' ').toLowerCase(); var set = {};
+    (s.match(/[a-z_][a-z0-9_]{1,}/g) || []).forEach(function (w) { if (!STOP[w]) set[w] = 1; });
+    (s.match(/\+\+|--|&&|\|\||::|->|%|\?|!=|==|\[\]|\*|&/g) || []).forEach(function (w) { set['#' + w] = 1; });
+    (s.match(/[а-яё]{5,}/g) || []).forEach(function (w) { var st = w.slice(0, 6); if (!STOP[st] && !STOP[w]) set[st] = 1; });
+    return set;
+  }
+  function overlap(a, b) { var n = 0; for (var k in a) if (b[k]) n += k.charAt(0) === '#' ? 0.5 : (/[a-z]/.test(k) ? 2 : 1); return n; }
+  D.toks = toks; D.overlap = overlap;
+
+  function hash(s) { var h = 5381; for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return 'q' + (h >>> 0).toString(36); }
+
+  /* сложность вопроса: 0 — простой (теория), 1 — средний, 2 — сложный (код) */
+  function diffOf(q) {
+    var t = q.q || '';
+    if (/```/.test(t)) return /What is the output|выведет/i.test(t) && t.length > 160 ? 2 : (q.type === 'keyboard' ? 1 : 2);
+    if (q.type === 'keyboard') return 1;
+    return 0;
+  }
+
+  D.load = function () {
+    return fetch('../data/ir-252/notes/cpp15.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (doc) {
+      D.doc = doc;
+      D.floors = doc.lectures.map(function (lec, i) {
+        var texts = [], pool = [], tasks = [];
+        lec.sections.forEach(function (s) {
+          if (s.kind === 'text' && s.title) texts.push({ id: s.id, title: s.title, blocks: s.blocks });
+          if (s.kind === 'test') (s.blocks || []).forEach(function (b) { (b.questions || []).forEach(function (q) {
+            var it = { id: hash(q.q + '|' + (q.answer || '') + (q.opts || []).map(function (o) { return o.t; }).join('|')), q: q.q, opts: q.opts || [], type: q.type || 'choice', answer: q.answer };
+            it.diff = diffOf(it); pool.push(it);
+          }); });
+          if (s.kind === 'tasks') (s.blocks || []).forEach(function (b) { if (b.t === 'qa') tasks.push({ id: hash('task' + lec.id + b.num), num: b.num, title: b.title, q: b.q, a: b.a }); });
+        });
+        /* комнаты: разделы лекции идут по порядку, 3–7 комнат + босс; в комнате может быть 1–2 раздела */
+        var n = Math.max(1, Math.min(7, texts.length || 1));
+        var rooms = [];
+        for (var k = 0; k < n; k++) {
+          var a = Math.floor(k * texts.length / n), b = Math.max(a + 1, Math.floor((k + 1) * texts.length / n));
+          var secs = texts.slice(a, b); secs.forEach(function (s) { s.tok = toks(s.title + ' ' + D.blocks(s.blocks)); });
+          rooms.push({ k: k, sec: secs[0] || null, secs: secs, boss: false, qs: [] });
+        }
+        /* каждый вопрос — в комнату с самым похожим разделом (по коду и словам) */
+        var cap = Math.max(3, Math.ceil(pool.length / n * 1.5));
+        var scored = pool.map(function (q) {
+          var qt = toks(q.q + ' ' + (q.opts || []).map(function (o) { return o.t; }).join(' ') + ' ' + (q.answer || ''));
+          var sc = rooms.map(function (r) { return r.secs.reduce(function (m, s) { return Math.max(m, overlap(qt, s.tok)); }, 0); });
+          var order = sc.map(function (_, i) { return i; }).sort(function (a, b) { return sc[b] - sc[a]; });
+          return { q: q, sc: sc, order: order, margin: sc[order[0]] - (sc[order[1]] || 0) };
+        }).sort(function (a, b) { return b.margin - a.margin; });   /* сначала самые «однозначные» */
+        scored.forEach(function (x) {
+          var pick = -1;
+          for (var i = 0; i < x.order.length; i++) { var ri = x.order[i]; if (x.sc[ri] > 0 && rooms[ri].qs.length < cap) { pick = ri; break; } }
+          if (pick < 0) { pick = 0; rooms.forEach(function (r, ri) { if (r.qs.length < rooms[pick].qs.length) pick = ri; }); }
+          x.q.room = pick; rooms[pick].qs.push(x.q.id);
+        });
+        /* пустая комната (раздел без вопросов) — берёт у самой большой соседней */
+        rooms.forEach(function (r, ri) { if (r.qs.length) return; var big = rooms.reduce(function (m, x) { return x.qs.length > m.qs.length ? x : m; }, rooms[0]); r.qs = big.qs.splice(0, Math.floor(big.qs.length / 2)); });
+        rooms.push({ k: n, sec: null, secs: texts, boss: true, qs: pool.map(function (q) { return q.id; }) });
+        var byId = {}; pool.forEach(function (q) { byId[q.id] = q; });
+        return { n: i + 1, id: lec.id, label: lec.label, title: lec.title, texts: texts, pool: pool, byId: byId, tasks: tasks, rooms: rooms, final: lec.label === 'Итог' };
+      });
+      return D.floors;
+    });
+  };
+
+  /* ---------- сохранение ---------- */
+  var fresh = function () { return { v: 1, hp: 5, maxHp: 5, iq: 0, streak: 0, lastDay: '', ticks: 0, srs: {}, rooms: {}, at: null, seenIntro: false, best: 0 }; };
+  D.save = (function () { try { var s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); return s && s.v === 1 ? Object.assign(fresh(), s) : fresh(); } catch (e) { return fresh(); } })();
+  D.persist = function () { try { localStorage.setItem(SAVE_KEY, JSON.stringify(D.save)); } catch (e) { /* приватный режим — играем без сохранения */ } };
+
+  /* огонёк: день засчитывается после первого ответа */
+  var today = function () { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+  var dayNum = function (s) { var p = s.split('-'); return Math.round(new Date(+p[0], +p[1] - 1, +p[2]).getTime() / 864e5); };
+  D.streakAlive = function () { var s = D.save; if (!s.lastDay) return false; var gap = dayNum(today()) - dayNum(s.lastDay); return gap <= 1; };
+  D.touchStreak = function () {
+    var s = D.save, t = today(); if (s.lastDay === t) return false;
+    var gap = s.lastDay ? dayNum(t) - dayNum(s.lastDay) : 99;
+    s.streak = gap === 1 ? s.streak + 1 : 1; s.lastDay = t; return true;
+  };
+
+  /* ---------- повторение (уровень знания 0–5 у каждого вопроса) ---------- */
+  var GAP = [0, 4, 10, 25, 60, 150];
+  D.level = function (id) { var r = D.save.srs[id]; return r ? r.l : 0; };
+  D.mastery = function (ids) { if (!ids.length) return 0; var s = 0; ids.forEach(function (id) { s += D.level(id); }); return Math.round(s / (ids.length * 5) * 100); };
+  D.record = function (id, ok) {
+    var s = D.save, r = s.srs[id] || { l: 0, n: 0, w: 0, due: 0 };
+    s.ticks++; r.n++;
+    if (ok) { r.l = Math.min(5, r.l + 1); r.due = s.ticks + GAP[r.l]; }
+    else { r.w++; r.l = Math.max(0, r.l - 1); r.due = s.ticks + 4 + Math.floor(Math.random() * 5); }
+    s.srs[id] = r;
+  };
+  /* выбрать следующий вопрос: сначала «вернувшиеся» ошибки, потом новые, потом слабые; знакомое — сложнее */
+  D.pick = function (floor, room, recent) {
+    var s = D.save, t = s.ticks, roomIds = room.qs, all = floor.pool.map(function (q) { return q.id; });
+    var notRecent = function (id) { return recent.indexOf(id) < 0; };
+    var due = all.filter(function (id) { var r = s.srs[id]; return r && r.w > 0 && r.l < 3 && r.due <= t && notRecent(id); });
+    if (due.length && Math.random() < 0.7) return floor.byId[due[Math.floor(Math.random() * due.length)]];
+    var fresh = roomIds.filter(function (id) { return !s.srs[id] && notRecent(id); });
+    if (fresh.length) return floor.byId[fresh[Math.floor(Math.random() * fresh.length)]];
+    /* всё в комнате уже видели: если комната освоена — берём вопросы сложнее из всего этажа */
+    var roomM = D.mastery(roomIds);
+    var cand = roomIds.filter(notRecent);
+    if (roomM >= 60) { var maxD = Math.max.apply(null, roomIds.map(function (id) { return floor.byId[id].diff; })); var harder = all.filter(function (id) { return floor.byId[id].diff > maxD - (maxD === 2 ? 1 : 0) && notRecent(id) && D.level(id) < 5; }); if (harder.length) cand = harder; }
+    if (!cand.length) cand = all.filter(notRecent);
+    if (!cand.length) cand = all;
+    cand.sort(function (a, b) { return (D.level(a) - D.level(b)) || ((s.srs[a] ? s.srs[a].due : 0) - (s.srs[b] ? s.srs[b].due : 0)); });
+    var top = cand.slice(0, Math.min(5, cand.length));
+    return floor.byId[top[Math.floor(Math.random() * top.length)]];
+  };
+})();

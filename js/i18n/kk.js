@@ -149,6 +149,7 @@ SP.I18N.kk = {
   'subjects.noContent': 'Файл мазмұны қолжетімсіз', 'subjects.openFail': 'Ашу мүмкін болмады:', 'subjects.noPreview': 'Алдын ала қарау қолжетімсіз',
   'subjects.noPreviewText': 'Файлды жүктеп алып, қолайлы бағдарламада ашыңыз.', 'subjects.slide': '{n} слайдтың {i}-сі', 'subjects.pptxNote': 'Мәтіндік көрініс: безендіру өзгеше болуы мүмкін.',
 
+  'tester.gameTitle': 'Білім зынданы — C++ ойыны', 'tester.gameSub': 'C++ сұрақтары мен конспектісі ойын түрінде: дәріс-қабаттар, құбыжықтар, қате күзетшісі, күндік тапсырмалар.', 'tester.gamePlay': 'Ойнау',
   'tester.sub': 'Тесттерді жүктеп, жаттығыңыз. Сұрақтар мен нұсқалар араластырылады.', 'tester.help': 'Бұл қалай жұмыс істейді', 'tester.editQuestions': 'Сұрақ редакторы',
   'tester.step1': '1. Тест файлдары', 'tester.formats': 'TXT, DOC, DOCX немесе .studyplay.json · бірнеше файл болады', 'tester.filesOf': '{max} ішінен {n}',
   'tester.dropHint': 'Файлдарды осында сүйреңіз немесе батырманы басыңыз', 'tester.pick': 'Файл таңдау', 'tester.addMore': 'Тағы файл қосу', 'tester.limit': '{max} файл шегі',

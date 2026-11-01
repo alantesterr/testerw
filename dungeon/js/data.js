@@ -118,9 +118,17 @@
         });
         /* пустая комната (раздел без вопросов) — берёт у самой большой соседней */
         rooms.forEach(function (r, ri) { if (r.qs.length) return; var big = rooms.reduce(function (m, x) { return x.qs.length > m.qs.length ? x : m; }, rooms[0]); r.qs = big.qs.splice(0, Math.floor(big.qs.length / 2)); });
-        rooms.push({ k: n, sec: null, secs: texts, boss: true, qs: pool.map(function (q) { return q.id; }) });
+        /* задания — в комнату с самым похожим разделом (если похожих нет — по кругу) */
+        rooms.forEach(function (r) { r.tasks = []; });
+        tasks.forEach(function (t, ti) {
+          var tt = toks((t.title || '') + ' ' + D.blocks(t.q)), best = -1, pick = ti % n;
+          rooms.forEach(function (r, ri) { var sc = r.secs.reduce(function (m, s) { return Math.max(m, overlap(tt, s.tok)); }, 0); if (sc > best && sc >= 2) { best = sc; pick = ri; } });
+          rooms[pick].tasks.push(t.id);
+        });
+        rooms.push({ k: n, sec: null, secs: texts, boss: true, tasks: [], qs: pool.map(function (q) { return q.id; }) });
+        var taskById = {}; tasks.forEach(function (t) { taskById[t.id] = t; });
         var byId = {}; pool.forEach(function (q) { byId[q.id] = q; });
-        return { n: i + 1, id: lec.id, label: lec.label, title: lec.title, texts: texts, pool: pool, byId: byId, tasks: tasks, rooms: rooms, final: lec.label === 'Итог' };
+        return { n: i + 1, id: lec.id, label: lec.label, title: lec.title, texts: texts, pool: pool, byId: byId, tasks: tasks, taskById: taskById, rooms: rooms, final: lec.label === 'Итог' };
       });
       return D.floors;
     });

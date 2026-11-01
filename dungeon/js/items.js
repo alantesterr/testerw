@@ -22,11 +22,11 @@
   X.HOTBAR = ['potion', 'bigpot', 'fifty', 'bulb', 'google', 'ai', 'shield'];
   X.WEAPONS = {
     wood:   { name: 'Деревянный меч', desc: 'обычный удар, не ломается', icon: 'weapon_rusty_sword', dur: 0, rar: 0 },
-    steel:  { name: 'Стальной клинок', desc: 'урон ×2', icon: 'weapon_knight_sword', dur: 30, price: 180, rar: 1 },
-    dagger: { name: 'Кинжал удачи', desc: '50%: урон ×2', icon: 'weapon_katana', dur: 30, price: 150, rar: 1 },
-    staff:  { name: 'Посох рассечения', desc: '33%: снести половину сердец монстра', icon: 'weapon_red_magic_staff', dur: 25, price: 260, rar: 2 },
-    hammer: { name: 'Молот берсерка', desc: 'урон ×3, но ошибка отнимает 2 ♥', icon: 'weapon_big_hammer', dur: 20, price: 300, rar: 2 },
-    legend: { name: 'Клинок Страуструпа', desc: 'урон ×2 и 5%: убить любого с одного удара', icon: 'weapon_golden_sword', dur: 40, price: 650, rar: 3 }
+    steel:  { name: 'Стальной клинок', desc: 'сильный удар: +2 IQ за каждый верный ответ', icon: 'weapon_knight_sword', dur: 30, price: 180, rar: 1 },
+    dagger: { name: 'Кинжал удачи', desc: '50%: удача, +2 IQ к ответу', icon: 'weapon_katana', dur: 30, price: 150, rar: 1 },
+    staff:  { name: 'Посох рассечения', desc: '33%: рассечение, большой бонус IQ', icon: 'weapon_red_magic_staff', dur: 25, price: 260, rar: 2 },
+    hammer: { name: 'Молот берсерка', desc: '+4 IQ за верный ответ, но ошибка отнимает 2 ♥', icon: 'weapon_big_hammer', dur: 20, price: 300, rar: 2 },
+    legend: { name: 'Клинок Страуструпа', desc: '+2 IQ за ответ и 5%: огромный бонус IQ', icon: 'weapon_golden_sword', dur: 40, price: 650, rar: 3 }
   };
   X.RAR = ['обычное', 'редкое', 'эпическое', 'легендарное'];
   X.RAR_COL = ['#4a4370', '#378ADD', '#7F77DD', '#EF9F27'];

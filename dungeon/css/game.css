@@ -274,3 +274,18 @@ b.bad,.bad{color:#F7A3A3}
 .room .tag{margin-top:6px}
 .disc{position:relative}.medal{position:absolute;right:-6px;bottom:-6px;width:28px;height:28px;border-radius:50%;background:#FFD25A;color:#3a2a06;font-style:normal;font-size:16px;display:flex;align-items:center;justify-content:center;border:3px solid #14121c}
 .node.clean .disc{box-shadow:0 6px 0 #0d0b12,0 0 0 4px rgba(255,210,90,.35)}
+/* ---------- этап 4: обучение и задания дня ---------- */
+.tip{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;background:#1d2b3a;border:1px solid #378ADD;border-radius:10px;padding:10px 12px;margin:0 0 10px;font-size:14px;line-height:1.45}
+.tip b{color:#85B7EB;width:100%}
+.tip span{flex:1 1 220px;color:#dfe8f4}
+.tip .btn{width:auto!important;padding:6px 12px}
+.daily{background:#1b1730;border:1px solid #3a3366;border-radius:12px;padding:12px;margin:10px 0}
+.daily>b{display:block;margin-bottom:8px;color:#FAC775}
+.daily .dq{position:relative;display:flex;justify-content:space-between;gap:8px;padding:7px 10px;margin:6px 0;border-radius:8px;background:#26213f;overflow:hidden;font-size:14px}
+.daily .dq span,.daily .dq em{position:relative;z-index:1}
+.daily .dq em{font-style:normal;color:#AFA9EC;white-space:nowrap}
+.daily .dq i{position:absolute;left:0;top:0;bottom:0;background:rgba(93,202,165,.18)}
+.daily .dq.done{color:#9FE1CB}
+.daily small{color:#8f89b3;font-size:12.5px}
+.brief .rich p{margin:6px 0}
+.brief .rich pre.code{font-size:13px;max-height:220px;overflow:auto}

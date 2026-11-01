@@ -149,6 +149,7 @@ SP.I18N.en = {
   'subjects.noContent': 'File content is not available', 'subjects.openFail': 'Could not open:', 'subjects.noPreview': 'Preview not available',
   'subjects.noPreviewText': 'Download the file and open it in a suitable app.', 'subjects.slide': 'Slide {i} of {n}', 'subjects.pptxNote': 'Text-only view: formatting may differ.',
 
+  'tester.gameTitle': 'Dungeon of Knowledge — a C++ game', 'tester.gameSub': 'The same C++ questions and notes as a game: lecture floors, monsters, a mistakes guardian, daily quests.', 'tester.gamePlay': 'Play',
   'tester.sub': 'Load tests and practise. Questions and options are shuffled.', 'tester.help': 'How it works', 'tester.editQuestions': 'Question editor',
   'tester.step1': '1. Test files', 'tester.formats': 'TXT, DOC, DOCX or .studyplay.json · several files allowed', 'tester.filesOf': '{n} of {max}',
   'tester.dropHint': 'Drag files here or press the button', 'tester.pick': 'Choose file', 'tester.addMore': 'Add another file', 'tester.limit': 'Limit of {max} files',

@@ -95,14 +95,16 @@
   /* ---------- ПУТЬ C++ (как ветка Duolingo) ---------- */
   var UNITS = [[1, 3, 'Раздел 1 · к РК1', 'Основы: алгоритмы, операции, ветвления'], [4, 6, 'Раздел 2 · к РК1', 'Циклы, массивы, функции, строки'], [7, 9, 'Раздел 3 · к РК2', 'ООП: принципы, классы, среда C++ Builder'], [10, 12, 'Раздел 4 · к РК2', 'Формы, события, иерархия классов'], [13, 15, 'Раздел 5 · к экзамену', 'Конструкторы, свойства, компоненты'], [16, 16, 'Финал', 'Смешанные сложные вопросы по всему курсу']];
   function floorMastery(f) { return D.mastery(f.pool.map(function (q) { return q.id; })); }
+  function poolIds(f) { return f.pool.map(function (q) { return q.id; }); }
+  function statLine(st) { return 'увидено ' + st.seen + ' / ' + st.total + (st.bad ? ' · <b class="bad">к повтору: ' + st.bad + '</b>' : ''); }
   function enterPath() {
     show(false); where('Подземелье C++');
-    var cur = S.at ? S.at.f : 1, h = '<div class="path-head"><h1>Подземелье C++</h1><span class="tag teal">все этажи открыты</span></div><p class="hallnote">Этаж = лекция. Цвет круга показывает, насколько ты освоил тему: серый — ещё не начинал, оранжевый — начал, зелёный — хорошо, золотой — отлично.</p>';
+    var cur = S.at ? S.at.f : 1, h = '<div class="path-head"><h1>Подземелье C++</h1><span class="tag teal">все этажи открыты</span></div><p class="hallnote">Этаж = лекция. Цвет круга — насколько ты освоил тему: серый — не начинал, оранжевый — начал, зелёный — хорошо, золотой — отлично. Золотая медаль ✓ — этаж пройден начисто: все вопросы увидены и ни одной неисправленной ошибки.</p>';
     UNITS.forEach(function (u, ui) {
       h += '<div class="unit u' + (ui % 4 + 1) + '"><small>' + esc(u[2]) + '</small><b>' + esc(u[3]) + '</b></div><div class="trail">';
       D.floors.filter(function (f) { return f.n >= u[0] && f.n <= u[1]; }).forEach(function (f) {
-        var m = floorMastery(f), cls = m >= 85 ? 'm3' : m >= 50 ? 'm2' : m > 0 ? 'm1' : '';
-        h += '<button class="node' + (f.n === cur ? ' cur' : '') + '" data-f="' + f.n + '"><span class="disc ' + cls + '">' + (f.final ? '★' : f.n) + '</span><span class="info"><b>' + esc(f.final ? 'Финальный этаж' : 'Этаж ' + f.n) + '</b><span>' + esc(f.title) + '</span><div class="bar"><i style="width:' + m + '%"></i></div><span>освоено ' + m + '%</span></span></button>';
+        var m = floorMastery(f), st = D.stats(poolIds(f)), cls = m >= 85 ? 'm3' : m >= 50 ? 'm2' : m > 0 ? 'm1' : '';
+        h += '<button class="node' + (f.n === cur ? ' cur' : '') + (st.clean ? ' clean' : '') + '" data-f="' + f.n + '"><span class="disc ' + cls + '">' + (f.final ? '★' : f.n) + (st.clean ? '<i class="medal">✓</i>' : '') + '</span><span class="info"><b>' + esc(f.final ? 'Финальный этаж' : 'Этаж ' + f.n) + (st.clean ? ' <span class="tag gold">пройден начисто</span>' : '') + '</b><span>' + esc(f.title) + '</span><div class="bar"><i style="width:' + m + '%"></i></div><span>освоено ' + m + '% · ' + statLine(st) + '</span></span></button>';
       });
       h += '</div>';
     });
@@ -117,15 +119,21 @@
   function enterFloor(n) {
     var f = D.floors[(n || 1) - 1]; if (!f) f = D.floors[0];
     show(false); where('Этаж ' + f.n + ' · ' + f.title);
-    var m = floorMastery(f), nextK = f.rooms.findIndex(function (r) { return !roomInfo(f, r.k).done; });
-    var h = '<div class="path-head"><h1>' + esc(f.final ? 'Финальный этаж' : 'Этаж ' + f.n) + '</h1><span class="tag teal">освоено ' + m + '%</span></div><p class="hallnote">' + esc(f.title) + '. Комнаты идут от лёгких к сложным, последняя — босс этажа. Каждая комната — кусочек лекции, поэтому, пройдя все, ты пройдёшь всю тему без пропусков.</p><div class="rooms">';
+    var m = floorMastery(f), fst = D.stats(poolIds(f)), bad = D.badIds(f).length;
+    var nextK = f.rooms.findIndex(function (r) { return !roomInfo(f, r.k).done || !D.stats(r.qs).clean; });
+    var h = '<div class="path-head"><h1>' + esc(f.final ? 'Финальный этаж' : 'Этаж ' + f.n) + '</h1><span class="tag teal">освоено ' + m + '%</span>' + (fst.clean ? '<span class="tag gold">пройден начисто ✓</span>' : '') + '</div>' +
+      '<p class="hallnote">' + esc(f.title) + '. Вопросов на этаже: ' + statLine(fst) + '. Комнаты идут от лёгких к сложным. Комната отмечается «чисто ✓», когда ты увидел все её вопросы и исправил все ошибки; пока это не так, при каждом заходе в неё приходит новая волна монстров именно с этими вопросами.</p><div class="rooms">';
     f.rooms.forEach(function (r) {
-      var ri = roomInfo(f, r.k), rm = D.mastery(r.qs), stars = rm >= 85 ? '★★★' : rm >= 50 ? '★★☆' : rm > 0 ? '★☆☆' : '☆☆☆';
-      h += '<button class="room' + (ri.done ? ' done' : '') + (r.boss ? ' boss' : '') + (r.k === nextK ? ' cur' : '') + '" data-k="' + r.k + '"><b>' + (r.boss ? 'Босс этажа' : 'Комната ' + (r.k + 1)) + '</b><span>' + esc(r.boss ? 'смешанные вопросы по всей лекции' : (r.sec ? r.sec.title : '')) + '</span><div class="stars">' + stars + '</div><span>' + (ri.done ? 'пройдена · ' : '') + 'освоено ' + rm + '%</span></button>';
+      if (r.boss) {
+        h += '<button class="room err' + (bad ? '' : ' locked') + '" data-k="err"' + (bad ? '' : ' disabled') + '><b>Зал ошибок</b><span>' + (bad ? 'ждут исправления: <b class="bad">' + bad + '</b>' : 'заперт — ошибок нет') + '</span><span>только твои ошибки этой лекции</span></button>';
+      }
+      var ri = roomInfo(f, r.k), rm = D.mastery(r.qs), st = D.stats(r.qs), stars = rm >= 85 ? '★★★' : rm >= 50 ? '★★☆' : rm > 0 ? '★☆☆' : '☆☆☆';
+      var status = st.clean && ri.done ? '<span class="tag gold">чисто ✓</span>' : ri.done ? '<span class="tag">новая волна: ' + Math.min(8, st.unseen + st.bad) + '</span>' : '';
+      h += '<button class="room' + (st.clean && ri.done ? ' done' : '') + (r.boss ? ' boss' : '') + (r.k === nextK ? ' cur' : '') + '" data-k="' + r.k + '"><b>' + (r.boss ? 'Босс этажа' : 'Комната ' + (r.k + 1)) + '</b><span>' + esc(r.boss ? 'неувиденные и слабые вопросы всей лекции' : (r.sec ? r.sec.title : '')) + '</span><div class="stars">' + stars + '</div><span>' + statLine(st) + '</span>' + status + '</button>';
     });
     h += '</div>';
     screenEl.innerHTML = h;
-    screenEl.querySelectorAll('[data-k]').forEach(function (b) { b.onclick = function () { go('room', { f: f.n, k: +b.getAttribute('data-k') }); }; });
+    screenEl.querySelectorAll('[data-k]').forEach(function (b) { b.onclick = function () { var k = b.getAttribute('data-k'); go('room', { f: f.n, k: k === 'err' ? 'err' : +k }); }; });
     S.at = { f: f.n, k: nextK < 0 ? 0 : nextK }; D.persist();
   }
 
@@ -133,35 +141,57 @@
   var ROSTER = [['slug', 'tzombie', 'mushroom', 'imp'], ['goblin', 'skelet', 'eye', 'orc'], ['skeleton', 'shaman', 'masked', 'necro', 'goblin'], ['chort', 'wogol', 'swampy', 'eye', 'skeleton']];
   var BOSS = ['ogre', 'bzombie', 'demon'];
   function rnd(seed) { var s = seed; return function () { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; }; }
-  function buildRoom(f, k) {
-    var room = f.rooms[k], r = rnd(f.n * 131 + k * 17 + 7), tier = f.n <= 3 ? 0 : f.n <= 6 ? 1 : f.n <= 10 ? 2 : 3;
-    var n = room.boss ? 0 : 2 + (k >= f.rooms.length / 2 ? 1 : 0), objs = [], ros = ROSTER[tier];
+  function tierOf(f) { return f.n <= 3 ? 0 : f.n <= 6 ? 1 : f.n <= 10 ? 2 : 3; }
+  /* волна: сердечек ровно на нужные вопросы (не больше 8), монстры по 1–4 сердца */
+  function waveMons(f, hearts, boss, seed) {
+    var r = rnd(seed), ros = ROSTER[tierOf(f)], out = [];
+    if (boss) { out.push({ type: 'mon', key: BOSS[Math.min(2, Math.floor(f.n / 6))], hp: hearts, max: hearts, strong: true, boss: true }); return out; }
+    var left = hearts;
+    while (left > 0) { var hp = Math.min(4, left === 5 ? 3 : left); var key = ros[Math.floor(r() * ros.length)]; out.push({ type: 'mon', key: key, hp: hp, max: hp, strong: hp >= 3 && !!A.MON[key].lm }); left -= hp; }
+    return out;
+  }
+  function placeObjs(objs) { var x0 = objs[0].type === 'altar' ? 104 : 140, span = 448 - x0; objs.forEach(function (o, i) { o.x = o.type === 'exit' ? 448 : Math.round(x0 + i * span / Math.max(1, objs.length - 1) * 0.94); o.state = 'idle'; o.st = now(); }); return objs; }
+  function buildRoom(f, k, mode, need) {
+    var objs = [];
+    if (k === 'err') { objs = waveMons(f, Math.max(1, Math.min(8, need)), false, f.n * 977 + S.ticks); objs.push({ type: 'exit' }); return placeObjs(objs); }
+    var room = f.rooms[k], r = rnd(f.n * 131 + k * 17 + 7), tier = tierOf(f), info = roomInfo(f, k);
     if (!room.boss && room.secs && room.secs.length) objs.push({ type: 'altar' });
-    var depth = k / Math.max(1, f.rooms.length - 1);
-    for (var i = 0; i < n; i++) {
-      var key = ros[Math.floor(r() * ros.length)], strong = i === n - 1 && depth > 0.3 && !!A.MON[key].lm;
-      var hp = 1 + Math.round(depth * 2) + (strong ? 2 : 0) + (tier >= 2 ? 1 : 0);
-      objs.push({ type: 'mon', key: key, hp: hp, max: hp, strong: strong });
+    if (mode === 'first') {
+      var n = room.boss ? 0 : 2 + (k >= f.rooms.length / 2 ? 1 : 0), ros = ROSTER[tier], depth = k / Math.max(1, f.rooms.length - 1);
+      for (var i = 0; i < n; i++) {
+        var key = ros[Math.floor(r() * ros.length)], strong = i === n - 1 && depth > 0.3 && !!A.MON[key].lm;
+        var hp = 1 + Math.round(depth * 2) + (strong ? 2 : 0) + (tier >= 2 ? 1 : 0);
+        objs.push({ type: 'mon', key: key, hp: hp, max: hp, strong: strong });
+      }
+      if (room.boss) { objs.push({ type: 'mon', key: ros[0], hp: 2 + tier, max: 2 + tier }); objs.push({ type: 'mon', key: BOSS[Math.min(2, Math.floor(f.n / 6))], hp: 7 + tier, max: 7 + tier, strong: true, boss: true }); }
+    } else if (mode === 'wave' || mode === 'train') {
+      objs = objs.concat(waveMons(f, mode === 'train' ? 3 : Math.min(8, need), room.boss, f.n * 131 + k * 17 + S.ticks));
     }
-    if (room.boss) { objs.push({ type: 'mon', key: ros[0], hp: 2 + tier, max: 2 + tier }); objs.push({ type: 'mon', key: BOSS[Math.min(2, Math.floor(f.n / 6))], hp: 7 + tier, max: 7 + tier, strong: true, boss: true }); }
-    else objs.push({ type: 'chest' });
+    if (!room.boss) objs.push({ type: 'chest' });
     objs.push({ type: 'exit' });
-    var x0 = objs[0].type === 'altar' ? 104 : 140, span = 448 - x0; objs.forEach(function (o, i) { o.x = o.type === 'exit' ? 448 : Math.round(x0 + i * span / Math.max(1, objs.length - 1) * 0.94); o.state = 'idle'; o.st = now(); });
-    var info = roomInfo(f, k);
-    info.cleared.forEach(function (i) { if (objs[i]) { objs[i].dead = true; objs[i].hp = 0; } });
+    placeObjs(objs);
+    if (mode === 'first') info.cleared.forEach(function (i) { if (objs[i]) { objs[i].dead = true; objs[i].hp = 0; } });
     if (info.chest) objs.forEach(function (o) { if (o.type === 'chest') o.open = true; });
     if (info.altar) objs.forEach(function (o) { if (o.type === 'altar') o.used = true; });
     return objs;
   }
-  function enterRoom(a) {
-    var f = D.floors[a.f - 1], room = f.rooms[a.k];
-    show(true); where((f.final ? 'Финал' : 'Этаж ' + f.n) + ' · ' + (room.boss ? 'Босс' : 'Комната ' + (a.k + 1)));
-    S.at = { f: f.n, k: a.k }; D.persist();
-    G.room = { floor: f.n, f: f, k: a.k, room: room, objs: buildRoom(f, a.k), idx: -1, combo: 1, recent: [], turns: 0, right: 0, wrong: 0, iq: 0, briefOpen: true, mon: null, m0: D.mastery(room.qs), mistakes: [] };
+  function errRoom(f) { return { k: 'err', errHall: true, boss: false, sec: null, secs: f.texts, qs: D.badIds(f) }; }
+  function enterRoom(a, train) {
+    train = train || a.train;
+    var f = D.floors[a.f - 1], isErr = a.k === 'err', room = isErr ? errRoom(f) : f.rooms[a.k];
+    show(true); where((f.final ? 'Финал' : 'Этаж ' + f.n) + ' · ' + (isErr ? 'Зал ошибок' : room.boss ? 'Босс' : 'Комната ' + (a.k + 1)));
+    if (!isErr) { S.at = { f: f.n, k: a.k }; D.persist(); }
+    var info = isErr ? { done: false } : roomInfo(f, a.k), st = D.stats(room.qs), need = st.unseen + st.bad;
+    var mode = isErr ? 'err' : train ? 'train' : !info.done ? 'first' : need > 0 ? 'wave' : 'clean';
+    G.room = { floor: f.n, f: f, k: a.k, room: room, mode: mode, objs: buildRoom(f, a.k, mode, isErr ? st.bad : need), idx: -1, combo: 1, recent: [], turns: 0, right: 0, wrong: 0, iq: 0, briefOpen: true, mon: null, m0: D.mastery(room.qs), mistakes: [], st0: st };
     G.hero.x = 36; G.hero.dir = 1;
     roomIdle();
+    var msg = mode === 'wave' ? 'Новая волна: ' + (st.unseen ? st.unseen + ' ' + plural(st.unseen, 'новый вопрос', 'новых вопроса', 'новых вопросов') : '') + (st.unseen && st.bad ? ' и ' : '') + (st.bad ? st.bad + ' ' + plural(st.bad, 'ошибка', 'ошибки', 'ошибок') + ' к повтору' : '') + (need > 8 ? ' (за раз — 8, остальное в следующей волне)' : '') + '.'
+      : mode === 'clean' ? 'Комната чиста ✓: все вопросы увидены, ошибок нет. Монстров нет — можно потренироваться.'
+      : mode === 'err' ? 'Зал ошибок: здесь только твои ошибки этой лекции (' + st.bad + '). Исправь их — и зал запрётся.' : '';
+    if (msg) panel.insertAdjacentHTML('afterbegin', '<div class="wave-msg">' + esc(msg) + '</div>');
   }
-  function nextObj() { var R = G.room; for (var i = 0; i < R.objs.length; i++) { var o = R.objs[i]; if ((o.type === 'mon' && !o.dead) || (o.type === 'chest' && !o.open) || (o.type === 'altar' && !o.used) || o.type === 'exit') return i; } return R.objs.length - 1; }
+  function plural(n, a, b, c) { var m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? a : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? b : c; }  function nextObj() { var R = G.room; for (var i = 0; i < R.objs.length; i++) { var o = R.objs[i]; if ((o.type === 'mon' && !o.dead) || (o.type === 'chest' && !o.open) || (o.type === 'altar' && !o.used) || o.type === 'exit') return i; } return R.objs.length - 1; }
   function roomSummary() {
     var R = G.room, mons = R.objs.filter(function (o) { return o.type === 'mon' && !o.dead; }).length, chest = R.objs.some(function (o) { return o.type === 'chest' && !o.open; });
     var altar = R.objs.some(function (o) { return o.type === 'altar' && !o.used; });
@@ -174,8 +204,10 @@
     var R = G.room, i = nextObj(), o = R.objs[i];
     var what = o.type === 'mon' ? (o.boss ? 'босс «' + A.MON[o.key].name + '»' : A.MON[o.key].name + (o.strong ? ' (сильный)' : '')) : o.type === 'chest' ? 'сундук' : o.type === 'altar' ? 'алтарь знаний (прочитать раздел лекции)' : 'выход';
     var sec = R.room.sec;
-    setPanel('<div class="row"><span class="tag">' + esc(R.room.boss ? 'Босс этажа' : 'Комната ' + (R.k + 1)) + '</span>' + (sec ? '<span class="tag teal">' + esc(sec.title) + '</span>' : '') + '</div><p class="msg">' + esc(roomSummary()) + '. Дальше — ' + esc(what) + '.</p>',
-      [btn('Идти дальше', 'primary', 'Enter', function () { approach(i); }), btn('Книжка', 'ghost', 'B', function () { openBookRoom(); })]);
+    var st = D.stats(R.room.qs), nm = R.room.errHall ? 'Зал ошибок' : R.room.boss ? 'Босс этажа' : 'Комната ' + (R.k + 1);
+    var bs = [btn('Идти дальше', 'primary', 'Enter', function () { approach(i); }), btn('Книжка', 'ghost', 'B', function () { openBookRoom(); })];
+    if (R.mode === 'clean' && o.type === 'exit') bs.splice(1, 0, btn('Тренировка (3 вопроса)', 'ghost', null, function () { go('room', { f: R.f.n, k: R.k, train: 1 }); }));
+    setPanel('<div class="row"><span class="tag">' + esc(nm) + '</span>' + (sec ? '<span class="tag teal">' + esc(sec.title) + '</span>' : '') + (st.clean ? '<span class="tag gold">чисто ✓</span>' : '') + '</div><p class="msg">' + esc(roomSummary()) + '. Дальше — ' + esc(what) + '.</p><p class="hint">Вопросы ' + (R.room.errHall ? 'зала' : 'комнаты') + ': ' + statLine(st) + '</p>', bs);
   }
   function approach(i) {
     var R = G.room, o = R.objs[i]; R.idx = i;
@@ -207,12 +239,12 @@
   function ask() {
     var R = G.room, m = R.mon, M = A.MON[m.key];
     R.monTurn++;
-    var useTask = m.strong && R.f.tasks.length && R.monTurn % 3 === 2;
+    var useTask = m.strong && (R.mode === 'first' || R.mode === 'train') && R.f.tasks.length && R.monTurn % 3 === 2;
     focusOn(true);
     var head = '<div class="row"><span class="tag ' + (m.boss || m.strong ? 'gold' : 'red') + '">' + esc(M.name) + (m.boss ? ' · босс' : m.strong ? ' · сильный' : '') + '</span><span class="tag teal">' + (useTask ? 'Задание' : 'Тест') + '</span><span class="tag">Лекция ' + R.f.n + '</span><span class="grow"></span>' + (useTask ? '' : trBtn()) + icoBtns() + '</div>';
     R.assisted = false; R.fiftyUsed = false; R.hinted = false; R.tr = null; R.answered = false;
     if (useTask) return askTask(head);
-    var q = D.pick(R.f, R.room, R.recent); R.q = q; R.recent.push(q.id); if (R.recent.length > 6) R.recent.shift();
+    var q = pickQ(R); R.q = q; R.recent.push(q.id); if (R.recent.length > 6) R.recent.shift();
     var h = head + briefHtml(q) + '<div class="qtext">' + D.md(q.q) + '</div>';
     if (q.type === 'keyboard') h += '<div class="kb"><input id="kbIn" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Что выведет программа? Впиши ответ"><button class="btn primary" id="kbGo">Ответить<kbd>Enter</kbd></button></div>';
     else {
@@ -227,6 +259,13 @@
     G.buttons = [];
     if (q.type === 'keyboard') { var inp = $('kbIn'); $('kbGo').onclick = function () { answer(norm(inp.value) === norm(q.answer), inp.value); }; inp.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('kbGo').click(); } }; if (matchMedia('(pointer:fine)').matches) setTimeout(function () { inp.focus({ preventScroll: true }); }, 50); }
     else panel.querySelectorAll('.opt').forEach(function (b) { b.onclick = function () { var oi = +b.getAttribute('data-o'); answer(!!q.opts[oi].right, oi); }; });
+  }
+  /* какой вопрос задать: первый заход — как раньше; волна — вопросы комнаты (ошибки → новые); босс — вся лекция; зал ошибок — только ошибки */
+  function pickQ(R) {
+    if (R.mode === 'err') { var b = D.badIds(R.f); return D.pickFrom(R.f, b.length ? b : poolIds(R.f), R.recent); }
+    if (R.room.boss) return D.pickFrom(R.f, poolIds(R.f), R.recent);
+    if (R.mode === 'wave' || R.mode === 'train') return D.pickFrom(R.f, R.room.qs, R.recent);
+    return D.pick(R.f, R.room, R.recent);
   }
   function norm(s) { return String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' ').replace(/[;.]$/, ''); }
   function askTask(head) {
@@ -272,7 +311,8 @@
         m.hp = Math.max(0, m.hp - dmg); setMon(m, m.hp ? 'hit' : 'death');
         floater((R.crit ? 'КРИТ! ' : '') + '−' + dmg + ' ♥', m.x, 120, R.crit ? '#FF9600' : '#FFD25A');
         floater('+' + gain + ' IQ', m.x + 20, 150, '#CECBF6');
-        if (!m.hp) { m.dead = true; var info = roomInfo(R.f, R.k); if (info.cleared.indexOf(R.idx) < 0) info.cleared.push(R.idx); S.rooms[rkey(R.f, R.k)] = info; }
+        if (!m.hp && R.mode !== 'first') m.dead = true;
+        if (!m.hp && R.mode === 'first') { m.dead = true; var info = roomInfo(R.f, R.k); if (info.cleared.indexOf(R.idx) < 0) info.cleared.push(R.idx); S.rooms[rkey(R.f, R.k)] = info; }
         D.persist(); hud(); bump();
         afterAnswer(true);
       });
@@ -312,17 +352,25 @@
   function stars(m) { return m >= 85 ? '★★★' : m >= 50 ? '★★☆' : m > 0 ? '★☆☆' : '☆☆☆'; }
   function exitRoom() {
     focusOn(false);
-    var R = G.room, f = R.f, info = roomInfo(f, R.k), first = !info.done;
-    info.done = true; S.rooms[rkey(f, R.k)] = info; var bonus = first ? 10 : 3; S.iq += bonus; R.iq += bonus; D.persist(); hud();
-    var m = D.mastery(R.room.qs), next = f.rooms[R.k + 1], acc = R.right + R.wrong ? Math.round(R.right / (R.right + R.wrong) * 100) : 100;
-    var h = '<div class="sum-head"><div><div class="qtext">' + (R.room.boss ? 'Босс этажа повержен!' : 'Комната пройдена!') + '</div><div class="sum-stars">' + stars(m) + '</div></div>' +
-      '<div class="sum-cards"><div><b>' + R.right + '</b><span>верно</span></div><div><b>' + R.wrong + '</b><span>ошибок</span></div><div><b>' + acc + '%</b><span>точность</span></div><div class="iq"><b>+' + R.iq + '</b><span>IQ</span></div></div></div>' +
-      '<div class="sum-bar"><span>Освоение темы комнаты</span><div class="mbar"><i class="was" style="width:' + R.m0 + '%"></i><i class="now" style="width:' + Math.max(0, m - R.m0) + '%;left:' + R.m0 + '%"></i></div><span>' + R.m0 + '% → <b>' + m + '%</b></span></div>';
+    var R = G.room, f = R.f, isErr = R.mode === 'err', info = isErr ? {} : roomInfo(f, R.k), first = !isErr && !info.done;
+    if (!isErr) { info.done = true; S.rooms[rkey(f, R.k)] = info; }
+    if (isErr) R.room.qs = D.badIds(f);
+    var st = D.stats(R.room.qs), bonus = first ? 10 : st.clean && !R.st0.clean ? 15 : 3; S.iq += bonus; R.iq += bonus; D.persist(); hud();
+    var m = D.mastery(R.room.qs), next = isErr || R.room.boss ? null : f.rooms[R.k + 1], acc = R.right + R.wrong ? Math.round(R.right / (R.right + R.wrong) * 100) : 100;
+    var title = isErr ? (st.bad ? 'Зал ошибок: волна отбита' : 'Все ошибки исправлены! Зал заперт') : st.clean ? (R.room.boss ? 'Босс повержен — этаж под контролем!' : 'Комната чиста ✓') : (R.room.boss ? 'Босс этажа повержен!' : 'Комната пройдена!');
+    var h = '<div class="sum-head"><div><div class="qtext">' + esc(title) + '</div>' + (isErr ? '' : '<div class="sum-stars">' + stars(m) + '</div>') + '</div>' +
+      '<div class="sum-cards"><div><b>' + R.right + '</b><span>верно</span></div><div><b>' + R.wrong + '</b><span>ошибок</span></div><div><b>' + acc + '%</b><span>точность</span></div><div class="iq"><b>+' + R.iq + '</b><span>IQ</span></div></div></div>' + (isErr ? '' :
+      '<div class="sum-bar"><span>Освоение темы комнаты</span><div class="mbar"><i class="was" style="width:' + R.m0 + '%"></i><i class="now" style="width:' + Math.max(0, m - R.m0) + '%;left:' + R.m0 + '%"></i></div><span>' + R.m0 + '% → <b>' + m + '%</b></span></div>');
     if (R.mistakes.length) {
       h += '<div class="sum-mist"><b>Повтори — здесь были ошибки</b><ul>' + R.mistakes.slice(0, 6).map(function (x) { return '<li><div class="mq">' + (x.md ? D.md(x.md) : esc(x.q)) + '</div><em>Ответ: ' + esc(x.a) + '</em></li>'; }).join('') + '</ul><p class="hint">Эти вопросы вернутся в следующих комнатах — через пару других, чтобы закрепиться.</p></div>';
-    } else h += '<p class="msg">Ни одной ошибки — отлично! Следующие комнаты будут сложнее.</p>';
-    setPanel(h, (next ? [btn('Следующая комната', 'primary', 'Enter', function () { go('room', { f: f.n, k: R.k + 1 }); })] : [btn(f.n < D.floors.length ? 'Этаж пройден! На следующий' : 'Подземелье пройдено!', 'primary', 'Enter', function () { if (f.n < D.floors.length) go('floor', f.n + 1); else go('path'); })])
-      .concat([btn('Книжка', 'ghost', 'B', openBookRoom), btn('К этажу', 'ghost', null, function () { go('floor', f.n); })]));
+    } else h += '<p class="msg">Ни одной ошибки — отлично!</p>';
+    h += isErr ? '<p class="wave-msg">' + (st.bad ? 'В зале ещё ждут ' + st.bad + ' ' + plural(st.bad, 'ошибка', 'ошибки', 'ошибок') + ' — вернись, будет новая волна.' : 'Ошибок этой лекции больше нет.') + '</p>'
+      : st.clean ? '<p class="wave-msg ok">Чисто ✓ — все вопросы ' + (R.room.boss ? 'лекции' : 'комнаты') + ' увидены, ошибок нет.</p>'
+      : '<p class="wave-msg">Осталось: ' + (st.unseen ? st.unseen + ' ' + plural(st.unseen, 'новый вопрос', 'новых вопроса', 'новых вопросов') : '') + (st.unseen && st.bad ? ' · ' : '') + (st.bad ? st.bad + ' к повтору' : '') + '. Зайди в ' + (R.room.boss ? 'босса' : 'комнату') + ' снова — придёт новая волна с этими вопросами.</p>';
+    var fst = D.stats(poolIds(f)); if (fst.clean) h += '<p class="wave-msg ok">🏅 Этаж ' + f.n + ' пройден начисто!</p>';
+    var again = !st.clean && !isErr ? [btn('Ещё волна здесь', 'ghost', null, function () { go('room', { f: f.n, k: R.k }); })] : isErr && st.bad ? [btn('Ещё волна ошибок', 'ghost', null, function () { go('room', { f: f.n, k: 'err' }); })] : [];
+    setPanel(h, (next ? [btn('Следующая комната', 'primary', 'Enter', function () { go('room', { f: f.n, k: R.k + 1 }); })] : isErr ? [btn('К этажу', 'primary', 'Enter', function () { go('floor', f.n); })] : [btn(f.n < D.floors.length ? 'На следующий этаж' : 'К пути', 'primary', 'Enter', function () { if (f.n < D.floors.length) go('floor', f.n + 1); else go('path'); })]).concat(again)
+      .concat([btn('Книжка', 'ghost', 'B', openBookRoom)]).concat(isErr ? [] : [btn('К этажу', 'ghost', null, function () { go('floor', f.n); })]));
   }
   function defeat() {
     focusOn(false);

@@ -151,10 +151,33 @@
   D.record = function (id, ok) {
     var s = D.save, r = s.srs[id] || { l: 0, n: 0, w: 0, due: 0 };
     s.ticks++; r.n++;
-    if (ok) { r.l = Math.min(5, r.l + 1); r.due = s.ticks + GAP[r.l]; }
-    else { r.w++; r.l = Math.max(0, r.l - 1); r.due = s.ticks + 4 + Math.floor(Math.random() * 5); }
+    if (ok) { r.l = Math.min(5, r.l + 1); r.due = s.ticks + GAP[r.l]; r.bad = false; }
+    else { r.w++; r.l = Math.max(0, r.l - 1); r.due = s.ticks + 4 + Math.floor(Math.random() * 5); r.bad = true; }
     s.srs[id] = r;
   };
+  /* «к повтору» — последний ответ был ошибкой (или «не знал», или с подсказкой) */
+  D.isBad = function (id) { var r = D.save.srs[id]; if (!r) return false; return r.bad != null ? r.bad : (r.w > 0 && r.l === 0); };
+  D.seen = function (id) { return !!D.save.srs[id]; };
+  D.stats = function (ids) {
+    var st = { total: ids.length, seen: 0, bad: 0, unseen: 0 };
+    ids.forEach(function (id) { if (D.seen(id)) st.seen++; else st.unseen++; if (D.isBad(id)) st.bad++; });
+    st.clean = st.total > 0 && st.unseen === 0 && st.bad === 0; return st;
+  };
+  /* выбор из набора: ошибки с подошедшей очередью → новые → остальные ошибки → самые слабые */
+  D.pickFrom = function (floor, ids, recent) {
+    var s = D.save, t = s.ticks, nr = function (id) { return recent.indexOf(id) < 0; };
+    var dueBad = ids.filter(function (id) { return D.isBad(id) && s.srs[id].due <= t && nr(id); });
+    if (dueBad.length) return floor.byId[dueBad[Math.floor(Math.random() * dueBad.length)]];
+    var fresh = ids.filter(function (id) { return !D.seen(id) && nr(id); });
+    if (fresh.length) return floor.byId[fresh[Math.floor(Math.random() * fresh.length)]];
+    var bad = ids.filter(function (id) { return D.isBad(id) && nr(id); }).sort(function (a, b) { return s.srs[a].due - s.srs[b].due; });
+    if (bad.length) return floor.byId[bad[0]];
+    var rest = ids.filter(nr); if (!rest.length) rest = ids.slice();
+    rest.sort(function (a, b) { return (D.level(a) - D.level(b)) || (s.srs[a].due - s.srs[b].due); });
+    var top = rest.slice(0, Math.min(4, rest.length));
+    return floor.byId[top[Math.floor(Math.random() * top.length)]];
+  };
+  D.badIds = function (floor) { return floor.pool.map(function (q) { return q.id; }).filter(D.isBad); };
   /* выбрать следующий вопрос: сначала «вернувшиеся» ошибки, потом новые, потом слабые; знакомое — сложнее */
   D.pick = function (floor, room, recent) {
     var s = D.save, t = s.ticks, roomIds = room.qs, all = floor.pool.map(function (q) { return q.id; });

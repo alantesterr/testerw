@@ -121,7 +121,8 @@
   }
   /* нарисовать героя: x — центр, y — пол */
   A.drawHero = function (c, anim, f, x, y, s, flash) {
-    var fr = A.hero[anim][f % A.hero[anim].length]; s = s || 2;
+    var list = A.hero[anim] || A.hero.idle, n = list.length; f = Math.floor(f) || 0;
+    var fr = list[((f % n) + n) % n]; s = s || 2;
     c.drawImage(fr, Math.round(x - HX * s), Math.round(y - 41 * s), HW * s, HH * s);
     if (flash) { c.save(); c.globalCompositeOperation = 'source-atop'; c.restore(); }
   };

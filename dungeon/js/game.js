@@ -814,7 +814,7 @@
     if (!(G.scene === 'yard' && G.descend && t - G.descend > 350)) {
       var anim = 'idle', f = Math.floor(t / 450);
       if (walking) { anim = 'walk'; f = Math.floor(t / 110); }
-      if (h.attackAt && t - h.attackAt < 420) { anim = 'attack'; f = Math.min(2, Math.floor((t - h.attackAt) / 140)); }
+      if (h.attackAt && t - h.attackAt < 420) { anim = 'attack'; f = Math.max(0, Math.min(2, Math.floor((t - h.attackAt) / 140))); }
       var hurt = h.hurtAt && t - h.hurtAt < 380; if (hurt) { anim = 'hurt'; f = 0; }
       var lunge = h.attackAt && t - h.attackAt < 420 ? Math.sin((t - h.attackAt) / 420 * Math.PI) * 22 : 0;
       var knock = hurt ? -Math.sin((t - h.hurtAt) / 380 * Math.PI) * 8 : 0;
@@ -828,7 +828,8 @@
       if (anim === 'attack' && f === 1) { c.strokeStyle = 'rgba(255,243,176,.9)'; c.lineWidth = 2; c.beginPath(); c.arc(h.x + 34, fy - 32, 26, -1.1, 0.9); c.stroke(); }
     }
   }
-  function loop(t) { draw(t); requestAnimationFrame(loop); }
+  /* ошибка в одном кадре не должна останавливать всю игру */
+  function loop(t) { requestAnimationFrame(loop); try { draw(t); } catch (e) { if (!loop.warned) { loop.warned = 1; console.error(e); } } }
   /* для проверки: мгновенно довести героя до цели (вкладка в фоне не анимируется) */
   window.DGame = { G: G, next: function () { goNext(); }, skip: function () { var h = G.hero; if (h.target != null) { h.x = h.target; h.target = null; var cb = h.onArrive; h.onArrive = null; if (cb) cb(); } } };
 

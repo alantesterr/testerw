@@ -71,7 +71,9 @@
       (intro ? '<div class="qtext">Добро пожаловать в Подземелье знаний!</div>' +
         '<p class="msg">Это игра для подготовки к РК и экзамену по C++. Внизу подземелья — этажи, каждый этаж — одна лекция. В комнатах тебя ждут монстры: они задают вопросы по теме. Ответил верно — ты бьёшь монстра, ошибся — монстр бьёт тебя и вопрос вернётся позже. Сердечки сверху — твои жизни, огонёк — сколько дней подряд ты занимаешься, IQ — награда за ответы.</p>'
         : '<div class="qtext">Домик</div><p class="msg">Отдохнул? Подземелье ждёт. Прогресс сохраняется после каждого ответа.</p>'),
-      [btn('Выйти во двор', 'primary', 'Enter', function () { S.seenIntro = true; D.persist(); walkTo(30, function () { go('yard'); }); })]);
+      [btn('Выйти во двор', 'primary', 'Enter', function () { S.seenIntro = true; D.persist(); walkTo(30, function () { go('yard'); }); }),
+       btn('Лавка мудреца', 'ghost', null, openShop), btn('Рюкзак', 'ghost', null, openBag)]);
+    if (S.hp < S.maxHp) { S.hp = S.maxHp; D.persist(); }
   }
   /* ---------- ДВОР ---------- */
   function enterYard() {
@@ -207,7 +209,8 @@
     R.monTurn++;
     var useTask = m.strong && R.f.tasks.length && R.monTurn % 3 === 2;
     focusOn(true);
-    var head = '<div class="row"><span class="tag ' + (m.boss || m.strong ? 'gold' : 'red') + '">' + esc(M.name) + (m.boss ? ' · босс' : m.strong ? ' · сильный' : '') + '</span><span class="tag teal">' + (useTask ? 'Задание' : 'Тест') + '</span><span class="tag">Лекция ' + R.f.n + '</span><span class="grow"></span>' + icoBtns() + '</div>';
+    var head = '<div class="row"><span class="tag ' + (m.boss || m.strong ? 'gold' : 'red') + '">' + esc(M.name) + (m.boss ? ' · босс' : m.strong ? ' · сильный' : '') + '</span><span class="tag teal">' + (useTask ? 'Задание' : 'Тест') + '</span><span class="tag">Лекция ' + R.f.n + '</span><span class="grow"></span>' + (useTask ? '' : trBtn()) + icoBtns() + '</div>';
+    R.assisted = false; R.fiftyUsed = false; R.hinted = false; R.tr = null; R.answered = false;
     if (useTask) return askTask(head);
     var q = D.pick(R.f, R.room, R.recent); R.q = q; R.recent.push(q.id); if (R.recent.length > 6) R.recent.shift();
     var h = head + briefHtml(q) + '<div class="qtext">' + D.md(q.q) + '</div>';
@@ -217,8 +220,9 @@
       R.order = order;
       h += '<div class="opts">' + order.map(function (oi, n) { return '<button class="opt" data-o="' + oi + '"><span class="n">' + (n + 1) + '</span><span>' + D.md(q.opts[oi].t) + '</span></button>'; }).join('') + '</div>';
     }
-    h += '<div class="hint">Клавиши: ' + (q.type === 'keyboard' ? 'Enter — ответить' : '1–' + q.opts.length + ' — выбрать ответ') + '</div>';
-    setPanel(h); wireIco();
+    h += hotbarHtml() + '<div class="hint">Клавиши: ' + (q.type === 'keyboard' ? 'Enter — ответить' : '1–' + q.opts.length + ' — выбрать ответ') + ' · T — перевести · B — книжка · F — весь экран</div>';
+    setPanel(h); wireIco(); wireTr(); wireHotbar();
+    if (S.cfg.autoTr) toggleTr();
     var det = panel.querySelector('details.brief'); if (det) det.ontoggle = function () { R.briefOpen = det.open; };
     G.buttons = [];
     if (q.type === 'keyboard') { var inp = $('kbIn'); $('kbGo').onclick = function () { answer(norm(inp.value) === norm(q.answer), inp.value); }; inp.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('kbGo').click(); } }; if (matchMedia('(pointer:fine)').matches) setTimeout(function () { inp.focus({ preventScroll: true }); }, 50); }
@@ -230,6 +234,7 @@
     setPanel(head + '<div class="qtext">Задание' + (t.title ? ': ' + esc(t.title.replace(/\s·\s(лёгкая|средняя|сложная)$/, '')) : '') + '</div><div class="task-box rich">' + D.blocks(t.q) + '</div>' +
       '<div class="sol" id="sol">▸ Показать решение</div><p class="hint">Реши в голове или на бумаге, потом открой решение и честно отметь. «Знал» бьёт сильнее (×2).</p>',
       [btn('Не знал', 'warn', null, function () { taskDone(false); }), btn('Знал', 'primary', null, function () { taskDone(true); })]); wireIco();
+    panel.insertAdjacentHTML('beforeend', hotbarHtml()); wireHotbar();
     $('sol').onclick = function () { var s = $('sol'); if (s.classList.contains('open')) return; s.classList.add('open'); s.innerHTML = '<div class="rich">' + D.blocks(t.a) + '</div>'; };
   }
   function taskDone(ok) {
@@ -242,7 +247,7 @@
   }
 
   function answer(ok, pickedIdx) {
-    var R = G.room, q = R.q; D.record(q.id, ok);
+    var R = G.room, q = R.q; if (R.answered) return; R.answered = true; D.record(q.id, ok && !R.assisted);
     if (!ok) R.mistakes.push({ q: shortQ(q.q), md: q.q, a: q.type === 'keyboard' ? q.answer : D.strip(D.md((q.opts.filter(function (o) { return o.right; })[0] || {}).t || '')) });
     if (q.type === 'keyboard') {
       var inp = $('kbIn'); inp.disabled = true; $('kbGo').disabled = true;
@@ -259,7 +264,8 @@
     if (D.touchStreak()) floater('Огонёк +1 день!', 240, 40, '#FF9600');
     if (ok) {
       R.right++;
-      var dmg = power; if (R.combo >= 1.5 && Math.random() < (R.combo - 1)) { dmg++; R.crit = true; } else R.crit = false;
+      var hw = X.hit(power, m), dmg = hw.dmg; if (R.combo >= 1.5 && Math.random() < (R.combo - 1)) { dmg++; R.crit = true; } else R.crit = false;
+      if (hw.note) setTimeout(function () { floater(hw.note, m.x, 90, '#FF9600'); }, 260);
       R.combo = Math.min(3, Math.round((R.combo + 0.1) * 10) / 10);
       var gain = Math.round(2 * R.combo) + (kind === 'task' ? 3 : 0); S.iq += gain; R.iq += gain;
       heroAttack(function () {
@@ -274,7 +280,9 @@
       R.wrong++; R.combo = 1;
       setMon(m, 'attack');
       setTimeout(function () {
-        S.hp = Math.max(0, S.hp - (m.boss ? 1 : 1)); G.hero.hurtAt = now(); floater('−1 ♥', G.hero.x, 110, '#F09595');
+        if (S.shieldOn) { S.shieldOn = false; floater('Щит выдержал!', G.hero.x, 110, '#85B7EB'); }
+        else { var cost = X.hurtCost(); S.hp = Math.max(0, S.hp - cost); G.hero.hurtAt = now(); floater('−' + cost + ' ♥', G.hero.x, 110, '#F09595'); }
+        if (S.hp <= 0 && X.take('feather')) { S.hp = 3; setTimeout(function () { floater('Перо феникса! +3 ♥', G.hero.x, 80, '#FF9600'); }, 400); }
         D.persist(); hud(); afterAnswer(false);
       }, A.MON[m.key].lm ? 420 : 260);
     }
@@ -283,7 +291,8 @@
     var R = G.room, m = R.mon;
     if (S.hp <= 0) return setTimeout(defeat, 500);
     var btns = [];
-    if (m.dead) btns.push(btn(m.boss ? 'Босс повержен! Дальше' : A.MON[m.key].name + ' повержен — идти дальше', 'primary', 'Enter', function () { R.mon = null; roomIdle(); }));
+    if (m.dead && m.boss) btns.push(btn('Босс повержен! Открыть железный сундук', 'primary', 'Enter', function () { R.mon = null; bossLoot(); }));
+    else if (m.dead) btns.push(btn(A.MON[m.key].name + ' повержен — идти дальше', 'primary', 'Enter', function () { R.mon = null; roomIdle(); }));
     else btns.push(btn('Следующий вопрос', 'primary', 'Enter', ask));
     var row = document.createElement('div'); row.className = 'row'; row.style.marginTop = '12px';
     row.innerHTML = btns.map(function (b, i) { return '<button class="btn ' + b.cls + '" data-b2="' + i + '">' + esc(b.label) + '<kbd>' + b.key + '</kbd></button>'; }).join('');
@@ -294,11 +303,11 @@
   function setMon(m, st) { m.state = st; m.st = now(); var d = A.monDur(m.key, st); if (st !== 'death') setTimeout(function () { if (m.state === st) { m.state = 'idle'; m.st = now(); } }, d); }
   function heroAttack(onHit) { var h = G.hero; h.attackAt = now(); setTimeout(onHit, 230); }
   function openChest(o) {
-    var R = G.room, gain = 10 + Math.floor(Math.random() * 16);
-    o.open = true; o.openAt = now(); S.iq += gain; R.iq += gain;
+    var R = G.room, L = X.loot('chest'), gain = L.iq;
+    o.open = true; o.openAt = now(); R.iq += gain;
     var info = roomInfo(R.f, R.k); info.chest = true; S.rooms[rkey(R.f, R.k)] = info; D.persist(); hud();
     floater('+' + gain + ' IQ', o.x, 150, '#CECBF6');
-    setPanel('<div class="qtext">Сундук открыт!</div><p class="msg">Внутри ' + gain + ' IQ. В следующих версиях в сундуках будут ещё зелья, свитки и оружие.</p>', [btn('Идти дальше', 'primary', 'Enter', roomIdle)]);
+    setPanel('<div class="qtext">Сундук открыт!</div>' + lootHtml(L), [btn('Идти дальше', 'primary', 'Enter', roomIdle), btn('Рюкзак', 'ghost', null, openBag)]);
   }
   function stars(m) { return m >= 85 ? '★★★' : m >= 50 ? '★★☆' : m > 0 ? '★☆☆' : '☆☆☆'; }
   function exitRoom() {
@@ -390,10 +399,181 @@
       }), btn('Пропустить', 'ghost', null, function () { o.used = true; roomIdle(); })]);
   }
 
+  /* =====================================================================
+     ЭТАП 3: хотбар, предметы, рюкзак, лавка, настройки, перевод
+     ===================================================================== */
+  var X = window.DX;
+  var ICO_TR = '<svg viewBox="0 0 24 24"><text x="2" y="12" font-size="11" font-weight="700" fill="#e8e4f8" font-family="Arial">A</text><text x="11" y="21" font-size="11" font-weight="700" fill="#5DCAA5" font-family="Arial">Я</text><path d="M9 6h4l-2 3" stroke="#AFA9EC" stroke-width="1.5" fill="none"/></svg>';
+  function toast(text, col) { var R = G.room; floater(text, R ? G.hero.x + 30 : 240, 70, col || '#e8e4f8'); }
+
+  /* --- хотбар под вопросом --- */
+  function hotbarHtml() {
+    var w = X.weapon(), W = X.WEAPONS[w.k], h = '<div class="hotbar" role="toolbar" aria-label="Предметы">';
+    h += '<button class="slot weapon" data-hb="#bag" title="' + esc(W.name + ' — ' + W.desc) + '"><img src="' + X.iconUrl(W.icon) + '" alt="">' + (W.dur ? '<i class="dur"><b style="width:' + Math.round(Math.max(0, w.dur) / W.dur * 100) + '%;background:' + (w.dur / W.dur > 0.5 ? '#5DCAA5' : w.dur / W.dur > 0.25 ? '#EF9F27' : '#E24B4A') + '"></b></i>' : '') + '</button>';
+    X.HOTBAR.forEach(function (k) {
+      var it = X.ITEMS[k], n = X.count(k); if (!n) return;
+      h += '<button class="slot" data-hb="' + k + '" title="' + esc(it.name + ' — ' + it.desc) + (it.key ? ' (' + it.key + ')' : '') + '"><img src="' + X.iconUrl(it.icon) + '" alt="">' + '<em>×' + n + '</em>' + (it.key ? '<kbd>' + it.key + '</kbd>' : '') + '</button>';
+    });
+    return h + (G.room && G.room.shieldTag ? '' : '') + '</div>';
+  }
+  function wireHotbar() {
+    panel.querySelectorAll('[data-hb]').forEach(function (b) { b.onclick = function () { var k = b.getAttribute('data-hb'); if (k === '#bag') openBag(); else useItem(k); }; });
+  }
+  function refreshHotbar() { var hb = panel.querySelector('.hotbar'); if (hb) { hb.outerHTML = hotbarHtml(); wireHotbar(); } }
+  function plainQ(q) { return String(q.q || '').replace(/```\w*\n?/g, '\n').replace(/`/g, '').trim() + ((q.opts || []).length ? '\n' + q.opts.map(function (o, i) { return (i + 1) + ') ' + o.t.replace(/`/g, ''); }).join('\n') : ''); }
+  function useItem(k) {
+    var R = G.room, it = X.ITEMS[k]; if (!it || !X.count(k)) return;
+    var inQ = R && R.mon && R.q && !R.answered, boss = R && R.mon && R.mon.boss;
+    if (boss && (R.used || 0) >= 3 && k !== 'potion' && k !== 'bigpot') return toast('На боссе — не больше 3 предметов', '#F09595');
+    if (k === 'potion' || k === 'bigpot') {
+      if (S.hp >= S.maxHp) return toast('Сердечки и так полные', '#B4B2C4');
+      X.take(k); S.hp = k === 'bigpot' ? S.maxHp : S.hp + 1; toast(k === 'bigpot' ? 'Все сердечки!' : '+1 ♥', '#9FE1CB');
+    } else if (k === 'shield') {
+      if (S.shieldOn) return toast('Щит уже поднят', '#B4B2C4');
+      X.take(k); S.shieldOn = true; toast('Щит поднят!', '#85B7EB');
+    } else {
+      if (!inQ) return toast('Это для вопроса — используй, когда монстр спросит', '#B4B2C4');
+      if (k === 'fifty') {
+        if (R.q.type === 'keyboard' || R.q.opts.length < 3 || R.fiftyUsed) return toast('Здесь 50/50 не сработает', '#B4B2C4');
+        var wrong = [].slice.call(panel.querySelectorAll('.opt')).filter(function (b) { return !R.q.opts[+b.getAttribute('data-o')].right; });
+        wrong.sort(function () { return Math.random() - 0.5; }).slice(0, 2).forEach(function (b) { b.disabled = true; b.classList.add('gone'); });
+        R.fiftyUsed = true; X.take(k);
+      } else if (k === 'bulb') {
+        if (R.hinted) return toast('Подсказка уже открыта', '#B4B2C4');
+        X.take(k); R.hinted = true; panel.querySelector('.qtext').insertAdjacentHTML('afterend', hintHtml(R.q));
+      } else if (k === 'google') {
+        X.take(k); window.open('https://www.google.com/search?q=' + encodeURIComponent(plainQ(R.q).slice(0, 900)), '_blank', 'noopener');
+      } else if (k === 'ai') {
+        X.take(k); var lang = S.cfg.trLang === 'kk' ? 'қазақ тілінде (Kazakh)' : 'на русском языке (Russian)';
+        window.open('https://www.google.com/search?udm=50&q=' + encodeURIComponent(('Ответь ' + lang + '. Это тест по C++. Объясни простыми словами, какой ответ верный и почему:\n' + plainQ(R.q)).slice(0, 1500)), '_blank', 'noopener');
+      }
+      R.assisted = true; markAssisted();
+    }
+    if (boss) R.used = (R.used || 0) + 1;
+    D.persist(); hud(); refreshHotbar();
+  }
+  function markAssisted() { var row = panel.querySelector('.row'); if (row && !row.querySelector('.tag.assist')) row.insertAdjacentHTML('beforeend', '<span class="tag assist">с подсказкой</span>'); }
+  function hintHtml(q) {
+    var R = G.room, sec = R.briefSec || R.room.sec, parts = [];
+    (sec && sec.blocks || []).forEach(function (b) { if (parts.join(' ').length > 380) return; var s = b.t === 'p' || b.t === 'note' ? D.strip(b.html) : (b.t === 'ul' || b.t === 'ol') ? b.items.map(D.strip).join('; ') : ''; if (s.length > 25) parts.push(s); });
+    var txt = parts.join(' ').slice(0, 420);
+    var extra = q.type === 'keyboard' ? '<p><b>Намёк к ответу:</b> в ответе ' + String(q.answer).length + ' симв., начинается с «' + esc(String(q.answer).charAt(0)) + '».</p>' : '';
+    return '<div class="hintbox"><b>💡 Подсказка' + (sec ? ' · ' + esc(sec.title) : '') + '</b><p>' + esc(txt) + (txt.length >= 420 ? '…' : '') + '</p>' + extra + '</div>';
+  }
+
+  /* --- перевод вопроса --- */
+  function trBtn() { return '<button class="ico-btn tr" data-ico="tr" title="Перевести на ' + (S.cfg.trLang === 'kk' ? 'казахский' : 'русский') + ' (T)" aria-label="Перевести">' + ICO_TR + '</button>'; }
+  function wireTr() { var b = panel.querySelector('[data-ico="tr"]'); if (b) b.onclick = function () { toggleTr(); }; }
+  function toggleTr() {
+    var R = G.room; if (!R || !R.q || !R.mon) return;
+    if (R.tr && R.tr.shown) { showOriginal(); return; }
+    if (R.tr && R.tr.data && R.tr.lang === S.cfg.trLang) { applyTr(R.tr.data); return; }
+    var b = panel.querySelector('[data-ico="tr"]'); if (b) b.classList.add('busy');
+    var q = R.q, lang = S.cfg.trLang;
+    X.trQuestion(q, lang).then(function (d) { if (G.room !== R || R.q !== q) return; R.tr = { data: d, lang: lang }; applyTr(d); })
+      .catch(function () { toast('Перевод недоступен — нет интернета?', '#F09595'); })
+      .then(function () { if (b) b.classList.remove('busy'); });
+  }
+  function applyTr(d) {
+    var R = G.room, qt = panel.querySelector('.qtext'); if (!qt) return;
+    if (!R.tr.orig) R.tr.orig = { q: qt.innerHTML, o: [].map.call(panel.querySelectorAll('.opt'), function (b) { return b.lastElementChild.innerHTML; }) };
+    qt.innerHTML = D.md(d.q) + '<div class="tr-note">' + esc(X.LANGS[R.tr.lang]) + ' · перевод Google · <button class="linkbtn" data-orig>оригинал</button></div>';
+    panel.querySelectorAll('.opt').forEach(function (b) { var oi = +b.getAttribute('data-o'); b.lastElementChild.innerHTML = D.md(d.o[oi] != null ? d.o[oi] : R.q.opts[oi].t); });
+    R.tr.shown = true; var ob = qt.querySelector('[data-orig]'); if (ob) ob.onclick = showOriginal;
+    var tb = panel.querySelector('[data-ico="tr"]'); if (tb) tb.classList.add('on');
+  }
+  function showOriginal() {
+    var R = G.room; if (!R.tr || !R.tr.orig) return;
+    panel.querySelector('.qtext').innerHTML = R.tr.orig.q;
+    panel.querySelectorAll('.opt').forEach(function (b, i) { b.lastElementChild.innerHTML = R.tr.orig.o[i]; });
+    R.tr.shown = false; var tb = panel.querySelector('[data-ico="tr"]'); if (tb) tb.classList.remove('on');
+  }
+
+  /* --- модальные окна: рюкзак, лавка, настройки --- */
+  function modal(html, onOpen) {
+    var el = $('modal'); if (!el) { el = document.createElement('div'); el.id = 'modal'; document.body.appendChild(el); el.addEventListener('click', function (e) { if (e.target === el) closeModal(); }); }
+    el.innerHTML = '<div class="md-wrap">' + html + '</div>'; el.hidden = false; document.body.classList.add('book-open'); G.modal = true;
+    var x = el.querySelector('[data-close]'); if (x) x.onclick = closeModal;
+    if (onOpen) onOpen(el);
+  }
+  function closeModal() { var el = $('modal'); if (el) el.hidden = true; document.body.classList.remove('book-open'); G.modal = false; hud(); refreshHotbar(); }
+  function slotCard(icon, title, sub, right, rar, extra) {
+    return '<div class="card-it" style="border-color:' + (X.RAR_COL[rar || 0]) + '"><img src="' + icon + '" alt=""><div class="grow"><b>' + esc(title) + '</b><span>' + sub + '</span>' + (extra || '') + '</div>' + (right || '') + '</div>';
+  }
+  function durBar(w) { var W = X.WEAPONS[w.k]; if (!W.dur) return '<span class="muted">не ломается</span>'; var p = Math.max(0, w.dur) / W.dur; return '<div class="durbar"><i style="width:' + Math.round(p * 100) + '%;background:' + (p > 0.5 ? '#5DCAA5' : p > 0.25 ? '#EF9F27' : '#E24B4A') + '"></i></div><span class="muted">прочность ' + Math.max(0, w.dur) + ' / ' + W.dur + (w.dur <= 0 ? ' — сломан, бьёт как обычный' : '') + '</span>'; }
+  function openBag() {
+    var h = '<header class="md-top"><b>Рюкзак</b><span class="grow"></span><span class="hud-iq"><span>IQ</span><b>' + S.iq + '</b></span><button class="btn ghost" data-close>✕</button></header><div class="md-body">';
+    h += '<h4>Оружие <small>(в руке — то, чем бьёшь)</small></h4>';
+    S.inv.weapons.forEach(function (w, i) {
+      var W = X.WEAPONS[w.k], inHand = i === S.inv.hand;
+      h += slotCard(X.iconUrl(W.icon), W.name + (inHand ? ' · в руке' : ''), esc(X.RAR[W.rar]) + ' · ' + esc(W.desc), inHand ? '<span class="tag teal">в руке</span>' : '<button class="btn" data-hand="' + i + '">Взять</button>', W.rar, durBar(w));
+    });
+    h += '<h4>Предметы</h4><div class="it-grid">';
+    var any = false;
+    Object.keys(X.ITEMS).forEach(function (k) { var n = X.count(k); if (!n) return; any = true; var it = X.ITEMS[k];
+      h += '<div class="it" style="border-color:' + X.RAR_COL[it.rar] + '"><img src="' + X.iconUrl(it.icon) + '" alt=""><em>×' + n + '</em><b>' + esc(it.name) + '</b><span>' + esc(it.desc) + '</span></div>'; });
+    if (!any) h += '<p class="muted">Пусто. Предметы падают из сундуков и продаются в лавке в домике.</p>';
+    h += '</div><p class="hint">Предметы для вопроса (50/50, лампа, Google, ИИ) используются в бою с хотбара под вопросом. Если ответил с подсказкой, вопрос засчитывается как «не знал» и вернётся ещё раз — так подсказки не мешают учиться. Перо феникса и ледяной кристалл срабатывают сами.</p></div>';
+    modal(h, function (el) { el.querySelectorAll('[data-hand]').forEach(function (b) { b.onclick = function () { S.inv.hand = +b.getAttribute('data-hand'); D.persist(); openBag(); }; }); });
+  }
+  function openShop() {
+    var h = '<header class="md-top"><b>Лавка мудреца</b><span class="grow"></span><span class="hud-iq"><span>IQ</span><b>' + S.iq + '</b></span><button class="btn ghost" data-close>✕</button></header><div class="md-body"><p class="muted">Плати своим IQ — его дают за верные ответы, прочитанные алтари, задания, сундуки и боссов.</p><h4>Расходники</h4><div class="shop-grid">';
+    Object.keys(X.ITEMS).forEach(function (k) { var it = X.ITEMS[k], can = S.iq >= it.price;
+      h += '<div class="shop-it" style="border-color:' + X.RAR_COL[it.rar] + '">' + (it.rar ? '<span class="rar" style="background:' + X.RAR_COL[it.rar] + '">' + X.RAR[it.rar] + '</span>' : '') + '<img src="' + X.iconUrl(it.icon) + '" alt=""><b>' + esc(it.name) + '</b><span>' + esc(it.desc) + '</span><small>у тебя: ' + X.count(k) + '</small><button class="btn ' + (can ? 'primary' : '') + '" data-buy="' + k + '"' + (can ? '' : ' disabled') + '>IQ ' + it.price + '</button></div>'; });
+    h += '</div><h4>Оружие</h4><div class="shop-grid">';
+    Object.keys(X.WEAPONS).forEach(function (k) { var W = X.WEAPONS[k]; if (!W.price) return; var can = S.iq >= W.price;
+      h += '<div class="shop-it" style="border-color:' + X.RAR_COL[W.rar] + '"><span class="rar" style="background:' + X.RAR_COL[W.rar] + '">' + X.RAR[W.rar] + '</span><img src="' + X.iconUrl(W.icon) + '" alt=""><b>' + esc(W.name) + '</b><span>' + esc(W.desc) + '</span><small>прочность ' + W.dur + '</small><button class="btn ' + (can ? 'primary' : '') + '" data-buyw="' + k + '"' + (can ? '' : ' disabled') + '>IQ ' + W.price + '</button></div>'; });
+    h += '</div>';
+    var worn = S.inv.weapons.map(function (w, i) { return { w: w, i: i }; }).filter(function (x) { var W = X.WEAPONS[x.w.k]; return W.dur && x.w.dur < W.dur; });
+    if (worn.length) { h += '<h4>Починка (IQ ' + X.REPAIR + ')</h4>'; worn.forEach(function (x) { var W = X.WEAPONS[x.w.k]; h += slotCard(X.iconUrl(W.icon), W.name, esc(W.desc), '<button class="btn ' + (S.iq >= X.REPAIR ? 'primary' : '') + '" data-fix="' + x.i + '"' + (S.iq >= X.REPAIR ? '' : ' disabled') + '>Починить</button>', W.rar, durBar(x.w)); }); }
+    h += '</div>';
+    modal(h, function (el) {
+      el.querySelectorAll('[data-buy]').forEach(function (b) { b.onclick = function () { var k = b.getAttribute('data-buy'), it = X.ITEMS[k]; if (S.iq < it.price) return; S.iq -= it.price; X.add(k); D.persist(); openShop(); }; });
+      el.querySelectorAll('[data-buyw]').forEach(function (b) { b.onclick = function () { var k = b.getAttribute('data-buyw'), W = X.WEAPONS[k]; if (S.iq < W.price) return; S.iq -= W.price; X.addWeapon(k); S.inv.hand = S.inv.weapons.length - 1; D.persist(); openShop(); }; });
+      el.querySelectorAll('[data-fix]').forEach(function (b) { b.onclick = function () { if (S.iq < X.REPAIR) return; var w = S.inv.weapons[+b.getAttribute('data-fix')]; S.iq -= X.REPAIR; w.dur = X.WEAPONS[w.k].dur; D.persist(); openShop(); }; });
+    });
+  }
+  function openSettings() {
+    var c2 = S.cfg;
+    var h = '<header class="md-top"><b>Настройки</b><span class="grow"></span><button class="btn ghost" data-close>✕</button></header><div class="md-body">' +
+      '<div class="set-row"><div><b>Язык перевода вопросов</b><span>На этот язык переводит кнопка «Перевести» (A→Я) и автоперевод.</span></div><div class="seg">' + Object.keys(X.LANGS).map(function (l) { return '<button data-lang="' + l + '" aria-pressed="' + (c2.trLang === l) + '">' + X.LANGS[l] + '</button>'; }).join('') + '</div></div>' +
+      '<div class="set-row"><div><b>Автоперевод</b><span>Каждый вопрос сразу показывается в переводе. Оригинал — по ссылке «оригинал» под вопросом.</span></div><label class="sw"><input type="checkbox" id="setAuto"' + (c2.autoTr ? ' checked' : '') + '><i></i></label></div>' +
+      '<div class="set-row"><div><b>Вопрос на весь экран</b><span>Сцена прячется, вопрос крупнее. После ответа видно удар. Клавиша F.</span></div><label class="sw"><input type="checkbox" id="setFocus"' + (S.focus ? ' checked' : '') + '><i></i></label></div>' +
+      '<div class="set-row"><div><b>Сбросить прогресс</b><span>Удалит освоение, IQ, предметы и огонёк на этом устройстве.</span></div><button class="btn warn" id="setReset">Сбросить</button></div>' +
+      '<p class="hint">Графика: «Monsters Creatures Fantasy» (Luiz Melo) и «DungeonTileset II» (0x72) — CC0. Герой, факелы и сцены нарисованы для StudyPlay.</p></div>';
+    modal(h, function (el) {
+      el.querySelectorAll('[data-lang]').forEach(function (b) { b.onclick = function () { c2.trLang = b.getAttribute('data-lang'); D.persist(); openSettings(); }; });
+      $('setAuto').onchange = function () { c2.autoTr = this.checked; D.persist(); };
+      $('setFocus').onchange = function () { S.focus = this.checked; D.persist(); };
+      $('setReset').onclick = function () { if (this.dataset.sure) { localStorage.removeItem('sp-dungeon-v1'); location.reload(); } else { this.dataset.sure = 1; this.textContent = 'Точно? Нажми ещё раз'; } };
+    });
+  }
+  $('hudBag').onclick = openBag; $('hudSet').onclick = openSettings;
+
+  /* --- лут --- */
+  function lootHtml(L) {
+    var cells = '<div class="loot-it"><span class="iqbig">IQ</span><b>+' + L.iq + '</b></div>';
+    L.items.forEach(function (k) { var it = X.ITEMS[k]; cells += '<div class="loot-it" style="border-color:' + X.RAR_COL[it.rar] + '"><img src="' + X.iconUrl(it.icon) + '" alt=""><b>' + esc(it.name) + '</b></div>'; });
+    if (L.weapon) { var W = X.WEAPONS[L.weapon]; cells += '<div class="loot-it big" style="border-color:' + X.RAR_COL[W.rar] + '"><span class="rar" style="background:' + X.RAR_COL[W.rar] + '">' + X.RAR[W.rar] + '</span><img src="' + X.iconUrl(W.icon) + '" alt=""><b>' + esc(W.name) + '</b><small>' + esc(W.desc) + '</small></div>'; }
+    return '<div class="loot">' + cells + '</div>' + (L.weapon ? '<p class="hint">Новое оружие лежит в рюкзаке — возьми его в руку.</p>' : '');
+  }
+  function bossLoot() {
+    var R = G.room, L = X.loot('boss'); R.iq += L.iq; D.persist(); hud(); roomLabels();
+    floater('+' + L.iq + ' IQ', G.hero.x + 60, 120, '#CECBF6');
+    setPanel('<div class="qtext">Железный сундук босса!</div>' + lootHtml(L), [btn('Идти дальше', 'primary', 'Enter', roomIdle), btn('Рюкзак', 'ghost', null, openBag)]);
+  }
+
   /* ---------- клавиатура ---------- */
   document.addEventListener('keydown', function (e) {
     if (BK) { if (e.key === 'Escape') { e.preventDefault(); closeBook(); } else if (e.key === 'ArrowRight') flip(1); else if (e.key === 'ArrowLeft') flip(-1); else if (e.key === 'Enter' && e.target.tagName !== 'SELECT') { e.preventDefault(); closeBook(); } return; }
+    if (G.modal) { if (e.key === 'Escape') closeModal(); return; }
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
+    if (G.scene === 'room' && G.room && G.room.mon && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      var lk = e.key.toLowerCase();
+      if (lk === 't' || lk === 'е') { e.preventDefault(); toggleTr(); return; }
+      var hk = Object.keys(X.ITEMS).filter(function (k) { return X.ITEMS[k].key && X.ITEMS[k].key.toLowerCase() === lk; })[0];
+      if (hk) { e.preventDefault(); useItem(hk); return; }
+    }
     if ((e.key === 'b' || e.key === 'B' || e.key === 'и' || e.key === 'И') && G.scene === 'room') { e.preventDefault(); openBookRoom(); return; }
     if ((e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') && G.scene === 'room' && G.room && G.room.mon) { e.preventDefault(); var fb = panel.querySelector('[data-ico="focus"]'); if (fb) fb.click(); else toggleFocus(); return; }
     if (e.key === 'Enter' && G.buttons && G.buttons.length) { e.preventDefault(); var b = G.buttons.filter(function (x) { return x.key === 'Enter'; })[0] || G.buttons[0]; b.fn(); return; }

@@ -134,11 +134,14 @@
   /* огонёк: день засчитывается после первого ответа */
   var today = function () { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
   var dayNum = function (s) { var p = s.split('-'); return Math.round(new Date(+p[0], +p[1] - 1, +p[2]).getTime() / 864e5); };
-  D.streakAlive = function () { var s = D.save; if (!s.lastDay) return false; var gap = dayNum(today()) - dayNum(s.lastDay); return gap <= 1; };
+  D.streakAlive = function () { var s = D.save; if (!s.lastDay) return false; var gap = dayNum(today()) - dayNum(s.lastDay); return gap <= 1 || (gap === 2 && s.inv && s.inv.items && s.inv.items.ice > 0); };
+  D.doneToday = function () { return D.save.lastDay === today(); };
   D.touchStreak = function () {
     var s = D.save, t = today(); if (s.lastDay === t) return false;
     var gap = s.lastDay ? dayNum(t) - dayNum(s.lastDay) : 99;
-    s.streak = gap === 1 ? s.streak + 1 : 1; s.lastDay = t; return true;
+    var saved = false;
+    if (gap === 2 && s.inv && s.inv.items && s.inv.items.ice > 0) { s.inv.items.ice--; saved = true; }
+    s.streak = (gap === 1 || saved) ? s.streak + 1 : 1; s.lastDay = t; D.iceSaved = saved; return true;
   };
 
   /* ---------- повторение (уровень знания 0–5 у каждого вопроса) ---------- */

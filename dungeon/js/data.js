@@ -92,7 +92,7 @@
     if (D.save && D.save.subj !== id) { D.save.subj = id; D.persist(); }
   };
   D.load = function () {
-    return Promise.all([loadCpp(), loadArch().catch(function (e) { console.warn('arch', e); })]).then(function () { D.useSubject(D.save.subj || 'cpp'); return D.floors; });
+    return Promise.all([loadCpp(), loadSyll('arch', 'Архитектура').catch(function (e) { console.warn('arch', e); }), loadSyll('phil', 'Философия').catch(function (e) { console.warn('phil', e); })]).then(function () { D.useSubject(D.save.subj || 'cpp'); return D.floors; });
   };
   /* разбор файла теста: <question> <variant> <variantright> <variant_keyboard> <explain> */
   D.parseTxt = function (text) {
@@ -124,8 +124,9 @@
     return secs;
   };
   var ROOM_SIZE = 10;
-  function loadArch() {
-    var base = '../data/subjects/arch/', get = function (f) { return f ? fetch(base + f, { cache: 'no-cache' }).then(function (r) { return r.ok ? r.text() : ''; }) : Promise.resolve(''); };
+  /* предметы по силлабусу (Архитектура ЭВМ, Философия): data/subjects/<id>/topics.json + tNN.txt + lNN.txt */
+  function loadSyll(sid, short) {
+    var base = '../data/subjects/' + sid + '/', get = function (f) { return f ? fetch(base + f, { cache: 'no-cache' }).then(function (r) { return r.ok ? r.text() : ''; }) : Promise.resolve(''); };
     return fetch(base + 'topics.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (meta) {
       var ready = meta.topics.filter(function (t) { return t.file; });
       return Promise.all(ready.map(function (t) { return Promise.all([get(t.file), get(t.lecture)]); })).then(function (pairs) {
@@ -133,10 +134,12 @@
         var floors = ready.map(function (t, i) {
           var texts = D.parseLecture(pairs[i][1], t.lab ? 'Л' : t.n);
           texts.forEach(function (s) { s.tok = toks(s.title + ' ' + D.blocks(s.blocks)); });
+          /* одинаковые вопросы (в тестах бывают дубли) — в игре один раз */
+          var seen = {};
           var pool = D.parseTxt(txts[i]).map(function (q) {
-            var it = { id: hash('arch|' + q.q + '|' + (q.answer || '') + q.opts.map(function (o) { return o.t; }).join('|')), q: q.q, opts: q.opts, type: q.type, answer: q.answer, ex: q.ex };
+            var it = { id: hash(sid + '|' + q.q + '|' + (q.answer || '') + q.opts.map(function (o) { return o.t; }).join('|')), q: q.q, opts: q.opts, type: q.type, answer: q.answer, ex: q.ex };
             it.diff = diffOf(it); return it;
-          });
+          }).filter(function (q) { if (seen[q.id]) return false; seen[q.id] = 1; return true; });
           /* комнаты — подряд по 10 вопросов (в файле вопросы идут по подтемам), последняя — босс темы */
           var n = Math.max(1, Math.ceil(pool.length / ROOM_SIZE)), rooms = [];
           for (var k = 0; k < n; k++) {
@@ -152,9 +155,9 @@
             r.sec = best; r.secs = [best]; r.label = best.title;
           });
           rooms.push({ k: n, sec: null, secs: texts, boss: true, tasks: [], qs: pool.map(function (q) { return q.id; }) });
-          return { n: t.n, id: 'arch-' + t.n, label: t.lab ? 'Лабы' : 'Тема ' + t.n, title: t.title, rk: t.rk, lab: !!t.lab, texts: texts, pool: pool, byId: byId, tasks: [], taskById: {}, rooms: rooms, final: false, subj: 'arch' };
+          return { n: t.n, id: sid + '-' + t.n, label: t.lab ? 'Лабы' : 'Тема ' + t.n, title: t.title, rk: t.rk, lab: !!t.lab, texts: texts, pool: pool, byId: byId, tasks: [], taskById: {}, rooms: rooms, final: false, subj: sid, syll: true };
         });
-        D.SUBJ.arch = { id: 'arch', title: meta.title, short: 'Архитектура', floors: floors, topics: meta.topics, unitWord: 'Тема' };
+        D.SUBJ[sid] = { id: sid, title: meta.title, short: short, floors: floors, topics: meta.topics, units: meta.units, unitWord: 'Тема', syll: true };
       });
     });
   }

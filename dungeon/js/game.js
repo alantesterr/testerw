@@ -53,7 +53,7 @@
     hud(); window.scrollTo(0, 0);
   }
   /* «Тема 3» у предметов по силлабусу, «Этаж 3» у C++ */
-  function fname(f) { return f.lab ? 'Лабы: EWB' : f.subj === 'arch' ? 'Тема ' + f.n : f.final ? 'Финальный этаж' : 'Этаж ' + f.n; }
+  function fname(f) { return f.lab ? 'Лабы: EWB' : f.syll ? 'Тема ' + f.n : f.final ? 'Финальный этаж' : 'Этаж ' + f.n; }
   /* тема по номеру (у лаб EWB номер 16, поэтому не по индексу) */
   function floorBy(n) { return D.floors.filter(function (f) { return f.n === +n; })[0] || D.floors[0]; }
   function subjTitle() { return D.subj ? D.subj.title : 'C++'; }
@@ -62,7 +62,7 @@
      Справа «☰» — меню-пауза (и клавиша Esc): продолжить, карта тем, домик, рюкзак, лавка,
      настройки и отдельно — выйти в StudyPlay. */
   var BACK = { house: 'sp', subject: 'house', exam: 'house', yard: 'house', hall: 'house', path: 'hall', floor: 'path', room: 'floor' };
-  function backLabel(to) { return { sp: 'StudyPlay', house: 'Домик', hall: 'Зал', path: D.subjId === 'arch' ? 'Темы' : 'Этажи', floor: 'Комнаты' }[to] || 'Назад'; }
+  function backLabel(to) { return { sp: 'StudyPlay', house: 'Домик', hall: 'Зал', path: D.subj && D.subj.syll ? 'Темы' : 'Этажи', floor: 'Комнаты' }[to] || 'Назад'; }
   function updBack() {
     var to = BACK[G.scene], b = $('hudBack');
     $('hudBackT').textContent = backLabel(to);
@@ -90,7 +90,7 @@
     var inRoom = G.scene === 'room' && G.room, mapOk = D.subj && G.scene !== 'path', items = [];
     items.push(['play', '▶', 'Продолжить', 'Esc', closeModal]);
     if (inRoom) items.push(['room', '↩', 'Выйти из комнаты', 'к комнатам темы', function () { closeModal(); goBack(); }]);
-    if (mapOk) items.push(['map', '🗺', D.subjId === 'arch' ? 'Карта тем' : 'Карта этажей', subjTitle(), function () { closeModal(); go('path'); }]);
+    if (mapOk) items.push(['map', '🗺', D.subj.syll ? 'Карта тем' : 'Карта этажей', subjTitle(), function () { closeModal(); go('path'); }]);
     if (G.scene !== 'house') items.push(['house', '🏠', 'Домик', 'предметы, экзамен, задания дня', function () { closeModal(); go('house'); }]);
     items.push(['bag', '🎒', 'Рюкзак', 'предметы и оружие', function () { closeModal(); openBag(); }]);
     items.push(['shop', '🧙', 'Лавка мудреца', 'IQ → предметы', function () { closeModal(); openShop(); }]);
@@ -117,8 +117,8 @@
 
   /* ---------- ДОМИК ---------- */
   /* предметы на главной: открытые и «скоро» */
-  var SOON = [['Философия', 'скоро'], ['ИКТ', 'скоро']];
-  function subjList() { return ['arch', 'cpp'].filter(function (id) { return D.SUBJ[id]; }).map(function (id) { return D.SUBJ[id]; }); }
+  var SOON = [['ИКТ', 'скоро']];
+  function subjList() { return ['arch', 'phil', 'cpp'].filter(function (id) { return D.SUBJ[id]; }).map(function (id) { return D.SUBJ[id]; }); }
   function subjCards() {
     return '<div class="subj-list">' + subjList().map(function (sj) {
       var p = D.progress(D.subjIds(sj));
@@ -160,7 +160,7 @@
     screenEl.querySelector('[data-go]').onclick = function () { go('path'); };
   }
   /* ---------- РЕЖИМЫ: РК1 / РК2 / все темы; вход сразу в комнату ---------- */
-  function rkOf(f) { return f.subj === 'arch' ? f.rk : f.n <= 6 ? 1 : f.n <= 12 ? 2 : 3; }
+  function rkOf(f) { return f.syll ? f.rk : f.n <= 6 ? 1 : f.n <= 12 ? 2 : 3; }
   function modeRk() { return S.mode && S.mode.s === D.subjId ? S.mode.rk : 0; }
   function modeFloors() { var rk = modeRk(); return D.floors.filter(function (f) { return !rk || rkOf(f) === rk; }); }
   function rangeText(fl) { if (!fl.length) return 'тем пока нет'; var a = fl[0].n, b = fl[fl.length - 1].n, q = fl.reduce(function (s, f) { return s + f.pool.length; }, 0); return (a === b ? 'тема ' + a : 'темы ' + a + '–' + b) + ' · вопросов: ' + q; }
@@ -275,14 +275,16 @@
       [btn('Спуститься в подземелье', 'primary', 'Enter', function () { walkTo(306, function () { G.descend = now(); setTimeout(function () { G.descend = 0; go('hall'); }, 700); }); }),
        btn('Назад в домик', 'ghost', null, function () { walkTo(80, function () { go('house'); }); })]);
   }
-  /* ---------- ХОЛЛ ---------- */
+  /* ---------- ХОЛЛ: три двери — Архитектура, C++, Философия ---------- */
+  var DOORS = [['arch', 96, 'Архитектура', '#AFA9EC', 'Архитектура ЭВМ'], ['cpp', 240, 'C++', '#9FE1CB', 'C++'], ['phil', 384, 'Философия', '#FAC775', 'Философия']];
   function enterHall() {
     show(true); where('Холл подземелья'); G.hero.x = 240;
-    var pa = D.SUBJ.arch ? D.progress(D.subjIds(D.SUBJ.arch)) : 0, pc = D.progress(D.subjIds(D.SUBJ.cpp));
-    labels([{ text: 'Архитектура · ' + pa + '%', x: 96, y: 112, color: '#AFA9EC' }, { text: 'C++ · ' + pc + '%', x: 240, y: 92, color: '#9FE1CB' }, { text: 'Философия, ИКТ · скоро', x: 384, y: 112, color: '#85B7EB' }]);
-    var bs = [];
-    if (D.SUBJ.arch) bs.push(btn('Войти: Архитектура ЭВМ', D.subjId === 'arch' ? 'primary' : 'ghost', D.subjId === 'arch' ? 'Enter' : null, function () { D.useSubject('arch'); walkTo(96, function () { go('path'); }); }));
-    bs.push(btn('Войти: C++', D.subjId === 'cpp' || !D.SUBJ.arch ? 'primary' : 'ghost', D.subjId === 'cpp' || !D.SUBJ.arch ? 'Enter' : null, function () { D.useSubject('cpp'); walkTo(240, function () { go('path'); }); }));
+    var open = DOORS.filter(function (d) { return D.SUBJ[d[0]]; });
+    labels(DOORS.map(function (d) { var sj = D.SUBJ[d[0]]; return { text: d[2] + ' · ' + (sj ? D.progress(D.subjIds(sj)) + '%' : 'скоро'), x: d[1], y: d[1] === 240 ? 92 : 112, color: d[3] }; }));
+    var bs = open.map(function (d) {
+      var mine = D.subjId === d[0];
+      return btn('Войти: ' + d[4], mine ? 'primary' : 'ghost', mine ? 'Enter' : null, function () { D.useSubject(d[0]); walkTo(d[1], function () { go('path'); }); });
+    });
     setPanel('<div class="qtext">Холл</div><p class="msg">Каждая дверь — подземелье одного предмета. Герой у тебя один, IQ, сердечки и огонёк общие. Процент — сколько вопросов предмета ты хотя бы раз решил верно.</p>', bs);
   }
 
@@ -293,11 +295,11 @@
   function statLine(st) { return 'увидено ' + st.seen + ' / ' + st.total + (st.bad ? ' · <b class="bad">к повтору: ' + st.bad + '</b>' : ''); }
   var UNITS_ARCH = [[1, 5, 'РК1 · темы 1–5', 'Числа в памяти, IEEE 754, логика, Карно, комбинационные схемы'], [6, 8, 'РК2 · темы 6–8', 'Триггеры, счётчики, процессор и система команд'], [16, 16, 'Лабораторные', 'Программа Electronics Workbench (EWB)']];
   function enterPath() {
-    var arch = D.subjId === 'arch';
+    var arch = !!D.subj.syll;
     show(false); where('Подземелье · ' + subjTitle());
     var cur = S.at && (S.at.s || 'cpp') === D.subjId ? S.at.f : 1, h = '<div class="path-head"><h1>Подземелье: ' + esc(subjTitle()) + '</h1><span class="tag teal">все ' + (arch ? 'темы' : 'этажи') + ' открыты</span></div><p class="hallnote">' + (arch ? 'Этаж = тема силлабуса.' : 'Этаж = лекция.') + ' Цвет круга — насколько ты освоил тему: серый — не начинал, оранжевый — начал, зелёный — хорошо, золотой — отлично. Золотая медаль ✓ — пройдено начисто: все вопросы увидены и ни одной неисправленной ошибки.</p>' + tipHtml('path') + dailyHtml();
     var rk = modeRk(); if (rk) h += '<div class="wave-msg">Режим РК' + rk + ': только темы этого рубежного контроля (' + esc(rangeText(modeFloors())) + '). <button class="btn ghost" data-allmode>Показать все темы</button></div>';
-    (arch ? UNITS_ARCH : UNITS).forEach(function (u, ui) {
+    (D.subj.units || (arch ? UNITS_ARCH : UNITS)).forEach(function (u, ui) {
       if (!D.floors.some(function (f) { return f.n >= u[0] && f.n <= u[1] && (!rk || rkOf(f) === rk); })) return;
       h += '<div class="unit u' + (ui % 4 + 1) + '"><small>' + esc(u[2]) + '</small><b>' + esc(u[3]) + '</b></div><div class="trail">';
       D.floors.filter(function (f) { return f.n >= u[0] && f.n <= u[1] && (!rk || rkOf(f) === rk); }).forEach(function (f) {
@@ -336,7 +338,7 @@
       }
       var ri = roomInfo(f, r.k), rm = D.mastery(r.qs), st = D.stats(r.qs), stars = rm >= 85 ? '★★★' : rm >= 50 ? '★★☆' : rm > 0 ? '★☆☆' : '☆☆☆';
       var status = st.clean && ri.done ? '<span class="tag gold">чисто ✓</span>' : ri.done ? '<span class="tag">есть что пройти ещё раз</span>' : '';
-      h += '<button class="room' + (st.clean && ri.done ? ' done' : '') + (r.boss ? ' boss' : '') + (r.k === nextK ? ' cur' : '') + '" data-k="' + r.k + '"><b>' + (r.boss ? 'Босс этажа' : 'Комната ' + (r.k + 1)) + '</b><span>' + esc(r.boss ? 'неувиденные и слабые вопросы всей ' + (f.subj === 'arch' ? 'темы' : 'лекции') : (r.sec ? r.sec.title : r.label || '')) + (r.tasks && r.tasks.length ? ' · заданий: ' + r.tasks.length : '') + '</span><div class="stars">' + stars + '</div><span>' + statLine(st) + '</span>' + status + '</button>';
+      h += '<button class="room' + (st.clean && ri.done ? ' done' : '') + (r.boss ? ' boss' : '') + (r.k === nextK ? ' cur' : '') + '" data-k="' + r.k + '"><b>' + (r.boss ? (f.syll ? 'Босс темы' : 'Босс этажа') : 'Комната ' + (r.k + 1)) + '</b><span>' + esc(r.boss ? 'неувиденные и слабые вопросы всей ' + (f.syll ? 'темы' : 'лекции') : (r.sec ? r.sec.title : r.label || '')) + (r.tasks && r.tasks.length ? ' · заданий: ' + r.tasks.length : '') + '</span><div class="stars">' + stars + '</div><span>' + statLine(st) + '</span>' + status + '</button>';
     });
     h += '</div>';
     screenEl.innerHTML = h;
@@ -489,7 +491,7 @@
     });
     R.briefSec = bsec || R.room.sec;
     /* у Архитектуры лекции короткие — отрывок показываем, только если он правда про этот вопрос */
-    if (!bsec || bs < (R.f.subj === 'arch' ? 4 : 1.6)) return '';
+    if (!bsec || bs < (R.f.syll ? 4 : 1.6)) return '';
     var bl = bsec.blocks, pick = [bl[bi]];
     if (/^(code|out)$/.test(bl[bi].t)) { if (bl[bi - 1] && /^(p|note|ul|ol)$/.test(bl[bi - 1].t)) pick.unshift(bl[bi - 1]); }
     else if (bl[bi + 1] && /^(code|out)$/.test(bl[bi + 1].t)) pick.push(bl[bi + 1]);
@@ -515,7 +517,7 @@
       h += '<div class="opts">' + order.map(function (oi, n) { return '<button class="opt" data-o="' + oi + '"><span class="n">' + (n + 1) + '</span><span>' + D.md(q.opts[oi].t) + '</span></button>'; }).join('') + '</div>';
     }
     h += hotbarHtml() + '<div class="hint">Клавиши: ' + (q.type === 'keyboard' ? 'Enter — ответить' : '1–' + q.opts.length + ' — выбрать ответ') + ' · T — перевести · B — книжка · F — весь экран</div>';
-    setPanel(h); wireIco(); wireTr(); wireHotbar(); wireBrief(); bubbleQ(q, m);
+    setPanel(h); wireIco(); wireTr(); wireHotbar(); wireBrief(); R.trB = null; bubbleQ(q, m); autoTrBubble(q, m);
     if (S.cfg.autoTr) toggleTr();
     G.buttons = [];
     if (q.type === 'keyboard') { var inp = $('kbIn'); $('kbGo').onclick = function () { answer(norm(inp.value) === norm(q.answer), inp.value); }; inp.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('kbGo').click(); } }; if (matchMedia('(pointer:fine)').matches) setTimeout(function () { inp.focus({ preventScroll: true }); }, 50); }
@@ -586,7 +588,7 @@
     var bot = Math.max(4, (A.H - head - 14) / A.H * 100);
     el.style.bottom = bot.toFixed(1) + '%'; el.style.fontSize = '';
     el.innerHTML = html; el.hidden = false;
-    var up = el.querySelector('[data-bup]'); if (up) up.onclick = function () { S.cfg.bubbleDown = false; D.persist(); var R = G.room; if (R && R.q && R.mon) bubbleQ(R.q, R.mon); };
+    var up = el.querySelector('[data-bup]'); if (up) up.onclick = function () { S.cfg.bubbleDown = false; D.persist(); var R = G.room; if (R && R.q && R.mon) { bubbleQ(R.q, R.mon); if (!R.trB) autoTrBubble(R.q, R.mon); } };
     var dn = el.querySelector('[data-bdown]'); if (dn) dn.onclick = function () { S.cfg.bubbleDown = true; D.persist(); var R = G.room; if (R && R.q && R.mon) bubbleQ(R.q, R.mon); };
     return fit ? fitBubble(el, bot) : true;
   }
@@ -610,15 +612,36 @@
     var R = G.room, qt = panel.querySelector('.qtext');
     if (qt) qt.classList.remove('in-bubble');
     if (S.cfg.bubbleDown) { R.bubble = '<button class="b-tog" data-bup title="Показать вопрос в облачке" aria-label="Показать вопрос в облачке">…</button>'; R.bubbleCls = 'mini'; bubbleAt(R.bubble, m, 'mini'); return; }
-    R.bubble = B_DOWN + D.md(q.q); R.bubbleCls = 'q';
+    /* перевод (C++): оригинал, под ним перевод — если уже пришёл */
+    var trHtml = R.trB && R.trB.q === q ? '<div class="b-tr">' + D.md(R.trB.text) + '</div>' : '';
+    R.bubble = B_DOWN + D.md(q.q) + trHtml; R.bubbleCls = 'q';
+    if (trHtml && !bubbleAt(R.bubble, m, 'q', true)) R.bubble = B_DOWN + D.md(q.q);
     if (bubbleAt(R.bubble, m, 'q', true)) { if (qt) qt.classList.add('in-bubble'); return; }
     var plain = plainText(q.q);
     R.bubble = B_DOWN + esc(plain.slice(0, 120).replace(/\s+\S*$/, '')) + '… <small>полностью внизу</small>'; R.bubbleCls = 'more';
     bubbleAt(R.bubble, m, 'more', true);
   }
+  /* C++ (вопросы на английском): сразу переводим и кладём перевод в облачко под оригинал,
+     а к вариантам — мелкой строкой под каждым. Код не переводится и не дублируется. */
+  function autoTrBubble(q, m) {
+    var R = G.room;
+    if (D.subjId !== 'cpp' || S.cfg.cppTr === false || S.cfg.autoTr || S.cfg.bubbleDown) return;
+    var prose = q.q.replace(/```[\s\S]*?```/g, ' ').trim(); if (!/[A-Za-z]{3,}/.test(prose)) return;
+    X.trQuestion(q, S.cfg.trLang).then(function (d) {
+      if (G.room !== R || R.q !== q || R.answered || R.mon !== m) return;
+      var text = String(d.q || '').replace(/```[\s\S]*?```/g, ' ').replace(/\n{2,}/g, '\n').trim();
+      if (text && text !== prose) { R.trB = { q: q, text: text }; bubbleQ(q, m); }
+      panel.querySelectorAll('.opt').forEach(function (b) {
+        var oi = +b.getAttribute('data-o'), o = q.opts[oi], t = d.o && d.o[oi];
+        if (!o || !t || t === o.t || X.isCodeLike(o.t) || b.querySelector('.o-tr')) return;
+        b.lastElementChild.insertAdjacentHTML('beforeend', '<small class="o-tr">' + D.md(t) + '</small>');
+      });
+    }).catch(function () {});
+  }
   function bubbleSay(text, cls) { var R = G.room; if (R && R.mon) bubbleAt('<b>' + esc(text) + '</b>', R.mon, 'say ' + cls); }
   var SAY_OK = ['Ай!', 'Ой, больно!', 'Угадал…', 'Ну ладно, верно!'], SAY_BAD = ['Ха! Мимо!', 'Неверно! Получай!', 'Не угадал!', 'Хе-хе, ошибка!'];
-  var SAY_DIE = ['Нееееет!', 'Я ещё вернусь…', 'Как ты узнал?!', 'Это нечестно!', 'Ты… слишком умный…', 'Мама, он всё выучил!'];
+  var SAY_DIE = ['Нееееет!', 'Я ещё вернусь…', 'Как ты узнал?!', 'Ты… слишком умный…', 'Мама, он всё выучил!', 'Не может быть!'];
+  var SAY_CHEAT = ['Это нечестно!', 'Ты подсмотрел!', 'Нечестно, с подсказкой!', 'Так и я могу!', 'Жульничество!'], SAY_GUARD_CHEAT = ['С подсказкой не считается.', 'Сам-то знаешь? Спрошу ещё.'];
   var SAY_BOSS = ['Невозможно!', 'Ты прошёл всю тему?!', 'Я… повержен…'], SAY_GUARD = ['Ладно, проходи.', 'Ошибки исправлены. Путь свободен.'];
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
 
@@ -645,7 +668,9 @@
     }
     /* реплика монстра: последний верный ответ его добивает — тогда «Нееееет!» и т. п. */
     var kill = !m.items.length && (m.guard ? clean : ok);
-    if (kill) bubbleSay(pick(m.guard ? SAY_GUARD : m.boss ? SAY_BOSS : SAY_DIE), 'die');
+    /* верно, но с подсказкой (Google, 50/50, лампа, ИИ…) — монстр возмущается */
+    if (ok && R.assisted) bubbleSay(pick(m.guard ? SAY_GUARD_CHEAT : SAY_CHEAT), 'cheat');
+    else if (kill) bubbleSay(pick(m.guard ? SAY_GUARD : m.boss ? SAY_BOSS : SAY_DIE), 'die');
     else bubbleSay(m.guard ? (ok ? 'Верно. Исправлено.' : 'Неверно. Спрошу ещё раз.') : pick(ok ? SAY_OK : SAY_BAD), ok ? 'ok' : 'bad');
     R.run = clean ? (R.run || 0) + 1 : 0; if (R.run === 5) quest('row5');
     if (ok) { quest('right'); if (kind === 'task') quest('task'); if (clean && R.mode === 'err') quest('fix'); }
@@ -938,7 +963,7 @@
   function rightText(q) { return q.type === 'keyboard' ? '<code>' + esc(q.answer) + '</code>' : q.opts.filter(function (o) { return o.right; }).map(function (o) { return D.md(o.t); }).join(' · '); }
   function refLine(f) {
     if (!f) return '';
-    if (f.subj === 'arch' && !f.texts.length) return 'Тема ' + f.n + ' по силлабусу: «' + f.title + '». Лекция у алтаря по этой теме — скоро.';
+    if (f.syll && !f.texts.length) return 'Тема ' + f.n + ' по силлабусу: «' + f.title + '». Лекция у алтаря по этой теме — скоро.';
     var sec = G.room && G.room.briefSec;
     return (f.lab ? 'Лабораторные' : 'Лекция ' + f.n) + ' «' + f.title + '»' + (sec ? ', раздел «' + sec.title + '»' : '') + ' — открой книжку (B).';
   }
@@ -1002,6 +1027,7 @@
     var h = '<header class="md-top"><b>Настройки</b><span class="grow"></span><button class="btn ghost" data-close>✕</button></header><div class="md-body">' +
       '<div class="set-row"><div><b>Язык перевода вопросов</b><span>На этот язык переводит кнопка «Перевести» (A→Я) и автоперевод.</span></div><div class="seg">' + Object.keys(X.LANGS).map(function (l) { return '<button data-lang="' + l + '" aria-pressed="' + (c2.trLang === l) + '">' + X.LANGS[l] + '</button>'; }).join('') + '</div></div>' +
       '<div class="set-row"><div><b>Автоперевод</b><span>Каждый вопрос сразу показывается в переводе. Оригинал — по ссылке «оригинал» под вопросом.</span></div><label class="sw"><input type="checkbox" id="setAuto"' + (c2.autoTr ? ' checked' : '') + '><i></i></label></div>' +
+'<div class="set-row"><div><b>Перевод C++ в облачке</b><span>Вопросы C++ на английском: в облачке у монстра оригинал, под ним перевод; под вариантами — мелкий перевод.</span></div><label class="sw"><input type="checkbox" id="setCppTr"' + (c2.cppTr !== false ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Вопрос на весь экран</b><span>Сцена прячется, вопрос крупнее. После ответа видно удар. Клавиша F.</span></div><label class="sw"><input type="checkbox" id="setFocus"' + (S.focus ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Звуки</b><span>Удар, ошибка, сундук, победа.</span></div><label class="sw"><input type="checkbox" id="setSound"' + (c2.sound !== false ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Обучение</b><span>Снова показать подсказки для новичка.</span></div><button class="btn ghost" id="setTut">Показать снова</button></div>' +
@@ -1010,6 +1036,7 @@
     modal(h, function (el) {
       el.querySelectorAll('[data-lang]').forEach(function (b) { b.onclick = function () { c2.trLang = b.getAttribute('data-lang'); D.persist(); openSettings(); }; });
       $('setAuto').onchange = function () { c2.autoTr = this.checked; D.persist(); };
+$('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
       $('setFocus').onchange = function () { S.focus = this.checked; D.persist(); };
       $('setSound').onchange = function () { c2.sound = this.checked; D.persist(); if (this.checked) sfx('ok'); };
       $('setTut').onclick = function () { S.tips = {}; D.persist(); this.textContent = 'Готово ✓'; };

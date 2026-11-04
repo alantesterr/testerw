@@ -394,3 +394,6 @@ b.bad,.bad{color:#F7A3A3}
   .hud-back{height:32px;font-size:13px;padding:0 9px 0 6px}
 }
 @media (max-width:400px){.hud-back{padding:0 7px 0 5px}.hud-back .ar{font-size:19px}}
+#bubble.say.cheat{--bf:#f3e1ff}
+#bubble .b-tr{margin-top:6px;padding-top:5px;border-top:2px dashed #c9bfa6;color:#4a3f6b;font-weight:600;font-size:.92em}
+.opt .o-tr{display:block;margin-top:3px;font-size:.82em;color:var(--mute);font-weight:500}

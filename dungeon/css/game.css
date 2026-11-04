@@ -401,3 +401,11 @@ b.bad,.bad{color:#F7A3A3}
 .luck-box{margin-top:10px}
 .rep-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
 .rep-row span{flex:1 1 220px;color:var(--mute);font-size:14px}
+
+/* ---------- ИКТ: уровни «зубрёжки» ---------- */
+.drill-bar{display:flex;height:14px;border-radius:8px;overflow:hidden;background:#2a2540;margin:6px 0 8px}
+.drill-bar i{display:block;height:100%}
+.drill-bar .l,.drill-leg .l{background:#5DCAA5}.drill-bar .s,.drill-leg .s{background:#EF9F27}.drill-bar .b,.drill-leg .b{background:#E24B4A}
+.drill-leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);margin-bottom:8px}
+.drill-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;background:#2a2540;vertical-align:-1px}
+.qimg{margin:8px 0}.qimg img{max-width:100%;max-height:260px;border-radius:8px;background:#fff;display:block}

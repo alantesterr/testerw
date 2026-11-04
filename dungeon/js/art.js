@@ -251,15 +251,15 @@
     c.fillStyle = '#0c0a12'; c.fillRect(0, 0, W, H);
     wall(c, 32, A.FLOOR_Y, 0.15);
     floorRow(c, A.FLOOR_Y);
-    var doors = [{ x: 96, key: 'phil' }, { x: 240, key: 'cpp', big: true }, { x: 384, key: 'ict' }];
+    /* четыре двери: Архитектура, C++ (большая), Философия, ИКТ; дверь текущего предмета светится */
+    var doors = [{ x: 64, key: 'arch' }, { x: 184, key: 'cpp', big: true }, { x: 304, key: 'phil' }, { x: 420, key: 'ict' }];
     doors.forEach(function (d) {
       var s = d.big ? 3 : 2.4, w = 32 * s, h = 32 * s, x = d.x - w / 2, y = A.FLOOR_Y - h;
       c.fillStyle = 'rgba(0,0,0,.5)'; c.fillRect(x - 6, y - 8, w + 12, h + 8);
       A.tile(c, 'doors_leaf_closed', x, y, s);
-      if (d.key === 'ict') { c.fillStyle = 'rgba(0,0,0,.45)'; c.fillRect(x, y, w, h); }
-      if (d.key === 'cpp') { c.fillStyle = 'rgba(93,202,165,' + (0.12 + 0.06 * Math.sin(t / 300)) + ')'; c.fillRect(x, y, w, h); }
+      if (d.key === (A.hallGlow || 'cpp')) { c.fillStyle = 'rgba(93,202,165,' + (0.12 + 0.06 * Math.sin(t / 300)) + ')'; c.fillRect(x, y, w, h); }
     });
-    A.torch(c, 168, 100, t); A.torch(c, 312, 100, t + 300); A.torch(c, 30, 100, t + 600); A.torch(c, 450, 100, t + 900);
+    A.torch(c, 124, 100, t); A.torch(c, 244, 100, t + 300); A.torch(c, 362, 100, t + 600);
     vignette(c, 0.5);
     return doors;
   };

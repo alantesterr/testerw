@@ -92,14 +92,17 @@
     if (D.save && D.save.subj !== id) { D.save.subj = id; D.persist(); }
   };
   D.load = function () {
-    return Promise.all([loadCpp(), loadSyll('arch', 'Архитектура').catch(function (e) { console.warn('arch', e); }), loadSyll('phil', 'Философия').catch(function (e) { console.warn('phil', e); })]).then(function () { D.useSubject(D.save.subj || 'cpp'); return D.floors; });
+    return Promise.all([loadCpp(), loadSyll('arch', 'Архитектура').catch(function (e) { console.warn('arch', e); }), loadSyll('phil', 'Философия').catch(function (e) { console.warn('phil', e); }), loadDrill('ict').catch(function (e) { console.warn('ict', e); })]).then(function () { D.useSubject(D.save.subj || 'cpp'); return D.floors; });
   };
   /* разбор файла теста: <question> <variant> <variantright> <variant_keyboard> <explain> */
   D.parseTxt = function (text) {
     return String(text).replace(/\r/g, '').split(/<question>/i).slice(1).map(function (raw) {
       var ex = '', m = raw.match(/<explain>([\s\S]*?)(?:<\/explain>|$)/i);
       if (m) { ex = m[1].trim(); raw = raw.replace(m[0], ''); }
-      var parts = raw.split(/<(variantright|variant_keyboard|variant)>/i), q = { q: parts[0].trim(), opts: [], type: 'choice', ex: ex };
+      /* картинка к вопросу (как в Тестере): <question_image>data:image/…</question_image> */
+      var img = '', im = raw.match(/<(question_image|image_question|questionimage)>([\s\S]*?)<\/\1>/i);
+      if (im) { img = im[2].trim(); raw = raw.replace(im[0], ''); if (!/^(data:image\/(png|jpe?g|gif|webp);base64,|https:\/\/)/i.test(img)) img = ''; }
+      var parts = raw.split(/<(variantright|variant_keyboard|variant)>/i), q = { q: parts[0].trim(), opts: [], type: 'choice', ex: ex, img: img };
       for (var k = 1; k < parts.length; k += 2) {
         var tag = parts[k].toLowerCase(), t = (parts[k + 1] || '').trim();
         if (tag === 'variant_keyboard') { q.type = 'keyboard'; q.answer = t; } else if (t) q.opts.push({ t: t, right: tag === 'variantright' });
@@ -158,6 +161,30 @@
           return { n: t.n, id: sid + '-' + t.n, label: t.lab ? 'Лабы' : 'Тема ' + t.n, title: t.title, rk: t.rk, lab: !!t.lab, texts: texts, pool: pool, byId: byId, tasks: [], taskById: {}, rooms: rooms, final: false, subj: sid, syll: true };
         });
         D.SUBJ[sid] = { id: sid, title: meta.title, short: short, floors: floors, topics: meta.topics, units: meta.units, unitWord: 'Тема', syll: true };
+      });
+    });
+  }
+  /* предметы «только тесты» (ИКТ): data/subjects/<id>/levels.json + файлы уровней.
+     Уровень = набор файлов (РК2 = РК1 + РК2, Экзамен = всё). Один вопрос в разных файлах — один id
+     (по тексту без знаков препинания и верному ответу), поэтому прогресс общий для всех уровней. */
+  function loadDrill(sid) {
+    var base = '../data/subjects/' + sid + '/', cache = {}, get = function (f) { return cache[f] || (cache[f] = fetch(base + f, { cache: 'no-cache' }).then(function (r) { return r.ok ? r.text() : ''; })); };
+    var nrm = function (s) { return String(s || '').toLowerCase().replace(/[\s.…\-–—:;,!?"«»“”‘’'`()]+/g, ' ').trim(); };
+    return fetch(base + 'levels.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (meta) {
+      return Promise.all(meta.levels.map(function (lv) { return Promise.all(lv.files.map(get)); })).then(function (texts) {
+        var floors = meta.levels.map(function (lv, i) {
+          var pool = [], byId = {};
+          texts[i].forEach(function (txt) { D.parseTxt(txt).forEach(function (q) {
+            var right = q.type === 'keyboard' ? q.answer : q.opts.filter(function (o) { return o.right; }).map(function (o) { return o.t; }).join('|');
+            var id = hash(sid + '|' + nrm(q.q) + '|' + nrm(right));
+            if (byId[id]) { if (q.img && !byId[id].img) byId[id].img = q.img; return; }   /* дубль: берём картинку, если она есть только тут */
+            var it = { id: id, q: q.q, opts: q.opts, type: q.type, answer: q.answer, ex: q.ex, img: q.img, topic: lv.n };
+            it.diff = diffOf(it); byId[id] = it; pool.push(it);
+          }); });
+          var rooms = [{ k: 0, sec: null, secs: [], boss: false, tasks: [], drill: true, label: 'Тренировка: 10 вопросов', qs: pool.map(function (q) { return q.id; }) }];
+          return { n: lv.n, id: sid + '-' + lv.n, label: lv.title, title: lv.title, sub: lv.sub, rk: lv.n, texts: [], pool: pool, byId: byId, tasks: [], taskById: {}, rooms: rooms, final: false, subj: sid, drill: true };
+        });
+        D.SUBJ[sid] = { id: sid, title: meta.title, short: meta.title, floors: floors, units: [[1, floors.length, meta.title + ' · только тесты', 'РК1 → РК2 (РК1 + РК2) → Экзамен (всё)']], unitWord: 'Уровень', drill: true };
       });
     });
   }
@@ -249,12 +276,31 @@
   /* прогресс предмета/темы: доля вопросов, на которые хотя бы раз ответили верно (без подсказки) */
   D.solvedOnce = function (id) { var r = D.save.srs[id]; return !!r && r.n - r.w > 0; };
   D.progress = function (ids) { if (!ids.length) return 0; return Math.round(ids.filter(D.solvedOnce).length / ids.length * 100); };
-  D.subjIds = function (sj) { return (sj || D.subj).floors.reduce(function (a, f) { return a.concat(f.pool.map(function (q) { return q.id; })); }, []); };
+  D.subjIds = function (sj) { var seen = {}; return (sj || D.subj).floors.reduce(function (a, f) { return a.concat(f.pool.map(function (q) { return q.id; })); }, []).filter(function (id) { if (seen[id]) return false; seen[id] = 1; return true; }); };
+  /* «Зубрёжка» (ИКТ): вес вопроса при выборе. Новый — часто; ошибка — очень часто, но не сразу
+     (сначала «остывает» несколько вопросов); верно подряд 1 / 2 / 3+ раз — всё реже, после 3 почти не попадается. */
+  D.drillWeight = function (id) {
+    var r = D.save.srs[id]; if (!r) return 5;
+    if (D.isBad(id)) return r.due > D.save.ticks ? 1.2 : 10;
+    var c = r.c != null ? r.c : r.l >= 3 ? 3 : r.l;
+    return c >= 3 ? 0.15 : c === 2 ? 0.6 : c === 1 ? 2 : 3;
+  };
+  D.learned = function (id) { var r = D.save.srs[id]; return !!r && !D.isBad(id) && (r.c != null ? r.c : r.l >= 3 ? 3 : 0) >= 3; };
+  D.drillPick = function (floor, n) {
+    var ids = floor.pool.map(function (q) { return q.id; }), out = [];
+    var w = ids.map(D.drillWeight);
+    for (var k = 0; k < n && ids.length; k++) {
+      var sum = w.reduce(function (a, b) { return a + b; }, 0), r = Math.random() * sum, i = 0;
+      while (i < w.length - 1 && r >= w[i]) { r -= w[i]; i++; }
+      out.push(ids[i]); ids.splice(i, 1); w.splice(i, 1);
+    }
+    return out;
+  };
   D.record = function (id, ok) {
     var s = D.save, r = s.srs[id] || { l: 0, n: 0, w: 0, due: 0 };
     s.ticks++; r.n++;
-    if (ok) { r.l = Math.min(5, r.l + 1); r.due = s.ticks + GAP[r.l]; r.bad = false; }
-    else { r.w++; r.l = Math.max(0, r.l - 1); r.due = s.ticks + 4 + Math.floor(Math.random() * 5); r.bad = true; }
+    if (ok) { r.l = Math.min(5, r.l + 1); r.due = s.ticks + GAP[r.l]; r.bad = false; r.c = (r.c || 0) + 1; }
+    else { r.w++; r.l = Math.max(0, r.l - 1); r.due = s.ticks + 4 + Math.floor(Math.random() * 5); r.bad = true; r.c = 0; }
     s.srs[id] = r;
   };
   /* «к повтору» — последний ответ был ошибкой (или «не знал», или с подсказкой) */

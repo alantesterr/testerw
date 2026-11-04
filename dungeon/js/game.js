@@ -53,7 +53,7 @@
     hud(); window.scrollTo(0, 0);
   }
   /* «Тема 3» у предметов по силлабусу, «Этаж 3» у C++ */
-  function fname(f) { return f.rep ? f.title : f.lab ? 'Лабы: EWB' : f.syll ? 'Тема ' + f.n : f.final ? 'Финальный этаж' : 'Этаж ' + f.n; }
+  function fname(f) { return f.rep || f.drill ? f.title : f.lab ? 'Лабы: EWB' : f.syll ? 'Тема ' + f.n : f.final ? 'Финальный этаж' : 'Этаж ' + f.n; }
   /* тема по номеру (у лаб EWB номер 16, поэтому не по индексу) */
   function floorBy(n) { if (n === 'rep' && G.rep) return G.rep; return D.floors.filter(function (f) { return f.n === +n; })[0] || D.floors[0]; }
   /* ---------- ПОВТОРЕНИЕ РК: одна комната из самых слабых вопросов всего РК ----------
@@ -77,9 +77,9 @@
      Справа «☰» — меню-пауза (и клавиша Esc): продолжить, карта тем, домик, рюкзак, лавка,
      настройки и отдельно — выйти в StudyPlay. */
   var BACK = { house: 'sp', subject: 'house', exam: 'house', hall: 'house', path: 'hall', floor: 'path', room: 'floor' };
-  function backLabel(to) { return { sp: 'StudyPlay', house: 'Домик', hall: 'Зал', path: D.subj && D.subj.syll ? 'Темы' : 'Этажи', floor: 'Комнаты' }[to] || 'Назад'; }
+  function backLabel(to) { return { sp: 'StudyPlay', house: 'Домик', hall: 'Зал', path: D.subj && D.subj.drill ? 'Уровни' : D.subj && D.subj.syll ? 'Темы' : 'Этажи', floor: 'Комнаты', level: 'Уровень' }[to] || 'Назад'; }
   function updBack() {
-    var to = BACK[G.scene], b = $('hudBack'); if (to === 'floor' && G.room && G.room.f.rep) to = 'path';
+    var to = BACK[G.scene], b = $('hudBack'); if (to === 'floor' && G.room && G.room.f.rep) to = 'path'; if (to === 'floor' && G.room && G.room.f.drill) to = 'level';
     $('hudBackT').textContent = backLabel(to);
     b.classList.toggle('exit', to === 'sp');
     b.title = to === 'sp' ? 'Выйти в StudyPlay (прогресс сохранён)' : 'Назад: ' + backLabel(to) + ' (Backspace)';
@@ -105,7 +105,7 @@
     var inRoom = G.scene === 'room' && G.room, mapOk = D.subj && G.scene !== 'path', items = [];
     items.push(['play', '▶', 'Продолжить', 'Esc', closeModal]);
     if (inRoom) items.push(['room', '↩', 'Выйти из комнаты', 'к комнатам темы', function () { closeModal(); goBack(); }]);
-    if (mapOk) items.push(['map', '🗺', D.subj.syll ? 'Карта тем' : 'Карта этажей', subjTitle(), function () { closeModal(); go('path'); }]);
+    if (mapOk) items.push(['map', '🗺', D.subj.drill ? 'Уровни ИКТ' : D.subj.syll ? 'Карта тем' : 'Карта этажей', subjTitle(), function () { closeModal(); go('path'); }]);
     if (G.scene !== 'house') items.push(['house', '🏠', 'Домик', 'предметы, экзамен, задания дня', function () { closeModal(); go('house'); }]);
     items.push(['bag', '🎒', 'Рюкзак', 'предметы и оружие', function () { closeModal(); openBag(); }]);
     items.push(['shop', '🧙', 'Лавка мудреца', 'IQ → предметы', function () { closeModal(); openShop(); }]);
@@ -132,8 +132,8 @@
 
   /* ---------- ДОМИК ---------- */
   /* предметы на главной: открытые и «скоро» */
-  var SOON = [['ИКТ', 'скоро']];
-  function subjList() { return ['arch', 'phil', 'cpp'].filter(function (id) { return D.SUBJ[id]; }).map(function (id) { return D.SUBJ[id]; }); }
+  var SOON = [];
+  function subjList() { return ['arch', 'phil', 'ict', 'cpp'].filter(function (id) { return D.SUBJ[id]; }).map(function (id) { return D.SUBJ[id]; }); }
   function subjCards() {
     return '<div class="subj-list">' + subjList().map(function (sj) {
       var p = D.progress(D.subjIds(sj));
@@ -210,7 +210,7 @@
   /* ---------- ЭКЗАМЕН: 40 случайных вопросов предмета, 50 минут, без пояснений до финиша ---------- */
   var EXAM_N = 40, EXAM_MIN = 50;
   function startExam() {
-    var all = []; D.floors.forEach(function (f) { f.pool.forEach(function (q) { all.push({ q: q, f: f }); }); });
+    var all = [], seenQ = {}; (D.subj.drill ? D.floors.slice(-1) : D.floors).forEach(function (f) { f.pool.forEach(function (q) { if (seenQ[q.id]) return; seenQ[q.id] = 1; all.push({ q: q, f: f }); }); });   /* ИКТ: экзамен — из уровня «Экзамен» (там все вопросы) */
     for (var i = all.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = all[i]; all[i] = all[j]; all[j] = t; }
     G.exam = { s: D.subjId, qs: all.slice(0, EXAM_N), i: 0, ans: [], end: Date.now() + EXAM_MIN * 60000, done: false };
     go('exam');
@@ -228,7 +228,7 @@
     var q = it.q, nr = q.opts.filter(function (o) { return o.right; }).length, kb = q.type === 'keyboard', sel = [];
     var order = q.opts.map(function (_, i) { return i; }); for (var i = order.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = order[i]; order[i] = order[j]; order[j] = t; }
     var h = '<div class="exam-top"><b>🎓 ' + esc(subjTitle()) + '</b><span class="tag">Вопрос ' + (E.i + 1) + ' из ' + E.qs.length + '</span><span class="grow"></span><span class="ex-time" id="exTime">' + mmss(E.end - Date.now()) + '</span></div>' +
-      '<div class="bar ex-bar"><i style="width:' + Math.round(E.i / E.qs.length * 100) + '%"></i></div><div class="exam-card"><p class="hint">' + esc(fname(it.f)) + '</p><div class="qtext">' + D.md(q.q) + '</div>' +
+      '<div class="bar ex-bar"><i style="width:' + Math.round(E.i / E.qs.length * 100) + '%"></i></div><div class="exam-card"><p class="hint">' + esc(fname(it.f)) + '</p><div class="qtext">' + D.md(q.q) + '</div>' + (q.img ? '<div class="qimg"><img src="' + esc(q.img) + '" alt="Картинка к вопросу"></div>' : '') +
       (kb ? '<div class="kb"><input id="exIn" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Впиши ответ"></div>'
         : (nr > 1 ? '<p class="hint"><b>Выбери ' + nr + ' ответа</b></p>' : '') + '<div class="opts">' + order.map(function (oi, n) { return '<button class="opt" data-o="' + oi + '"><span class="n">' + (n + 1) + '</span><span>' + D.md(q.opts[oi].t) + '</span></button>'; }).join('') + '</div>') +
       '<div class="row" style="margin-top:12px"><button class="btn primary" id="exGo" disabled>' + (E.i === E.qs.length - 1 ? 'Ответить и завершить' : 'Ответить') + '<kbd>Enter</kbd></button><span class="grow"></span><button class="btn ghost" id="exEnd">Завершить экзамен</button></div></div>';
@@ -283,11 +283,11 @@
   }
 
   /* ---------- ХОЛЛ: три двери — Архитектура, C++, Философия ---------- */
-  var DOORS = [['arch', 96, 'Архитектура', '#AFA9EC', 'Архитектура ЭВМ'], ['cpp', 240, 'C++', '#9FE1CB', 'C++'], ['phil', 384, 'Философия', '#FAC775', 'Философия']];
+  var DOORS = [['arch', 64, 'Архитектура', '#AFA9EC', 'Архитектура ЭВМ'], ['cpp', 184, 'C++', '#9FE1CB', 'C++'], ['phil', 304, 'Философия', '#FAC775', 'Философия'], ['ict', 420, 'ИКТ', '#85B7EB', 'ИКТ']];
   function enterHall() {
-    show(true); where('Холл подземелья'); G.hero.x = 240;
+    show(true); where('Холл подземелья'); G.hero.x = 240; A.hallGlow = D.subjId;
     var open = DOORS.filter(function (d) { return D.SUBJ[d[0]]; });
-    labels(DOORS.map(function (d) { var sj = D.SUBJ[d[0]]; return { text: d[2] + ' · ' + (sj ? D.progress(D.subjIds(sj)) + '%' : 'скоро'), x: d[1], y: d[1] === 240 ? 92 : 112, color: d[3] }; }));
+    labels(DOORS.map(function (d) { var sj = D.SUBJ[d[0]]; return { text: d[2] + ' · ' + (sj ? D.progress(D.subjIds(sj)) + '%' : 'скоро'), x: d[1], y: d[0] === 'cpp' ? 92 : 112, color: d[3] }; }));
     var bs = open.map(function (d) {
       var mine = D.subjId === d[0];
       return btn('Войти: ' + d[4], mine ? 'primary' : 'ghost', mine ? 'Enter' : null, function () { D.useSubject(d[0]); walkTo(d[1], function () { go('path'); }); });
@@ -305,7 +305,7 @@
     var arch = !!D.subj.syll;
     show(false); where('Подземелье · ' + subjTitle());
     var cur = S.at && (S.at.s || 'cpp') === D.subjId ? S.at.f : 1, h = '<div class="path-head"><h1>Подземелье: ' + esc(subjTitle()) + '</h1><span class="tag teal">все ' + (arch ? 'темы' : 'этажи') + ' открыты</span></div><p class="hallnote">' + (arch ? 'Этаж = тема силлабуса.' : 'Этаж = лекция.') + ' Цвет круга — насколько ты освоил тему: серый — не начинал, оранжевый — начал, зелёный — хорошо, золотой — отлично. Золотая медаль ✓ — пройдено начисто: все вопросы увидены и ни одной неисправленной ошибки.</p>' + tipHtml('path') + dailyHtml();
-/* повторение РК: самые слабые вопросы всех тем РК — в одной комнате */    h += '<div class="rep-row"><span>🔁 Повторение — ' + REP_N + ' самых слабых вопросов в одной комнате:</span>' + (D.subj.syll ? [1, 2] : [0]).filter(function (k) { return repFloors(k).length; }).map(function (k) { var nb = repWeak(k); return '<button class="btn ' + (nb ? 'primary' : 'ghost') + '" data-rep="' + k + '">' + (k ? 'РК' + k : 'Все темы') + (nb ? ' · ошибок ' + nb : '') + '</button>'; }).join('') + '</div>';
+/* повторение РК: самые слабые вопросы всех тем РК — в одной комнате */    if (!D.subj.drill) h += '<div class="rep-row"><span>🔁 Повторение — ' + REP_N + ' самых слабых вопросов в одной комнате:</span>' + (D.subj.syll ? [1, 2] : [0]).filter(function (k) { return repFloors(k).length; }).map(function (k) { var nb = repWeak(k); return '<button class="btn ' + (nb ? 'primary' : 'ghost') + '" data-rep="' + k + '">' + (k ? 'РК' + k : 'Все темы') + (nb ? ' · ошибок ' + nb : '') + '</button>'; }).join('') + '</div>';
     var rk = modeRk(); if (rk) h += '<div class="wave-msg">Режим РК' + rk + ': только темы этого рубежного контроля (' + esc(rangeText(modeFloors())) + '). <button class="btn ghost" data-allmode>Показать все темы</button></div>';
     (D.subj.units || (arch ? UNITS_ARCH : UNITS)).forEach(function (u, ui) {
       if (!D.floors.some(function (f) { return f.n >= u[0] && f.n <= u[1] && (!rk || rkOf(f) === rk); })) return;
@@ -334,8 +334,29 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   /* ---------- ЭТАЖ: комнаты ---------- */
   function rkey(f, k) { return f.id + ':' + k; }
   function roomInfo(f, k) { return S.rooms[rkey(f, k)] || { cleared: [], done: false, chest: false }; }
+  /* ---------- УРОВЕНЬ «ЗУБРЁЖКИ» (ИКТ): без комнат и лекций — тренировки по 10 вопросов ---------- */
+  function enterDrill(f) {
+    show(false); where(subjTitle() + ' · ' + f.title);
+    var ids = poolIds(f), n = ids.length, learned = ids.filter(D.learned).length, bad = D.badIds(f).length, st = D.stats(ids), seen = st.seen - learned - bad;
+    var pct = function (x) { return n ? Math.round(x / n * 100) : 0; };
+    var h = '<div class="path-head"><h1>' + esc(subjTitle()) + ': ' + esc(f.title) + '</h1><span class="tag teal">выучено ' + pct(learned) + '%</span></div>' +
+      '<p class="hallnote">' + esc(f.sub || '') + ' · вопросов: ' + n + '</p>' +
+      '<div class="drill-bar"><i class="l" style="width:' + pct(learned) + '%"></i><i class="s" style="width:' + pct(Math.max(0, seen)) + '%"></i><i class="b" style="width:' + pct(bad) + '%"></i></div>' +
+      '<div class="drill-leg"><span><i class="l"></i>выучено (3 раза подряд верно): <b>' + learned + '</b></span><span><i class="s"></i>знакомые: <b>' + Math.max(0, seen) + '</b></span><span><i class="b"></i>ошибки: <b>' + bad + '</b></span><span><i></i>ещё не видел: <b>' + st.unseen + '</b></span></div>' +
+      '<p class="msg">Тренировка — 10 вопросов. Новые попадаются часто, ошибки — чаще всего (но не сразу, а через несколько вопросов), а то, на что ты <b>3 раза подряд</b> ответил верно, почти не попадается. Так ты увидишь все вопросы и зазубришь каждый. Не знаешь — жми «🔎 Google»: он объяснит ответ и каждый вариант.</p>' +
+      '<div class="row" style="margin:12px 0"><button class="btn primary" data-go>▶ Тренировка: 10 вопросов<kbd>Enter</kbd></button>' +
+      (bad ? '<button class="btn warn" data-err>Зал ошибок · ' + bad + '</button>' : '') +
+      '<button class="btn ghost" data-exam>🎓 Пробный экзамен</button></div>';
+    screenEl.innerHTML = h;
+    screenEl.querySelector('[data-go]').onclick = function () { go('room', { f: f.n, k: 0, again: 1 }); };
+    var be = screenEl.querySelector('[data-err]'); if (be) be.onclick = function () { go('room', { f: f.n, k: 'err' }); };
+    screenEl.querySelector('[data-exam]').onclick = function () { openEntry('exam'); };
+    G.buttons = [btn('Тренировка', 'primary', 'Enter', function () { go('room', { f: f.n, k: 0, again: 1 }); })];
+    S.at = { s: D.subjId, f: f.n, k: 0 }; D.persist();
+  }
   function enterFloor(n) {
     var f = floorBy(n || 1);
+    if (f.drill) return enterDrill(f);
     show(false); where(fname(f) + ' · ' + f.title);
     var m = floorMastery(f), fst = D.stats(poolIds(f)), bad = D.badIds(f).length;
     var nextK = f.rooms.findIndex(function (r) { return !roomInfo(f, r.k).done || !D.stats(r.qs).clean; });
@@ -360,7 +381,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   var ROSTER = [['slug', 'tzombie', 'mushroom', 'imp'], ['goblin', 'skelet', 'eye', 'orc'], ['skeleton', 'shaman', 'masked', 'necro', 'goblin'], ['chort', 'wogol', 'swampy', 'eye', 'skeleton']];
   var BOSS = ['ogre', 'bzombie', 'demon'], GUARD = 'masked';
   function rnd(seed) { var s = seed; return function () { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; }; }
-  function tierOf(f) { if (f.rep) return 1; return f.lab || f.n <= 3 ? 0 : f.n <= 6 ? 1 : f.n <= 10 ? 2 : 3; }
+  function tierOf(f) { if (f.rep) return 1; if (f.drill) return Math.min(3, f.n - 1); return f.lab || f.n <= 3 ? 0 : f.n <= 6 ? 1 : f.n <= 10 ? 2 : 3; }
   /* порядок вопросов: ошибки, у которых подошла очередь → новые → остальные ошибки → слабые → крепкие */
   function orderIds(ids) {
     function rank(id) { var r = D.save.srs[id]; if (!r) return 1; if (D.isBad(id)) return r.due <= S.ticks ? 0 : 2; return 3 + r.l; }
@@ -464,10 +485,11 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   function errRoom(f) { return { k: 'err', errHall: true, boss: false, sec: null, secs: f.texts, tasks: [], qs: D.badIds(f) }; }
   function enterRoom(a) {
     var f = floorBy(a.f), isErr = a.k === 'err', room = isErr ? errRoom(f) : f.rooms[a.k];
-    show(true); where((f.final ? 'Финал' : fname(f)) + ' · ' + (isErr ? 'Зал ошибок' : room.boss ? 'Босс' : 'Комната ' + (a.k + 1)));
+if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) });   /* ИКТ: 10 вопросов по весам — новые и ошибки чаще, выученные почти никогда */
+    show(true); where((f.final ? 'Финал' : fname(f)) + ' · ' + (isErr ? 'Зал ошибок' : f.drill ? 'Тренировка' : room.boss ? 'Босс' : 'Комната ' + (a.k + 1)));
     if (!isErr && !f.rep) { S.at = { s: D.subjId, f: f.n, k: a.k }; D.persist(); }
     var info = isErr ? { done: false } : roomInfo(f, a.k), st = D.stats(room.qs);
-    var mode = isErr ? 'err' : (a.again || !info.done || !st.clean) ? 'run' : 'clean';
+    var mode = isErr ? 'err' : (a.again || !info.done || !st.clean || f.drill) ? 'run' : 'clean';
     var items = mode === 'clean' ? [] : roomItems(f, room, isErr);
     G.room = { floor: f.n, f: f, k: a.k, room: room, mode: mode, items: items, objs: buildRoom(f, a.k, mode, items), idx: -1, combo: 1, recent: [], turns: 0, right: 0, wrong: 0, iq: 0, briefOpen: false, mon: null, m0: D.mastery(room.qs), mistakes: [], problems: [], cheats: [], errs: {}, errItem: {}, fixed: 0, st0: st };
     G.hero.x = 36; G.hero.dir = 1;
@@ -576,7 +598,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     if (isTask) return askTask(head, t);
     var q = it.t === 'r' ? reverseQ(R.f, R.f.byId[it.id]) : R.f.byId[it.id]; R.q = q; R.recent.push(q.id); if (R.recent.length > 6) R.recent.shift();
     var right = q.type === 'keyboard' ? q.answer : (q.opts.filter(function (o) { return o.right; })[0] || {}).t;
-    var h = head + tipHtml('q') + briefHtml(q.q + ' ' + (right || '')) + '<div class="qtext">' + D.md(q.q) + '</div>';
+    var h = head + tipHtml('q') + briefHtml(q.q + ' ' + (right || '')) + '<div class="qtext">' + D.md(q.q) + '</div>' + (q.img ? '<div class="qimg"><img src="' + esc(q.img) + '" alt="Картинка к вопросу"></div>' : '');
     if (q.type === 'keyboard') h += '<div class="kb"><input id="kbIn" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Что выведет программа? Впиши ответ"><button class="btn primary" id="kbGo">Ответить<kbd>Enter</kbd></button></div>';
     else {
       var order = q.opts.map(function (_, i) { return i; }); for (var i = order.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var tt = order[i]; order[i] = order[j]; order[j] = tt; }
@@ -841,6 +863,12 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
     var main = next ? btn(st.clean ? 'Следующая комната' : 'Пропустить → следующая комната', 'primary', 'Enter', function () { go('room', { f: f.n, k: R.k + 1 }); })
       : isErr ? btn('Дальше', 'primary', 'Enter', function () { go('floor', f.n); })
       : btn(nextF ? 'Дальше: ' + fname(nextF) : 'К пути', 'primary', 'Enter', function () { if (nextF) go('floor', nextF.n); else go('path'); });
+    if (f.drill) {   /* ИКТ: следующая десятка или к уровню */
+      again = [];
+      main = btn('▶ Ещё 10 вопросов', 'primary', 'Enter', function () { go('room', { f: f.n, k: 0, again: 1 }); });
+      again.push(btn('К уровню ' + f.title, 'ghost', null, function () { go('floor', f.n); }));
+      setPanel(h, [main, again[0]]); return;
+    }
     if (f.rep) {   /* повторение: заново собрать слабые вопросы или вернуться к карте */
       again = repWeak(f.rk) ? [btn('🔁 Повторить ещё', 'ghost', null, function () { buildRep(f.rk); })] : [];
       main = btn('К карте тем', 'primary', 'Enter', function () { go('path'); });
@@ -1037,6 +1065,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
   function rightText(q) { return q.type === 'keyboard' ? '<code>' + esc(q.answer) + '</code>' : q.opts.filter(function (o) { return o.right; }).map(function (o) { return D.md(o.t); }).join(' · '); }
   function refLine(f) {
     if (!f) return '';
+    if (f.drill) return 'Лекций у ИКТ нет — жми «🔎 Google»: он сначала ответит, потом объяснит каждый вариант.';
     if (f.rep) {   /* повторение: раздел лекции подскажет, из какой он темы */
       var rs = G.room && G.room.briefSec, tn = rs ? String(rs.id).split('.')[0] : '', tf = tn ? floorBy(tn === 'Л' ? 16 : +tn) : null;
       return tf ? refLine(tf) : 'Найди этот вопрос в теме на карте и открой её лекцию у алтаря.';

@@ -56,9 +56,11 @@
     return '<div class="grid-2">' +
       '<section class="card"><div class="card-head"><div><div class="card-title">' + SP.icon('file-text') + 'TXT</div><div class="card-sub">' + esc(SP.t('designer.txtHint')) + '</div></div></div>' +
       '<div class="stack-sm" role="radiogroup">' + radio('etxt', 'simple', SP.t('designer.onlySimple', { n: c[0] }), true) + radio('etxt', 'special', SP.t('designer.onlySpecial', { n: c[1] })) + radio('etxt', 'all', SP.t('designer.allFile', { n: c[0] + c[1] })) + '</div>' +
+      '<label class="check"><input type="checkbox" id="eTxtEx" checked><span>' + esc(SP.t('designer.withEx')) + '</span></label>' +
       '<button type="button" class="btn btn-primary" id="eTxt">' + SP.icon('download') + '<span>' + esc(SP.t('designer.dlTxt')) + '</span></button></section>' +
       '<section class="card"><div class="card-head"><div><div class="card-title">' + SP.icon('file-text') + 'DOCX / DOC</div><div class="card-sub">' + esc(SP.t('designer.docHint')) + '</div></div></div>' +
       '<div class="stack-sm" role="radiogroup">' + radio('edoc', 'normal', SP.t('designer.onlyNormal', { n: st().dz.length - kbN }), true) + radio('edoc', 'kb', SP.t('designer.onlyKb', { n: kbN })) + radio('edoc', 'all', SP.t('designer.allFile', { n: st().dz.length })) + '</div>' +
+      '<label class="check"><input type="checkbox" id="eDocEx"><span>' + esc(SP.t('designer.withEx')) + '</span></label>' +
       '<div class="btn-group"><button type="button" class="btn btn-primary" id="eDocx">' + SP.icon('download') + '<span>DOCX</span></button><button type="button" class="btn" id="eDoc">' + SP.icon('download') + '<span>DOC</span></button></div></section>' +
       '</div>' +
       '<section class="card"><div class="card-head"><div><div class="card-title">' + SP.icon('file-json') + esc(SP.t('designer.more')) + '</div><div class="card-sub">' + esc(SP.t('designer.jsonHint')) + '</div></div></div>' +
@@ -91,6 +93,7 @@
           (sp && o.img ? '<div class="op-img">' + E.img(o.img, 'dq-img') + '<button type="button" class="btn btn-ghost btn-sm" data-a="clearimg">' + esc(SP.t('designer.removeImg')) + '</button></div>' : '') + '</div>';
       }).join('') + '</div><div class="row"><button type="button" class="btn btn-sm" data-a="addo">' + SP.icon('plus') + '<span>' + esc(SP.t('designer.addOpt')) + '</span></button></div>';
     }
+    h += '<textarea class="textarea dq-ex" data-f="ex" rows="2" placeholder="' + esc(SP.t('designer.explainPh')) + '" aria-label="' + esc(SP.t('quiz.explain')) + '">' + esc(q.ex || '') + '</textarea>';
     return h + '</article>';
   }
 
@@ -142,7 +145,7 @@
     L.addEventListener('input', function (e) {
       var t = e.target, cardEl = t.closest('.dq'); if (!cardEl) return;
       var q = st().dz[+cardEl.getAttribute('data-q')], f = t.getAttribute('data-f'), rowEl = t.closest('.oprow');
-      if (f === 'q') q.q = t.value; else if (f === 'answer') q.answer = t.value;
+      if (f === 'q') q.q = t.value; else if (f === 'answer') q.answer = t.value; else if (f === 'ex') q.ex = t.value;
       else if (f === 't') { q.opts[+rowEl.getAttribute('data-o')].t = t.value; autoGrow(t); }
       else if (f === 'r') { q.opts[+rowEl.getAttribute('data-o')].right = t.checked; t.closest('.right-check').classList.toggle('on', t.checked); }
       cardEl.querySelector('.dq-st').innerHTML = statusHtml(q);
@@ -190,21 +193,21 @@
       var m = radioVal('etxt'), list = m === 'simple' ? simple() : m === 'special' ? spec() : simple().concat(spec());
       if (!list.length) { SP.toast(SP.t('designer.groupEmpty'), 'warning'); return; }
       if (!checkList(list)) return;
-      SP.downloadText(E.buildText(list, true), 'studyplay-' + m + '.txt'); SP.toast(SP.t('designer.saved'), 'success');
+      SP.downloadText(E.buildText(list, true, SP.$('#eTxtEx', root).checked), 'studyplay-' + m + '.txt'); SP.toast(SP.t('designer.saved'), 'success');
     };
     var docList = function () { var m = radioVal('edoc'), n = dz.filter(function (q) { return !E.isKb(q); }), k = dz.filter(E.isKb); return { m: m, list: m === 'normal' ? n : m === 'kb' ? k : n.concat(k) }; };
     var imgNote = function (list) { var c = list.filter(function (q) { return q.img || (q.opts || []).some(function (o) { return o.img; }); }).length; SP.toast(c ? SP.t('designer.noImgInDoc', { n: c }) : SP.t('designer.saved'), c ? 'warning' : 'success'); };
     SP.$('#eDocx', root).onclick = function (ev) {
       var d = docList(); if (!d.list.length) { SP.toast(SP.t('designer.groupEmpty'), 'warning'); return; } if (!checkList(d.list)) return;
       var b = ev.currentTarget; SP.busy(b, true);
-      E.mkDocx(E.buildText(d.list, false)).then(function (blob) { SP.download(blob, 'studyplay-' + d.m + '.docx'); imgNote(d.list); }, function (e) { SP.toast(e.message, 'danger'); }).then(function () { SP.busy(b, false); });
+      E.mkDocx(E.buildText(d.list, false, SP.$('#eDocEx', root).checked)).then(function (blob) { SP.download(blob, 'studyplay-' + d.m + '.docx'); imgNote(d.list); }, function (e) { SP.toast(e.message, 'danger'); }).then(function () { SP.busy(b, false); });
     };
     SP.$('#eDoc', root).onclick = function () {
       var d = docList(); if (!d.list.length) { SP.toast(SP.t('designer.groupEmpty'), 'warning'); return; } if (!checkList(d.list)) return;
-      SP.download(new Blob([E.makeDocRtf(E.buildText(d.list, false))], { type: 'application/msword' }), 'studyplay-' + d.m + '.doc'); imgNote(d.list);
+      SP.download(new Blob([E.makeDocRtf(E.buildText(d.list, false, SP.$('#eDocEx', root).checked))], { type: 'application/msword' }), 'studyplay-' + d.m + '.doc'); imgNote(d.list);
     };
     SP.$('#eJson', root).onclick = function () { if (!checkList(dz)) return; SP.downloadText(JSON.stringify({ format: 'StudyPlay', version: 1, all: dz.map(E.serializeQ) }, null, 2), 'studyplay-test.studyplay.json', 'application/json'); SP.toast(SP.t('designer.saved'), 'success'); };
-    SP.$('#eCopy', root).onclick = function () { if (!checkList(dz)) return; SP.copyText(E.buildText(simple().concat(spec()), true)).then(function () { SP.toast(SP.t('designer.copied'), 'success'); }); };
+    SP.$('#eCopy', root).onclick = function () { if (!checkList(dz)) return; SP.copyText(E.buildText(simple().concat(spec()), true, true)).then(function () { SP.toast(SP.t('designer.copied'), 'success'); }); };
     SP.$('#ePlay', root).onclick = function () {
       SP.bank.sync(); var all = SP.bank.all();
       if (!all.length) { SP.toast(SP.t('designer.noValid'), 'warning'); return; }

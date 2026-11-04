@@ -50,7 +50,7 @@
           '<span class="opt-text">' + E.richHtml(T ? T.o[i] : o.t, true) + E.img(o.img, 'opt-img') + (T ? '<span class="opt-orig">' + esc(o.t) + '</span>' : '') + '</span></button>';
       }).join('');
       var kbHtml = kb ? '<div class="field"><label class="label" for="kbAns">' + esc(SP.t('quiz.typeAnswer')) + '</label><input class="input kb-input" id="kbAns" autocomplete="off" value="' + esc(a ? a.typed : '') + '" placeholder="' + esc(SP.t('quiz.yourAnswer')) + '"' + (a ? ' disabled' : '') + '><span class="hint">' + esc(SP.t('quiz.kbHint')) + '</span></div>' : '';
-      var verdict = a ? '<div class="alert ' + (a.ok ? 'alert-success' : 'alert-danger') + '">' + SP.icon(a.ok ? 'circle-check' : 'circle-x') + '<div class="alert-body"><b>' + esc(SP.t(a.ok ? 'quiz.right' : 'quiz.wrong')) + '</b>' + (kb && !a.ok ? '<span>' + esc(SP.t('quiz.correctIs', { a: q.answer })) + '</span>' : '') + '</div></div>' : '';
+      var verdict = a ? '<div class="alert ' + (a.ok ? 'alert-success' : 'alert-danger') + '">' + SP.icon(a.ok ? 'circle-check' : 'circle-x') + '<div class="alert-body"><b>' + esc(SP.t(a.ok ? 'quiz.right' : 'quiz.wrong')) + '</b>' + (kb && !a.ok ? '<span>' + esc(SP.t('quiz.correctIs', { a: q.answer })) + '</span>' : '') + '</div></div>' + E.explainHtml(q) : '';
       var typeLabel = kb ? SP.t('quiz.kindKb') : multi ? SP.t('quiz.kindMulti', { n: q.n }) : SP.t('quiz.kindSingle');
       var primary = '';
       if (!a && kb) primary = '<button type="button" class="btn btn-primary" id="qCheck">' + SP.icon('check') + '<span>' + esc(SP.t('quiz.check')) + '</span></button>';

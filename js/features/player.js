@@ -498,9 +498,9 @@
     qAnswered = { ok: ok };
     b.results.push({ id: id, ok: ok });
     if (ok) pq.errs = pq.errs.filter(function (x) { return x !== id; }); else if (pq.errs.indexOf(id) < 0) pq.errs.push(id);
-    pq.history.push(Object.assign({ id: id, ok: ok, at: Date.now(), pos: Math.round(savedPos), q: q.q.slice(0, 600), right: rightText(q).slice(0, 400), kb: kb }, r));
+    pq.history.push(Object.assign({ id: id, ok: ok, at: Date.now(), pos: Math.round(savedPos), q: q.q.slice(0, 600), right: rightText(q).slice(0, 400), ex: String(q.ex || '').slice(0, 2000), kb: kb }, r));
     savePq();
-    $('pqVerdict').innerHTML = '<div class="alert ' + (ok ? 'alert-success' : 'alert-danger') + '">' + SP.icon(ok ? 'circle-check' : 'circle-x') + '<div class="alert-body"><b>' + esc(T(ok ? 'quiz.right' : 'quiz.wrong')) + '</b>' + (!ok ? '<span>' + esc(T('quiz.correctIs', { a: rightText(q) })) + '</span>' : '') + '</div></div>';
+    $('pqVerdict').innerHTML = '<div class="alert ' + (ok ? 'alert-success' : 'alert-danger') + '">' + SP.icon(ok ? 'circle-check' : 'circle-x') + '<div class="alert-body"><b>' + esc(T(ok ? 'quiz.right' : 'quiz.wrong')) + '</b>' + (!ok ? '<span>' + esc(T('quiz.correctIs', { a: rightText(q) })) + '</span>' : '') + '</div></div>' + E.explainHtml(q);
     var go = $('pqGo'); go.disabled = false;
     var last = b.qi === b.ids.length - 1;
     go.innerHTML = last ? SP.icon('play') + '<span>' + esc(T('player.resume')) + '</span>' : '<span>' + esc(T('quiz.next')) + '</span>';
@@ -568,7 +568,7 @@
     if (feedSel !== null && hist[feedSel]) {
       var h = hist[feedSel];
       html += '<div class="card card-flat feed-detail"><div class="row-between"><span class="badge ' + (h.ok ? 'badge-success' : 'badge-danger') + '">' + SP.icon(h.ok ? 'circle-check' : 'circle-x') + esc(T(h.ok ? 'quiz.right' : 'quiz.wrong')) + '</span><span class="xsmall subtle">' + esc(T('player.atVideo', { t: fmt(h.pos || 0) })) + ' · ' + esc(SP.fmtDateTime(h.at)) + '</span></div>' +
-        E.richHtml(h.q, true) + '<div class="small"><b>' + esc(T('player.yourAnswer')) + ':</b> ' + esc((h.kb ? h.typed : (h.sel || []).join('; ')) || '—') + '</div><div class="small"><b class="text-success">' + esc(T('quiz.correct')) + ':</b> ' + esc(h.right) + '</div></div>';
+        E.richHtml(h.q, true) + '<div class="small"><b>' + esc(T('player.yourAnswer')) + ':</b> ' + esc((h.kb ? h.typed : (h.sel || []).join('; ')) || '—') + '</div><div class="small"><b class="text-success">' + esc(T('quiz.correct')) + ':</b> ' + esc(h.right) + '</div>' + E.explainHtml(h) + '</div>';
     }
     if (pq && pq.lastResult) html += '<div class="row-between feed-last"><span class="small">' + esc(T('player.lastResult', { p: pq.lastResult.pct, a: pq.lastResult.ok, n: pq.lastResult.n })) + '</span><button type="button" class="btn btn-sm" id="feedResult"' + (quizOpen ? ' disabled' : '') + '>' + SP.icon('list-checks') + '<span>' + esc(T('player.showResult')) + '</span></button></div>';
     html += '<div class="row-between"><span class="xsmall subtle">' + esc(T('player.feedSaved')) + '</span><button type="button" class="btn btn-sm btn-danger-outline" id="feedReset"' + (hist.length || (pq && pq.errs.length) ? '' : ' disabled') + '>' + SP.icon('rotate-ccw') + '<span>' + esc(T('player.resetProgress')) + '</span></button></div>';

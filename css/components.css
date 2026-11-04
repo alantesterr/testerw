@@ -414,3 +414,8 @@ html.modal-open, html.modal-open body { overflow: hidden; }
 .sk.card { height: 4.5rem; border-radius: 14px; }
 @keyframes sk-move { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .sk, .toast-timer { animation: none; } }
+/* Пояснение к ответу (<explain>) — под вердиктом в Тестере, плеере и истории */
+.q-explain { margin-top: .6rem; padding: .65rem .85rem; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border, rgba(127,127,127,.25)); color: var(--text); font-size: .95em; }
+.q-explain-h { display: flex; align-items: center; gap: .4rem; margin-bottom: .3rem; color: var(--text-2); }
+.q-explain-h svg { width: 1em; height: 1em; }
+.dq-ex { margin-top: .5rem; font-size: .92em; }

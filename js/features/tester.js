@@ -88,7 +88,7 @@
       SP.modal({
         title: SP.t('tester.helpTitle'), size: 'lg',
         body: SP.t('tester.helpHtml') +
-          '<pre class="code"><code>&lt;question&gt;2 + 2 = ?\n&lt;variant&gt;3\n&lt;variantright&gt;4\n\n&lt;question&gt;' + esc(SP.t('tester.exMulti')) + '\n&lt;variantright&gt;A\n&lt;variantright&gt;B\n&lt;variant&gt;C\n\n&lt;question&gt;' + esc(SP.t('tester.exKb')) + '\n&lt;variant_keyboard&gt;100</code></pre>',
+          '<pre class="code"><code>&lt;question&gt;2 + 2 = ?\n&lt;variant&gt;3\n&lt;variantright&gt;4\n\n&lt;question&gt;' + esc(SP.t('tester.exMulti')) + '\n&lt;variantright&gt;A\n&lt;variantright&gt;B\n&lt;variant&gt;C\n\n&lt;question&gt;' + esc(SP.t('tester.exKb')) + '\n&lt;variant_keyboard&gt;100\n&lt;explain&gt;' + esc(SP.t('tester.exExplain')) + '</code></pre>',
         actions: [
           { label: SP.t('tester.promptDocx'), icon: 'download', close: false, onClick: function () { SP.tester.downloadPrompt(); return false; } },
           { label: SP.t('tester.promptCopy'), icon: 'copy', kind: 'primary', close: false, onClick: function () { SP.copyText(SP.PROMPT_TEXT || '').then(function () { SP.toast(SP.t('common.copied'), 'success'); }); return false; } }

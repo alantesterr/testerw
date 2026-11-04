@@ -7,6 +7,7 @@
      <variant_keyboard>ответ, который вводят с клавиатуры
      <question_image>data:image/...</question_image>
      <variant_image>data:image/...</variant_image>
+     <explain>пояснение — показывается после ответа (последним в вопросе)
    Код в вопросах: ```cpp ... ``` (блок) и `код` (в строке).
    ===================================================================== */
 (function () {
@@ -50,7 +51,7 @@
   function img(src, cls) { return src ? '<img class="' + (cls || 'q-img') + '" src="' + esc(src) + '" alt="' + esc(SP.t('tester.image')) + '" loading="lazy">' : ''; }
 
   /* ---------- Разбор текста ---------- */
-  var KNOWN_TAGS_RE = /<\/?(?:question|variantright|variant_keyboard|variant|question_image|image_question|questionimage|variant_image|image_variant)(?:\s[^>]*)?>/gi;
+  var KNOWN_TAGS_RE = /<\/?(?:question|variantright|variant_keyboard|variant|question_image|image_question|questionimage|variant_image|image_variant|explain)(?:\s[^>]*)?>/gi;
   function cleanTxt(s) { return String(s == null ? '' : s).replace(KNOWN_TAGS_RE, '').replace(/\r/g, '').replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim(); }
   function rawPreview(raw) { return clean(String(raw).replace(/data:image\/[^<\s]*/g, '[img]').replace(/<variantright>/gi, ' + ').replace(/<variant_keyboard>/gi, ' = ').replace(/<variant>/gi, ' - ').replace(/<[^>]+>/g, ' ')).slice(0, 260); }
 
@@ -58,6 +59,9 @@
     var out = [], bad = [];
     String(text).split(/<question(?:\s[^>]*)?>/i).slice(1).forEach(function (raw) {
       var fail = function (r) { bad.push({ raw: rawPreview(raw), reason: r }); };
+      /* пояснение к ответу: <explain>текст (до </explain> или до конца вопроса) — показывается после ответа */
+      var exM = raw.match(/<explain>([\s\S]*?)(?:<\/explain>|$)/i), ex = exM ? cleanTxt(exM[1]) : '';
+      if (exM) raw = raw.replace(exM[0], '');
       var qImg = (raw.match(/<(?:question_image|image_question|questionimage)>([\s\S]*?)<\/(?:question_image|image_question|questionimage)>/i) || [])[1] || '';
       var keyboard = raw.match(/<variant_keyboard>([\s\S]*?)(?=<\/?(?:variant|variantright|variant_keyboard|question_image|variant_image)>|$)/i);
       var body = raw.replace(/<(?:question_image|image_question|questionimage)>[\s\S]*?<\/(?:question_image|image_question|questionimage)>/ig, '');
@@ -74,13 +78,13 @@
       if (kbd || keyboard) {
         if (!answer && keyboard) answer = clean(keyboard[1].split(/<\//)[0]);
         if (!answer) { fail(SP.t('tester.err.noAnswer')); return; }
-        out.push({ q: qtxt, img: qImg.trim(), type: 'keyboard', answer: answer, opts: [], n: 1 }); return;
+        out.push({ q: qtxt, img: qImg.trim(), ex: ex, type: 'keyboard', answer: answer, opts: [], n: 1 }); return;
       }
-      if (!opts.length) { out.push({ q: qtxt, img: qImg.trim(), type: 'choice', opts: [], n: 0 }); return; }
+      if (!opts.length) { out.push({ q: qtxt, img: qImg.trim(), ex: ex, type: 'choice', opts: [], n: 0 }); return; }
       if (opts.length < 2) { fail(SP.t('tester.err.oneOpt')); return; }
       if (!opts.some(function (o) { return o.right; })) opts[0].right = true;
       if (opts.every(function (o) { return o.right; })) { fail(SP.t('tester.err.allRight')); return; }
-      out.push({ q: qtxt, img: qImg.trim(), type: 'choice', opts: opts, n: opts.filter(function (o) { return o.right; }).length });
+      out.push({ q: qtxt, img: qImg.trim(), ex: ex, type: 'choice', opts: opts, n: opts.filter(function (o) { return o.right; }).length });
     });
     return { out: out, bad: bad };
   }
@@ -95,6 +99,7 @@
     }
     if (q._f) r._f = q._f;
     if (q.special) r.special = true;
+    if (q.ex || q.explain) r.ex = String(q.ex || q.explain);
     return r;
   }
   function problem(q) {
@@ -108,9 +113,18 @@
     return '';
   }
   function serializeQ(q) {
-    if (q.type === 'keyboard') return { q: q.q, img: q.img || '', type: 'keyboard', answer: q.answer, opts: [], n: 1 };
-    var opts = q.opts.filter(function (x) { return String(x.t).trim(); }).map(function (o) { return { t: String(o.t).trim(), right: !!o.right, img: o.img || '' }; });
-    return { q: String(q.q).trim(), img: q.img || '', type: 'choice', opts: opts, n: opts.filter(function (o) { return o.right; }).length };
+    var r, ex = String(q.ex || '').trim();
+    if (q.type === 'keyboard') r = { q: q.q, img: q.img || '', type: 'keyboard', answer: q.answer, opts: [], n: 1 };
+    else {
+      var opts = q.opts.filter(function (x) { return String(x.t).trim(); }).map(function (o) { return { t: String(o.t).trim(), right: !!o.right, img: o.img || '' }; });
+      r = { q: String(q.q).trim(), img: q.img || '', type: 'choice', opts: opts, n: opts.filter(function (o) { return o.right; }).length };
+    }
+    if (ex) r.ex = ex;
+    return r;
+  }
+  /* Блок «Пояснение» под вердиктом (если в файле был <explain>) */
+  function explainHtml(q) {
+    return q && String(q.ex || '').trim() ? '<div class="q-explain"><div class="q-explain-h">' + SP.icon('book-open') + '<b>' + esc(SP.t('quiz.explain')) + '</b></div>' + richHtml(String(q.ex), true) + '</div>' : '';
   }
   var isKb = function (q) { return q.type === 'keyboard'; };
   var isSpecial = function (q) { return !!(q.special || isKb(q) || q.img || (q.opts || []).some(function (o) { return o.img; })); };
@@ -163,13 +177,14 @@
   }
 
   /* ---------- Экспорт ---------- */
-  function fmtQ(q, withImg) {
-    var s = '<question>' + String(q.q).trim() + '\n';
+  /* withEx — дописать пояснение <explain> (StudyPlay его понимает, Платонус — нет) */
+  function fmtQ(q, withImg, withEx) {
+    var s = '<question>' + String(q.q).trim() + '\n', ex = withEx && String(q.ex || '').trim() ? '\n<explain>' + String(q.ex).trim() : '';
     if (withImg && q.img) s += '<question_image>' + q.img + '</question_image>\n';
-    if (isKb(q)) return s + '<variant_keyboard>' + String(q.answer).trim();
-    return s + q.opts.filter(function (o) { return String(o.t).trim(); }).map(function (o) { return (o.right ? '<variantright>' : '<variant>') + String(o.t).trim() + (withImg && o.img ? '<variant_image>' + o.img + '</variant_image>' : ''); }).join('\n');
+    if (isKb(q)) return s + '<variant_keyboard>' + String(q.answer).trim() + ex;
+    return s + q.opts.filter(function (o) { return String(o.t).trim(); }).map(function (o) { return (o.right ? '<variantright>' : '<variant>') + String(o.t).trim() + (withImg && o.img ? '<variant_image>' + o.img + '</variant_image>' : ''); }).join('\n') + ex;
   }
-  function buildText(list, withImg) { return list.map(function (q) { return fmtQ(q, withImg); }).join('\n\n') + '\n'; }
+  function buildText(list, withImg, withEx) { return list.map(function (q) { return fmtQ(q, withImg, withEx); }).join('\n\n') + '\n'; }
   function makeDocRtf(text) {
     var e = String(text).replace(/\\/g, '\\\\').replace(/[{}]/g, function (c) { return '\\' + c; }).replace(/\r?\n/g, '\\par\n').replace(/[^\x00-\x7f]/g, function (ch) { var c = ch.charCodeAt(0); return '\\u' + (c > 32767 ? c - 65536 : c) + '?'; });
     return '{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\f0\\fs24 ' + e + '}';
@@ -213,7 +228,7 @@
     qid: qid, checkKeyboard: checkKeyboard, checkChoice: checkChoice,
     readFile: readFile, readTextDocument: readTextDocument, validateFile: validateFile,
     buildText: buildText, fmtQ: fmtQ, makeDocRtf: makeDocRtf, mkDocx: mkDocx,
-    richHtml: richHtml, img: img, translateQ: translateQ, translateFallback: translateFallback,
+    richHtml: richHtml, img: img, explainHtml: explainHtml, translateQ: translateQ, translateFallback: translateFallback,
     aiPrompt: aiPrompt, google: google,
     blankQ: function () { return { q: '', opts: [0, 1, 2, 3].map(function () { return { t: '', right: false, img: '' }; }), img: '', type: 'choice', answer: '' }; },
     blankOpts: function () { return [0, 1, 2, 3].map(function () { return { t: '', right: false, img: '' }; }); }

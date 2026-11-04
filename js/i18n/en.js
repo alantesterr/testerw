@@ -159,10 +159,11 @@ SP.I18N.en = {
   'tester.needFile': 'Load a test file first.', 'tester.loaded': 'Loaded', 'tester.noQuestions': 'no questions found in the file', 'tester.image': 'Illustration',
   'tester.helpTitle': 'Guide: tests in StudyPlay',
   'tester.helpHtml': '<p>Upload a test file or create one in the <b>Test designer</b> (Settings → For the author). You can mark one or several correct answers, add images and keyboard-answer questions.</p>' +
-    '<p><b>File format.</b> A question starts with <code>&lt;question&gt;</code>, the correct option with <code>&lt;variantright&gt;</code>, others with <code>&lt;variant&gt;</code>, a typed answer with <code>&lt;variant_keyboard&gt;</code>. If no option is marked correct, the first one counts as correct.</p>' +
+    '<p><b>File format.</b> A question starts with <code>&lt;question&gt;</code>, the correct option with <code>&lt;variantright&gt;</code>, others with <code>&lt;variant&gt;</code>, a typed answer with <code>&lt;variant_keyboard&gt;</code>. If no option is marked correct, the first one counts as correct. An explanation goes in <code>&lt;explain&gt;</code> at the end of the question and is shown right after answering. Platonus does not understand this tag — export without explanations for it.</p>' +
     '<p><b>Checking.</b> With several correct answers you must select all correct ones and nothing else. Typed answers ignore letter case and surrounding spaces.</p>' +
     '<p><b>Bottom bar.</b> On the left: Super search, AI mode and Translate; on the right: Back and Next. Under Translate there is an Auto-translate switch (also in Settings → Tester and player): when it is on, questions are translated automatically.</p><p><b>Keys</b> (when not typing in a field): ← → — previous / next question, 1–9 — choose an option, Enter — answer / next, Esc — remove focus. In a typed-answer field, Enter submits. Turn them off in Settings → Tester and player.</p>',
-  'tester.exMulti': 'Choose the colours of the flag of Kazakhstan', 'tester.exKb': 'Type the number 100',
+  'tester.exMulti': 'Choose the colours of the flag of Kazakhstan', 'tester.exKb': 'Type the number 100', 'tester.exExplain': 'Solution: 10 · 10 = 100. The explanation appears after answering.',
+  'quiz.explain': 'Explanation', 'designer.explainPh': 'Explanation of the answer (optional) — shown after answering', 'designer.withEx': 'With explanations (uncheck for Platonus upload)',
   'tester.promptDocx': 'AI prompt (DOCX)', 'tester.promptCopy': 'Copy prompt', 'tester.aiQ': 'Question:', 'tester.aiOpts': 'Options:',
   'tester.aiAsk': 'Answer in English. Explain the correct answer and each option.',
   'tester.err.noText': 'no question text', 'tester.err.noAnswer': 'no correct answer for the keyboard question',

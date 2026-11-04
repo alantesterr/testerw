@@ -492,7 +492,7 @@
   function norm(s) { return String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' ').replace(/[;.]$/, ''); }
   function askTask(head, t) {
     var R = G.room; R.task = t; R.taskAnswered = false; R.q = null;
-    R.bubble = 'Реши задание' + (t.title ? ': «' + esc(t.title.replace(/\s·\s(лёгкая|средняя|сложная)$/, '')) + '»' : '') + ' <small>условие внизу</small>'; bubbleAt(R.bubble, R.mon, 'more');
+    R.bubble = 'Реши задание' + (t.title ? ': «' + esc(t.title.replace(/\s·\s(лёгкая|средняя|сложная)$/, '')) + '»' : '') + ' <small>условие внизу</small>'; R.bubbleCls = 'more'; bubbleAt(R.bubble, R.mon, 'more');
     setPanel(head + briefHtml((t.title || '') + ' ' + D.blocks(t.q) + ' ' + D.blocks(t.a)) + '<div class="qtext">Задание' + (t.title ? ': ' + esc(t.title.replace(/\s·\s(лёгкая|средняя|сложная)$/, '')) : '') + '</div><div class="task-box rich">' + D.blocks(t.q) + '</div>' +
       '<div class="sol" id="sol">▸ Показать решение</div><p class="hint">Реши в голове или на бумаге, потом открой решение и честно отметь. «Знал» даёт больше IQ.</p>',
       [btn('Не знал', 'warn', null, function () { taskDone(false); }), btn('Знал', 'primary', null, function () { taskDone(true); })]); wireIco(); wireBrief();
@@ -525,49 +525,74 @@
   /* Верный ответ снимает одно сердечко монстра. Ошибка сердечко монстра НЕ снимает: монстр бьёт героя (−1 ♥),
      а вопрос возвращается к нему же через 3–5 вопросов — так все вопросы комнаты будут отвечены.
      Ошибки и ответы с подсказкой ещё раз спросит страж; страж не бьёт, ошибка у него — вопрос в конец очереди. */
-  /* ---------- облачко над сценой: вопрос «говорит» монстр ----------
-     Короткий вопрос без кода — целиком в облачке (в панели его не дублируем).
-     Длинный или с кодом — в облачке начало, полный текст остаётся внизу. */
-  var BUBBLE_MAX = 150;
-  function bubbleAt(html, m, cls) {
-    /* как в комиксе: сбоку от монстра на уровне его головы, хвостик ко рту.
-       Обычно справа (герой стоит слева); у правого края сцены — слева. */
-    var el = $('bubble'); if (!m) return hideBubble();
+  /* ---------- облачко у монстра: вопрос «говорит» монстр ----------
+     Как в комиксе: сбоку от монстра на уровне его головы, хвостик к нему. Обычно справа
+     (герой стоит слева); у края сцены — с той стороны, где больше места.
+     Весь вопрос (даже длинный и с кодом) стараемся вместить: уменьшаем шрифт, при нужде
+     облачко опускается ниже головы. Не влезло совсем — начало в облачке, полностью внизу.
+     Кнопка «…» опускает вопрос в панель (облачко сворачивается в «…»), выбор запоминается. */
+  function bubbleAt(html, m, cls, fit) {
+    var el = $('bubble'); if (!m) { hideBubble(); return false; }
     var M = A.MON[m.key], hw = M.boss ? 30 : M.lm ? 24 : 16, head = monTop(m) + 10;
-    var rx = (m.x + hw + 4) / A.W * 100, lx = (m.x - hw - 4) / A.W * 100, right = 100 - rx >= 34 || 100 - rx >= lx;
+    var rx = (m.x + hw + 4) / A.W * 100, lx = (m.x - hw - 4) / A.W * 100, wr = 100 - rx - 2, wl = lx - 2;
+    var right = fit ? wr >= wl || wr >= 45 : wr >= 32 || wr >= wl;
     el.className = (right ? 'side-r' : 'side-l') + (cls ? ' ' + cls : '');
     el.style.left = right ? rx.toFixed(1) + '%' : '';
     el.style.right = right ? '' : (100 - lx).toFixed(1) + '%';
-    el.style.maxWidth = 'min(' + Math.max(28, (right ? 100 - rx : lx) - 2).toFixed(1) + '%, 460px)';
-    el.style.bottom = Math.max(4, (A.H - head - 14) / A.H * 100).toFixed(1) + '%';
+    el.style.maxWidth = 'min(' + Math.max(28, right ? wr : wl).toFixed(1) + '%, ' + (fit ? 560 : 460) + 'px)';
+    var bot = Math.max(4, (A.H - head - 14) / A.H * 100);
+    el.style.bottom = bot.toFixed(1) + '%'; el.style.fontSize = '';
     el.innerHTML = html; el.hidden = false;
+    var up = el.querySelector('[data-bup]'); if (up) up.onclick = function () { S.cfg.bubbleDown = false; D.persist(); var R = G.room; if (R && R.q && R.mon) bubbleQ(R.q, R.mon); };
+    var dn = el.querySelector('[data-bdown]'); if (dn) dn.onclick = function () { S.cfg.bubbleDown = true; D.persist(); var R = G.room; if (R && R.q && R.mon) bubbleQ(R.q, R.mon); };
+    return fit ? fitBubble(el, bot) : true;
+  }
+  /* уменьшаем шрифт, пока облачко не влезет в сцену; потом пробуем опустить его ниже */
+  function fitBubble(el, bot) {
+    var H = $('sceneWrap').clientHeight; if (!H) return true;
+    var fs = parseFloat(getComputedStyle(el).fontSize), fits = function () { return el.offsetHeight <= H * (1 - bot / 100) - 6; };
+    for (var f = fs; !fits() && f > 11; f -= 1) el.style.fontSize = (f - 1) + 'px';
+    if (fits()) return true;
+    bot = 3; el.style.bottom = '3%'; el.style.fontSize = '';
+    for (f = fs; !fits() && f > 10; f -= 1) el.style.fontSize = (f - 1) + 'px';
+    return fits();
   }
   function hideBubble() { var el = $('bubble'); el.hidden = true; el.innerHTML = ''; }
+  /* поворот телефона / смена размера окна — заново подгоняем облачко */
+  window.addEventListener('resize', function () {
+    clearTimeout(G.bubT); G.bubT = setTimeout(function () { var R = G.room; if (G.scene === 'room' && R && R.mon && R.q && !R.answered && !appEl.classList.contains('watch')) bubbleQ(R.q, R.mon); }, 150);
+  });
+  var B_DOWN = '<button class="b-tog" data-bdown title="Опустить вопрос вниз" aria-label="Опустить вопрос вниз">…</button>';
   function bubbleQ(q, m) {
-    var plain = plainText(q.q), short = !/```/.test(q.q) && plain.length <= BUBBLE_MAX;
-    G.room.bubble = short ? D.md(q.q) : esc(plain.slice(0, 90).replace(/\s+\S*$/, '')) + '… <small>полностью внизу</small>';
-    bubbleAt(G.room.bubble, m, short ? '' : 'more');
-    var qt = panel.querySelector('.qtext'); if (qt && short) qt.classList.add('in-bubble');
+    var R = G.room, qt = panel.querySelector('.qtext');
+    if (qt) qt.classList.remove('in-bubble');
+    if (S.cfg.bubbleDown) { R.bubble = '<button class="b-tog" data-bup title="Показать вопрос в облачке" aria-label="Показать вопрос в облачке">…</button>'; R.bubbleCls = 'mini'; bubbleAt(R.bubble, m, 'mini'); return; }
+    R.bubble = B_DOWN + D.md(q.q); R.bubbleCls = 'q';
+    if (bubbleAt(R.bubble, m, 'q', true)) { if (qt) qt.classList.add('in-bubble'); return; }
+    var plain = plainText(q.q);
+    R.bubble = B_DOWN + esc(plain.slice(0, 120).replace(/\s+\S*$/, '')) + '… <small>полностью внизу</small>'; R.bubbleCls = 'more';
+    bubbleAt(R.bubble, m, 'more', true);
   }
-  function bubbleSay(text, ok) { var R = G.room; if (R && R.mon) bubbleAt('<b>' + esc(text) + '</b>', R.mon, 'say ' + (ok ? 'ok' : 'bad')); }
+  function bubbleSay(text, cls) { var R = G.room; if (R && R.mon) bubbleAt('<b>' + esc(text) + '</b>', R.mon, 'say ' + cls); }
   var SAY_OK = ['Ай!', 'Ой, больно!', 'Угадал…', 'Ну ладно, верно!'], SAY_BAD = ['Ха! Мимо!', 'Неверно! Получай!', 'Не угадал!', 'Хе-хе, ошибка!'];
+  var SAY_DIE = ['Нееееет!', 'Я ещё вернусь…', 'Как ты узнал?!', 'Это нечестно!', 'Ты… слишком умный…', 'Мама, он всё выучил!'];
+  var SAY_BOSS = ['Невозможно!', 'Ты прошёл всю тему?!', 'Я… повержен…'], SAY_GUARD = ['Ладно, проходи.', 'Ошибки исправлены. Путь свободен.'];
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
 
   /* после ответа панель ненадолго гаснет, чтобы было видно удар героя или атаку монстра */
-  var WATCH_MS = 1300;
+  var WATCH_MS = 1560;
   function watchHit() {
     appEl.classList.add('watch'); clearTimeout(G.watchT);
     var low = window.innerWidth < 900 && !appEl.classList.contains('focus');
     if (low) window.scrollTo({ top: 0, behavior: 'smooth' });
     G.watchT = setTimeout(function () {
       appEl.classList.remove('watch');
-      var R = G.room; if (R && R.mon && !R.mon.dead && R.bubble) bubbleAt(R.bubble, R.mon, 'past'); else hideBubble();
+      var R = G.room; if (R && R.mon && !R.mon.dead && R.bubble) bubbleAt(R.bubble, R.mon, (R.bubbleCls || '') + ' past', R.bubbleCls !== 'mini'); else hideBubble();
       if (low && G.scene === 'room') panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, WATCH_MS);
   }
   function resolve(ok, power, kind) {
     var R = G.room, m = R.mon, it = m.items.shift(), clean = ok && !R.assisted; peek(); watchHit();
-    bubbleSay(m.guard ? (ok ? 'Верно. Исправлено.' : 'Неверно. Спрошу ещё раз.') : pick(ok ? SAY_OK : SAY_BAD), ok);
     R.turns++;
     if (D.touchStreak()) floater('Огонёк +1 день!', 240, 40, '#FF9600');
     if (m.guard) { if (clean) R.fixed++; else m.items.push(it); }
@@ -575,6 +600,10 @@
       if (!ok) { var pos = Math.min(m.items.length, 2 + Math.floor(Math.random() * 3)); m.items.splice(pos, 0, it); var ek = it.t + it.id; R.errs[ek] = (R.errs[ek] || 0) + 1; R.errItem[ek] = it; }
       else if (R.assisted && !R.cheats.some(function (x) { return x.t === it.t && x.id === it.id; })) R.cheats.push(it);
     }
+    /* реплика монстра: последний верный ответ его добивает — тогда «Нееееет!» и т. п. */
+    var kill = !m.items.length && (m.guard ? clean : ok);
+    if (kill) bubbleSay(pick(m.guard ? SAY_GUARD : m.boss ? SAY_BOSS : SAY_DIE), 'die');
+    else bubbleSay(m.guard ? (ok ? 'Верно. Исправлено.' : 'Неверно. Спрошу ещё раз.') : pick(ok ? SAY_OK : SAY_BAD), ok ? 'ok' : 'bad');
     R.run = clean ? (R.run || 0) + 1 : 0; if (R.run === 5) quest('row5');
     if (ok) { quest('right'); if (kind === 'task') quest('task'); if (clean && R.mode === 'err') quest('fix'); }
     var drop = function () { m.hp = m.items.length; if (!m.hp) { m.dead = true; setMon(m, 'death'); sfx('kill'); if (m.guard) quest('guard'); } };

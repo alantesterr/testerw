@@ -364,3 +364,9 @@ b.bad,.bad{color:#F7A3A3}
 #app:not(.focus) .qtext.in-bubble{display:none}
 #app.focus:not(.peek) #bubble{display:none}
 @media (max-width:520px){#bubble{max-width:64%;padding:6px 9px;border-width:2px;border-radius:10px}}
+#bubble pre.code{background:#1d1830;color:#9FE1CB;font-size:.82em;line-height:1.35;padding:5px 8px;margin:4px 0 0;white-space:pre-wrap;overflow:hidden;border-radius:6px}
+#bubble .b-tog{pointer-events:auto;float:right;margin:-3px -5px 2px 8px;background:#efe7d2;color:#1d1830;border:2px solid #1d1830;border-radius:8px;font-family:inherit;font-weight:800;font-size:14px;line-height:1;padding:1px 7px 5px;cursor:pointer}
+#bubble .b-tog:hover{background:#FAC775}
+#bubble.mini{padding:3px 5px;border-radius:10px}
+#bubble.mini .b-tog{float:none;margin:0;font-size:16px;border:0;background:transparent}
+#bubble.say.die{--bf:#fff1c9;font-size:clamp(15px,2.4vw,24px)}

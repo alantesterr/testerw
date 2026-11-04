@@ -340,3 +340,21 @@ b.bad,.bad{color:#F7A3A3}
 /* ---------- пауза после ответа: видно удар / атаку монстра ---------- */
 #panel{transition:opacity .25s}
 #app.watch #panel{opacity:.12;pointer-events:none}
+
+/* ---------- облачко с вопросом у монстра ---------- */
+#bubble{position:absolute;top:4%;max-width:min(58%,520px);max-height:62%;overflow:hidden;background:#fbf7ec;color:#1d1830;border:3px solid #1d1830;border-radius:14px;padding:8px 12px;font-size:clamp(12px,1.7vw,17px);line-height:1.35;font-weight:600;box-shadow:0 4px 0 rgba(0,0,0,.45);pointer-events:none;animation:bubIn .18s ease-out}
+#bubble[hidden]{display:none}
+#bubble::after{content:"";position:absolute;bottom:-14px;width:0;height:0;border:9px solid transparent;border-top:12px solid #1d1830}
+#bubble.to-left::after{right:10px}
+#bubble.to-right::after{left:10px}
+#bubble p{margin:0}
+#bubble code{background:#e9e1cc;border-radius:4px;padding:0 4px;font-size:.92em}
+#bubble small{display:block;margin-top:3px;color:#6b6480;font-weight:600;font-size:.8em}
+#bubble.say{font-size:clamp(14px,2.2vw,22px);padding:6px 14px}
+#bubble.say.ok{background:#e3f6ee}
+#bubble.say.bad{background:#fde6e6}
+#bubble.past{opacity:.85}
+@keyframes bubIn{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
+#app:not(.focus) .qtext.in-bubble{display:none}
+#app.focus:not(.peek) #bubble{display:none}
+@media (max-width:520px){#bubble{max-width:64%;padding:6px 9px;border-width:2px;border-radius:10px}}

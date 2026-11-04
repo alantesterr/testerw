@@ -48,7 +48,7 @@
     if (scene !== 'exam' && G.exTimer) { clearInterval(G.exTimer); G.exTimer = null; }
     G.scene = scene; labels([]); G.hero.onArrive = null; G.hero.target = null;
     if (scene !== 'room') G.room = null;
-    clearTimeout(G.watchT); $('app').classList.remove('watch');
+    clearTimeout(G.watchT); $('app').classList.remove('watch'); hideBubble();
     ({ house: enterHouse, subject: enterSubject, exam: enterExam, yard: enterYard, hall: enterHall, path: enterPath, floor: enterFloor, room: enterRoom })[scene](arg);
     hud(); window.scrollTo(0, 0);
   }
@@ -392,7 +392,7 @@
     return g;
   }
   function goNext() {
-    var R = G.room; R.mon = null; G.buttons = [];
+    var R = G.room; R.mon = null; R.bubble = null; G.buttons = []; hideBubble();
     var g = maybeGuard(); roomLabels();
     if (g) {
       focusOn(false); sfx('guard');
@@ -410,7 +410,7 @@
   function monTop(o) { return A.FLOOR_Y + 8 - A.monHeight(o.key) - (A.MON[o.key].fly ? 40 : 6); }
   function roomLabels() { var R = G.room; if (!R) return; labels(R.objs.filter(function (o) { return o.type === 'mon' && !o.dead; }).map(function (o) { return { text: monName(o), x: o.x, y: monTop(o) - 14, color: o.boss || o.guard ? '#F09595' : o.strong ? '#FAC775' : '#e8e4f8' }; }).concat(R.objs.filter(function (o) { return o.type === 'chest' && !o.open; }).map(function (o) { return { text: 'Сундук', x: o.x, y: A.FLOOR_Y - 36, color: '#FAC775' }; })).concat(R.objs.filter(function (o) { return o.type === 'altar' && !o.used; }).map(function (o) { return { text: 'Алтарь знаний', x: o.x, y: A.FLOOR_Y - 70, color: '#CECBF6' }; }))); }
   function roomIdle() {
-    focusOn(false); maybeGuard(); roomLabels();
+    hideBubble(); focusOn(false); maybeGuard(); roomLabels();
     var R = G.room, i = nextObj(), o = R.objs[i];
     var what = o.type === 'mon' ? (o.boss ? 'босс «' + monName(o) + '»' : o.guard ? 'страж выхода (' + o.hp + ' ♥ — твои ошибки и подсказки)' : monName(o) + ' (' + o.hp + ' ♥)') : o.type === 'chest' ? 'сундук' : o.type === 'altar' ? 'алтарь знаний (прочитать раздел лекции)' : 'выход';
     var sec = R.room.sec;
@@ -472,7 +472,7 @@
       h += '<div class="opts">' + order.map(function (oi, n) { return '<button class="opt" data-o="' + oi + '"><span class="n">' + (n + 1) + '</span><span>' + D.md(q.opts[oi].t) + '</span></button>'; }).join('') + '</div>';
     }
     h += hotbarHtml() + '<div class="hint">Клавиши: ' + (q.type === 'keyboard' ? 'Enter — ответить' : '1–' + q.opts.length + ' — выбрать ответ') + ' · T — перевести · B — книжка · F — весь экран</div>';
-    setPanel(h); wireIco(); wireTr(); wireHotbar(); wireBrief();
+    setPanel(h); wireIco(); wireTr(); wireHotbar(); wireBrief(); bubbleQ(q, m);
     if (S.cfg.autoTr) toggleTr();
     G.buttons = [];
     if (q.type === 'keyboard') { var inp = $('kbIn'); $('kbGo').onclick = function () { answer(norm(inp.value) === norm(q.answer), inp.value); }; inp.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('kbGo').click(); } }; if (matchMedia('(pointer:fine)').matches) setTimeout(function () { inp.focus({ preventScroll: true }); }, 50); }
@@ -492,6 +492,7 @@
   function norm(s) { return String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' ').replace(/[;.]$/, ''); }
   function askTask(head, t) {
     var R = G.room; R.task = t; R.taskAnswered = false; R.q = null;
+    R.bubble = 'Реши задание' + (t.title ? ': «' + esc(t.title.replace(/\s·\s(лёгкая|средняя|сложная)$/, '')) + '»' : '') + ' <small>условие внизу</small>'; bubbleAt(R.bubble, R.mon, 'more');
     setPanel(head + briefHtml((t.title || '') + ' ' + D.blocks(t.q) + ' ' + D.blocks(t.a)) + '<div class="qtext">Задание' + (t.title ? ': ' + esc(t.title.replace(/\s·\s(лёгкая|средняя|сложная)$/, '')) : '') + '</div><div class="task-box rich">' + D.blocks(t.q) + '</div>' +
       '<div class="sol" id="sol">▸ Показать решение</div><p class="hint">Реши в голове или на бумаге, потом открой решение и честно отметь. «Знал» даёт больше IQ.</p>',
       [btn('Не знал', 'warn', null, function () { taskDone(false); }), btn('Знал', 'primary', null, function () { taskDone(true); })]); wireIco(); wireBrief();
@@ -524,6 +525,30 @@
   /* Верный ответ снимает одно сердечко монстра. Ошибка сердечко монстра НЕ снимает: монстр бьёт героя (−1 ♥),
      а вопрос возвращается к нему же через 3–5 вопросов — так все вопросы комнаты будут отвечены.
      Ошибки и ответы с подсказкой ещё раз спросит страж; страж не бьёт, ошибка у него — вопрос в конец очереди. */
+  /* ---------- облачко над сценой: вопрос «говорит» монстр ----------
+     Короткий вопрос без кода — целиком в облачке (в панели его не дублируем).
+     Длинный или с кодом — в облачке начало, полный текст остаётся внизу. */
+  var BUBBLE_MAX = 150;
+  function bubbleAt(html, m, cls) {
+    var el = $('bubble'); if (!m) return hideBubble();
+    var px = m.x / A.W * 100, left = px > 50;
+    el.className = (left ? 'to-left' : 'to-right') + (cls ? ' ' + cls : '');
+    el.style.left = left ? '' : 'calc(' + px.toFixed(1) + '% + 4%)';
+    el.style.right = left ? 'calc(' + (100 - px).toFixed(1) + '% + 4%)' : '';
+    el.style.maxWidth = 'min(' + Math.max(30, left ? px - 6 : 94 - px).toFixed(1) + '%, 520px)';
+    el.innerHTML = html; el.hidden = false;
+  }
+  function hideBubble() { var el = $('bubble'); el.hidden = true; el.innerHTML = ''; }
+  function bubbleQ(q, m) {
+    var plain = plainText(q.q), short = !/```/.test(q.q) && plain.length <= BUBBLE_MAX;
+    G.room.bubble = short ? D.md(q.q) : esc(plain.slice(0, 90).replace(/\s+\S*$/, '')) + '… <small>полностью внизу</small>';
+    bubbleAt(G.room.bubble, m, short ? '' : 'more');
+    var qt = panel.querySelector('.qtext'); if (qt && short) qt.classList.add('in-bubble');
+  }
+  function bubbleSay(text, ok) { var R = G.room; if (R && R.mon) bubbleAt('<b>' + esc(text) + '</b>', R.mon, 'say ' + (ok ? 'ok' : 'bad')); }
+  var SAY_OK = ['Ай!', 'Ой, больно!', 'Угадал…', 'Ну ладно, верно!'], SAY_BAD = ['Ха! Мимо!', 'Неверно! Получай!', 'Не угадал!', 'Хе-хе, ошибка!'];
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+
   /* после ответа панель ненадолго гаснет, чтобы было видно удар героя или атаку монстра */
   var WATCH_MS = 1300;
   function watchHit() {
@@ -532,11 +557,13 @@
     if (low) window.scrollTo({ top: 0, behavior: 'smooth' });
     G.watchT = setTimeout(function () {
       appEl.classList.remove('watch');
+      var R = G.room; if (R && R.mon && !R.mon.dead && R.bubble) bubbleAt(R.bubble, R.mon, 'past'); else hideBubble();
       if (low && G.scene === 'room') panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, WATCH_MS);
   }
   function resolve(ok, power, kind) {
     var R = G.room, m = R.mon, it = m.items.shift(), clean = ok && !R.assisted; peek(); watchHit();
+    bubbleSay(m.guard ? (ok ? 'Верно. Исправлено.' : 'Неверно. Спрошу ещё раз.') : pick(ok ? SAY_OK : SAY_BAD), ok);
     R.turns++;
     if (D.touchStreak()) floater('Огонёк +1 день!', 240, 40, '#FF9600');
     if (m.guard) { if (clean) R.fixed++; else m.items.push(it); }
@@ -801,6 +828,7 @@
   }
   function applyTr(d) {
     var R = G.room, qt = panel.querySelector('.qtext'); if (!qt) return;
+    qt.classList.remove('in-bubble'); /* перевод показываем внизу, облачко остаётся на языке оригинала */
     if (!R.tr.orig) R.tr.orig = { q: qt.innerHTML, o: [].map.call(panel.querySelectorAll('.opt'), function (b) { return b.lastElementChild.innerHTML; }) };
     qt.innerHTML = D.md(d.q) + '<div class="tr-note">' + esc(X.LANGS[R.tr.lang]) + ' · перевод Google · <button class="linkbtn" data-orig>оригинал</button></div>';
     panel.querySelectorAll('.opt').forEach(function (b) { var oi = +b.getAttribute('data-o'); b.lastElementChild.innerHTML = D.md(d.o[oi] != null ? d.o[oi] : R.q.opts[oi].t); });

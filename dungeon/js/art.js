@@ -145,6 +145,7 @@
     chort: { t: 'chort_idle', name: 'Чёрт', s: 3 },
     wogol: { t: 'wogol_idle', name: 'Воггол', s: 3 },
     swampy: { t: 'swampy', name: 'Болотник', s: 3 },
+    twin: { t: 'wogol_idle', name: 'Двойник', s: 3, twin: true },
     ogre: { t: 'ogre_idle', name: 'Огр', s: 3.4, boss: true },
     bzombie: { t: 'big_zombie_idle', name: 'Большой зомби', s: 3.4, boss: true },
     demon: { t: 'big_demon_idle', name: 'Демон', s: 3.4, boss: true }

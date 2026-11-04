@@ -397,3 +397,5 @@ b.bad,.bad{color:#F7A3A3}
 #bubble.say.cheat{--bf:#f3e1ff}
 #bubble .b-tr{margin-top:6px;padding-top:5px;border-top:2px dashed #c9bfa6;color:#4a3f6b;font-weight:600;font-size:.92em}
 .opt .o-tr{display:block;margin-top:3px;font-size:.82em;color:var(--mute);font-weight:500}
+#bubble .b-twin{display:block;margin:0 0 3px;color:#993C1D;font-weight:800;font-size:.85em}
+.luck-box{margin-top:10px}

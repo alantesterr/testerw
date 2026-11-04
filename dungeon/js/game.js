@@ -1,5 +1,5 @@
 /* =====================================================================
-   ИГРА: сцены (домик → двор → холл → путь C++ → этаж → комната), ходьба,
+   ИГРА: сцены (домик → холл → путь → тема/этаж → комната), ходьба,
    бой, сердечки, комбо, IQ, огонёк. Этап 1.
    ===================================================================== */
 (function () {
@@ -49,7 +49,7 @@
     G.scene = scene; labels([]); G.hero.onArrive = null; G.hero.target = null;
     if (scene !== 'room') G.room = null;
     clearTimeout(G.watchT); $('app').classList.remove('watch'); hideBubble();
-    ({ house: enterHouse, subject: enterSubject, exam: enterExam, yard: enterYard, hall: enterHall, path: enterPath, floor: enterFloor, room: enterRoom })[scene](arg);
+    ({ house: enterHouse, subject: enterSubject, exam: enterExam, hall: enterHall, path: enterPath, floor: enterFloor, room: enterRoom })[scene](arg);
     hud(); window.scrollTo(0, 0);
   }
   /* «Тема 3» у предметов по силлабусу, «Этаж 3» у C++ */
@@ -61,7 +61,7 @@
      Слева одна кнопка «назад», на ней всегда написано, КУДА она ведёт (в домике — «StudyPlay»).
      Справа «☰» — меню-пауза (и клавиша Esc): продолжить, карта тем, домик, рюкзак, лавка,
      настройки и отдельно — выйти в StudyPlay. */
-  var BACK = { house: 'sp', subject: 'house', exam: 'house', yard: 'house', hall: 'house', path: 'hall', floor: 'path', room: 'floor' };
+  var BACK = { house: 'sp', subject: 'house', exam: 'house', hall: 'house', path: 'hall', floor: 'path', room: 'floor' };
   function backLabel(to) { return { sp: 'StudyPlay', house: 'Домик', hall: 'Зал', path: D.subj && D.subj.syll ? 'Темы' : 'Этажи', floor: 'Комнаты' }[to] || 'Назад'; }
   function updBack() {
     var to = BACK[G.scene], b = $('hudBack');
@@ -267,14 +267,6 @@
     screenEl.querySelectorAll('[data-gg]').forEach(function (b) { b.onclick = function () { openGoogle(wrong[+b.getAttribute('data-gg')].q); }; });
   }
 
-  /* ---------- ДВОР ---------- */
-  function enterYard() {
-    show(true); where('Двор'); G.hero.x = 90;
-    labels([{ text: 'Подземелье', x: 310, y: 96, color: '#FAC775' }, { text: 'Домик', x: 63, y: 110 }]);
-    setPanel('<div class="qtext">Вход в подземелье</div><p class="msg">Каменная арка, за ней лестница вниз. Спустись — и выбери, в чьё подземелье идти.</p>',
-      [btn('Спуститься в подземелье', 'primary', 'Enter', function () { walkTo(306, function () { G.descend = now(); setTimeout(function () { G.descend = 0; go('hall'); }, 700); }); }),
-       btn('Назад в домик', 'ghost', null, function () { walkTo(80, function () { go('house'); }); })]);
-  }
   /* ---------- ХОЛЛ: три двери — Архитектура, C++, Философия ---------- */
   var DOORS = [['arch', 96, 'Архитектура', '#AFA9EC', 'Архитектура ЭВМ'], ['cpp', 240, 'C++', '#9FE1CB', 'C++'], ['phil', 384, 'Философия', '#FAC775', 'Философия']];
   function enterHall() {
@@ -374,13 +366,43 @@
       out.push(mkMon(BOSS[Math.min(2, Math.floor(f.n / 6))], qs.slice(cut).concat(ts), { strong: true, boss: true }));
       return out.filter(function (m) { return m.hp; });
     }
-    var n = Math.max(1, Math.min(5, Math.ceil(items.length / 4)));
+    /* Двойник: два похожих понятия подряд (неверный вариант одного вопроса — верный ответ другого) */
+    var pair = twinPair(f, qs);
+    if (pair) {
+      qs = qs.filter(function (x) { return x.id !== pair[0].id && x.id !== pair[1].id; });
+      out.push(mkMon('twin', pair, { twin: true }));
+    }
+    var n = Math.max(1, Math.min(5, Math.ceil((qs.length + ts.length) / 4)));
     for (var i = 0; i < n; i++) {
       var part = qs.slice(Math.floor(i * qs.length / n), Math.floor((i + 1) * qs.length / n)); if (i === n - 1) part = part.concat(ts);
       var key = ros[Math.floor(r() * ros.length)];
       out.push(mkMon(key, part, { strong: !!A.MON[key].lm && (part.length >= 4 || (i === n - 1 && ts.length > 0)) }));
     }
-    return out.filter(function (m) { return m.hp; });
+    out = out.filter(function (m) { return m.hp; });
+    if (pair && out.length > 2) out.splice(1, 0, out.shift());   /* Двойник — вторым, не первым */
+    return out;
+  }
+  /* пара «легко перепутать»: у вопроса A среди неверных вариантов есть верный ответ вопроса B той же темы.
+     Сначала ищем B в этой же комнате, потом во всей теме. */
+  function twinPair(f, qs) {
+    var nrm = function (s) { return String(s || '').toLowerCase().replace(/[`*_"«»().,;:!?\s-]+/g, ' ').trim(); };
+    var rightOf = function (Q) { var o = Q.opts.filter(function (x) { return x.right; }); return o.length === 1 ? nrm(o[0].t) : ''; };
+    var byAns = {};
+    f.pool.forEach(function (Q) { var a = rightOf(Q); if (a.length >= 4 && /[a-zа-яё]{3}/.test(a)) (byAns[a] = byAns[a] || []).push(Q); });
+    var inRoom = {}; qs.forEach(function (x) { inRoom[x.id] = 1; });
+    var best = null;
+    qs.forEach(function (x) {
+      var Q = f.byId[x.id]; if (!Q || Q.type !== 'choice' || best && best.inside) return;
+      Q.opts.forEach(function (o) {
+        if (o.right) return;
+        (byAns[nrm(o.t)] || []).forEach(function (P) {
+          if (P.id === Q.id || best && best.inside) return;
+          var inside = !!inRoom[P.id];
+          if (!best || inside) best = { a: x, b: { t: 'q', id: P.id }, inside: inside };
+        });
+      });
+    });
+    return best && qs.length >= 3 ? [best.a, best.b] : null;
   }
   function placeObjs(objs) { var x0 = objs[0].type === 'altar' ? 104 : 140, span = 448 - x0; objs.forEach(function (o, i) { o.x = o.type === 'exit' ? 448 : Math.round(x0 + i * span / Math.max(1, objs.length - 1) * 0.94); o.state = 'idle'; o.st = now(); }); return objs; }
   function buildRoom(f, k, mode, items) {
@@ -504,7 +526,7 @@
     R.monTurn++;
     var isTask = it.t === 't', t = isTask ? R.f.taskById[it.id] : null;
     focusOn(true);
-    var head = '<div class="row"><span class="tag ' + (m.boss || m.strong || m.guard ? 'gold' : 'red') + '">' + esc(monName(m)) + (m.boss ? ' · босс' : m.guard ? ' · твои ошибки' : m.strong ? ' · сильный' : '') + '</span><span class="tag teal">' + (isTask ? 'Задание' : 'Тест') + '</span><span class="tag">' + m.hp + ' ♥</span><span class="grow"></span>' + (isTask ? '' : trBtn()) + icoBtns(!isTask) + '</div>';
+    var head = '<div class="row"><span class="tag ' + (m.boss || m.strong || m.guard ? 'gold' : 'red') + '">' + esc(monName(m)) + (m.boss ? ' · босс' : m.guard ? ' · твои ошибки' : m.twin ? ' · похожие понятия' : m.strong ? ' · сильный' : '') + '</span><span class="tag teal">' + (isTask ? 'Задание' : 'Тест') + '</span><span class="tag">' + m.hp + ' ♥</span><span class="grow"></span>' + (isTask ? '' : trBtn()) + icoBtns(!isTask) + '</div>';
     R.assisted = false; R.fiftyUsed = false; R.hinted = false; R.tr = null; R.answered = false;
     if (isTask) return askTask(head, t);
     var q = R.f.byId[it.id]; R.q = q; R.recent.push(q.id); if (R.recent.length > 6) R.recent.shift();
@@ -614,7 +636,8 @@
     if (S.cfg.bubbleDown) { R.bubble = '<button class="b-tog" data-bup title="Показать вопрос в облачке" aria-label="Показать вопрос в облачке">…</button>'; R.bubbleCls = 'mini'; bubbleAt(R.bubble, m, 'mini'); return; }
     /* перевод (C++): оригинал, под ним перевод — если уже пришёл */
     var trHtml = R.trB && R.trB.q === q ? '<div class="b-tr">' + D.md(R.trB.text) + '</div>' : '';
-    R.bubble = B_DOWN + D.md(q.q) + trHtml; R.bubbleCls = 'q';
+    var twinNote = m.twin ? '<small class="b-twin">' + (m.items.length > 1 ? 'Нас двое — не перепутай с похожим!' : 'А теперь похожее понятие!') + '</small>' : '';
+    R.bubble = B_DOWN + twinNote + D.md(q.q) + trHtml; R.bubbleCls = 'q';
     if (trHtml && !bubbleAt(R.bubble, m, 'q', true)) R.bubble = B_DOWN + D.md(q.q);
     if (bubbleAt(R.bubble, m, 'q', true)) { if (qt) qt.classList.add('in-bubble'); return; }
     var plain = plainText(q.q);
@@ -673,6 +696,8 @@
     else if (kill) bubbleSay(pick(m.guard ? SAY_GUARD : m.boss ? SAY_BOSS : SAY_DIE), 'die');
     else bubbleSay(m.guard ? (ok ? 'Верно. Исправлено.' : 'Неверно. Спрошу ещё раз.') : pick(ok ? SAY_OK : SAY_BAD), ok ? 'ok' : 'bad');
     R.run = clean ? (R.run || 0) + 1 : 0; if (R.run === 5) quest('row5');
+    if (R.run && R.run % LUCK_RUN === 0) setTimeout(luckChest, 700);
+    else if (clean && R.run >= LUCK_RUN - 3) setTimeout(function () { floater('Серия ' + R.run + ' — до сундука удачи ' + (LUCK_RUN - R.run % LUCK_RUN), 240, 60, '#97C459'); }, 500);
     if (ok) { quest('right'); if (kind === 'task') quest('task'); if (clean && R.mode === 'err') quest('fix'); }
     var drop = function () { m.hp = m.items.length; if (!m.hp) { m.dead = true; setMon(m, 'death'); sfx('kill'); if (m.guard) quest('guard'); } };
     if (ok) {
@@ -1126,6 +1151,17 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
   }
 
   /* --- лут --- */
+  /* серия: LUCK_RUN верных ответов подряд без подсказок → сундук удачи (обычная добыча + гарантированно редкий предмет) */
+  var LUCK_RUN = 10;
+  function luckChest() {
+    var R = G.room; if (!R) return;
+    var L = X.loot('chest'), rare = ['ai', 'bigpot', 'ice'][Math.floor(Math.random() * 3)];
+    X.add(rare); L.items.push(rare); R.iq += L.iq; sfx('chest'); D.persist(); hud(); refreshHotbar();
+    floater('🍀 Серия ' + R.run + '! Сундук удачи', 240, 50, '#97C459');
+    var box = document.createElement('div'); box.className = 'luck-box';
+    box.innerHTML = '<div class="wave-msg ok">🍀 Серия ' + R.run + ' без ошибок и подсказок — сундук удачи!</div>' + lootHtml(L);
+    var anchor = panel.querySelector('.verdict'); if (anchor) anchor.after(box); else panel.appendChild(box);
+  }
   function lootHtml(L) {
     var cells = '<div class="loot-it"><span class="iqbig">IQ</span><b>+' + L.iq + '</b></div>';
     L.items.forEach(function (k) { var it = X.ITEMS[k]; cells += '<div class="loot-it" style="border-color:' + X.RAR_COL[it.rar] + '"><img src="' + X.iconUrl(it.icon) + '" alt=""><b>' + esc(it.name) + '</b></div>'; });
@@ -1169,7 +1205,6 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
       else { h.x += Math.sign(d) * Math.min(Math.abs(d), dt * 0.12); h.dir = Math.sign(d); walking = true; }
     }
     if (G.scene === 'house') A.bgHouse(c, t);
-    else if (G.scene === 'yard') A.bgYard(c, t);
     else if (G.scene === 'hall') A.bgHall(c, t);
     else if (G.scene === 'room' && G.room) A.bgRoom(c, t, { exit: true, exitOpen: G.room.objs.every(function (o) { return o.type !== 'mon' || o.dead; }), seed: G.room.k, goo: G.room.floor % 3 === 0, hole: G.room.floor % 2 === 0 });
     else return;
@@ -1187,19 +1222,20 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
         var asking = G.room.mon === o && !o.dead, others = G.room.mon && !G.room.mon.dead && !asking;
         if (asking) { c.fillStyle = 'rgba(250,199,117,' + (0.22 + 0.08 * Math.sin(t / 300)).toFixed(3) + ')'; c.beginPath(); c.ellipse(o.x, fy, rw + 12, 9, 0, 0, 7); c.fill(); }
         c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(o.x, fy, rw, 5, 0, 0, 7); c.fill();
+        if (A.MON[o.key].twin && !o.dead) A.drawMonster(c, o.key, st, t - o.st + 200, o.x + 14, fy, others ? 0.3 : 0.5);   /* «тень» Двойника */
         A.drawMonster(c, o.key, st, t - o.st, o.x, fy, others ? 0.6 : 1);
         if (!o.dead) A.hearts(c, o.x, monTop(o) - 12, o.hp, o.max);
       }
     });
     /* герой */
-    if (!(G.scene === 'yard' && G.descend && t - G.descend > 350)) {
+    {
       var anim = 'idle', f = Math.floor(t / 450);
       if (walking) { anim = 'walk'; f = Math.floor(t / 110); }
       if (h.attackAt && t - h.attackAt < 420) { anim = 'attack'; f = Math.max(0, Math.min(2, Math.floor((t - h.attackAt) / 140))); }
       var hurt = h.hurtAt && t - h.hurtAt < 380; if (hurt) { anim = 'hurt'; f = 0; }
       var lunge = h.attackAt && t - h.attackAt < 420 ? Math.sin((t - h.attackAt) / 420 * Math.PI) * 22 : 0;
       var knock = hurt ? -Math.sin((t - h.hurtAt) / 380 * Math.PI) * 8 : 0;
-      var y = fy + (G.scene === 'yard' && G.descend ? Math.min(30, (t - G.descend) / 12) : 0);
+      var y = fy;
       c.save(); c.globalAlpha = hurt && Math.floor(t / 60) % 2 ? 0.55 : 1;
       c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(h.x + lunge + knock, fy, 18, 4.5, 0, 0, 7); c.fill();
       if (h.dir < 0) { c.translate(h.x * 2, 0); c.scale(-1, 1); }

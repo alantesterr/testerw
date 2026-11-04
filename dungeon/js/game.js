@@ -279,7 +279,7 @@
     screenEl.querySelectorAll('[data-home]').forEach(function (b) { b.onclick = function () { go('house'); }; });
     var rv = screenEl.querySelector('[data-rev]'); if (rv) rv.onclick = function () { examResult(true); };
     screenEl.querySelector('[data-again]').onclick = startExam;
-    screenEl.querySelectorAll('[data-gg]').forEach(function (b) { b.onclick = function () { openGoogle(wrong[+b.getAttribute('data-gg')].q); }; });
+    screenEl.querySelectorAll('[data-gg]').forEach(function (b) { b.onclick = function () { var a = wrong[+b.getAttribute('data-gg')]; openGoogle(a.q, a.f); }; });
   }
 
   /* ---------- ХОЛЛ: три двери — Архитектура, C++, Философия ---------- */
@@ -969,8 +969,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
       } else if (k === 'google') {
         X.take(k); window.open('https://www.google.com/search?q=' + encodeURIComponent(plainQ(R.q).slice(0, 900)), '_blank', 'noopener');
       } else if (k === 'ai') {
-        X.take(k); var lang = S.cfg.trLang === 'kk' ? 'қазақ тілінде (Kazakh)' : 'на русском языке (Russian)';
-        window.open('https://www.google.com/search?udm=50&q=' + encodeURIComponent(('Ответь ' + lang + '. Это тест по предмету «' + subjTitle() + '». Объясни простыми словами, какой ответ верный и почему:\n' + plainQ(R.q)).slice(0, 1500)), '_blank', 'noopener');
+        X.take(k); window.open('https://www.google.com/search?udm=50&q=' + encodeURIComponent(aiPrompt(R.q, R.f, false)), '_blank', 'noopener');
       }
       R.assisted = true; markAssisted();
     }
@@ -1057,12 +1056,43 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   }
   /* окно Google: вопрос, тема, предмет; поиск — только Google, без ИИ.
      Открыть поиск ДО ответа — это подсказка (вопрос потом спросит страж). */
-  function openGoogle(q) {
-    var R = G.room, f = R && R.f, before = !!(R && R.mon && R.q === q && !R.answered);
-    var query = ((f ? f.title + ' ' : '') + plainText(q.q)).slice(0, 280);
+  /* Запрос для ИИ-режима Google: сначала ответить, потом объяснить верный и КАЖДЫЙ неверный вариант,
+     в конце разжевать тему. Добавляем отрывок лекции как контекст; после ответа — какой ответ верный по тесту. */
+  function plainBlock(b) { return String(blockText(b) || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); }
+  function lectureCtx(q, f) {
+    if (!f || !f.texts || !f.texts.length) return '';
+    var qt = D.toks(q.q + ' ' + (q.opts || []).map(function (o) { return o.t; }).join(' ')), best = null, bs = 0;
+    f.texts.forEach(function (s) { (s.blocks || []).forEach(function (b, i) {
+      if (b.t === 'h') return; if (!b._tok) b._tok = D.toks(blockText(b));
+      var sc = D.overlap(qt, b._tok); if (sc > bs) { bs = sc; best = { s: s, i: i }; }
+    }); });
+    if (!best || bs < 1) return '';
+    var bl = best.s.blocks, txt = [bl[best.i - 1], bl[best.i], bl[best.i + 1]].filter(function (b) { return b && b.t !== 'h'; }).map(plainBlock).join(' ');
+    return (best.s.title + ': ' + txt).slice(0, 500);
+  }
+  function aiPrompt(q, f, showRight) {
+    var kk = S.cfg.trLang === 'kk', letters = 'АБВГДЕЖЗ';
+    /* варианты — в том порядке, что на экране (в файлах верный часто первый) */
+    var R = G.room, order = R && R.q === q && R.order && R.order.length === (q.opts || []).length ? R.order : (q.opts || []).map(function (_, i) { return i; });
+    var opts = order.map(function (oi, i) { return letters[i] + ') ' + plainText(q.opts[oi].t); });
+    var right = (q.opts || []).filter(function (o) { return o.right; }).map(function (o) { return plainText(o.t); });
+    var ctx = lectureCtx(q, f);
+    var p = (kk ? 'Қазақ тілінде жауап бер. ' : 'Ответь на русском языке. ') +
+      'Это вопрос из теста по предмету «' + subjTitle() + '»' + (f && f.title && !f.rep ? ', тема «' + f.title + '»' : '') + '.\n' +
+      'Вопрос: ' + plainText(q.q) + '\n' + (opts.length ? 'Варианты:\n' + opts.join('\n') + '\n' : (q.answer ? '' : '')) +
+      (showRight && right.length ? 'В тесте правильным считается: ' + right.join('; ') + '.\n' : '') +
+      'Сначала коротко назови правильный ответ. Потом объясни, почему он правильный, и по КАЖДОМУ неверному варианту — почему он неверный. ' +
+      'В конце разжуй тему простыми словами: что это за понятие, откуда оно, пример из жизни, как запомнить.' +
+      (ctx ? '\nКонтекст из лекции (используй в объяснении): ' + ctx : '');
+    return p.slice(0, 1800);
+  }
+  function openGoogle(q, f) {
+    var R = G.room; f = f || (R && R.f);
+    if (f && f.rep) { var tp = q.src ? q.src.topic : q.topic; if (tp) f = floorBy(tp); }   /* в «Повторении» — лекция темы вопроса */
+    var before = !!(R && R.mon && R.q === q && !R.answered);
     /* открываем сразу, без окна; до ответа тихо помечаем как подсказку */
     if (before && !R.assisted) { R.assisted = true; markAssisted(); }
-    window.open('https://www.google.com/search?q=' + encodeURIComponent(query), '_blank', 'noopener');
+    window.open('https://www.google.com/search?udm=50&q=' + encodeURIComponent(aiPrompt(q, f, !before)), '_blank', 'noopener');
   }
   function slotCard(icon, title, sub, right, rar, extra) {
     return '<div class="card-it" style="border-color:' + (X.RAR_COL[rar || 0]) + '"><img src="' + icon + '" alt=""><div class="grow"><b>' + esc(title) + '</b><span>' + sub + '</span>' + (extra || '') + '</div>' + (right || '') + '</div>';

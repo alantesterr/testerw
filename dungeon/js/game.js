@@ -530,12 +530,16 @@
      Длинный или с кодом — в облачке начало, полный текст остаётся внизу. */
   var BUBBLE_MAX = 150;
   function bubbleAt(html, m, cls) {
+    /* как в комиксе: сбоку от монстра на уровне его головы, хвостик ко рту.
+       Обычно справа (герой стоит слева); у правого края сцены — слева. */
     var el = $('bubble'); if (!m) return hideBubble();
-    var px = m.x / A.W * 100, left = px > 50;
-    el.className = (left ? 'to-left' : 'to-right') + (cls ? ' ' + cls : '');
-    el.style.left = left ? '' : 'calc(' + px.toFixed(1) + '% + 4%)';
-    el.style.right = left ? 'calc(' + (100 - px).toFixed(1) + '% + 4%)' : '';
-    el.style.maxWidth = 'min(' + Math.max(30, left ? px - 6 : 94 - px).toFixed(1) + '%, 520px)';
+    var M = A.MON[m.key], hw = M.boss ? 30 : M.lm ? 24 : 16, head = monTop(m) + 10;
+    var rx = (m.x + hw + 4) / A.W * 100, lx = (m.x - hw - 4) / A.W * 100, right = 100 - rx >= 34 || 100 - rx >= lx;
+    el.className = (right ? 'side-r' : 'side-l') + (cls ? ' ' + cls : '');
+    el.style.left = right ? rx.toFixed(1) + '%' : '';
+    el.style.right = right ? '' : (100 - lx).toFixed(1) + '%';
+    el.style.maxWidth = 'min(' + Math.max(28, (right ? 100 - rx : lx) - 2).toFixed(1) + '%, 460px)';
+    el.style.bottom = Math.max(4, (A.H - head - 14) / A.H * 100).toFixed(1) + '%';
     el.innerHTML = html; el.hidden = false;
   }
   function hideBubble() { var el = $('bubble'); el.hidden = true; el.innerHTML = ''; }
@@ -1083,9 +1087,12 @@
         A.frame(c, fr[o.open ? (o.openAt ? k : 2) : 0], o.x - 20, fy - 40, 2.5);
       } else if (o.type === 'mon') {
         if (o.dead && (!o.st || t - o.st > 900)) return;
-        var st = o.dead ? 'death' : o.state;
-        c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(o.x, fy, A.MON[o.key].boss ? 34 : 22, 5, 0, 0, 7); c.fill();
-        A.drawMonster(c, o.key, st, t - o.st, o.x, fy);
+        var st = o.dead ? 'death' : o.state, rw = A.MON[o.key].boss ? 34 : 22;
+        /* кто сейчас спрашивает — тёплое пятно света под ним; остальные чуть бледнее */
+        var asking = G.room.mon === o && !o.dead, others = G.room.mon && !G.room.mon.dead && !asking;
+        if (asking) { c.fillStyle = 'rgba(250,199,117,' + (0.22 + 0.08 * Math.sin(t / 300)).toFixed(3) + ')'; c.beginPath(); c.ellipse(o.x, fy, rw + 12, 9, 0, 0, 7); c.fill(); }
+        c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(o.x, fy, rw, 5, 0, 0, 7); c.fill();
+        A.drawMonster(c, o.key, st, t - o.st, o.x, fy, others ? 0.6 : 1);
         if (!o.dead) A.hearts(c, o.x, monTop(o) - 12, o.hp, o.max);
       }
     });

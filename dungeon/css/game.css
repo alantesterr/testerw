@@ -342,17 +342,23 @@ b.bad,.bad{color:#F7A3A3}
 #app.watch #panel{opacity:.12;pointer-events:none}
 
 /* ---------- облачко с вопросом у монстра ---------- */
-#bubble{position:absolute;top:4%;max-width:min(58%,520px);max-height:62%;overflow:hidden;background:#fbf7ec;color:#1d1830;border:3px solid #1d1830;border-radius:14px;padding:8px 12px;font-size:clamp(12px,1.7vw,17px);line-height:1.35;font-weight:600;box-shadow:0 4px 0 rgba(0,0,0,.45);pointer-events:none;animation:bubIn .18s ease-out}
+#bubble{--bf:#fbf7ec;position:absolute;max-width:min(58%,460px);background:var(--bf);color:#1d1830;border:3px solid #1d1830;border-radius:14px;padding:8px 12px;font-size:clamp(12px,1.7vw,17px);line-height:1.35;font-weight:600;box-shadow:0 4px 0 rgba(0,0,0,.45);pointer-events:none;animation:bubIn .18s ease-out}
 #bubble[hidden]{display:none}
-#bubble::after{content:"";position:absolute;bottom:-14px;width:0;height:0;border:9px solid transparent;border-top:12px solid #1d1830}
-#bubble.to-left::after{right:10px}
-#bubble.to-right::after{left:10px}
+#bubble::before,#bubble::after{content:"";position:absolute;width:0;height:0;border-style:solid;border-color:transparent}
+#bubble::before{bottom:6px;border-width:9px 0 9px 0}
+#bubble::after{bottom:9px;border-width:6px 0 6px 0}
+#bubble.side-r::before{left:-16px;border-right:14px solid #1d1830}
+#bubble.side-r::after{left:-10px;border-right:11px solid var(--bf)}
+#bubble.side-l::before{right:-16px;border-left:14px solid #1d1830}
+#bubble.side-l::after{right:-10px;border-left:11px solid var(--bf)}
+#bubble.side-r{transform-origin:left bottom}
+#bubble.side-l{transform-origin:right bottom}
 #bubble p{margin:0}
 #bubble code{background:#e9e1cc;border-radius:4px;padding:0 4px;font-size:.92em}
 #bubble small{display:block;margin-top:3px;color:#6b6480;font-weight:600;font-size:.8em}
 #bubble.say{font-size:clamp(14px,2.2vw,22px);padding:6px 14px}
-#bubble.say.ok{background:#e3f6ee}
-#bubble.say.bad{background:#fde6e6}
+#bubble.say.ok{--bf:#e3f6ee}
+#bubble.say.bad{--bf:#fde6e6}
 #bubble.past{opacity:.85}
 @keyframes bubIn{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
 #app:not(.focus) .qtext.in-bubble{display:none}

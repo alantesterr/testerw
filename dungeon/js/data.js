@@ -19,7 +19,7 @@
     var out = '', parts = s.split(/```(?:\w+)?\n?/);
     parts.forEach(function (p, i) {
       if (i % 2) out += '<pre class="code">' + esc(p.replace(/\n$/, '')) + '</pre>';
-      else out += esc(p).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\n/g, ' ');
+      else out += esc(p.replace(/^\n+|\n+$/g, '')).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\n/g, '<br>');
     });
     return out;
   };
@@ -81,10 +81,61 @@
     return 0;
   }
 
+  /* ---------- предметы ----------
+     cpp  — этажи из конспекта C++ (лекции → комнаты по разделам);
+     arch — темы силлабуса из data/subjects/arch: topics.json + tNN.txt в формате Тестера.
+     D.floors — этажи ТЕКУЩЕГО предмета (вся игра работает с ним). */
+  D.SUBJ = {};
+  D.useSubject = function (id) {
+    if (!D.SUBJ[id]) id = 'cpp';
+    D.subjId = id; D.subj = D.SUBJ[id]; D.floors = D.subj.floors;
+    if (D.save && D.save.subj !== id) { D.save.subj = id; D.persist(); }
+  };
   D.load = function () {
+    return Promise.all([loadCpp(), loadArch().catch(function (e) { console.warn('arch', e); })]).then(function () { D.useSubject(D.save.subj || 'cpp'); return D.floors; });
+  };
+  /* разбор файла теста: <question> <variant> <variantright> <variant_keyboard> <explain> */
+  D.parseTxt = function (text) {
+    return String(text).replace(/\r/g, '').split(/<question>/i).slice(1).map(function (raw) {
+      var ex = '', m = raw.match(/<explain>([\s\S]*?)(?:<\/explain>|$)/i);
+      if (m) { ex = m[1].trim(); raw = raw.replace(m[0], ''); }
+      var parts = raw.split(/<(variantright|variant_keyboard|variant)>/i), q = { q: parts[0].trim(), opts: [], type: 'choice', ex: ex };
+      for (var k = 1; k < parts.length; k += 2) {
+        var tag = parts[k].toLowerCase(), t = (parts[k + 1] || '').trim();
+        if (tag === 'variant_keyboard') { q.type = 'keyboard'; q.answer = t; } else if (t) q.opts.push({ t: t, right: tag === 'variantright' });
+      }
+      return q;
+    }).filter(function (q) { return q.q && (q.type === 'keyboard' ? q.answer : q.opts.length > 1); });
+  };
+  var ROOM_SIZE = 10;
+  function loadArch() {
+    var base = '../data/subjects/arch/';
+    return fetch(base + 'topics.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (meta) {
+      var ready = meta.topics.filter(function (t) { return t.file; });
+      return Promise.all(ready.map(function (t) { return fetch(base + t.file, { cache: 'no-cache' }).then(function (r) { return r.text(); }); })).then(function (txts) {
+        var floors = ready.map(function (t, i) {
+          var pool = D.parseTxt(txts[i]).map(function (q) {
+            var it = { id: hash('arch|' + q.q + '|' + (q.answer || '') + q.opts.map(function (o) { return o.t; }).join('|')), q: q.q, opts: q.opts, type: q.type, answer: q.answer, ex: q.ex };
+            it.diff = diffOf(it); return it;
+          });
+          /* комнаты — подряд по 10 вопросов (в файле вопросы идут по подтемам), последняя — босс темы */
+          var n = Math.max(1, Math.ceil(pool.length / ROOM_SIZE)), rooms = [];
+          for (var k = 0; k < n; k++) {
+            var a = Math.floor(k * pool.length / n), b = Math.floor((k + 1) * pool.length / n);
+            rooms.push({ k: k, sec: null, secs: [], boss: false, tasks: [], label: 'вопросы ' + (a + 1) + '–' + b, qs: pool.slice(a, b).map(function (q) { return q.id; }) });
+          }
+          rooms.push({ k: n, sec: null, secs: [], boss: true, tasks: [], qs: pool.map(function (q) { return q.id; }) });
+          var byId = {}; pool.forEach(function (q) { q.topic = t.n; byId[q.id] = q; });
+          return { n: t.n, id: 'arch-' + t.n, label: 'Тема ' + t.n, title: t.title, rk: t.rk, texts: [], pool: pool, byId: byId, tasks: [], taskById: {}, rooms: rooms, final: false, subj: 'arch' };
+        });
+        D.SUBJ.arch = { id: 'arch', title: meta.title, short: 'Архитектура', floors: floors, topics: meta.topics, unitWord: 'Тема' };
+      });
+    });
+  }
+  function loadCpp() {
     return fetch('../data/ir-252/notes/cpp15.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (doc) {
       D.doc = doc;
-      D.floors = doc.lectures.map(function (lec, i) {
+      var floors = doc.lectures.map(function (lec, i) {
         var texts = [], pool = [], tasks = [];
         lec.sections.forEach(function (s) {
           if (s.kind === 'text' && s.title) texts.push({ id: s.id, title: s.title, blocks: s.blocks });
@@ -128,15 +179,25 @@
         rooms.push({ k: n, sec: null, secs: texts, boss: true, tasks: [], qs: pool.map(function (q) { return q.id; }) });
         var taskById = {}; tasks.forEach(function (t) { taskById[t.id] = t; });
         var byId = {}; pool.forEach(function (q) { byId[q.id] = q; });
-        return { n: i + 1, id: lec.id, label: lec.label, title: lec.title, texts: texts, pool: pool, byId: byId, tasks: tasks, taskById: taskById, rooms: rooms, final: lec.label === 'Итог' };
+        return { n: i + 1, id: lec.id, label: lec.label, title: lec.title, texts: texts, pool: pool, byId: byId, tasks: tasks, taskById: taskById, rooms: rooms, final: lec.label === 'Итог', subj: 'cpp' };
       });
-      return D.floors;
+      D.SUBJ.cpp = { id: 'cpp', title: 'C++ (ООП)', short: 'C++', floors: floors, unitWord: 'Этаж' };
+      return floors;
     });
-  };
+  }
 
-  /* ---------- сохранение ---------- */
-  var fresh = function () { return { v: 1, hp: 5, maxHp: 5, iq: 0, streak: 0, lastDay: '', ticks: 0, srs: {}, rooms: {}, at: null, seenIntro: false, best: 0 }; };
-  D.save = (function () { try { var s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); return s && s.v === 1 ? Object.assign(fresh(), s) : fresh(); } catch (e) { return fresh(); } })();
+  /* ---------- сохранение ----------
+     v2 (ноябрь 2026): несколько предметов (subj), место в подземелье помнит предмет (at.s).
+     Сохранение v1 переносится как есть: HP, IQ, повторение и комнаты не теряются. */
+  var fresh = function () { return { v: 2, subj: 'cpp', hp: 5, maxHp: 5, iq: 0, streak: 0, lastDay: '', ticks: 0, srs: {}, rooms: {}, at: null, seenIntro: false, best: 0 }; };
+  D.save = (function () {
+    try {
+      var s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+      if (!s || (s.v !== 1 && s.v !== 2)) return fresh();
+      if (s.v === 1) { s.v = 2; s.subj = 'cpp'; if (s.at) s.at.s = 'cpp'; }
+      return Object.assign(fresh(), s);
+    } catch (e) { return fresh(); }
+  })();
   D.persist = function () { try { localStorage.setItem(SAVE_KEY, JSON.stringify(D.save)); } catch (e) { /* приватный режим — играем без сохранения */ } };
 
   /* огонёк: день засчитывается после первого ответа */
@@ -156,6 +217,10 @@
   var GAP = [0, 4, 10, 25, 60, 150];
   D.level = function (id) { var r = D.save.srs[id]; return r ? r.l : 0; };
   D.mastery = function (ids) { if (!ids.length) return 0; var s = 0; ids.forEach(function (id) { s += D.level(id); }); return Math.round(s / (ids.length * 5) * 100); };
+  /* прогресс предмета/темы: доля вопросов, на которые хотя бы раз ответили верно (без подсказки) */
+  D.solvedOnce = function (id) { var r = D.save.srs[id]; return !!r && r.n - r.w > 0; };
+  D.progress = function (ids) { if (!ids.length) return 0; return Math.round(ids.filter(D.solvedOnce).length / ids.length * 100); };
+  D.subjIds = function (sj) { return (sj || D.subj).floors.reduce(function (a, f) { return a.concat(f.pool.map(function (q) { return q.id; })); }, []); };
   D.record = function (id, ok) {
     var s = D.save, r = s.srs[id] || { l: 0, n: 0, w: 0, due: 0 };
     s.ticks++; r.n++;

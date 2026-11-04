@@ -289,3 +289,31 @@ b.bad,.bad{color:#F7A3A3}
 .daily small{color:#8f89b3;font-size:12.5px}
 .brief .rich p{margin:6px 0}
 .brief .rich pre.code{font-size:13px;max-height:220px;overflow:auto}
+
+/* ===== этап 1 (ноябрь 2026): предметы, «Объясни», Google, «В StudyPlay» ===== */
+.hud-sp{display:inline-flex;align-items:center;gap:4px;height:36px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);text-decoration:none;font-weight:700;font-size:14px;white-space:nowrap}
+.hud-sp:hover{border-color:var(--line2)}
+@media (max-width:560px){.hud-sp{height:30px;padding:0 7px;font-size:13px}.hud-sp span{display:none}}
+@media (max-width:400px){#hud{gap:4px;padding:6px 6px}.hud-hearts i{width:12px;height:11px}}
+.subj-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:6px 0 10px}
+.subj{display:flex;flex-direction:column;gap:4px;text-align:left;border:2px solid var(--line);background:var(--card);color:var(--text);border-radius:12px;padding:10px 12px;font:inherit;cursor:pointer}
+.subj:hover{border-color:#7F77DD}
+.subj.soon{opacity:.55;cursor:default}
+.subj span{font-size:13px;color:#B4B2C4}
+.subj .bar,.topic .bar{height:8px;border-radius:6px;background:#2f2a44;overflow:hidden}
+.subj .bar i,.topic .bar i{display:block;height:100%;background:linear-gradient(90deg,#5DCAA5,#9FE1CB)}
+.topics{display:grid;gap:8px}
+.topic{display:flex;gap:12px;align-items:center;text-align:left;border:2px solid var(--line);background:var(--card);color:var(--text);border-radius:12px;padding:10px 12px;font:inherit;cursor:pointer;width:100%}
+.topic:hover{border-color:#7F77DD}
+.topic.soon{opacity:.5;cursor:default}
+.topic .tn{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#2f2a44;font-weight:800}
+.topic .tt{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+.topic .tt span{font-size:13px;color:#B4B2C4}
+.node.soon{opacity:.45;cursor:default}
+.path-head{flex-wrap:wrap}
+.ico-btn.ggl{font:800 16px/1 Arial,sans-serif;color:#85B7EB}
+.ex-body .ex-q{font-weight:700;margin-bottom:6px}
+.ex-body .ex-right{margin:6px 0 10px}
+.ex-text{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:8px}
+.ex-text p{margin:5px 0}
+.ex-text .ex-li{margin-left:10px}

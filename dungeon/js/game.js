@@ -715,7 +715,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
 
   /* после ответа панель ненадолго гаснет, чтобы было видно удар героя или атаку монстра */
   var WATCH_MS = 1560;
-  function watchHit() {
+  function watchHit(ms) {
     appEl.classList.add('watch'); clearTimeout(G.watchT);
     var low = window.innerWidth < 900 && !appEl.classList.contains('focus');
     if (low) window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -723,7 +723,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
       appEl.classList.remove('watch');
       var R = G.room; if (R && R.mon && !R.mon.dead && R.bubble) bubbleAt(R.bubble, R.mon, (R.bubbleCls || '') + ' past', R.bubbleCls !== 'mini'); else hideBubble();
       if (low && G.scene === 'room') panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, WATCH_MS);
+    }, ms || WATCH_MS);
   }
   function resolve(ok, power, kind) {
     var R = G.room, m = R.mon, it = m.items.shift(), clean = ok && !R.assisted; peek(); watchHit();
@@ -736,6 +736,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     }
     /* реплика монстра: последний верный ответ его добивает — тогда «Нееееет!» и т. п. */
     var kill = !m.items.length && (m.guard ? clean : ok);
+if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает дольше — панель и облачко ждут конца телепорта */
     /* верно, но с подсказкой (Google, 50/50, лампа, ИИ…) — монстр возмущается */
     if (ok && R.assisted) bubbleSay(pick(m.guard ? SAY_GUARD_CHEAT : SAY_CHEAT), 'cheat');
     else if (kill) bubbleSay(pick(m.guard ? SAY_GUARD : m.boss ? SAY_BOSS : SAY_DIE), 'die');
@@ -787,7 +788,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
       setTimeout(function () {
         if (G.room === R && R.mon === m && !BK && !G.modal) goNext();
         else if (G.room === R && R.mon === m) { G.buttons = [btn('Дальше', 'primary', 'Enter', goNext)]; var nb = document.createElement('button'); nb.className = 'btn primary'; nb.innerHTML = 'Дальше<kbd>Enter</kbd>'; nb.onclick = goNext; row0.appendChild(nb); }
-      }, WATCH_MS + 500);
+      }, m.guard ? TP_MS + 800 : WATCH_MS + 500);
       return;
     }
     else if (m.dead) btns.push(btn('Дальше', 'primary', 'Enter', goNext));
@@ -1280,7 +1281,7 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
 
   /* телепорт стража (как эндермен): мерцает и дрожит, сжимается в фиолетовый столб,
      вокруг взлетают и разлетаются частицы; через ~1,4 с остаются только гаснущие искры */
-  var TP_MS = 1400;
+  var TP_MS = 2380;   /* +70% к прежним 1,4 с */
   function drawTeleport(c, o, dt, fy) {
     if (dt > TP_MS) return;
     var k = dt / TP_MS, h = A.monHeight(o.key), top = fy - h;

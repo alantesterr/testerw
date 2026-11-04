@@ -710,7 +710,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   var SAY_OK = ['Ай!', 'Ой, больно!', 'Угадал…', 'Ну ладно, верно!'], SAY_BAD = ['Ха! Мимо!', 'Неверно! Получай!', 'Не угадал!', 'Хе-хе, ошибка!'];
   var SAY_DIE = ['Нееееет!', 'Я ещё вернусь…', 'Как ты узнал?!', 'Ты… слишком умный…', 'Мама, он всё выучил!', 'Не может быть!'];
   var SAY_CHEAT = ['Это нечестно!', 'Ты подсмотрел!', 'Нечестно, с подсказкой!', 'Так и я могу!', 'Жульничество!'], SAY_GUARD_CHEAT = ['С подсказкой не считается.', 'Сам-то знаешь? Спрошу ещё.'];
-  var SAY_BOSS = ['Невозможно!', 'Ты прошёл всю тему?!', 'Я… повержен…'], SAY_GUARD = ['Ладно, проходи.', 'Ошибки исправлены. Путь свободен.'];
+  var SAY_BOSS = ['Невозможно!', 'Ты прошёл всю тему?!', 'Я… повержен…'], SAY_GUARD = ['Ещё встретимся…', 'Я вернусь, когда ты ошибёшься.', 'Сегодня ты сильнее. Пока!', 'Жди меня у следующей двери…', 'Запомнил тебя. До встречи!', 'Исчезаю… но не навсегда.'];
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
 
   /* после ответа панель ненадолго гаснет, чтобы было видно удар героя или атаку монстра */
@@ -744,7 +744,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     if (R.run && R.run % LUCK_RUN === 0) setTimeout(luckChest, 700);
     else if (clean && R.run >= LUCK_RUN - 3) setTimeout(function () { floater('Серия ' + R.run + ' — до сундука удачи ' + (LUCK_RUN - R.run % LUCK_RUN), 240, 60, '#97C459'); }, 500);
     if (ok) { quest('right'); if (kind === 'task') quest('task'); if (clean && R.mode === 'err') quest('fix'); }
-    var drop = function () { m.hp = m.items.length; if (!m.hp) { m.dead = true; setMon(m, 'death'); sfx('kill'); if (m.guard) quest('guard'); } };
+    var drop = function () { m.hp = m.items.length; if (!m.hp) { m.dead = true; if (m.guard) { m.tpAt = now(); m.state = 'idle'; m.st = m.tpAt; sfx('chest'); quest('guard'); } else { setMon(m, 'death'); sfx('kill'); } } };
     if (ok) {
       R.right++;
       var hw = X.hit(power, m), bonus = Math.min(20, Math.max(0, hw.dmg - power) * 2); R.crit = R.combo >= 1.5 && Math.random() < (R.combo - 1);
@@ -782,7 +782,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     else if (m.dead && ok && !R.assisted) {
       /* верный ответ добил монстра — сразу идём дальше; «Объясни» успеет остановить переход */
       G.buttons = []; var row0 = document.createElement('div'); row0.className = 'row'; row0.style.marginTop = '10px';
-      row0.innerHTML = '<span class="hint">' + esc(monName(m)) + ' повержен…</span>' + (R.q ? '<button class="btn ghost" data-ex0>📖 Объясни</button>' : '');
+      row0.innerHTML = '<span class="hint">' + esc(monName(m)) + (m.guard ? ' исчез в облаке искр…' : ' повержен…') + '</span>' + (R.q ? '<button class="btn ghost" data-ex0>📖 Объясни</button>' : '');
       panel.appendChild(row0); var q0 = R.q, exb = row0.querySelector('[data-ex0]'); if (exb) exb.onclick = function () { openExplain(q0); };
       setTimeout(function () {
         if (G.room === R && R.mon === m && !BK && !G.modal) goNext();
@@ -1278,6 +1278,30 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
     if (e.key === 'Backspace') { if (G.scene !== 'exam' && (G.scene !== 'room' || !G.room || !G.room.mon)) { e.preventDefault(); goBack(); } }
   });
 
+  /* телепорт стража (как эндермен): мерцает и дрожит, сжимается в фиолетовый столб,
+     вокруг взлетают и разлетаются частицы; через ~1,4 с остаются только гаснущие искры */
+  var TP_MS = 1400;
+  function drawTeleport(c, o, dt, fy) {
+    if (dt > TP_MS) return;
+    var k = dt / TP_MS, h = A.monHeight(o.key), top = fy - h;
+    if (k < 0.55) {
+      var a = (1 - k / 0.55) * (Math.floor(dt / 70) % 2 ? 0.55 : 1), jx = (Math.random() - 0.5) * 6 * (k / 0.55 + 0.2);
+      c.save(); c.translate(o.x + jx, fy); c.scale(1 - k * 0.9, 1 + k * 0.25); c.translate(-o.x, -fy);
+      A.drawMonster(c, o.key, 'idle', dt, o.x, fy, a); c.restore();
+    }
+    if (k > 0.25 && k < 0.8) {   /* столб света */
+      var ca = Math.sin((k - 0.25) / 0.55 * Math.PI);
+      c.fillStyle = 'rgba(176,124,255,' + (0.55 * ca).toFixed(3) + ')'; c.fillRect(o.x - 6, top - 30, 12, h + 30);
+      c.fillStyle = 'rgba(235,215,255,' + (0.8 * ca).toFixed(3) + ')'; c.fillRect(o.x - 2, top - 30, 4, h + 30);
+    }
+    for (var i = 0; i < 26; i++) {   /* частицы: у каждой свой угол, скорость и цвет */
+      var seed = (i * 97 + o.x * 13) % 360, ang = seed / 57.3, sp = 18 + (i * 37) % 30, life = 0.5 + ((i * 53) % 50) / 100;
+      var p = Math.min(1, k / life); if (p >= 1) continue;
+      var px = o.x + Math.cos(ang) * sp * p * 1.4, py = fy - h * 0.5 - (i % 3 === 0 ? h * 0.9 * p : Math.sin(ang) * sp * p) - 10 * p;
+      c.fillStyle = (i % 3 ? 'rgba(176,124,255,' : 'rgba(240,220,255,') + (1 - p).toFixed(3) + ')';
+      var s = i % 4 ? 2 : 3; c.fillRect(Math.round(px), Math.round(py), s, s);
+    }
+  }
   /* ---------- отрисовка ---------- */
   function draw(t) {
     var h = G.hero, dt = Math.min(50, t - (G.last || t)); G.last = t;
@@ -1299,6 +1323,7 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
         var fr = A.anim[o.open ? 'chest_full_open' : 'chest_full_open'] || [], k = o.open ? Math.min(2, Math.floor((t - (o.openAt || 0)) / 120)) : 0;
         A.frame(c, fr[o.open ? (o.openAt ? k : 2) : 0], o.x - 20, fy - 40, 2.5);
       } else if (o.type === 'mon') {
+        if (o.tpAt) { drawTeleport(c, o, t - o.tpAt, fy); return; }   /* страж не умирает — телепортируется */
         if (o.dead && (!o.st || t - o.st > 900)) return;
         var st = o.dead ? 'death' : o.state, rw = A.MON[o.key].boss ? 34 : 22;
         /* кто сейчас спрашивает — тёплое пятно света под ним; остальные чуть бледнее */

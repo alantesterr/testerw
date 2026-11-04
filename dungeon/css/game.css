@@ -317,3 +317,4 @@ b.bad,.bad{color:#F7A3A3}
 .ex-text{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:8px}
 .ex-text p{margin:5px 0}
 .ex-text .ex-li{margin-left:10px}
+.opt.sel{border-color:#7F77DD;background:#2a2540}

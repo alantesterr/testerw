@@ -349,7 +349,18 @@
     if (S.cfg.autoTr) toggleTr();
     G.buttons = [];
     if (q.type === 'keyboard') { var inp = $('kbIn'); $('kbGo').onclick = function () { answer(norm(inp.value) === norm(q.answer), inp.value); }; inp.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('kbGo').click(); } }; if (matchMedia('(pointer:fine)').matches) setTimeout(function () { inp.focus({ preventScroll: true }); }, 50); }
-    else panel.querySelectorAll('.opt').forEach(function (b) { b.onclick = function () { var oi = +b.getAttribute('data-o'); answer(!!q.opts[oi].right, oi); }; });
+    else {
+      var nr = q.opts.filter(function (o) { return o.right; }).length;
+      if (nr > 1) {
+        /* несколько верных ответов: отмечаем нужное количество и жмём «Ответить» */
+        R.sel = [];
+        panel.querySelector('.opts').insertAdjacentHTML('beforebegin', '<p class="hint"><b>Выбери ' + nr + ' ответа</b>, потом нажми «Ответить».</p>');
+        panel.querySelector('.opts').insertAdjacentHTML('afterend', '<div class="row" id="mRow" style="margin-top:10px"><button class="btn primary" id="mGo" disabled>Ответить<kbd>Enter</kbd></button></div>');
+        var submit = function () { if (R.answered || R.sel.length !== nr) return; var r = $('mRow'); if (r) r.remove(); answer(R.sel.every(function (oi) { return q.opts[oi].right; }), R.sel.slice()); };
+        panel.querySelectorAll('.opt').forEach(function (b) { b.onclick = function () { if (R.answered) return; var oi = +b.getAttribute('data-o'), i = R.sel.indexOf(oi); if (i >= 0) { R.sel.splice(i, 1); b.classList.remove('sel'); } else { R.sel.push(oi); b.classList.add('sel'); } $('mGo').disabled = R.sel.length !== nr; }; });
+        $('mGo').onclick = submit; G.buttons = [btn('Ответить', 'primary', 'Enter', submit)];
+      } else panel.querySelectorAll('.opt').forEach(function (b) { b.onclick = function () { var oi = +b.getAttribute('data-o'); answer(!!q.opts[oi].right, oi); }; });
+    }
   }
   function norm(s) { return String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' ').replace(/[;.]$/, ''); }
   function askTask(head, t) {
@@ -378,7 +389,7 @@
       var inp = $('kbIn'); inp.disabled = true; $('kbGo').disabled = true;
       panel.querySelector('.kb').insertAdjacentHTML('afterend', '<div class="verdict ' + (ok ? 'ok' : 'bad') + '">' + (ok ? 'Верно!' + (R.assisted ? ' Но с подсказкой — ' + later : '') : 'Неверно. Правильный ответ: <code>' + esc(q.answer) + '</code>. ' + again) + '</div>');
     } else {
-      panel.querySelectorAll('.opt').forEach(function (b) { var oi = +b.getAttribute('data-o'); b.disabled = true; if (q.opts[oi].right) b.classList.add('right'); else if (oi === pickedIdx) b.classList.add('wrong'); });
+      panel.querySelectorAll('.opt').forEach(function (b) { var oi = +b.getAttribute('data-o'); b.disabled = true; b.classList.remove('sel'); if (q.opts[oi].right) b.classList.add('right'); else if (oi === pickedIdx || (Array.isArray(pickedIdx) && pickedIdx.indexOf(oi) >= 0)) b.classList.add('wrong'); });
       panel.querySelector('.opts').insertAdjacentHTML('afterend', '<div class="verdict ' + (ok ? 'ok' : 'bad') + '">' + (ok ? 'Верно! Удар!' + (R.assisted ? ' Но с подсказкой — ' + later : '') : (R.mon.guard ? 'Неверно. ' : 'Неверно — монстр бьёт тебя. ') + again) + '</div>');
     }
     resolve(ok, 1, 'q');

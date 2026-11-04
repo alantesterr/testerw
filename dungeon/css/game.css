@@ -336,3 +336,7 @@ b.bad,.bad{color:#F7A3A3}
 .ex-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
 .ex-item p{margin:6px 0}
 .ex-item .bad{color:#F09595}
+
+/* ---------- пауза после ответа: видно удар / атаку монстра ---------- */
+#panel{transition:opacity .25s}
+#app.watch #panel{opacity:.12;pointer-events:none}

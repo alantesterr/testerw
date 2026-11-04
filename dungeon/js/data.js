@@ -131,7 +131,7 @@
       return Promise.all(ready.map(function (t) { return Promise.all([get(t.file), get(t.lecture)]); })).then(function (pairs) {
         var txts = pairs.map(function (p) { return p[0]; });
         var floors = ready.map(function (t, i) {
-          var texts = D.parseLecture(pairs[i][1], t.n);
+          var texts = D.parseLecture(pairs[i][1], t.lab ? 'Л' : t.n);
           texts.forEach(function (s) { s.tok = toks(s.title + ' ' + D.blocks(s.blocks)); });
           var pool = D.parseTxt(txts[i]).map(function (q) {
             var it = { id: hash('arch|' + q.q + '|' + (q.answer || '') + q.opts.map(function (o) { return o.t; }).join('|')), q: q.q, opts: q.opts, type: q.type, answer: q.answer, ex: q.ex };
@@ -152,7 +152,7 @@
             r.sec = best; r.secs = [best]; r.label = best.title;
           });
           rooms.push({ k: n, sec: null, secs: texts, boss: true, tasks: [], qs: pool.map(function (q) { return q.id; }) });
-          return { n: t.n, id: 'arch-' + t.n, label: 'Тема ' + t.n, title: t.title, rk: t.rk, texts: texts, pool: pool, byId: byId, tasks: [], taskById: {}, rooms: rooms, final: false, subj: 'arch' };
+          return { n: t.n, id: 'arch-' + t.n, label: t.lab ? 'Лабы' : 'Тема ' + t.n, title: t.title, rk: t.rk, lab: !!t.lab, texts: texts, pool: pool, byId: byId, tasks: [], taskById: {}, rooms: rooms, final: false, subj: 'arch' };
         });
         D.SUBJ.arch = { id: 'arch', title: meta.title, short: 'Архитектура', floors: floors, topics: meta.topics, unitWord: 'Тема' };
       });

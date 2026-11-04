@@ -399,3 +399,5 @@ b.bad,.bad{color:#F7A3A3}
 .opt .o-tr{display:block;margin-top:3px;font-size:.82em;color:var(--mute);font-weight:500}
 #bubble .b-twin{display:block;margin:0 0 3px;color:#993C1D;font-weight:800;font-size:.85em}
 .luck-box{margin-top:10px}
+.rep-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.rep-row span{flex:1 1 220px;color:var(--mute);font-size:14px}

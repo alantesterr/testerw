@@ -16,7 +16,7 @@
 
   /* ---------- HUD ---------- */
   function hud() {
-    $('hud').hidden = false;
+    $('hud').hidden = false; updBack();
     var h = '';
     for (var i = 0; i < S.maxHp; i++) h += '<i style="background-image:url(' + (i < S.hp ? A.heartUrl.ui_heart_full : A.heartUrl.ui_heart_empty) + ')"></i>';
     $('hudHearts').innerHTML = h;
@@ -57,12 +57,56 @@
   /* тема по номеру (у лаб EWB номер 16, поэтому не по индексу) */
   function floorBy(n) { return D.floors.filter(function (f) { return f.n === +n; })[0] || D.floors[0]; }
   function subjTitle() { return D.subj ? D.subj.title : 'C++'; }
-  $('hudSP').onclick = function () { D.persist(); };
-  $('hudBack').onclick = function () {
-    var back = { house: null, subject: 'house', exam: 'house', yard: 'house', hall: 'yard', path: 'hall', floor: 'path', room: 'floor' }[G.scene];
-    if (back === 'floor') go('floor', G.room ? G.room.floor : S.at && S.at.f);
-    else if (back) go(back);
-  };
+  /* ---------- навигация как в играх ----------
+     Слева одна кнопка «назад», на ней всегда написано, КУДА она ведёт (в домике — «StudyPlay»).
+     Справа «☰» — меню-пауза (и клавиша Esc): продолжить, карта тем, домик, рюкзак, лавка,
+     настройки и отдельно — выйти в StudyPlay. */
+  var BACK = { house: 'sp', subject: 'house', exam: 'house', yard: 'house', hall: 'house', path: 'hall', floor: 'path', room: 'floor' };
+  function backLabel(to) { return { sp: 'StudyPlay', house: 'Домик', hall: 'Зал', path: D.subjId === 'arch' ? 'Темы' : 'Этажи', floor: 'Комнаты' }[to] || 'Назад'; }
+  function updBack() {
+    var to = BACK[G.scene], b = $('hudBack');
+    $('hudBackT').textContent = backLabel(to);
+    b.classList.toggle('exit', to === 'sp');
+    b.title = to === 'sp' ? 'Выйти в StudyPlay (прогресс сохранён)' : 'Назад: ' + backLabel(to) + ' (Backspace)';
+  }
+  function exitToSP() { D.persist(); location.href = '../index.html#/tester'; }
+  function goFloorBack() { go('floor', G.room ? G.room.floor : S.at && S.at.f); }
+  function confirmBox(title, text, yes, onYes) {
+    modal('<header class="md-top"><b>' + esc(title) + '</b><span class="grow"></span><button class="btn ghost" data-close>✕</button></header><div class="md-body"><p class="msg">' + esc(text) + '</p><div class="row"><button class="btn primary" data-yes>' + esc(yes) + '</button><button class="btn ghost" data-close>Остаться</button></div></div>', function (el) {
+      el.querySelectorAll('[data-close]').forEach(function (b) { b.onclick = closeModal; });
+      el.querySelector('[data-yes]').onclick = function () { closeModal(); onYes(); };
+      G.modalEnter = function () { closeModal(); onYes(); };
+    });
+  }
+  function goBack() {
+    var to = BACK[G.scene];
+    if (to === 'sp') return exitToSP();
+    if (G.scene === 'exam' && G.exam && !G.exam.done) return confirmBox('Прервать экзамен?', 'Результат не засчитается. Начать заново можно в любой момент.', 'Прервать', function () { go('house'); });
+    if (G.scene === 'room' && G.room && G.room.mon && !G.room.mon.dead) return confirmBox('Выйти из комнаты?', 'Ответы уже сохранены. Комнату можно пройти ещё раз.', 'Выйти', goFloorBack);
+    if (to === 'floor') goFloorBack(); else if (to) go(to);
+  }
+  $('hudBack').onclick = goBack;
+  function openMenu() {
+    var inRoom = G.scene === 'room' && G.room, mapOk = D.subj && G.scene !== 'path', items = [];
+    items.push(['play', '▶', 'Продолжить', 'Esc', closeModal]);
+    if (inRoom) items.push(['room', '↩', 'Выйти из комнаты', 'к комнатам темы', function () { closeModal(); goBack(); }]);
+    if (mapOk) items.push(['map', '🗺', D.subjId === 'arch' ? 'Карта тем' : 'Карта этажей', subjTitle(), function () { closeModal(); go('path'); }]);
+    if (G.scene !== 'house') items.push(['house', '🏠', 'Домик', 'предметы, экзамен, задания дня', function () { closeModal(); go('house'); }]);
+    items.push(['bag', '🎒', 'Рюкзак', 'предметы и оружие', function () { closeModal(); openBag(); }]);
+    items.push(['shop', '🧙', 'Лавка мудреца', 'IQ → предметы', function () { closeModal(); openShop(); }]);
+    items.push(['set', '⚙', 'Настройки', 'перевод, звук, крупный вопрос', function () { closeModal(); openSettings(); }]);
+    var h = '<header class="md-top"><b>Меню</b><span class="grow"></span><button class="btn ghost" data-close aria-label="Закрыть">✕</button></header><div class="md-body"><div class="menu-list">' +
+      items.map(function (it, i) { return '<button class="menu-it' + (i === 0 ? ' first' : '') + '" data-mi="' + i + '"><span class="mi-ic">' + it[1] + '</span><b>' + esc(it[2]) + '</b><span class="mi-sub">' + esc(it[3]) + '</span></button>'; }).join('') +
+      '</div><button class="menu-it exit" data-exit><span class="mi-ic">🚪</span><b>Выйти в StudyPlay</b><span class="mi-sub">прогресс сохранён</span></button></div>';
+    modal(h, function (el) {
+      el.querySelector('.md-wrap').classList.add('menu-md');
+      el.querySelectorAll('[data-close]').forEach(function (b) { b.onclick = closeModal; });
+      el.querySelectorAll('[data-mi]').forEach(function (b) { b.onclick = function () { items[+b.getAttribute('data-mi')][4](); }; });
+      el.querySelector('[data-exit]').onclick = exitToSP;
+      G.menuOpen = true;
+    });
+  }
+  $('hudMenu').onclick = openMenu;
   function btn(label, cls, key, fn) { return { label: label, cls: cls, key: key, fn: fn }; }
   function setPanel(html, buttons) {
     panel.innerHTML = html + (buttons && buttons.length ? '<div class="row" style="margin-top:12px">' + buttons.map(function (b, i) { return '<button class="btn ' + (b.cls || '') + '" data-b="' + i + '">' + esc(b.label) + (b.key ? '<kbd>' + b.key + '</kbd>' : '') + '</button>'; }).join('') + '</div>' : '');
@@ -101,7 +145,7 @@
     D.useSubject(id); show(false); where(subjTitle());
     var sj = D.subj, all = D.subjIds(), p = D.progress(all);
     var topics = sj.topics || sj.floors.map(function (f) { return { n: f.n, title: f.title, file: 1 }; });
-    var h = '<div class="path-head"><button class="btn ghost" data-home>⌂ Домой</button><h1>' + esc(sj.title) + '</h1><span class="tag teal">решено ' + p + '%</span></div>' +
+    var h = '<div class="path-head"><h1>' + esc(sj.title) + '</h1><span class="tag teal">решено ' + p + '%</span></div>' +
       '<p class="hallnote">Процент темы — сколько её вопросов ты хотя бы раз решил верно (без подсказки). Серые темы ещё без вопросов — они появятся после лекций и лабораторных.</p><div class="topics">';
     topics.forEach(function (t) {
       var f = sj.floors.filter(function (x) { return x.n === t.n; })[0];
@@ -109,7 +153,7 @@
       var tp = D.progress(f.pool.map(function (q) { return q.id; }));
       h += '<button class="topic" data-t="' + f.n + '"><span class="tn">' + (t.lab ? 'Л' : t.n) + '</span><span class="tt"><b>' + esc(t.title) + '</b><div class="bar"><i style="width:' + tp + '%"></i></div><span>' + tp + '% · вопросов: ' + f.pool.length + '</span></span></button>';
     });
-    h += '</div><div class="row" style="margin:14px 0"><button class="btn primary" data-go>⚔ В подземелье: ' + esc(sj.short || sj.title) + '</button><button class="btn ghost" data-home>⌂ Домой</button></div>';
+    h += '</div><div class="row" style="margin:14px 0"><button class="btn primary" data-go>⚔ В подземелье: ' + esc(sj.short || sj.title) + '</button></div>';
     screenEl.innerHTML = h;
     screenEl.querySelectorAll('[data-t]').forEach(function (b) { b.onclick = function () { go('floor', +b.getAttribute('data-t')); }; });
     screenEl.querySelectorAll('[data-home]').forEach(function (b) { b.onclick = function () { go('house'); }; });
@@ -204,7 +248,7 @@
   function examResult(review) {
     var E = G.exam, wrong = E.ans.filter(function (a) { return !a.ok; }), skipped = E.qs.length - E.ans.length;
     var grade = E.pct >= 90 ? 'отлично' : E.pct >= 75 ? 'хорошо' : E.pct >= 50 ? 'удовлетворительно' : 'пока не сдано';
-    var h = '<div class="path-head"><button class="btn ghost" data-home>⌂ Домой</button><h1>Экзамен завершён</h1><span class="tag ' + (E.pct >= 50 ? 'teal' : 'red') + '">' + E.pct + '% · ' + grade + '</span></div>' +
+    var h = '<div class="path-head"><h1>Экзамен завершён</h1><span class="tag ' + (E.pct >= 50 ? 'teal' : 'red') + '">' + E.pct + '% · ' + grade + '</span></div>' +
       '<div class="sum-cards"><div><b>' + E.right + '</b><span>верно</span></div><div><b>' + wrong.length + '</b><span>ошибок</span></div><div><b>' + skipped + '</b><span>без ответа</span></div><div class="iq"><b>+' + E.right + '</b><span>IQ</span></div></div>' +
       (E.timeout ? '<p class="wave-msg">Время вышло — экзамен завершён автоматически.</p>' : '') +
       '<p class="hallnote">Лучший результат по предмету «' + esc(subjTitle()) + '»: ' + ((S.exams[E.s] || {}).best || E.pct) + '%. Ошибки попали в повторение — монстры спросят их снова.</p>';
@@ -239,7 +283,6 @@
     var bs = [];
     if (D.SUBJ.arch) bs.push(btn('Войти: Архитектура ЭВМ', D.subjId === 'arch' ? 'primary' : 'ghost', D.subjId === 'arch' ? 'Enter' : null, function () { D.useSubject('arch'); walkTo(96, function () { go('path'); }); }));
     bs.push(btn('Войти: C++', D.subjId === 'cpp' || !D.SUBJ.arch ? 'primary' : 'ghost', D.subjId === 'cpp' || !D.SUBJ.arch ? 'Enter' : null, function () { D.useSubject('cpp'); walkTo(240, function () { go('path'); }); }));
-    bs.push(btn('⌂ Домой', 'ghost', null, function () { go('house'); }));
     setPanel('<div class="qtext">Холл</div><p class="msg">Каждая дверь — подземелье одного предмета. Герой у тебя один, IQ, сердечки и огонёк общие. Процент — сколько вопросов предмета ты хотя бы раз решил верно.</p>', bs);
   }
 
@@ -252,7 +295,7 @@
   function enterPath() {
     var arch = D.subjId === 'arch';
     show(false); where('Подземелье · ' + subjTitle());
-    var cur = S.at && (S.at.s || 'cpp') === D.subjId ? S.at.f : 1, h = '<div class="path-head"><button class="btn ghost" data-home>⌂ Домой</button><h1>Подземелье: ' + esc(subjTitle()) + '</h1><span class="tag teal">все ' + (arch ? 'темы' : 'этажи') + ' открыты</span></div><p class="hallnote">' + (arch ? 'Этаж = тема силлабуса.' : 'Этаж = лекция.') + ' Цвет круга — насколько ты освоил тему: серый — не начинал, оранжевый — начал, зелёный — хорошо, золотой — отлично. Золотая медаль ✓ — пройдено начисто: все вопросы увидены и ни одной неисправленной ошибки.</p>' + tipHtml('path') + dailyHtml();
+    var cur = S.at && (S.at.s || 'cpp') === D.subjId ? S.at.f : 1, h = '<div class="path-head"><h1>Подземелье: ' + esc(subjTitle()) + '</h1><span class="tag teal">все ' + (arch ? 'темы' : 'этажи') + ' открыты</span></div><p class="hallnote">' + (arch ? 'Этаж = тема силлабуса.' : 'Этаж = лекция.') + ' Цвет круга — насколько ты освоил тему: серый — не начинал, оранжевый — начал, зелёный — хорошо, золотой — отлично. Золотая медаль ✓ — пройдено начисто: все вопросы увидены и ни одной неисправленной ошибки.</p>' + tipHtml('path') + dailyHtml();
     var rk = modeRk(); if (rk) h += '<div class="wave-msg">Режим РК' + rk + ': только темы этого рубежного контроля (' + esc(rangeText(modeFloors())) + '). <button class="btn ghost" data-allmode>Показать все темы</button></div>';
     (arch ? UNITS_ARCH : UNITS).forEach(function (u, ui) {
       if (!D.floors.some(function (f) { return f.n >= u[0] && f.n <= u[1] && (!rk || rkOf(f) === rk); })) return;
@@ -285,7 +328,7 @@
     show(false); where(fname(f) + ' · ' + f.title);
     var m = floorMastery(f), fst = D.stats(poolIds(f)), bad = D.badIds(f).length;
     var nextK = f.rooms.findIndex(function (r) { return !roomInfo(f, r.k).done || !D.stats(r.qs).clean; });
-    var h = '<div class="path-head"><button class="btn ghost" data-home>⌂ Домой</button><h1>' + esc(fname(f)) + '</h1><span class="tag teal">освоено ' + m + '%</span>' + (fst.clean ? '<span class="tag gold">пройдено начисто ✓</span>' : '') + '</div>' +
+    var h = '<div class="path-head"><h1>' + esc(fname(f)) + '</h1><span class="tag teal">освоено ' + m + '%</span>' + (fst.clean ? '<span class="tag gold">пройдено начисто ✓</span>' : '') + '</div>' +
       '<p class="hallnote">' + esc(f.title) + '. Вопросов: ' + statLine(fst) + '. В каждой комнате монстров ровно столько, чтобы спросить все её вопросы и задания. Ошибся — монстр бьёт тебя и задаст этот вопрос ещё раз чуть позже, пропустить нельзя. Ошибки и ответы с подсказкой ещё раз спросит страж у выхода (у него сердечки не тратятся). Так комната становится «чисто ✓».</p>' + tipHtml('floor') + '<div class="rooms">';
     f.rooms.forEach(function (r) {
       if (r.boss) {
@@ -882,7 +925,7 @@
     var x = el.querySelector('[data-close]'); if (x) x.onclick = closeModal;
     if (onOpen) onOpen(el);
   }
-  function closeModal() { G.modalEnter = null; var el = $('modal'); if (el) el.hidden = true; document.body.classList.remove('book-open'); G.modal = false; hud(); refreshHotbar(); }
+  function closeModal() { G.modalEnter = null; G.menuOpen = false; var el = $('modal'); if (el) el.hidden = true; document.body.classList.remove('book-open'); G.modal = false; hud(); refreshHotbar(); }
 
   /* ---------- «Объясни» и «Спросить в Google» ---------- */
   function exHtml(t) {
@@ -961,7 +1004,6 @@
       '<div class="set-row"><div><b>Автоперевод</b><span>Каждый вопрос сразу показывается в переводе. Оригинал — по ссылке «оригинал» под вопросом.</span></div><label class="sw"><input type="checkbox" id="setAuto"' + (c2.autoTr ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Вопрос на весь экран</b><span>Сцена прячется, вопрос крупнее. После ответа видно удар. Клавиша F.</span></div><label class="sw"><input type="checkbox" id="setFocus"' + (S.focus ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Звуки</b><span>Удар, ошибка, сундук, победа.</span></div><label class="sw"><input type="checkbox" id="setSound"' + (c2.sound !== false ? ' checked' : '') + '><i></i></label></div>' +
-      '<div class="set-row"><div><b>Куда пойти</b><span>Выйти из комнаты или вернуться к выбору подземелья.</span></div><div class="row">' + (G.scene === 'room' ?'<button class="btn ghost" id="setFloor">К этажу</button>' : '') + '<button class="btn ghost" id="setPath">Путь C++</button><button class="btn ghost" id="setHall">Холл</button><a class="btn ghost" href="../index.html#/tester">В StudyPlay</a></div></div>' +
       '<div class="set-row"><div><b>Обучение</b><span>Снова показать подсказки для новичка.</span></div><button class="btn ghost" id="setTut">Показать снова</button></div>' +
       '<div class="set-row"><div><b>Сбросить прогресс</b><span>Удалит освоение, IQ, предметы и огонёк на этом устройстве.</span></div><button class="btn warn" id="setReset">Сбросить</button></div>' +
       '<p class="hint">Графика: «Monsters Creatures Fantasy» (Luiz Melo) и «DungeonTileset II» (0x72) — CC0. Герой, факелы и сцены нарисованы для StudyPlay.</p></div>';
@@ -971,14 +1013,9 @@
       $('setFocus').onchange = function () { S.focus = this.checked; D.persist(); };
       $('setSound').onchange = function () { c2.sound = this.checked; D.persist(); if (this.checked) sfx('ok'); };
       $('setTut').onclick = function () { S.tips = {}; D.persist(); this.textContent = 'Готово ✓'; };
-      var fl = G.room ? G.room.floor : S.at && S.at.f;
-      if ($('setFloor')) $('setFloor').onclick = function () { closeModal(); go('floor', fl); };
-      $('setPath').onclick = function () { closeModal(); go('path'); };
-      $('setHall').onclick = function () { closeModal(); go('hall'); };
       $('setReset').onclick = function () { if (this.dataset.sure) { localStorage.removeItem('sp-dungeon-v1'); location.reload(); } else { this.dataset.sure = 1; this.textContent = 'Точно? Нажми ещё раз'; } };
     });
   }
-  $('hudBag').onclick = openBag; $('hudSet').onclick = openSettings;
 
   /* =====================================================================
      ЭТАП 4: звуки, задания дня, обучение
@@ -1090,7 +1127,9 @@
     if ((e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') && G.scene === 'room' && G.room && G.room.mon) { e.preventDefault(); var fb = panel.querySelector('[data-ico="focus"]'); if (fb) fb.click(); else toggleFocus(); return; }
     if (e.key === 'Enter' && G.buttons && G.buttons.length) { e.preventDefault(); var b = G.buttons.filter(function (x) { return x.key === 'Enter'; })[0] || G.buttons[0]; b.fn(); return; }
     if (/^[1-9]$/.test(e.key)) { var opts = (G.scene === 'exam' ? screenEl : panel).querySelectorAll('.opt:not([disabled])'); var el = opts[+e.key - 1]; if (el) { e.preventDefault(); el.click(); } }
-    if (e.key === 'Escape' || e.key === 'Backspace') { if (G.scene !== 'exam' && (G.scene !== 'room' || !G.room || !G.room.mon)) $('hudBack').click(); }
+    /* Esc — меню-пауза (как в играх), Backspace — назад (не во время боя и экзамена) */
+    if (e.key === 'Escape') { e.preventDefault(); openMenu(); return; }
+    if (e.key === 'Backspace') { if (G.scene !== 'exam' && (G.scene !== 'room' || !G.room || !G.room.mon)) { e.preventDefault(); goBack(); } }
   });
 
   /* ---------- отрисовка ---------- */

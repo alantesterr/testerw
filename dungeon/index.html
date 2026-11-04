@@ -7,20 +7,18 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Подземелье знаний · StudyPlay</title>
-<link rel="stylesheet" href="css/game.css?v=27">
+<link rel="stylesheet" href="css/game.css?v=28">
 </head>
 <body>
 <div id="app">
   <header id="hud" hidden>
-    <a class="hud-sp" id="hudSP" href="../index.html#/tester" title="Вернуться в StudyPlay (прогресс сохранён)">← <span>В StudyPlay</span></a>
-    <button class="hud-btn" id="hudBack" aria-label="Назад">‹</button>
+    <button class="hud-back" id="hudBack"><span class="ar" aria-hidden="true">‹</span><span id="hudBackT">Назад</span></button>
     <div class="hud-hearts" id="hudHearts" aria-label="Сердечки"></div>
     <div class="hud-flame" id="hudFlame" title="Дней подряд"><span class="flame-ic" aria-hidden="true"></span><b id="hudStreak">0</b></div>
     <div class="hud-iq" title="IQ — награда за ответы"><span>IQ</span><b id="hudIq">0</b></div>
     <div class="hud-where" id="hudWhere"></div>
     <div class="hud-combo" id="hudCombo" hidden><span>КОМБО</span><b id="hudComboV">×1.0</b></div>
-    <button class="hud-btn" id="hudBag" title="Рюкзак" aria-label="Рюкзак"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 7V5a4 4 0 0 1 8 0v2" stroke="#d9b07a" stroke-width="2" fill="none"/><rect x="4" y="7" width="16" height="14" rx="4" fill="#8a5a2b"/><rect x="8" y="12" width="8" height="5" rx="1.5" fill="#c8922a"/></svg></button>
-    <button class="hud-btn" id="hudSet" title="Настройки" aria-label="Настройки"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#e8e4f8" stroke-width="2"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
+    <button class="hud-btn hud-menu" id="hudMenu" title="Меню (Esc)" aria-label="Меню"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#e8e4f8" stroke-width="2.6" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </header>
 
   <main id="stage">
@@ -35,9 +33,9 @@
   <section id="screen" hidden></section>
   <div id="loading"><div class="ld-flame"></div><div>Загружаем подземелье…</div></div>
 </div>
-<script src="js/data.js?v=27"></script>
-<script src="js/art.js?v=27"></script>
-<script src="js/items.js?v=27"></script>
-<script src="js/game.js?v=27"></script>
+<script src="js/data.js?v=28"></script>
+<script src="js/art.js?v=28"></script>
+<script src="js/items.js?v=28"></script>
+<script src="js/game.js?v=28"></script>
 </body>
 </html>

@@ -318,3 +318,21 @@ b.bad,.bad{color:#F7A3A3}
 .ex-text p{margin:5px 0}
 .ex-text .ex-li{margin-left:10px}
 .opt.sel{border-color:#7F77DD;background:#2a2540}
+/* ===== этап 2: вход с режимом, экзамен ===== */
+.seg{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}
+.seg label{display:flex;align-items:center;gap:6px;border:2px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;background:var(--card)}
+.seg label:has(input:checked){border-color:#7F77DD;background:#2a2540}
+.seg input{accent-color:#7F77DD}
+.exam-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.exam-top .grow{flex:1}
+.ex-time{font:800 22px/1 Consolas,monospace;color:#9FE1CB;background:var(--card);border:2px solid var(--line);border-radius:10px;padding:6px 10px}
+.ex-time.low{color:#F09595;border-color:#E24B4A}
+.ex-bar{height:8px;border-radius:6px;background:#2f2a44;overflow:hidden;margin-bottom:12px}
+.ex-bar i{display:block;height:100%;background:linear-gradient(90deg,#7F77DD,#AFA9EC)}
+.exam-card{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.exam-card .opts{display:grid;gap:8px}
+.exam-card .kb input{width:100%;font-size:18px;padding:10px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--text)}
+.ex-list{display:grid;gap:10px}
+.ex-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.ex-item p{margin:6px 0}
+.ex-item .bad{color:#F09595}

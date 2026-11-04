@@ -695,7 +695,7 @@
   function rightText(q) { return q.type === 'keyboard' ? '<code>' + esc(q.answer) + '</code>' : q.opts.filter(function (o) { return o.right; }).map(function (o) { return D.md(o.t); }).join(' · '); }
   function refLine(f) {
     if (!f) return '';
-    if (f.subj === 'arch') return 'Тема ' + f.n + ' по силлабусу: «' + f.title + '». Лекция у алтаря по этой теме — скоро.';
+    if (f.subj === 'arch' && !f.texts.length) return 'Тема ' + f.n + ' по силлабусу: «' + f.title + '». Лекция у алтаря по этой теме — скоро.';
     var sec = G.room && G.room.briefSec;
     return 'Лекция ' + f.n + ' «' + f.title + '»' + (sec ? ', раздел «' + sec.title + '»' : '') + ' — открой книжку (B).';
   }

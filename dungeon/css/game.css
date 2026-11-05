@@ -483,3 +483,11 @@ details.brief.was-err summary{color:#FAC775}
 .mode-card .mi{grid-row:1/3;font-size:30px;align-self:center;text-align:center}
 .mode-card b{font-size:18px}
 .mode-card span:last-child{font-size:13px;color:var(--mute);line-height:1.4}
+/* «Сначала вспомни»: варианты прячутся на 2 с; панель появляется плавно */
+.opts.recall{opacity:0;pointer-events:none;max-height:0;overflow:hidden}
+.opts{transition:opacity .35s}
+.recall-msg{color:#CECBF6;font-weight:700;margin:10px 0;animation:hotPulse 1.2s infinite}
+.recall-msg .linkbtn{background:none;border:0;color:var(--mute);text-decoration:underline dotted;font:inherit;font-weight:400;cursor:pointer;margin-left:6px}
+#panel>*{animation:panelIn .22s ease-out}
+@keyframes panelIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.high-note .btn{margin-left:8px}

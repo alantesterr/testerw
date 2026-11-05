@@ -316,23 +316,24 @@
   function enterPath() {
     var arch = !!D.subj.syll;
     show(false); where('Подземелье · ' + subjTitle());
-    var cur = S.at && (S.at.s || 'cpp') === D.subjId ? S.at.f : 1, h = '<div class="path-head"><h1>Подземелье: ' + esc(subjTitle()) + '</h1><span class="tag teal">все ' + (arch ? 'темы' : 'этажи') + ' открыты</span></div><p class="hallnote">' + (arch ? 'Этаж = тема силлабуса.' : 'Этаж = лекция.') + ' Цвет круга — насколько ты освоил тему: серый — не начинал, оранжевый — начал, зелёный — хорошо, золотой — отлично. Золотая медаль ✓ — пройдено начисто: все вопросы увидены и ни одной неисправленной ошибки.</p>' + tipHtml('path') + dailyHtml();
+    var cur = S.at && (S.at.s || 'cpp') === D.subjId ? S.at.f : 1, h = '<div class="path-head"><h1>Подземелье: ' + esc(subjTitle()) + '</h1><span class="tag teal">все ' + (arch ? 'темы' : 'этажи') + ' открыты</span></div><p class="hallnote">' + (D.subj.drill ? 'Дверь = уровень.' : arch ? 'Дверь = тема силлабуса.' : 'Дверь = лекция.') + ' Нажми на дверь, чтобы войти. Полоска — сколько освоено, золотая медаль ✓ — пройдено начисто.</p>';
 /* повторение РК: самые слабые вопросы всех тем РК — в одной комнате */    if (!D.subj.drill) h += '<div class="rep-row"><span>🔁 Повторение — ' + REP_N + ' самых слабых вопросов в одной комнате:</span>' + (D.subj.syll ? [1, 2] : [0]).filter(function (k) { return repFloors(k).length; }).map(function (k) { var nb = repWeak(k); return '<button class="btn ' + (nb ? 'primary' : 'ghost') + '" data-rep="' + k + '">' + (k ? 'РК' + k : 'Все темы') + (nb ? ' · ошибок ' + nb : '') + '</button>'; }).join('') + '</div>';
     var rk = modeRk(); if (rk) h += '<div class="wave-msg">Режим РК' + rk + ': только темы этого рубежного контроля (' + esc(rangeText(modeFloors())) + '). <button class="btn ghost" data-allmode>Показать все темы</button></div>';
     (D.subj.units || (arch ? UNITS_ARCH : UNITS)).forEach(function (u, ui) {
       if (!D.floors.some(function (f) { return f.n >= u[0] && f.n <= u[1] && (!rk || rkOf(f) === rk); })) return;
-      h += '<div class="unit u' + (ui % 4 + 1) + '"><small>' + esc(u[2]) + '</small><b>' + esc(u[3]) + '</b></div><div class="trail">';
+      h += '<div class="unit u' + (ui % 4 + 1) + '"><small>' + esc(u[2]) + '</small><b>' + esc(u[3]) + '</b></div><div class="doors">';
       D.floors.filter(function (f) { return f.n >= u[0] && f.n <= u[1] && (!rk || rkOf(f) === rk); }).forEach(function (f) {
         var m = floorMastery(f), st = D.stats(poolIds(f)), cls = m >= 85 ? 'm3' : m >= 50 ? 'm2' : m > 0 ? 'm1' : '';
-        h += '<button class="node' + (f.n === cur ? ' cur' : '') + (st.clean ? ' clean' : '') + '" data-f="' + f.n + '"><span class="disc ' + cls + '">' + (f.final ? '★' : f.lab ? 'Л' : f.n) + (st.clean ? '<i class="medal">✓</i>' : '') + '</span><span class="info"><b>' + esc(fname(f)) + (st.clean ? ' <span class="tag gold">пройдено начисто</span>' : '') + '</b><span>' + esc(f.title) + '</span><div class="bar"><i style="width:' + m + '%"></i></div><span>освоено ' + m + '% · ' + statLine(st) + '</span></span></button>';
+        /* тема = дверь: номер на табличке, название, полоска освоения, ✓ за «начисто» */
+        h += '<button class="tdoor' + (f.n === cur ? ' cur' : '') + (st.clean ? ' clean' : '') + '" data-f="' + f.n + '" title="' + esc(f.title) + '"><span class="td-arch"><span class="td-plate">' + (f.final ? '★' : f.lab ? 'Л' : f.drill ? f.title : f.n) + '</span>' + (st.clean ? '<i class="td-medal">✓</i>' : '') + '<span class="td-knob"></span></span><b>' + esc(f.drill ? (f.sub || f.title) : f.title) + '</b><span class="td-bar"><i style="width:' + m + '%"></i></span><small>освоено ' + m + '%' + (st.bad ? ' · <b class="bad">ошибок ' + st.bad + '</b>' : '') + '</small></button>';
       });
       h += '</div>';
     });
     /* темы силлабуса без вопросов — серые «скоро» */
     var later = (D.subj.topics || []).filter(function (t) { return !t.file && (!rk || t.rk === rk); });
     if (later.length) {
-      h += '<div class="unit u4"><small>Скоро</small><b>Темы появятся после лекций и лабораторных</b></div><div class="trail">';
-      later.forEach(function (t) { h += '<div class="node soon"><span class="disc">' + t.n + '</span><span class="info"><b>Тема ' + t.n + ' · скоро</b><span>' + esc(t.title) + '</span></span></div>'; });
+      h += '<div class="unit u4"><small>Скоро</small><b>Темы появятся после лекций и лабораторных</b></div><div class="doors">';
+      later.forEach(function (t) { h += '<div class="tdoor soon"><span class="td-arch"><span class="td-plate">' + t.n + '</span><span class="td-lock">🔒</span></span><b>' + esc(t.title) + '</b><small>скоро</small></div>'; });
       h += '</div>';
     }
     screenEl.innerHTML = h;
@@ -340,7 +341,7 @@
     var am = screenEl.querySelector('[data-allmode]'); if (am) am.onclick = function () { S.mode = null; D.persist(); go('path'); };
 screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = function () { buildRep(+b.getAttribute('data-rep')); }; });
     screenEl.querySelectorAll('[data-f]').forEach(function (b) { b.onclick = function () { go('floor', +b.getAttribute('data-f')); }; });
-    var curEl = screenEl.querySelector('.node.cur'); if (curEl) setTimeout(function () { curEl.scrollIntoView({ block: 'center' }); }, 30);
+    var curEl = screenEl.querySelector('.tdoor.cur'); if (curEl) setTimeout(function () { curEl.scrollIntoView({ block: 'center' }); }, 30);
   }
 
   /* ---------- ЭТАЖ: комнаты ---------- */

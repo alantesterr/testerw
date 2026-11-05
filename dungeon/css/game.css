@@ -409,3 +409,20 @@ b.bad,.bad{color:#F7A3A3}
 .drill-leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);margin-bottom:8px}
 .drill-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;background:#2a2540;vertical-align:-1px}
 .qimg{margin:8px 0}.qimg img{max-width:100%;max-height:260px;border-radius:8px;background:#fff;display:block}
+
+/* ---------- темы — двери (как двери подземелья) ---------- */
+.doors{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin:6px 0 18px}
+.tdoor{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 8px 12px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;text-align:center;cursor:pointer;transition:transform .12s,border-color .12s}
+.tdoor:hover{transform:translateY(-2px);border-color:var(--line2)}
+.tdoor.cur{border-color:#EF9F27;box-shadow:0 0 0 2px rgba(239,159,39,.35)}
+.td-arch{position:relative;width:76px;height:96px;border-radius:38px 38px 4px 4px;border:4px solid #3a2a1c;background:repeating-linear-gradient(90deg,#7a4a26 0 17px,#5e3a1e 17px 19px);box-shadow:inset 0 -10px 0 rgba(0,0,0,.25),0 4px 0 #1a120c}
+.tdoor.clean .td-arch{border-color:#c8922a;box-shadow:inset 0 -10px 0 rgba(0,0,0,.25),0 0 12px rgba(250,199,117,.45)}
+.td-plate{position:absolute;top:16px;left:50%;transform:translateX(-50%);min-width:30px;padding:2px 6px;border-radius:6px;background:#e9dcc0;color:#2a1c10;border:2px solid #3a2a1c;font-weight:800;font-size:15px;white-space:nowrap}
+.td-knob{position:absolute;right:10px;top:54px;width:7px;height:7px;border-radius:50%;background:#ffd25a}
+.td-medal{position:absolute;bottom:-8px;right:-10px;width:26px;height:26px;border-radius:50%;background:#c8922a;color:#fff;font-style:normal;font-weight:800;line-height:26px;border:2px solid #fff3c4}
+.td-lock{position:absolute;top:50px;left:50%;transform:translateX(-50%);font-size:18px}
+.tdoor>b{font-size:13px;line-height:1.25;min-height:2.5em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tdoor small{font-size:11.5px;color:var(--mute)}
+.td-bar{width:100%;height:6px;border-radius:4px;background:#2a2540;overflow:hidden}.td-bar i{display:block;height:100%;background:#5DCAA5}
+.tdoor.soon{opacity:.5;cursor:default}.tdoor.soon .td-arch{filter:grayscale(1)}
+@media (max-width:420px){.doors{grid-template-columns:repeat(2,1fr);gap:10px}.td-arch{width:64px;height:82px}}

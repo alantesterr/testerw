@@ -55,6 +55,131 @@
   function fname(f) { return f.rep || f.drill || f.arena ? f.title : f.lab ? 'Лабы: EWB' : f.syll ? 'Тема ' + f.n : f.final ? 'Финальный этаж' : 'Этаж ' + f.n; }
   /* тема по номеру (у лаб EWB номер 16, поэтому не по индексу) */
   function floorBy(n) { if (n === 'arena' && G.arena) return G.arena; if (n === 'rep' && G.rep) return G.rep; if (n === 'exam' && G.exf) return G.exf; return D.floors.filter(function (f) { return f.n === +n; })[0] || D.floors[0]; }
+  /* ---------- ПЕЩЕРА ТЕМЫ («Тропа знаний») ----------
+     Тема = пещера вниз: комнаты по порядку, внизу босс. Комнату не выбираешь — входишь в ту, где остановился.
+     Все вопросы темы при каждом проходе случайно раскиданы по комнатам (за проход попадутся все).
+     Пройденные комнаты горят золотом; можно вернуться в любую открытую; «Возродить монстров» — проход заново
+     (тогда монстры спрашивают и «наоборот»). Состояние прохода: S.runs[f.id]. */
+  function caveOn(f) { return !!f && !f.drill && !f.rep && !f.exam && !f.arena && typeof f.n === 'number'; }
+  function caveN(f) { return f.rooms.filter(function (r) { return !r.boss; }).length; }
+  function caveRun(f, reset) {
+    S.runs = S.runs || {};
+    var run = S.runs[f.id], ids = poolIds(f);
+    if (!run || reset || run.size !== ids.length) {
+      var order = ids.slice(); for (var i = order.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = order[i]; order[i] = order[j]; order[j] = t; }
+      run = S.runs[f.id] = { order: order, size: ids.length, at: 0, cleared: [], seed: Math.floor(Math.random() * 1e6), revived: run ? (run.revived || 0) + (reset ? 1 : 0) : 0 };
+      G.cavePrev = {}; D.persist();
+    }
+    return run;
+  }
+  function runQs(f, k) { var run = caveRun(f), n = caveN(f), L = run.order.length; return run.order.slice(Math.floor(k * L / n), Math.floor((k + 1) * L / n)); }
+  function caveOpen(f, k) { var run = caveRun(f); return k <= run.at || run.cleared[k] || (k > 0 && run.cleared[k - 1]); }
+  /* какие монстры сидят в комнате (для картинки пещеры) — тот же расчёт, что при входе в комнату */
+  function cavePreview(f, k) {
+    var run = caveRun(f), key = f.id + ':' + run.seed + ':' + k; G.cavePrev = G.cavePrev || {};
+    if (!G.cavePrev[key]) {
+      var boss = k >= caveN(f), items = boss ? orderIds(poolIds(f)).slice(0, 10 + tierOf(f)).map(qi) : runQs(f, k).map(qi);
+      G.cavePrev[key] = makeMons(f, items, boss, run.seed + k * 17).map(function (m) { return m.key; });
+    }
+    return G.cavePrev[key];
+  }
+  /* рисунок пещеры: комнаты-диорамы зигзагом вниз, монстры в каждой, внизу логово босса в лаве */
+  function drawCave(c, W, H, f, t, hero) {
+    /* комнаты идут зигзагом в две колонки и по высоте заходят друг на друга — так они крупнее и монстров видно */
+    var run = caveRun(f), n = caveN(f), top = 26, bossH = Math.min(64, H * 0.22), step = (H - top - bossH - 14) / Math.max(1, n - 1 + 1.75), roomH = Math.min(step * 1.75, 70), rowH = step, bw = W * 0.45, rects = [];
+    c.fillStyle = '#100c16'; c.fillRect(0, 0, W, H);
+    var th = A.THEMES[themeOf(f)] || {};
+    c.fillStyle = '#FAC775'; c.font = 'bold 11px system-ui, sans-serif'; c.textBaseline = 'middle';
+    c.fillText(fname(f) + ' · ' + (th.name || ''), 10, 13);
+    c.textAlign = 'right'; c.fillText(run.cleared[n] ? 'тема пройдена ✓' : 'до босса: ' + Math.max(0, n - run.cleared.slice(0, n).filter(Boolean).length) + ' ' + plural(Math.max(0, n - run.cleared.slice(0, n).filter(Boolean).length), 'комната', 'комнаты', 'комнат'), W - 10, 13); c.textAlign = 'left';
+    for (var k = 0; k <= n; k++) {
+      var boss = k === n, x = boss ? W * 0.06 : (k % 2 ? W * 0.51 : W * 0.04), y = boss ? H - bossH - 6 : top + k * rowH, w = boss ? W * 0.88 : bw, h = boss ? bossH : roomH;
+      rects.push({ k: k, x: x, y: y, w: w, h: h });
+    }
+    /* коридоры */
+    c.strokeStyle = '#2e2638'; c.lineWidth = 6;
+    for (var k2 = 0; k2 < n; k2++) { var a = rects[k2], b = rects[k2 + 1]; c.beginPath(); c.moveTo(a.x + a.w / 2, a.y + a.h); c.lineTo(b.x + b.w / 2, b.y); c.stroke(); }
+    rects.forEach(function (r) {
+      var boss = r.k === n, done = !!run.cleared[r.k], cur = hero && hero.k === r.k, open = caveOpen(f, r.k);
+      /* комната: кирпичная стена, пол, факелы */
+      c.fillStyle = boss ? '#2a0a10' : '#2a2236'; c.fillRect(r.x, r.y, r.w, r.h);
+      if (!boss) { c.fillStyle = '#3a3048'; for (var by = r.y + 2; by < r.y + r.h - 7; by += 6) for (var bx = r.x + ((by - r.y) % 12 ? 0 : 6); bx < r.x + r.w - 4; bx += 12) c.fillRect(bx, by, 10, 4); }
+      c.fillStyle = boss ? '#3a1014' : '#4a3d32'; c.fillRect(r.x, r.y + r.h - 6, r.w, 6);
+      if (boss) { var la = 0.6 + 0.3 * Math.sin(t / 250); c.fillStyle = 'rgba(255,90,26,' + la.toFixed(2) + ')'; c.fillRect(r.x, r.y + r.h - 5, r.w, 5); }
+      if (!boss) { var fa = 0.7 + 0.3 * Math.sin(t / 180 + r.k); c.fillStyle = 'rgba(255,184,74,' + (done ? fa : 0.35).toFixed(2) + ')'; c.fillRect(r.x + 4, r.y + 3, 3, 5); c.fillRect(r.x + r.w - 7, r.y + 3, 3, 5); }
+      /* монстры этой комнаты */
+      var keys = cavePreview(f, r.k), mh = boss ? r.h * 0.95 : r.h * 0.62, step = (r.w - 16) / Math.max(1, keys.length);
+      keys.forEach(function (key, i) {
+        var M = A.MON[key]; if (!M) return;
+        var big = mh / Math.max(8, A.monHeight(key) * (M.boss ? 1 : 1)), mx = boss ? r.x + r.w * 0.62 + (i - keys.length + 1) * 24 : r.x + 12 + step * (i + 0.5) + (cur ? 10 : 0), my = r.y + r.h - 4;
+        A.drawMonster(c, key, 'idle', t + i * 200, mx, my, done ? 0.3 : open || boss ? 1 : 0.8, Math.min(1, big));
+      });
+      if (boss) { c.fillStyle = '#F09595'; c.font = 'bold 10px system-ui, sans-serif'; c.fillText('БОСС: ' + (A.MON[keys[keys.length - 1]] || {}).name, r.x + 8, r.y + 10); }
+      /* рамка: пройдено — золото с ✓, ты здесь — бирюза */
+      c.lineWidth = 2; c.strokeStyle = done ? '#FAC775' : cur ? '#5DCAA5' : boss ? '#E24B4A' : '#4a3d5c'; c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+      if (done) { c.fillStyle = 'rgba(250,199,117,.14)'; c.fillRect(r.x, r.y, r.w, r.h); c.fillStyle = '#FAC775'; c.font = 'bold 11px system-ui, sans-serif'; c.fillText('✓', r.x + r.w - 14, r.y + 10); }
+      if (!open && !boss && !done) { c.fillStyle = 'rgba(8,6,12,.12)'; c.fillRect(r.x, r.y, r.w, r.h); }
+    });
+    /* герой */
+    if (hero) {
+      var ra = rects[hero.from != null ? hero.from : hero.k], rb = rects[hero.k], p = hero.p == null ? 1 : hero.p;
+      var hx = (ra.x + 16) + ((rb.x + 16) - (ra.x + 16)) * p, hy = (ra.y + ra.h - 4) + ((rb.y + rb.h - 4) - (ra.y + ra.h - 4)) * p;
+      A.drawHero(c, p < 1 ? 'walk' : 'idle', Math.floor(t / (p < 1 ? 110 : 450)), hx, hy, Math.max(0.35, (roomH * 0.55) / 42));
+    }
+    return rects;
+  }
+  /* переход: на весь экран сцены пещера, герой идёт из комнаты from в комнату to; клик/Enter — пропустить */
+  function caveTransition(f, from, to, done, intro) {
+    show(true); if (intro) setPanel('<p class="msg">Спускаемся в пещеру… <span class="hint">(нажми, чтобы пропустить)</span></p>');
+    var sw = $('sceneWrap'), cv = document.createElement('canvas'), W = 480, H = 270, dur = fast() ? 700 : intro ? 2400 : 1600, t0 = performance.now(), fin = false;
+    cv.width = W; cv.height = H; cv.className = 'cave-ov'; sw.appendChild(cv); var c = cv.getContext('2d'); c.imageSmoothingEnabled = false;
+    var end = function () { if (fin) return; fin = true; G.caveSkip = null; cv.classList.add('out'); setTimeout(function () { cv.remove(); }, 250); done(); };
+    G.caveSkip = end; cv.onclick = end;
+    (function frame(t) {
+      if (fin) return;
+      var k = Math.min(1, (t - t0) / dur), p = intro ? (k < 0.35 ? 0 : Math.min(1, (k - 0.35) / 0.5)) : Math.min(1, k / 0.8);
+      drawCave(c, W, H, f, t, { k: to, from: from, p: p });
+      if (k >= 1) return setTimeout(end, 150);
+      requestAnimationFrame(frame);
+    })(performance.now());
+  }
+  /* карта пещеры: нажми на открытую комнату — герой пойдёт туда; «Возродить монстров» — проход заново */
+  function openCaveMap() {
+    var R = G.room, f = R && R.f; if (!f || !caveOn(f)) return;
+    var run = caveRun(f);
+    var h = '<header class="md-top"><b>🗺 Пещера · ' + esc(fname(f)) + '</b><span class="grow"></span><button class="btn ghost" data-close>✕</button></header><div class="md-body">' +
+      '<canvas id="caveMap" width="480" height="300" class="cave-map"></canvas><p class="hint">Нажми на открытую комнату, чтобы перейти. Пройденные горят золотом.</p>' +
+      '<div class="row"><button class="btn ghost" data-revive>⟲ Возродить монстров</button><button class="btn primary" data-close>Назад в бой</button></div></div>';
+    modal(h, function (el) {
+      var cv = el.querySelector('#caveMap'), c = cv.getContext('2d'), rects = [], alive = true; c.imageSmoothingEnabled = false;
+      (function frame(t) { if (!alive || !document.body.contains(cv)) return; rects = drawCave(c, 480, 300, f, t, { k: R.k }); requestAnimationFrame(frame); })(performance.now());
+      cv.onclick = function (e) {
+        var b = cv.getBoundingClientRect(), x = (e.clientX - b.left) / b.width * 480, y = (e.clientY - b.top) / b.height * 300;
+        var r = rects.filter(function (q) { return x >= q.x && x <= q.x + q.w && y >= q.y && y <= q.y + q.h; })[0];
+        if (!r || r.k === R.k) return; if (!caveOpen(f, r.k)) return toast('Сначала пройди комнаты выше', '#F09595');
+        alive = false; closeModal(); caveTransition(f, R.k, r.k, function () { go('room', { f: f.n, k: r.k }); });
+      };
+      el.querySelector('[data-revive]').onclick = function () { alive = false; closeModal(); reviveCave(f); };
+      el.querySelectorAll('[data-close]').forEach(function (b) { b.onclick = function () { alive = false; closeModal(); }; });
+    });
+  }
+  function reviveCave(f) {
+    caveRun(f, true); toast('Монстры возродились! Теперь они спрашивают и «наоборот» — закрепляем.', '#FAC775');
+    caveTransition(f, 0, 0, function () { go('room', { f: f.n, k: 0 }); }, true);
+  }
+  /* тема пройдена: праздник и выбор — возродить монстров, следующая тема или карта */
+  function caveDone(f) {
+    show(false); where(fname(f) + ' · пройдено');
+    var st = D.stats(poolIds(f)), m = floorMastery(f), next = D.floors.filter(function (x) { return x.n > f.n; })[0];
+    screenEl.innerHTML = '<div class="cave-done"><div class="confetti"></div><h1>🏆 ' + esc(fname(f)) + ' пройдена!</h1><p class="msg">' + esc(f.title) + '</p>' +
+      '<p class="msg">Освоено <b>' + m + '%</b> · вопросов увидено ' + st.seen + ' из ' + st.total + (st.bad ? ' · ошибок к повтору: <b class="bad">' + st.bad + '</b>' : '') + '</p>' +
+      '<div class="row" style="margin-top:14px">' + (next ? '<button class="btn primary" data-next>▶ ' + esc(fname(next)) + '<kbd>Enter</kbd></button>' : '') +
+      '<button class="btn ' + (next ? 'ghost' : 'primary') + '" data-revive>⟲ Возродить монстров (закрепить)</button><button class="btn ghost" data-map>К карте тем</button></div></div>';
+    var nb = screenEl.querySelector('[data-next]'); if (nb) nb.onclick = function () { go('floor', next.n); };
+    screenEl.querySelector('[data-revive]').onclick = function () { reviveCave(f); };
+    screenEl.querySelector('[data-map]').onclick = function () { go('path'); };
+    G.buttons = [btn('Дальше', 'primary', 'Enter', next ? function () { go('floor', next.n); } : function () { reviveCave(f); })];
+  }
   /* ---------- АРЕНА ПОДГОТОВКИ: без карты и комнат — монстры идут сами, по 10 вопросов ----------
      Вопросы — «зубрёжкой» (как у ИКТ): новые часто, ошибки чаще всего (не сразу), выученные почти не попадаются.
      Набор: предмет и РК1 / РК2 / всё (у ИКТ — уровни). Каждые 10 вопросов — итог и «Ещё 10» (сам через 3 с). */
@@ -125,7 +250,7 @@
   var BACK = { house: 'sp', subject: 'house', exam: 'house', hall: 'house', path: 'hall', floor: 'path', room: 'floor' };
   function backLabel(to) { return { sp: 'StudyPlay', house: 'Домик', hall: 'Зал', path: D.subj && D.subj.drill ? 'Уровни' : D.subj && D.subj.syll ? 'Темы' : 'Этажи', floor: 'Комнаты', level: 'Уровень' }[to] || 'Назад'; }
   function updBack() {
-    var to = BACK[G.scene], b = $('hudBack'); if (to === 'floor' && G.room && G.room.f.rep) to = 'path'; if (to === 'floor' && G.room && (G.room.f.exam || G.room.f.arena)) to = 'house'; if (to === 'floor' && G.room && G.room.f.drill) to = 'level';
+    var to = BACK[G.scene], b = $('hudBack'); if (to === 'floor' && G.room && (G.room.f.rep || caveOn(G.room.f))) to = 'path'; if (to === 'floor' && G.room && (G.room.f.exam || G.room.f.arena)) to = 'house'; if (to === 'floor' && G.room && G.room.f.drill) to = 'level';
     $('hudBackT').textContent = backLabel(to);
     b.classList.toggle('exit', to === 'sp');
     b.title = to === 'sp' ? 'Выйти в StudyPlay (прогресс сохранён)' : 'Назад: ' + backLabel(to) + ' (Backspace)';
@@ -145,12 +270,13 @@
     if (G.scene === 'exam' && G.exam && !G.exam.done) return confirmBox('Прервать экзамен?', 'Результат не засчитается. Начать заново можно в любой момент.', 'Прервать', function () { go('house'); });
     if (G.scene === 'room' && G.room && G.room.f.exam) return confirmBox('Прервать экзамен?', 'Результат не засчитается. Начать заново можно кнопкой «🎓 Экзамен» в домике.', 'Прервать', function () { G.exam = null; go('house'); });
     if (G.scene === 'room' && G.room && G.room.mon && !G.room.mon.dead) return confirmBox('Выйти из комнаты?', 'Ответы уже сохранены. Комнату можно пройти ещё раз.', 'Выйти', goFloorBack);
-    if (to === 'floor' && G.room && G.room.f.arena) go('house'); else if (to === 'floor' && G.room && G.room.f.rep) go('path'); else if (to === 'floor') goFloorBack(); else if (to) go(to);
+    if (to === 'floor' && G.room && G.room.f.arena) go('house'); else if (to === 'floor' && G.room && (G.room.f.rep || caveOn(G.room.f))) go('path'); else if (to === 'floor') goFloorBack(); else if (to) go(to);
   }
   $('hudBack').onclick = goBack;
   function openMenu() {
     var inRoom = G.scene === 'room' && G.room, mapOk = D.subj && G.scene !== 'path', items = [];
     items.push(['play', '▶', 'Продолжить', 'Esc', closeModal]);
+    if (inRoom && caveOn(G.room.f)) items.push(['cave', '🗺', 'Карта пещеры', 'перейти в другую комнату, возродить монстров', function () { closeModal(); openCaveMap(); }]);
     if (inRoom) items.push(['room', '↩', 'Выйти из комнаты', 'к комнатам темы', function () { closeModal(); goBack(); }]);
     if (mapOk) items.push(['map', '🗺', D.subj.drill ? 'Уровни ИКТ' : D.subj.syll ? 'Карта тем' : 'Карта этажей', subjTitle(), function () { closeModal(); go('path'); }]);
     if (G.scene !== 'house') items.push(['house', '🏠', 'Домик', 'предметы, экзамен, задания дня', function () { closeModal(); go('house'); }]);
@@ -476,6 +602,12 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   function enterFloor(n) {
     var f = floorBy(n || 1);
     if (f.drill) return enterDrill(f);
+    if (caveOn(f)) {   /* тема = пещера: сразу в комнату, где остановился (с картинкой спуска) */
+      var run = caveRun(f);
+      if (run.cleared[caveN(f)]) return caveDone(f);
+      S.at = { s: D.subjId, f: f.n, k: run.at }; D.persist();
+      return caveTransition(f, run.at, run.at, function () { go('room', { f: f.n, k: run.at }); }, true);
+    }
     show(false); where(fname(f) + ' · ' + f.title);
     var m = floorMastery(f), fst = D.stats(poolIds(f)), bad = D.badIds(f).length;
     var nextK = f.rooms.findIndex(function (r) { return !roomInfo(f, r.k).done || !D.stats(r.qs).clean; });
@@ -530,9 +662,9 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
       out.push(mkMon('twin', pair, { twin: true }));
     }
     /* Софист (только предметы по силлабусу): 2 вопроса «наоборот» — дан ответ, выбери вопрос */
-    if (f.syll && qs.length >= 6) {
-      var rev = qs.filter(function (x) { return revOk(f, f.byId[x.id]); }).slice(0, 2);
-      if (rev.length === 2) {
+    if ((f.arena || (caveOn(f) && caveRun(f).revived > 0)) && qs.length >= 4) {   /* Софист — только у возрождённых монстров и в Хаос-забеге */
+      var rev = qs.filter(function (x) { return revOk(f, f.byId[x.id]); }).slice(0, f.arena ? 2 : 3);
+      if (rev.length >= 2) {
         qs = qs.filter(function (x) { return rev.indexOf(x) < 0; });
         out.push(mkMon('sophist', rev.map(function (x) { return { t: 'r', id: x.id }; }), { sophist: true }));
       }
@@ -597,8 +729,8 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
       objs = [mkMon('overlord', items, { boss: true, strong: true, exam: true }), { type: 'exit' }];
       placeObjs(objs); objs[0].x = 330; return objs;
     }
-    if (room && !room.boss && room.secs && room.secs.length) objs.push({ type: 'altar' });
-    if (mode !== 'clean') objs = objs.concat(makeMons(f, items, room && room.boss, (f.rep ? 7 : f.arena ? 11 + (f.batch || 0) : f.n) * 131 + (isErr ? 97 : k) * 17 + S.ticks));
+    if (room && !room.boss && room.secs && room.secs.length && !caveOn(f)) objs.push({ type: 'altar' });   /* в пещере алтаря нет: книга — ссылкой под вопросом */
+    if (mode !== 'clean') objs = objs.concat(makeMons(f, items, room && room.boss, caveOn(f) && !isErr ? caveRun(f).seed + k * 17 : (f.rep ? 7 : f.arena ? 11 + (f.batch || 0) : f.n) * 131 + (isErr ? 97 : k) * 17 + S.ticks));
     if (room && !room.boss) objs.push({ type: 'chest' });
     objs.push({ type: 'exit' });
     placeObjs(objs);
@@ -610,11 +742,13 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   function enterRoom(a) {
     var f = floorBy(a.f), isErr = a.k === 'err', room = isErr ? errRoom(f) : f.rooms[a.k];
     if ((f.drill || f.arena) && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) });   /* ИКТ: 10 вопросов по весам — новые и ошибки чаще, выученные почти никогда */
+    if (caveOn(f) && !isErr) { var crun = caveRun(f); if (!room.boss) room = Object.assign({}, room, { qs: runQs(f, a.k), sec: null, secs: [] }); if (!crun.cleared[a.k]) crun.at = a.k; S.at = { s: D.subjId, f: f.n, k: a.k }; D.persist(); }   /* пещера: вопросы темы случайно по комнатам */
     show(true); where((f.final ? 'Финал' : fname(f)) + ' · ' + (A.THEMES[themeOf(f)] || {}).name + ' · ' + (isErr ? 'Зал ошибок' : f.drill ? 'Тренировка' : room.boss ? 'Босс' : 'Комната ' + (a.k + 1)));
     if (f.arena) where('⚔ ' + arenaLine(f));
+    if (caveOn(f) && !isErr) { var cn = caveN(f), cl = caveRun(f).cleared.slice(0, cn).filter(Boolean).length; where(fname(f) + ' · ' + (a.k >= cn ? 'логово босса' : 'комната ' + (a.k + 1) + ' из ' + cn + ' · до босса ' + (cn - cl))); }
     if (!isErr && !f.rep && !f.exam && !f.arena) { S.at = { s: D.subjId, f: f.n, k: a.k }; D.persist(); }
     var info = isErr ? { done: false } : roomInfo(f, a.k), st = D.stats(room.qs);
-    var mode = isErr ? 'err' : (a.again || !info.done || !st.clean || f.drill) ? 'run' : 'clean';
+    var mode = isErr ? 'err' : caveOn(f) ? (caveRun(f).cleared[a.k] ? 'clean' : 'run') : (a.again || !info.done || !st.clean || f.drill) ? 'run' : 'clean';
     var items = mode === 'clean' ? [] : roomItems(f, room, isErr);
     G.room = { floor: f.n, f: f, k: a.k, room: room, mode: mode, items: items, objs: buildRoom(f, a.k, mode, items), idx: -1, combo: 1, recent: [], turns: 0, right: 0, wrong: 0, iq: 0, briefOpen: false, mon: null, m0: D.mastery(room.qs), mistakes: [], problems: [], cheats: [], errs: {}, errItem: {}, fixed: 0, st0: st };
     G.hero.x = 36; G.hero.dir = 1;
@@ -687,7 +821,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
       if (autoOn()) autoGo(nextObj());
       return;
     }
-    approach(nextObj());
+    approach(autoOn() ? nextObjAuto() : nextObj());   /* автопоход: к монстру/сундуку/выходу, алтарь — только по желанию */
   }
   function roomSummary() {
     var R = G.room, mons = R.objs.filter(function (o) { return o.type === 'mon' && !o.dead; }).length, chest = R.objs.some(function (o) { return o.type === 'chest' && !o.open; });
@@ -744,6 +878,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     var sec = R.room.sec;
     var st = D.stats(R.room.qs), nm = R.room.errHall ? 'Зал ошибок' : R.room.boss ? 'Босс этажа' : 'Комната ' + (R.k + 1);
     var bs = [btn('Идти дальше', 'primary', 'Enter', function () { approach(i); })];
+    if (caveOn(R.f)) bs.push(btn('🗺 Пещера', 'ghost', null, openCaveMap));
     if (R.mode === 'clean' && o.type === 'exit') bs.push(btn('Пройти ещё раз', 'ghost', null, function () { go('room', { f: R.f.n, k: R.k, again: 1 }); }));
     setPanel('<div class="row"><span class="tag">' + esc(nm) + '</span>' + (sec ? '<span class="tag teal">' + esc(sec.title) + '</span>' : '') + (st.clean ? '<span class="tag gold">чисто ✓</span>' : '') + '</div><p class="msg">' + esc(roomSummary()) + '. Дальше — ' + esc(what) + '.</p><p class="hint">Вопросы ' + (R.room.errHall ? 'зала' : 'комнаты') + ': ' + statLine(st) + '</p>', bs);
     if (autoOn() && R.mode !== 'clean' && !(o.type === 'altar')) autoGo(i);
@@ -1143,6 +1278,13 @@ if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает д
     focusOn(false);
     var R = G.room, f = R.f, isErr = R.mode === 'err', boss = R.room.boss, info = isErr ? {} : roomInfo(f, R.k), first = !isErr && !info.done;
     if (!isErr) { info.done = true; S.rooms[rkey(f, R.k)] = info; }
+    if (caveOn(f) && !isErr) {   /* пещера: без экрана итогов — сразу картинка спуска в следующую комнату; после босса — праздник */
+      var run = caveRun(f), n = caveN(f); run.cleared[R.k] = true; S.iq += 3; D.persist(); hud(); sfx("ok");
+      if (R.k >= n) { run.at = n; D.persist(); return caveDone(f); }
+      var nk = R.k + 1; while (nk < n && run.cleared[nk]) nk++;
+      run.at = nk; D.persist();
+      return caveTransition(f, R.k, nk, function () { go("room", { f: f.n, k: nk }); });
+    }
     if (isErr) R.room.qs = D.badIds(f);
     var st = D.stats(R.room.qs);
     sfx(st.clean ? 'win' : 'ok');
@@ -1572,6 +1714,7 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
 
   /* ---------- клавиатура ---------- */
   document.addEventListener('keydown', function (e) {
+    if (G.caveSkip && (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape')) { e.preventDefault(); G.caveSkip(); return; }   /* пропустить картинку спуска */
     if (BK) { if (e.key === 'Escape') { e.preventDefault(); closeBook(); } else if (e.key === 'ArrowRight') flip(1); else if (e.key === 'ArrowLeft') flip(-1); else if (e.key === 'Enter' && e.target.tagName !== 'SELECT') { e.preventDefault(); closeBook(); } return; }
     if (G.modal) { if (e.key === 'Escape') closeModal(); else if (e.key === 'Enter' && G.modalEnter && e.target.tagName !== 'BUTTON') { e.preventDefault(); G.modalEnter(); } return; }
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
@@ -1582,6 +1725,7 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
       var hk = Object.keys(X.ITEMS).filter(function (k) { return X.ITEMS[k].key && X.ITEMS[k].key.toLowerCase() === lk; })[0];
       if (hk) { e.preventDefault(); useItem(hk); return; }
     }
+    if ((e.key === 'm' || e.key === 'M' || e.key === 'ь' || e.key === 'Ь') && G.scene === 'room' && G.room && caveOn(G.room.f)) { e.preventDefault(); openCaveMap(); return; }
     if ((e.key === 'b' || e.key === 'B' || e.key === 'и' || e.key === 'И') && G.scene === 'room') { e.preventDefault(); openBookRoom(); return; }
     if (e.key === 'Enter' && G.buttons && G.buttons.length) { e.preventDefault(); var b = G.buttons.filter(function (x) { return x.key === 'Enter'; })[0] || G.buttons[0]; b.fn(); return; }
     if (/^[1-9]$/.test(e.key)) { var opts = (G.scene === 'exam' ? screenEl : panel).querySelectorAll('.opt:not([disabled])'); var el = opts[+e.key - 1]; if (el) { e.preventDefault(); el.click(); } }

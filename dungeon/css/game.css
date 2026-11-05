@@ -464,3 +464,15 @@ details.brief.was-err summary{color:#FAC775}
 .door-hint{position:absolute;transform:translateY(-50%);background:rgba(10,8,16,.85);color:#FAC775;font-weight:800;font-size:clamp(12px,1.6vw,16px);padding:5px 10px;border-radius:8px;border:1px solid #FAC775;white-space:nowrap;pointer-events:none;animation:hotPulse 1.4s infinite}
 .door-hint .dh-arrow{display:inline-block;animation:dhArrow .8s infinite}
 @keyframes dhArrow{0%,100%{transform:translateX(0)}50%{transform:translateX(-6px)}}
+
+/* ---------- пещера: картинка спуска и карта ---------- */
+.cave-ov{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;z-index:5;cursor:pointer;animation:caveIn .25s ease-out}
+.cave-ov.out{animation:caveOut .25s ease-in forwards}
+@keyframes caveIn{from{opacity:0}to{opacity:1}}
+@keyframes caveOut{to{opacity:0}}
+.cave-map{width:100%;max-width:720px;display:block;margin:0 auto;border-radius:10px;image-rendering:pixelated;cursor:pointer;background:#100c16}
+.cave-done{text-align:center;padding:30px 10px;position:relative;overflow:hidden}
+.cave-done h1{font-size:clamp(22px,4vw,34px);margin:6px 0}
+.cave-done .row{justify-content:center}
+.confetti{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(#FAC775 2px,transparent 2px),radial-gradient(#5DCAA5 2px,transparent 2px),radial-gradient(#E24B4A 2px,transparent 2px),radial-gradient(#AFA9EC 2px,transparent 2px);background-size:60px 70px,80px 60px,70px 90px,90px 80px;background-position:0 0,20px 30px,40px 10px,10px 50px;animation:confetti 3s linear infinite;opacity:.7}
+@keyframes confetti{from{background-position:0 -100px,20px -70px,40px -90px,10px -50px}to{background-position:0 400px,20px 430px,40px 410px,10px 450px}}

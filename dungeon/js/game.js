@@ -46,6 +46,7 @@
     if (scene !== 'exam' && G.exTimer) { clearInterval(G.exTimer); G.exTimer = null; }
     G.scene = scene; labels([]); G.hero.onArrive = null; G.hero.target = null;
     if (scene !== 'room') G.room = null;
+    G.intruder = null;
     clearTimeout(G.watchT); $('app').classList.remove('watch'); hideBubble();
     ({ house: enterHouse, subject: enterSubject, exam: enterExam, hall: enterHall, path: enterPath, floor: enterFloor, room: enterRoom })[scene](arg);
     hud(); window.scrollTo(0, 0);
@@ -155,6 +156,51 @@
        btn('🎓 Экзамен', 'ghost', null, function () { openEntry('exam'); }),
        btn('🎒 Рюкзак', 'ghost', null, openBag)]);
     if (S.hp < S.maxHp) { S.hp = S.maxHp; D.persist(); }
+    if (!G.intruder) setTimeout(function () { if (G.scene === 'house') maybeIntruder(); }, 1500);
+  }
+  /* ---------- НЕЗВАНЫЙ ГОСТЬ: изредка из подземелья в домик заходит монстр с 1 ♥ и задаёт один вопрос ----------
+     Вопрос — из любого предмета, чаще из тем, которые ты уже начинал. Верно — монстр падает, награда.
+     Неверно — он смеётся и убегает обратно (сердечки не тратятся). */
+  var INTR_EVERY = 30 * 60000, INTR_CHANCE = 0.2;
+  function maybeIntruder() {
+    if (G.intruder || Date.now() - (S.intrAt || 0) < INTR_EVERY || Math.random() > INTR_CHANCE) return;
+    var floors = [];
+    Object.keys(D.SUBJ).forEach(function (s) { D.SUBJ[s].floors.forEach(function (f) { floors.push({ s: s, f: f, touched: f.pool.some(function (q) { return D.seen(q.id); }) }); }); });
+    var touched = floors.filter(function (x) { return x.touched; }), from = touched.length && Math.random() < 0.8 ? touched : floors;
+    var pickF = from[Math.floor(Math.random() * from.length)], choice = pickF.f.pool.filter(function (q) { return q.type === 'choice' && q.opts.length > 1; });
+    if (!choice.length) return;
+    var q = choice[Math.floor(Math.random() * choice.length)], ros = ROSTER[0].concat(ROSTER[1]);
+    S.intrAt = Date.now(); D.persist();
+    G.intruder = { type: 'mon', key: ros[Math.floor(Math.random() * ros.length)], x: 20, target: 200, state: 'idle', st: now(), hp: 1, max: 1, items: [{ t: 'q', id: q.id }], q: q, s: pickF.s, f: pickF.f, dir: -1 };
+    sfx('guard');
+  }
+  function intruderArrived() {
+    var I = G.intruder; if (!I || G.scene !== 'house') return;
+    var order = I.q.opts.map(function (_, i) { return i; }).sort(function () { return Math.random() - 0.5; });
+    bubbleAt('<small class="b-twin">Я из подземелья «' + esc(D.SUBJ[I.s].title) + '»! Ответь — или пожалеешь!</small>' + D.md(I.q.q), I, 'q', true);
+    setPanel('<div class="row"><span class="tag red">Незваный гость · ' + esc(A.MON[I.key].name) + '</span><span class="tag">' + esc(D.SUBJ[I.s].title) + ' · ' + esc(fname(I.f)) + '</span></div>' +
+      '<div class="opts">' + order.map(function (oi, n) { return '<button class="opt" data-io="' + oi + '"><span class="n">' + (n + 1) + '</span><span>' + D.md(I.q.opts[oi].t) + '</span></button>'; }).join('') + '</div>');
+    panel.querySelectorAll('[data-io]').forEach(function (b) { b.onclick = function () { intruderAnswer(+b.getAttribute('data-io')); }; });
+  }
+  function intruderAnswer(oi) {
+    var I = G.intruder; if (!I || I.done) return; I.done = true;
+    var ok = !!I.q.opts[oi].right; D.record(I.q.id, ok);
+    panel.querySelectorAll('[data-io]').forEach(function (b) { var k = +b.getAttribute('data-io'); b.disabled = true; if (I.q.opts[k].right) b.classList.add('right'); else if (k === oi) b.classList.add('wrong'); });
+    var msg;
+    if (ok) {
+      var gain = 15, gift = Math.random() < 0.35 ? ['potion', 'fifty', 'bulb', 'shield'][Math.floor(Math.random() * 4)] : null;
+      S.iq += gain; if (gift) X.add(gift);
+      G.hero.attackAt = now(); setTimeout(function () { setMon(I, 'death'); I.dead = true; sfx('kill'); floater('+' + gain + ' IQ', I.x, 120, '#CECBF6'); }, 230);
+      bubbleAt('<b>' + esc(line(SAY_DIE, RUDE_DIE)) + '</b>', I, 'say die');
+      msg = 'Верно! Гость повержен: +' + gain + ' IQ' + (gift ? ' и ' + X.ITEMS[gift].name : '') + '.';
+    } else {
+      setMon(I, 'attack'); bubbleAt('<b>' + esc(line(['Ха! Не знаешь!', 'Учи лучше!', 'Хе-хе, мимо!'], RUDE_BAD)) + '</b>', I, 'say bad');
+      setTimeout(function () { if (G.intruder === I) { I.target = 8; I.dir = 1; } }, 1200);
+      msg = 'Неверно — гость хихикает и убегает в подземелье. Этот вопрос попал в повторение.';
+    }
+    D.persist(); hud();
+    panel.insertAdjacentHTML('beforeend', '<div class="verdict ' + (ok ? 'ok' : 'bad') + '">' + esc(msg) + '</div>');
+    setTimeout(function () { if (G.intruder === I) { G.intruder = null; hideBubble(); if (G.scene === 'house') enterHouse(); } }, 3200);
   }
   /* что можно нажать на сцене (в координатах холста 480×270) */
   function hotspots() {
@@ -1411,6 +1457,20 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
 
   /* телепорт стража (как эндермен): мерцает и дрожит, сжимается в фиолетовый столб,
      вокруг взлетают и разлетаются частицы; через ~1,4 с остаются только гаснущие искры */
+  /* незваный гость: выходит из двери домика, идёт к герою; после ошибки убегает обратно */
+  function drawIntruder(c, t) {
+    var I = G.intruder; if (!I) return;
+    var fy = A.FLOOR_Y + 8, dt = Math.min(50, t - (I.lt || t)); I.lt = t;
+    if (I.target != null && Math.abs(I.x - I.target) > 1) {
+      I.x += Math.sign(I.target - I.x) * dt * 0.09;
+      if (Math.abs(I.x - I.target) <= 1) { I.x = I.target; if (I.target > 100 && !I.arrived) { I.arrived = true; intruderArrived(); } else if (I.target < 20) { G.intruder = null; hideBubble(); return; } }
+    }
+    if (I.dead && t - I.st > 900) return;
+    c.save(); if (I.dir < 0) { c.translate(I.x * 2, 0); c.scale(-1, 1); }
+    c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(I.x, fy, 18, 4, 0, 0, 7); c.fill();
+    A.drawMonster(c, I.key, I.dead ? 'death' : I.state, t - I.st, I.x, fy); c.restore();
+    if (!I.dead) A.hearts(c, I.x, monTop(I) - 12, I.done && I.q ? 1 : I.hp, 1);
+  }
   var TP_MS = 2380;   /* +70% к прежним 1,4 с */
   function drawTeleport(c, o, dt, fy) {
     if (dt > TP_MS) return;
@@ -1442,7 +1502,7 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
       var d = h.target - h.x; if (Math.abs(d) < 1.5) { h.x = h.target; h.target = null; var cb = h.onArrive; h.onArrive = null; if (cb) cb(); }
       else { h.x += Math.sign(d) * Math.min(Math.abs(d), dt * 0.12); h.dir = Math.sign(d); walking = true; }
     }
-    if (G.scene === 'house') { A.bgHouse(c, t); c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(SAGE_X, A.FLOOR_Y + 8, 16, 4, 0, 0, 7); c.fill(); A.drawMonster(c, 'sage', 'idle', t, SAGE_X, A.FLOOR_Y + 8); }
+    if (G.scene === 'house') { A.bgHouse(c, t); c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(SAGE_X, A.FLOOR_Y + 8, 16, 4, 0, 0, 7); c.fill(); A.drawMonster(c, 'sage', 'idle', t, SAGE_X, A.FLOOR_Y + 8); drawIntruder(c, t); }
     else if (G.scene === 'hall') A.bgHall(c, t);
     else if (G.scene === 'room' && G.room) A.bgRoom(c, t, { exit: true, exitOpen: G.room.objs.every(function (o) { return o.type !== 'mon' || o.dead; }), seed: G.room.k, goo: G.room.floor % 3 === 0, hole: G.room.floor % 2 === 0 });
     else return;

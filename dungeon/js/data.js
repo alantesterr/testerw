@@ -279,13 +279,16 @@
   D.subjIds = function (sj) { var seen = {}; return (sj || D.subj).floors.reduce(function (a, f) { return a.concat(f.pool.map(function (q) { return q.id; })); }, []).filter(function (id) { if (seen[id]) return false; seen[id] = 1; return true; }); };
   /* «Зубрёжка» (ИКТ): вес вопроса при выборе. Новый — часто; ошибка — очень часто, но не сразу
      (сначала «остывает» несколько вопросов); верно подряд 1 / 2 / 3+ раз — всё реже, после 3 почти не попадается. */
+  /* «Знаю — не спрашивай»: вопрос, который ты сам отметил, почти не попадается и считается выученным */
+  D.isKnown = function (id) { return !!(D.save.known && D.save.known[id]); };
   D.drillWeight = function (id) {
+    if (D.isKnown(id)) return 0.02;
     var r = D.save.srs[id]; if (!r) return 5;
     if (D.isBad(id)) return r.due > D.save.ticks ? 1.2 : 10;
     var c = r.c != null ? r.c : r.l >= 3 ? 3 : r.l;
     return c >= 3 ? 0.15 : c === 2 ? 0.6 : c === 1 ? 2 : 3;
   };
-  D.learned = function (id) { var r = D.save.srs[id]; return !!r && !D.isBad(id) && (r.c != null ? r.c : r.l >= 3 ? 3 : 0) >= 3; };
+  D.learned = function (id) { if (D.isKnown(id)) return true; var r = D.save.srs[id]; return !!r && !D.isBad(id) && (r.c != null ? r.c : r.l >= 3 ? 3 : 0) >= 3; };
   D.drillPick = function (floor, n) {
     var ids = floor.pool.map(function (q) { return q.id; }), out = [];
     var w = ids.map(D.drillWeight);

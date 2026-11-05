@@ -75,9 +75,56 @@
     hud(); window.scrollTo(0, 0);
   }
   /* «Тема 3» у предметов по силлабусу, «Этаж 3» у C++ */
-  function fname(f) { return f.rep || f.drill ? f.title : f.lab ? 'Лабы: EWB' : f.syll ? 'Тема ' + f.n : f.final ? 'Финальный этаж' : 'Этаж ' + f.n; }
+  function fname(f) { return f.rep || f.drill || f.arena ? f.title : f.lab ? 'Лабы: EWB' : f.syll ? 'Тема ' + f.n : f.final ? 'Финальный этаж' : 'Этаж ' + f.n; }
   /* тема по номеру (у лаб EWB номер 16, поэтому не по индексу) */
-  function floorBy(n) { if (n === 'rep' && G.rep) return G.rep; if (n === 'exam' && G.exf) return G.exf; return D.floors.filter(function (f) { return f.n === +n; })[0] || D.floors[0]; }
+  function floorBy(n) { if (n === 'arena' && G.arena) return G.arena; if (n === 'rep' && G.rep) return G.rep; if (n === 'exam' && G.exf) return G.exf; return D.floors.filter(function (f) { return f.n === +n; })[0] || D.floors[0]; }
+  /* ---------- АРЕНА ПОДГОТОВКИ: без карты и комнат — монстры идут сами, по 10 вопросов ----------
+     Вопросы — «зубрёжкой» (как у ИКТ): новые часто, ошибки чаще всего (не сразу), выученные почти не попадаются.
+     Набор: предмет и РК1 / РК2 / всё (у ИКТ — уровни). Каждые 10 вопросов — итог и «Ещё 10» (сам через 3 с). */
+  function arenaScopes(sj) {
+    if (sj.drill) return sj.floors.map(function (f) { return { id: 'lv' + f.n, label: f.title, floors: [f] }; });
+    var by = function (rk) { return sj.floors.filter(function (f) { return rkOf(f) === rk; }); };
+    var out = [{ id: 'rk1', label: 'РК1', floors: by(1) }, { id: 'rk2', label: 'РК2', floors: by(2) }].filter(function (x) { return x.floors.length; });
+    out.push({ id: 'all', label: 'Экзамен (всё)', floors: sj.floors.slice() });
+    return out;
+  }
+  function openArena() {
+    var subs = subjList(), cur = D.subjId, last = S.arenaLast || {};
+    var h = '<header class="md-top"><b>⚔ Готовиться</b><span class="grow"></span><button class="btn ghost" data-close>✕</button></header><div class="md-body">' +
+      '<p class="hint">Арена: монстры идут сами, по 10 вопросов. Новые — часто, ошибки — чаще всего, выученное (3 раза подряд верно) почти не попадается.</p>' +
+      '<h4>Предмет</h4><div class="seg" id="arS">' + subs.map(function (sj) { return '<label><input type="radio" name="arS" value="' + sj.id + '"' + (sj.id === (last.s || cur) ? ' checked' : '') + '><span>' + esc(sj.title) + '</span></label>'; }).join('') + '</div>' +
+      '<h4>Что учим</h4><div class="seg" id="arC"></div><p class="msg" id="arInfo"></p>' +
+      '<div class="row"><button class="btn primary" data-start>Начать<kbd>Enter</kbd></button><button class="btn ghost" data-close>Назад</button></div></div>';
+    modal(h, function (el) {
+      var val = function (n) { var r = el.querySelector('input[name="' + n + '"]:checked'); return r ? r.value : ''; };
+      var fill = function () {
+        var sj = D.SUBJ[val('arS')], sc = arenaScopes(sj), pick = sc.filter(function (x) { return x.id === last.c; })[0] ? last.c : sc[0].id;
+        el.querySelector('#arC').innerHTML = sc.map(function (x) { return '<label><input type="radio" name="arC" value="' + x.id + '"' + (x.id === pick ? ' checked' : '') + '><span>' + esc(x.label) + '</span></label>'; }).join('');
+        el.querySelectorAll('input[name="arC"]').forEach(function (i) { i.onchange = info; }); info();
+      };
+      var info = function () {
+        var sj = D.SUBJ[val('arS')], x = arenaScopes(sj).filter(function (y) { return y.id === val('arC'); })[0]; if (!x) return;
+        var ids = arenaIds(x.floors), l = ids.filter(D.learned).length;
+        el.querySelector('#arInfo').innerHTML = 'Вопросов: <b>' + ids.length + '</b> · выучено: <b>' + l + '</b> (' + (ids.length ? Math.round(l / ids.length * 100) : 0) + '%)';
+      };
+      el.querySelectorAll('input[name="arS"]').forEach(function (i) { i.onchange = fill; }); fill();
+      var start = function () { var s = val('arS'), c = val('arC'); closeModal(); S.arenaLast = { s: s, c: c }; D.persist(); buildArena(s, c); };
+      el.querySelector('[data-start]').onclick = start; G.modalEnter = start;
+    });
+  }
+  function arenaIds(floors) { var seen = {}, out = []; floors.forEach(function (f) { f.pool.forEach(function (q) { if (!seen[q.id]) { seen[q.id] = 1; out.push(q.id); } }); }); return out; }
+  function buildArena(sid, cid, batch) {
+    var sj = D.SUBJ[sid]; D.useSubject(sid);
+    var x = arenaScopes(sj).filter(function (y) { return y.id === cid; })[0] || arenaScopes(sj)[0];
+    var pool = [], byId = {}, texts = [];
+    x.floors.forEach(function (f) { f.pool.forEach(function (q) { if (!byId[q.id]) { byId[q.id] = q; pool.push(q); } }); texts = texts.concat(f.texts); });
+    var prev = G.arena && G.arena.subj === sid && G.arena.cid === cid ? G.arena : null;
+    G.arena = { n: 'arena', arena: true, cid: cid, id: sid + '-arena-' + cid, label: 'Арена', title: 'Арена · ' + sj.short + ' · ' + x.label, texts: texts, pool: pool, byId: byId, tasks: [], taskById: {},
+      rooms: [{ k: 0, sec: null, secs: [], boss: false, tasks: [], label: 'Арена', qs: [] }], final: false, subj: sid, syll: !!sj.syll,
+      batch: batch != null ? batch : prev ? prev.batch + 1 : 0, l0: prev ? prev.l0 : pool.filter(function (q) { return D.learned(q.id); }).length };
+    go('room', { f: 'arena', k: 0, again: 1 });
+  }
+  function arenaLine(f) { var l = f.pool.filter(function (q) { return D.learned(q.id); }).length; return f.title + ' · выучено ' + l + ' из ' + f.pool.length; }
   /* ---------- ПОВТОРЕНИЕ РК: одна комната из самых слабых вопросов всего РК ----------
      Сначала ошибки, потом едва знакомые, потом ещё не увиденные. Ответы идут в прогресс своих тем. */
   var REP_N = 15;
@@ -101,7 +148,7 @@
   var BACK = { house: 'sp', subject: 'house', exam: 'house', hall: 'house', path: 'hall', floor: 'path', room: 'floor' };
   function backLabel(to) { return { sp: 'StudyPlay', house: 'Домик', hall: 'Зал', path: D.subj && D.subj.drill ? 'Уровни' : D.subj && D.subj.syll ? 'Темы' : 'Этажи', floor: 'Комнаты', level: 'Уровень' }[to] || 'Назад'; }
   function updBack() {
-    var to = BACK[G.scene], b = $('hudBack'); if (to === 'floor' && G.room && G.room.f.rep) to = 'path'; if (to === 'floor' && G.room && G.room.f.exam) to = 'house'; if (to === 'floor' && G.room && G.room.f.drill) to = 'level';
+    var to = BACK[G.scene], b = $('hudBack'); if (to === 'floor' && G.room && G.room.f.rep) to = 'path'; if (to === 'floor' && G.room && (G.room.f.exam || G.room.f.arena)) to = 'house'; if (to === 'floor' && G.room && G.room.f.drill) to = 'level';
     $('hudBackT').textContent = backLabel(to);
     b.classList.toggle('exit', to === 'sp');
     b.title = to === 'sp' ? 'Выйти в StudyPlay (прогресс сохранён)' : 'Назад: ' + backLabel(to) + ' (Backspace)';
@@ -121,7 +168,7 @@
     if (G.scene === 'exam' && G.exam && !G.exam.done) return confirmBox('Прервать экзамен?', 'Результат не засчитается. Начать заново можно в любой момент.', 'Прервать', function () { go('house'); });
     if (G.scene === 'room' && G.room && G.room.f.exam) return confirmBox('Прервать экзамен?', 'Результат не засчитается. Начать заново можно кнопкой «🎓 Экзамен» в домике.', 'Прервать', function () { G.exam = null; go('house'); });
     if (G.scene === 'room' && G.room && G.room.mon && !G.room.mon.dead) return confirmBox('Выйти из комнаты?', 'Ответы уже сохранены. Комнату можно пройти ещё раз.', 'Выйти', goFloorBack);
-    if (to === 'floor' && G.room && G.room.f.rep) go('path'); else if (to === 'floor') goFloorBack(); else if (to) go(to);
+    if (to === 'floor' && G.room && G.room.f.arena) go('house'); else if (to === 'floor' && G.room && G.room.f.rep) go('path'); else if (to === 'floor') goFloorBack(); else if (to) go(to);
   }
   $('hudBack').onclick = goBack;
   function openMenu() {
@@ -185,7 +232,7 @@
         '<p class="msg">Игра для подготовки к РК и экзамену. В комнатах монстры задают вопросы: верно — монстр теряет сердечко, ошибся — бьёт тебя (−1 ♥) и спросит этот вопрос ещё раз. IQ — награда за ответы, на него Мудрец продаёт предметы.</p>'
         : '<div class="qtext">Домик</div>') +
         '<p class="hint">Нажми на <b>дверь</b> слева — в подземелье. <b>Мудрец</b> продаёт предметы за IQ.</p>',
-      (contBtn() ? [contBtn()] : []).concat([btn('⚔ В подземелье', contBtn() ? 'ghost' : 'primary', contBtn() ? null : 'Enter', toDungeon),
+      (contBtn() ? [contBtn()] : []).concat([btn('⚔ Готовиться', contBtn() ? 'ghost' : 'primary', contBtn() ? null : 'Enter', openArena), btn('🚪 В подземелье', 'ghost', null, toDungeon),
        btn('🎓 Экзамен', 'ghost', null, function () { openEntry('exam'); }),
        btn('🎒 Рюкзак', 'ghost', null, openBag)]));
     if (S.hp < S.maxHp) { S.hp = S.maxHp; D.persist(); }
@@ -466,7 +513,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   var ROSTER = [['slug', 'tzombie', 'mushroom', 'imp'], ['goblin', 'skelet', 'eye', 'orc'], ['skeleton', 'shaman', 'masked', 'necro', 'goblin'], ['chort', 'wogol', 'swampy', 'eye', 'skeleton']];
   var BOSS = ['ogre', 'bzombie', 'demon'], GUARD = 'masked';
   function rnd(seed) { var s = seed; return function () { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; }; }
-  function tierOf(f) { if (f.rep) return 1; if (f.drill) return Math.min(3, f.n - 1); return f.lab || f.n <= 3 ? 0 : f.n <= 6 ? 1 : f.n <= 10 ? 2 : 3; }
+  function tierOf(f) { if (f.rep || f.arena) return 1; if (f.drill) return Math.min(3, f.n - 1); return f.lab || f.n <= 3 ? 0 : f.n <= 6 ? 1 : f.n <= 10 ? 2 : 3; }
   /* порядок вопросов: ошибки, у которых подошла очередь → новые → остальные ошибки → слабые → крепкие */
   function orderIds(ids) {
     function rank(id) { var r = D.save.srs[id]; if (!r) return 1; if (D.isBad(id)) return r.due <= S.ticks ? 0 : 2; return 3 + r.l; }
@@ -477,8 +524,10 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   function roomItems(f, room, isErr) {
     if (isErr) return orderIds(D.badIds(f)).slice(0, 12).map(qi);
     if (f.exam) return room.qs.map(qi);   /* экзамен: 40 вопросов по порядку */
-    if (room.boss) return orderIds(poolIds(f)).slice(0, 10 + tierOf(f)).map(qi);
-    return orderIds(room.qs).map(qi).concat((room.tasks || []).map(function (id) { return { t: 't', id: id }; }));
+    /* «Знаю» — не спрашиваем (если в комнате все «знаю», спросим всё же) */
+    var unk = function (ids) { var u = ids.filter(function (id) { return !D.isKnown(id); }); return u.length ? u : ids; };
+    if (room.boss) return orderIds(unk(poolIds(f))).slice(0, 10 + tierOf(f)).map(qi);
+    return orderIds(f.drill || f.arena ? room.qs : unk(room.qs)).map(qi).concat((room.tasks || []).map(function (id) { return { t: 't', id: id }; }));
   }
   function mkMon(key, items, extra) { var o = { type: 'mon', key: key, items: items.slice(), hp: items.length, max: items.length }; for (var k in extra || {}) o[k] = extra[k]; return o; }
   /* монстры: сердечек ровно столько, сколько вопросов и заданий; задания — у последнего (сильного) */
@@ -565,7 +614,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
       placeObjs(objs); objs[0].x = 330; return objs;
     }
     if (room && !room.boss && room.secs && room.secs.length) objs.push({ type: 'altar' });
-    if (mode !== 'clean') objs = objs.concat(makeMons(f, items, room && room.boss, (f.rep ? 7 : f.n) * 131 + (isErr ? 97 : k) * 17 + S.ticks));
+    if (mode !== 'clean') objs = objs.concat(makeMons(f, items, room && room.boss, (f.rep ? 7 : f.arena ? 11 + (f.batch || 0) : f.n) * 131 + (isErr ? 97 : k) * 17 + S.ticks));
     if (room && !room.boss) objs.push({ type: 'chest' });
     objs.push({ type: 'exit' });
     placeObjs(objs);
@@ -576,9 +625,10 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   function errRoom(f) { return { k: 'err', errHall: true, boss: false, sec: null, secs: f.texts, tasks: [], qs: D.badIds(f) }; }
   function enterRoom(a) {
     var f = floorBy(a.f), isErr = a.k === 'err', room = isErr ? errRoom(f) : f.rooms[a.k];
-if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) });   /* ИКТ: 10 вопросов по весам — новые и ошибки чаще, выученные почти никогда */
+    if ((f.drill || f.arena) && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) });   /* ИКТ: 10 вопросов по весам — новые и ошибки чаще, выученные почти никогда */
     show(true); where((f.final ? 'Финал' : fname(f)) + ' · ' + (A.THEMES[themeOf(f)] || {}).name + ' · ' + (isErr ? 'Зал ошибок' : f.drill ? 'Тренировка' : room.boss ? 'Босс' : 'Комната ' + (a.k + 1)));
-    if (!isErr && !f.rep && !f.exam) { S.at = { s: D.subjId, f: f.n, k: a.k }; D.persist(); }
+    if (f.arena) where('⚔ ' + arenaLine(f));
+    if (!isErr && !f.rep && !f.exam && !f.arena) { S.at = { s: D.subjId, f: f.n, k: a.k }; D.persist(); }
     var info = isErr ? { done: false } : roomInfo(f, a.k), st = D.stats(room.qs);
     var mode = isErr ? 'err' : (a.again || !info.done || !st.clean || f.drill) ? 'run' : 'clean';
     var items = mode === 'clean' ? [] : roomItems(f, room, isErr);
@@ -650,6 +700,7 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
       focusOn(false); sfx('guard');
       setPanel('<div class="row"><span class="tag gold">Страж выхода</span><span class="tag">' + g.hp + ' ♥</span></div><div class="qtext">У выхода стоит страж</div><p class="msg">Он спросит все вопросы, где ты брал подсказку, и несколько, где ошибался (чаще ошибался — скорее спросит): <b>' + g.hp + '</b>. Ответь сам, без подсказок. Страж не бьёт — сердечки у него не тратятся. Ошибёшься — вопрос вернётся в конец очереди.</p>',
         [btn('К стражу', 'primary', 'Enter', function () { approach(nextObj()); })]);
+      if (autoOn()) autoGo(nextObj());
       return;
     }
     approach(nextObj());
@@ -661,15 +712,45 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
   }
   function monTop(o) { return A.FLOOR_Y + 8 - A.monHeight(o.key) - (A.MON[o.key].fly ? 40 : 6); }
   function roomLabels() { var R = G.room; if (!R) return; labels(R.objs.filter(function (o) { return o.type === 'mon' && !o.dead; }).map(function (o) { return { text: monName(o), x: o.x, y: monTop(o) - 14, color: o.boss || o.guard ? '#F09595' : o.strong ? '#FAC775' : '#e8e4f8' }; }).concat(R.objs.filter(function (o) { return o.type === 'chest' && !o.open; }).map(function (o) { return { text: 'Сундук', x: o.x, y: A.FLOOR_Y - 36, color: '#FAC775' }; })).concat(R.objs.filter(function (o) { return o.type === 'altar' && !o.used; }).map(function (o) { return { text: 'Алтарь знаний', x: o.x, y: A.FLOOR_Y - 70, color: '#CECBF6' }; }))); }
+  /* «✓ Знаю — не спрашивай»: вопрос засчитывается как верный и дальше почти не попадается (вернуть — в Настройках) */
+  function markKnown(q) {
+    var R = G.room; if (!R || R.answered || R.q !== q) return;
+    D.save.known = D.save.known || {}; D.save.known[q.id] = 1; D.persist();
+    toast('Отмечено «Знаю» — этот вопрос больше почти не попадётся', '#9FE1CB');
+    var kr = panel.querySelector('.know-row'); if (kr) kr.remove();
+    if (q.type === 'keyboard') answer(true, q.answer);
+    else { var rights = q.opts.map(function (o, i) { return o.right ? i : -1; }).filter(function (i) { return i >= 0; }); answer(true, rights.length > 1 ? rights : rights[0]); }
+  }
+  /* автопереход: после ответа сам идём дальше (следующий вопрос / следующий монстр), если ничего не нажато.
+     Открыл «Объясни» или Google — автопереход ждёт, дальше — кнопкой. */
+  function autoNext(R, m, fn) {
+    if (!autoOn()) return;
+    var q = R.q; if (!q) return;   /* задания (с решением) — без автоперехода, надо успеть прочитать */
+    var tok = R.nextTok = Math.random();
+    setTimeout(function () { if (G.room === R && R.mon === m && R.nextTok === tok && R.q === q && R.answered && !G.modal && !BK) fn(); }, wms() + (fast() ? 500 : 1100));
+  }
+  /* после сундука: добычу видно ~2 с, потом сам идём дальше (если ничего не нажато) */
+  function autoLoot() {
+    if (!autoOn()) return; var R = G.room, tok = R.idleTok = Math.random();
+    setTimeout(function () { if (G.room === R && R.idleTok === tok && !R.mon && !G.modal && !BK && G.scene === 'room') goNext(); }, fast() ? 1200 : 2200);
+  }
+  /* автопоход: герой сам идёт к следующему монстру, сундуку или выходу (алтарь — только по желанию, книжка: B) */
+  function autoOn() { return S.cfg.auto !== false; }
+  function nextObjAuto() { var R = G.room; for (var i = 0; i < R.objs.length; i++) { var o = R.objs[i]; if ((o.type === 'mon' && !o.dead) || (o.type === 'chest' && !o.open) || o.type === 'exit') return i; } return R.objs.length - 1; }
+  function autoGo(i) {
+    var R = G.room, tok = R.idleTok = Math.random();
+    setTimeout(function () { if (G.room === R && R.idleTok === tok && !R.mon && !G.modal && !BK && G.hero.target == null && G.scene === 'room') approach(i); }, fast() ? 250 : 650);
+  }
   function roomIdle() {
     hideBubble(); focusOn(false); maybeGuard(); roomLabels();
-    var R = G.room, i = nextObj(), o = R.objs[i];
+    var R = G.room, i = autoOn() && R.mode !== 'clean' ? nextObjAuto() : nextObj(), o = R.objs[i];
     var what = o.type === 'mon' ? (o.boss ? 'босс «' + monName(o) + '»' : o.guard ? 'страж выхода (' + o.hp + ' ♥ — твои ошибки и подсказки)' : monName(o) + ' (' + o.hp + ' ♥)') : o.type === 'chest' ? 'сундук' : o.type === 'altar' ? 'алтарь знаний (прочитать раздел лекции)' : 'выход';
     var sec = R.room.sec;
     var st = D.stats(R.room.qs), nm = R.room.errHall ? 'Зал ошибок' : R.room.boss ? 'Босс этажа' : 'Комната ' + (R.k + 1);
     var bs = [btn('Идти дальше', 'primary', 'Enter', function () { approach(i); })];
     if (R.mode === 'clean' && o.type === 'exit') bs.push(btn('Пройти ещё раз', 'ghost', null, function () { go('room', { f: R.f.n, k: R.k, again: 1 }); }));
     setPanel('<div class="row"><span class="tag">' + esc(nm) + '</span>' + (sec ? '<span class="tag teal">' + esc(sec.title) + '</span>' : '') + (st.clean ? '<span class="tag gold">чисто ✓</span>' : '') + '</div><p class="msg">' + esc(roomSummary()) + '. Дальше — ' + esc(what) + '.</p><p class="hint">Вопросы ' + (R.room.errHall ? 'зала' : 'комнаты') + ': ' + statLine(st) + '</p>', bs);
+    if (autoOn() && R.mode !== 'clean' && !(o.type === 'altar')) autoGo(i);
   }
   /* ---------- МИРЫ ТЕМ: у каждой темы своя обстановка, свои монстры и свой босс ---------- */
   var THEME_ORDER = ['crypt', 'library', 'ice', 'swamp', 'lava', 'temple', 'shadow', 'blood'];
@@ -686,13 +767,14 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
   };
   var THEME_BOSS = { crypt: ['zking', 'bzombie'], library: ['evilwiz', 'dshadow'], ice: ['dice'], swamp: ['dpoison', 'zking'], lava: ['demonslime', 'dfire', 'ochief'], temple: ['dgold', 'evilwiz'], shadow: ['swizard', 'dshadow'], blood: ['demonslime', 'dblood'] };
   function themeOf(f) {
-    if (!f) return 'crypt'; if (f.exam) return 'blood'; if (f.rep) return 'temple';
+    if (!f) return 'crypt'; if (f.exam) return 'blood'; if (f.rep) return 'temple'; if (f.arena) return THEME_ORDER[(f.batch || 0) % THEME_ORDER.length];
     var n = typeof f.n === 'number' ? f.n : 1; return THEME_ORDER[(n - 1 + (THEME_OFF[f.subj] || 0)) % THEME_ORDER.length];
   }
   function themeRoster(f) { return THEME_MONS[themeOf(f)]; }
   function themeBoss(f) { var b = THEME_BOSS[themeOf(f)], n = typeof f.n === 'number' ? f.n : 0; return b[n % b.length]; }
   /* эпичное появление босса: затемнение, табличка с именем, рык, тряска */
   function bossIntro(o, done) {
+    if (fast()) { floater(A.MON[o.key].name + '!', o.x, 60, '#F09595'); return done(); }   /* быстрый режим: без таблички */
     var sw = $('sceneWrap'), el = document.createElement('div'); el.className = 'boss-title';
     el.innerHTML = '<small>' + esc((A.THEMES[themeOf(G.room.f)] || {}).name || 'Босс') + ' · босс темы</small><b>' + esc(A.MON[o.key].name) + '</b><span>' + o.hp + ' ♥</span>';
     sw.appendChild(el); sw.classList.remove('rage'); void sw.offsetWidth; sw.classList.add('rage'); setMon(o, 'attack'); sfx('guard');
@@ -706,7 +788,7 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
     setTimeout(function () { floater('ВТОРАЯ ФАЗА!', m.x, 60, '#F09595'); bubbleAt('<b>' + esc(line(['Это была лишь разминка!', 'Теперь я серьёзен!', 'Узри мою истинную форму!', 'Ты меня разбудил…'], RUDE_RAGE)) + '</b>', m, 'say bad'); }, 650);
   }
   function approach(i) {
-    var R = G.room, o = R.objs[i]; R.idx = i;
+    var R = G.room, o = R.objs[i]; R.idx = i; R.idleTok = 0;
     var stop = o.type === 'mon' ? o.x - (A.MON[o.key].lm && A.MON[o.key].boss ? 92 : A.MON[o.key].lm ? 62 : A.MON[o.key].boss ? 66 : 50) : o.type === 'chest' ? o.x - 34 : o.type === 'altar' ? o.x - 30 : o.x - 26;
     setPanel('<p class="msg">Идём…</p>');
     walkTo(stop, function () {
@@ -758,8 +840,10 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
       R.order = order;
       h += '<div class="opts">' + order.map(function (oi, n) { return '<button class="opt" data-o="' + oi + '"><span class="n">' + (n + 1) + '</span><span>' + D.md(q.opts[oi].t) + '</span></button>'; }).join('') + '</div>';
     }
+    if (!R.f.exam && !q.rev) h += '<div class="row know-row"><button class="btn ghost" data-know title="Отметить как выученный — больше почти не будет попадаться">✓ Знаю — не спрашивай</button></div>';
     h += hotbarHtml() + '<div class="hint">Клавиши: ' + (q.type === 'keyboard' ? 'Enter — ответить' : '1–' + q.opts.length + ' — выбрать ответ') + ' · T — перевести · B — книжка · F — весь экран</div>';
     setPanel(h); wireIco(); wireTr(); wireHotbar(); wireBrief(); R.trB = null; bubbleQ(q, m); autoTrBubble(q, m);
+    var kb0 = panel.querySelector('[data-know]'); if (kb0) kb0.onclick = function () { markKnown(q); };
     if (S.cfg.autoTr) toggleTr();
     G.buttons = [];
     if (q.type === 'keyboard') { var inp = $('kbIn'); $('kbGo').onclick = function () { answer(norm(inp.value) === norm(q.answer), inp.value); }; inp.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('kbGo').click(); } }; if (matchMedia('(pointer:fine)').matches) setTimeout(function () { inp.focus({ preventScroll: true }); }, 50); }
@@ -924,6 +1008,8 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
 
   /* после ответа панель ненадолго гаснет, чтобы было видно удар героя или атаку монстра */
   var WATCH_MS = 1560;
+  function fast() { return S.cfg.fast === true; }   /* быстрый режим: короткие паузы и анимации */
+  function wms() { return fast() ? 550 : WATCH_MS; }
   function watchHit(ms) {
     appEl.classList.add('watch'); clearTimeout(G.watchT);
     var low = window.innerWidth < 900 && !appEl.classList.contains('focus');
@@ -932,7 +1018,7 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
       appEl.classList.remove('watch');
       var R = G.room; if (R && R.mon && !R.mon.dead && R.bubble) bubbleAt(R.bubble, R.mon, (R.bubbleCls || '') + ' past', R.bubbleCls !== 'mini'); else hideBubble();
       if (low && G.scene === 'room') panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, ms || WATCH_MS);
+    }, ms || wms());
   }
   function resolve(ok, power, kind) {
     var R = G.room, m = R.mon, it = m.items.shift(), clean = ok && !R.assisted; peek(); watchHit();
@@ -946,7 +1032,7 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
     }
     /* реплика монстра: последний верный ответ его добивает — тогда «Нееееет!» и т. п. */
     var kill = !m.items.length && (m.guard ? clean : ok);
-if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает дольше — панель и облачко ждут конца телепорта */
+if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает дольше — панель и облачко ждут конца телепорта */
     /* верно, но с подсказкой (Google, 50/50, лампа, ИИ…) — монстр возмущается */
     if (ok && R.assisted) bubbleSay(m.guard ? pick(SAY_GUARD_CHEAT) : line(SAY_CHEAT, RUDE_CHEAT), 'cheat');
     else if (kill) bubbleSay(m.exam ? pick(SAY_EXAM) : m.guard ? line(SAY_GUARD, RUDE_GUARD) : m.boss ? line(SAY_BOSS, RUDE_DIE) : line(SAY_DIE, RUDE_DIE), 'die');
@@ -989,14 +1075,14 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
   function afterAnswer(ok) {
     var R = G.room, m = R.mon;
     if (R.f.exam) {   /* экзамен: только «Следующий вопрос»; последний ответ — разбор */
-      if (!m.items.length) { var row1 = document.createElement('div'); row1.className = 'row'; row1.style.marginTop = '10px'; row1.innerHTML = '<span class="hint">Это был последний вопрос — считаем результат…</span>'; panel.appendChild(row1); return setTimeout(function () { if (G.room === R) finishExamHall(false); }, TP_MS + 600); }
+      if (!m.items.length) { var row1 = document.createElement('div'); row1.className = 'row'; row1.style.marginTop = '10px'; row1.innerHTML = '<span class="hint">Это был последний вопрос — считаем результат…</span>'; panel.appendChild(row1); return setTimeout(function () { if (G.room === R) finishExamHall(false); }, tpms() + 600); }
       G.buttons = [btn('Следующий вопрос', 'primary', 'Enter', ask)];
       var row2 = document.createElement('div'); row2.className = 'row'; row2.style.marginTop = '12px'; row2.innerHTML = '<button class="btn primary" data-nx>Следующий вопрос<kbd>Enter</kbd></button>';
-      panel.appendChild(row2); row2.querySelector('[data-nx]').onclick = ask; return;
+      panel.appendChild(row2); row2.querySelector('[data-nx]').onclick = ask; autoNext(R, m, ask); return;
     }
     if (S.hp <= 0) return setTimeout(defeat, 500);
-    if (m.mimic && m.dead) return setTimeout(function () { if (G.room === R) { R.mon = null; mimicLoot(); } }, WATCH_MS);
-    if (m.boss && !m.dead && !m.raged && m.items.length >= 3 && Math.random() < RAGE_CHANCE) return setTimeout(function () { if (G.room === R && R.mon === m) bossRage(m); }, WATCH_MS);
+    if (m.mimic && m.dead) return setTimeout(function () { if (G.room === R) { R.mon = null; mimicLoot(); } }, wms());
+    if (m.boss && !m.dead && !m.raged && m.items.length >= 3 && Math.random() < RAGE_CHANCE) return setTimeout(function () { if (G.room === R && R.mon === m) bossRage(m); }, wms());
     var btns = [];
     if (m.dead && m.boss) btns.push(btn('Босс повержен! Открыть железный сундук', 'primary', 'Enter', function () { R.mon = null; bossLoot(); }));
     else if (m.dead && ok && !R.assisted) {
@@ -1007,7 +1093,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
       setTimeout(function () {
         if (G.room === R && R.mon === m && !BK && !G.modal) goNext();
         else if (G.room === R && R.mon === m) { G.buttons = [btn('Дальше', 'primary', 'Enter', goNext)]; var nb = document.createElement('button'); nb.className = 'btn primary'; nb.innerHTML = 'Дальше<kbd>Enter</kbd>'; nb.onclick = goNext; row0.appendChild(nb); }
-      }, m.guard ? TP_MS + 800 : WATCH_MS + 500);
+      }, m.guard ? tpms() + 800 : wms() + 500);
       return;
     }
     else if (m.dead) btns.push(btn('Дальше', 'primary', 'Enter', goNext));
@@ -1017,6 +1103,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
     row.innerHTML = btns.map(function (b, i) { return '<button class="btn ' + b.cls + '" data-b2="' + i + '">' + esc(b.label) + (b.key ? '<kbd>' + b.key + '</kbd>' : '') + '</button>'; }).join('');
     panel.appendChild(row); G.buttons = btns;
     row.querySelectorAll('[data-b2]').forEach(function (el) { el.onclick = function () { btns[+el.getAttribute('data-b2')].fn(); }; });
+    autoNext(R, m, btns[0].fn);
   }
   function bump() { var e = $('hudCombo'); e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump'); }
   function setMon(m, st) { m.state = st; m.st = now(); var d = A.monDur(m.key, st); if (st !== 'death') setTimeout(function () { if (m.state === st) { m.state = 'idle'; m.st = now(); } }, d); }
@@ -1037,7 +1124,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
   function mimicLoot() {
     var R = G.room, L1 = X.loot('chest'), L2 = X.loot('chest'), L = { iq: L1.iq + L2.iq, items: L1.items.concat(L2.items), weapon: L1.weapon || L2.weapon };
     R.iq += L.iq; sfx('chest'); D.persist(); hud(); roomLabels();
-    setPanel('<div class="qtext">Мимик повержен — двойная добыча!</div>' + lootHtml(L), [btn('Идти дальше', 'primary', 'Enter', goNext), btn('Рюкзак', 'ghost', null, openBag)]);
+    setPanel('<div class="qtext">Мимик повержен — двойная добыча!</div>' + lootHtml(L), [btn('Идти дальше', 'primary', 'Enter', goNext), btn('Рюкзак', 'ghost', null, openBag)]); autoLoot();
   }
   function openChest(o) {
     if (maybeMimic(o)) return;
@@ -1045,7 +1132,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
     o.open = true; o.openAt = now(); R.iq += gain; sfx('chest');
     var info = roomInfo(R.f, R.k); info.chest = true; S.rooms[rkey(R.f, R.k)] = info; D.persist(); hud();
     floater('+' + gain + ' IQ', o.x, 150, '#CECBF6');
-    setPanel('<div class="qtext">Сундук открыт!</div>' + lootHtml(L), [btn('Идти дальше', 'primary', 'Enter', goNext), btn('Рюкзак', 'ghost', null, openBag)]);
+    setPanel('<div class="qtext">Сундук открыт!</div>' + lootHtml(L), [btn('Идти дальше', 'primary', 'Enter', goNext), btn('Рюкзак', 'ghost', null, openBag)]); autoLoot();
   }
   function stars(m) { return m >= 85 ? '★★★' : m >= 50 ? '★★☆' : m > 0 ? '★☆☆' : '☆☆☆'; }
   function exitRoom() {
@@ -1078,13 +1165,26 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
     var fst = D.stats(poolIds(f)); if (fst.clean) h += '<p class="wave-msg ok">🏅 ' + esc(fname(f)) + ' — пройдено начисто!</p>';
     /* золотой сундук: первый раз тема пройдена начисто (все вопросы увидены, ни одной ошибки) — богатая награда и медаль на двери */
     S.gold = S.gold || {};
-    if (fst.clean && !f.rep && !f.exam && !S.gold[f.id]) {
+    if (fst.clean && !f.rep && !f.exam && !f.arena && !S.gold[f.id]) {
       S.gold[f.id] = Date.now(); var GL = X.loot('gold'); R.iq += GL.iq; D.persist(); hud(); sfx('chest');
       h += '<div class="wave-msg ok">🏆 Золотой сундук за «' + esc(fname(f)) + '» без ошибок!</div>' + lootHtml(GL);
     }
     var main = next ? btn(st.clean ? 'Следующая комната' : 'Пропустить → следующая комната', 'primary', 'Enter', function () { go('room', { f: f.n, k: R.k + 1 }); })
       : isErr ? btn('Дальше', 'primary', 'Enter', function () { go('floor', f.n); })
       : btn(nextF ? 'Дальше: ' + fname(nextF) : 'К пути', 'primary', 'Enter', function () { if (nextF) go('floor', nextF.n); else go('path'); });
+    if (f.arena) {   /* арена: итог десятки, прогресс и «Ещё 10» (сам через 3 с при автопереходе) */
+      var la = f.pool.filter(function (q) { return D.learned(q.id); }).length, dl = la - (f.l0 || 0);
+      h += '<div class="wave-msg ok">⚔ ' + esc(f.title) + ': выучено <b>' + la + '</b> из ' + f.pool.length + (dl > 0 ? ' (+' + dl + ' за сессию)' : '') + '</div>';
+      var nextA = btn('▶ Ещё 10 вопросов', 'primary', 'Enter', function () { G.arenaTok = 0; buildArena(f.subj, f.cid); });
+      var stopA = btn('Хватит на сегодня', 'ghost', null, function () { G.arenaTok = 0; go('house'); });
+      setPanel(h, [nextA, stopA]);
+      if (autoOn()) {
+        var tokA = G.arenaTok = Math.random(), secA = 3, rowA = document.createElement('p'); rowA.className = 'hint'; panel.appendChild(rowA);
+        var tickA = function () { if (G.arenaTok !== tokA || G.scene !== 'room' || G.room !== R) return; if (secA <= 0) { G.arenaTok = 0; return buildArena(f.subj, f.cid); } rowA.textContent = 'Следующие 10 вопросов через ' + secA + '…'; secA--; setTimeout(tickA, 1000); };
+        tickA();
+      }
+      return;
+    }
     if (f.drill) {   /* ИКТ: следующая десятка или к уровню */
       again = [];
       main = btn('▶ Ещё 10 вопросов', 'primary', 'Enter', function () { go('room', { f: f.n, k: 0, again: 1 }); });
@@ -1289,7 +1389,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
   function refLine(f) {
     if (!f) return '';
     if (f.drill) return 'Лекций у ИКТ нет — жми «🔎 Google»: он сначала ответит, потом объяснит каждый вариант.';
-    if (f.rep) {   /* повторение: раздел лекции подскажет, из какой он темы */
+    if (f.rep || f.arena) {   /* повторение и арена: раздел лекции подскажет, из какой он темы */
       var rs = G.room && G.room.briefSec, tn = rs ? String(rs.id).split('.')[0] : '', tf = tn ? floorBy(tn === 'Л' ? 16 : +tn) : null;
       return tf ? refLine(tf) : 'Найди этот вопрос в теме на карте и открой её лекцию у алтаря.';
     }
@@ -1341,7 +1441,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
   }
   function openGoogle(q, f) {
     var R = G.room; f = f || (R && R.f);
-    if (f && f.rep) { var tp = q.src ? q.src.topic : q.topic; if (tp) f = floorBy(tp); }   /* в «Повторении» — лекция темы вопроса */
+    if (f && (f.rep || f.arena)) { var tp = q.src ? q.src.topic : q.topic; if (tp) f = floorBy(tp); }   /* в «Повторении» — лекция темы вопроса */
     var before = !!(R && R.mon && R.q === q && !R.answered);
     /* открываем сразу, без окна; до ответа тихо помечаем как подсказку */
     if (before && !R.assisted) { R.assisted = true; markAssisted(); }
@@ -1390,7 +1490,10 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
       '<div class="set-row"><div><b>Вопрос на весь экран</b><span>Сцена прячется, вопрос крупнее. После ответа видно удар. Клавиша F.</span></div><label class="sw"><input type="checkbox" id="setFocus"' + (S.focus ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Звуки</b><span>Удар, ошибка, сундук, победа.</span></div><label class="sw"><input type="checkbox" id="setSound"' + (c2.sound !== false ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Реплики 18+ (мат)</b><span>Монстры иногда матерятся, когда получают урон, бьют или умирают. Выключи — будут только приличные фразы.</span></div><label class="sw"><input type="checkbox" id="setRude"' + (c2.rude !== false ? ' checked' : '') + '><i></i></label></div>' +
+      '<div class="set-row"><div><b>Автопереход и автопоход</b><span>После ответа сам переходит к следующему вопросу, герой сам идёт к монстрам, сундукам и выходу. Меньше нажатий.</span></div><label class="sw"><input type="checkbox" id="setAutoGo"' + (c2.auto !== false ? ' checked' : '') + '><i></i></label></div>' +
+      '<div class="set-row"><div><b>Быстрые анимации</b><span>Пауза после ответа 0,5 с вместо 1,5 с, без табличек босса и долгих телепортов — чтобы прогнать больше вопросов.</span></div><label class="sw"><input type="checkbox" id="setFast"' + (c2.fast === true ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Облегчённая графика</b><span>Без частиц, аур и перекраски монстров — для слабых телефонов. Включается сама, если игра тормозит.</span></div><label class="sw"><input type="checkbox" id="setLite"' + (c2.lite === true ? ' checked' : '') + '><i></i></label></div>' +
+      '<div class="set-row"><div><b>Вопросы «Знаю»</b><span>Ты отметил «Знаю» у ' + Object.keys(D.save.known || {}).length + ' вопросов — они почти не попадаются. Можно вернуть их все.</span></div><button class="btn ghost" id="setKnown">Вернуть все</button></div>' +
       '<div class="set-row"><div><b>Обучение</b><span>Снова показать подсказки для новичка.</span></div><button class="btn ghost" id="setTut">Показать снова</button></div>' +
       '<div class="set-row"><div><b>Сбросить прогресс</b><span>Удалит освоение, IQ, уровень и предметы на этом устройстве.</span></div><button class="btn warn" id="setReset">Сбросить</button></div>' +
       '<p class="hint">Графика: «Monsters Creatures Fantasy» и «Evil Wizard» (Luiz Melo) и «DungeonTileset II» (0x72) — CC0. Демон-Слизень и Владыка Экзамена: «Boss: Demon Slime» by chierit — CC BY 4.0, chierit.itch.io/boss-demon-slime. Герой, факелы и сцены нарисованы для StudyPlay.</p></div>';
@@ -1402,6 +1505,9 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
       $('setSound').onchange = function () { c2.sound = this.checked; D.persist(); if (this.checked) sfx('ok'); };
       $('setRude').onchange = function () { c2.rude = this.checked; D.persist(); };
       $('setLite').onchange = function () { c2.lite = this.checked; D.persist(); };
+      $('setAutoGo').onchange = function () { c2.auto = this.checked; D.persist(); };
+      $('setFast').onchange = function () { c2.fast = this.checked; D.persist(); };
+      $('setKnown').onclick = function () { D.save.known = {}; D.persist(); this.textContent = 'Готово ✓'; };
       $('setTut').onclick = function () { S.tips = {}; D.persist(); this.textContent = 'Готово ✓'; };
       $('setReset').onclick = function () { if (this.dataset.sure) { localStorage.removeItem('sp-dungeon-v1'); location.reload(); } else { this.dataset.sure = 1; this.textContent = 'Точно? Нажми ещё раз'; } };
     });
@@ -1468,7 +1574,7 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
   function bossLoot() {
     var R = G.room, L = X.loot('boss'); R.iq += L.iq; D.persist(); hud(); roomLabels();
     floater('+' + L.iq + ' IQ', G.hero.x + 60, 120, '#CECBF6');
-    setPanel('<div class="qtext">Железный сундук босса!</div>' + lootHtml(L), [btn('Идти дальше', 'primary', 'Enter', goNext), btn('Рюкзак', 'ghost', null, openBag)]);
+    setPanel('<div class="qtext">Железный сундук босса!</div>' + lootHtml(L), [btn('Идти дальше', 'primary', 'Enter', goNext), btn('Рюкзак', 'ghost', null, openBag)]); autoLoot();
   }
 
   /* ---------- клавиатура ---------- */
@@ -1520,9 +1626,10 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
     if (!I.dead) A.hearts(c, I.x, monTop(I) - 12, I.done && I.q ? 1 : I.hp, 1);
   }
   var TP_MS = 2380;   /* +70% к прежним 1,4 с */
+  function tpms() { return fast() ? 900 : TP_MS; }
   function drawTeleport(c, o, dt, fy) {
-    if (dt > TP_MS) return;
-    var k = dt / TP_MS, h = A.monHeight(o.key), top = fy - h;
+    if (dt > tpms()) return;
+    var k = dt / tpms(), h = A.monHeight(o.key), top = fy - h;
     if (k < 0.55) {
       var a = (1 - k / 0.55) * (Math.floor(dt / 70) % 2 ? 0.55 : 1), jx = (Math.random() - 0.5) * 6 * (k / 0.55 + 0.2);
       c.save(); c.translate(o.x + jx, fy); c.scale(1 - k * 0.9, 1 + k * 0.25); c.translate(-o.x, -fy);

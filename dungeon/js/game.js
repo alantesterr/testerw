@@ -513,11 +513,11 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   function mkMon(key, items, extra) { var o = { type: 'mon', key: key, items: items.slice(), hp: items.length, max: items.length }; for (var k in extra || {}) o[k] = extra[k]; return o; }
   /* монстры: сердечек ровно столько, сколько вопросов и заданий; задания — у последнего (сильного) */
   function makeMons(f, items, boss, seed) {
-    var r = rnd(seed), ros = ROSTER[tierOf(f)], qs = items.filter(function (x) { return x.t === 'q'; }), ts = items.filter(function (x) { return x.t === 't'; }), out = [];
+    var r = rnd(seed), ros = f.exam || f.rep ? ROSTER[tierOf(f)] : themeRoster(f), qs = items.filter(function (x) { return x.t === 'q'; }), ts = items.filter(function (x) { return x.t === 't'; }), out = [];
     if (boss) {
       var cut = Math.min(3, Math.max(0, qs.length - 4));
       if (cut) out.push(mkMon(ros[0], qs.slice(0, cut)));
-      out.push(mkMon(BOSS[Math.min(2, Math.floor(f.n / 6))], qs.slice(cut).concat(ts), { strong: true, boss: true }));
+      out.push(mkMon(themeBoss(f), qs.slice(cut).concat(ts), { strong: true, boss: true }));
       return out.filter(function (m) { return m.hp; });
     }
     /* Двойник: два похожих понятия подряд (неверный вариант одного вопроса — верный ответ другого) */
@@ -537,7 +537,8 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     var n = Math.max(1, Math.min(5, Math.ceil((qs.length + ts.length) / 4)));
     for (var i = 0; i < n; i++) {
       var part = qs.slice(Math.floor(i * qs.length / n), Math.floor((i + 1) * qs.length / n)); if (i === n - 1) part = part.concat(ts);
-      var key = ros[Math.floor(r() * ros.length)];
+      var key = ros[Math.floor(r() * ros.length)], tries = 0;   /* в одной комнате монстры не повторяются */
+      while (out.some(function (o) { return o.key === key; }) && tries++ < 8) key = ros[Math.floor(r() * ros.length)];
       out.push(mkMon(key, part, { strong: !!A.MON[key].lm && (part.length >= 4 || (i === n - 1 && ts.length > 0)) }));
     }
     out = out.filter(function (m) { return m.hp; });
@@ -606,7 +607,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   function enterRoom(a) {
     var f = floorBy(a.f), isErr = a.k === 'err', room = isErr ? errRoom(f) : f.rooms[a.k];
 if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) });   /* ИКТ: 10 вопросов по весам — новые и ошибки чаще, выученные почти никогда */
-    show(true); where((f.final ? 'Финал' : fname(f)) + ' · ' + (isErr ? 'Зал ошибок' : f.drill ? 'Тренировка' : room.boss ? 'Босс' : 'Комната ' + (a.k + 1)));
+    show(true); where((f.final ? 'Финал' : fname(f)) + ' · ' + (A.THEMES[themeOf(f)] || {}).name + ' · ' + (isErr ? 'Зал ошибок' : f.drill ? 'Тренировка' : room.boss ? 'Босс' : 'Комната ' + (a.k + 1)));
     if (!isErr && !f.rep && !f.exam) { S.at = { s: D.subjId, f: f.n, k: a.k }; D.persist(); }
     var info = isErr ? { done: false } : roomInfo(f, a.k), st = D.stats(room.qs);
     var mode = isErr ? 'err' : (a.again || !info.done || !st.clean || f.drill) ? 'run' : 'clean';
@@ -700,12 +701,47 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
     if (R.mode === 'clean' && o.type === 'exit') bs.push(btn('Пройти ещё раз', 'ghost', null, function () { go('room', { f: R.f.n, k: R.k, again: 1 }); }));
     setPanel('<div class="row"><span class="tag">' + esc(nm) + '</span>' + (sec ? '<span class="tag teal">' + esc(sec.title) + '</span>' : '') + (st.clean ? '<span class="tag gold">чисто ✓</span>' : '') + '</div><p class="msg">' + esc(roomSummary()) + '. Дальше — ' + esc(what) + '.</p><p class="hint">Вопросы ' + (R.room.errHall ? 'зала' : 'комнаты') + ': ' + statLine(st) + '</p>', bs);
   }
+  /* ---------- МИРЫ ТЕМ: у каждой темы своя обстановка, свои монстры и свой босс ---------- */
+  var THEME_ORDER = ['crypt', 'library', 'ice', 'swamp', 'lava', 'temple', 'shadow', 'blood'];
+  var THEME_OFF = { arch: 0, phil: 1, ict: 3, cpp: 5 };
+  var THEME_MONS = {
+    crypt: ['skelet', 'tzombie', 'skeleton', 'necro', 'gskel', 'doc'],
+    library: ['imp', 'tgoblin', 'pumpkin', 'doc', 'delf', 'eye'],
+    ice: ['icezombie', 'iimp', 'iorc', 'eye', 'skelet', 'tzombie'],
+    swamp: ['slug', 'tslug', 'muddy', 'pchort', 'pswamp', 'mushroom'],
+    lava: ['fimp', 'forc', 'chort', 'orc', 'shaman', 'goblin'],
+    temple: ['angel', 'gskel', 'lizard', 'dwarf', 'masked', 'eye'],
+    shadow: ['schort', 'knight', 'delf', 'necro', 'wogol', 'skeleton'],
+    blood: ['bnecro', 'fimp', 'chort', 'knight', 'orc', 'skeleton']
+  };
+  var THEME_BOSS = { crypt: ['zking', 'bzombie'], library: ['dshadow', 'demon'], ice: ['dice'], swamp: ['dpoison', 'zking'], lava: ['dfire', 'ochief'], temple: ['dgold'], shadow: ['dshadow'], blood: ['dblood', 'ochief'] };
+  function themeOf(f) {
+    if (!f) return 'crypt'; if (f.exam) return 'blood'; if (f.rep) return 'temple';
+    var n = typeof f.n === 'number' ? f.n : 1; return THEME_ORDER[(n - 1 + (THEME_OFF[f.subj] || 0)) % THEME_ORDER.length];
+  }
+  function themeRoster(f) { return THEME_MONS[themeOf(f)]; }
+  function themeBoss(f) { var b = THEME_BOSS[themeOf(f)], n = typeof f.n === 'number' ? f.n : 0; return b[n % b.length]; }
+  /* эпичное появление босса: затемнение, табличка с именем, рык, тряска */
+  function bossIntro(o, done) {
+    var sw = $('sceneWrap'), el = document.createElement('div'); el.className = 'boss-title';
+    el.innerHTML = '<small>' + esc((A.THEMES[themeOf(G.room.f)] || {}).name || 'Босс') + ' · босс темы</small><b>' + esc(A.MON[o.key].name) + '</b><span>' + o.hp + ' ♥</span>';
+    sw.appendChild(el); sw.classList.remove('rage'); void sw.offsetWidth; sw.classList.add('rage'); setMon(o, 'attack'); sfx('guard');
+    setTimeout(function () { el.classList.add('out'); }, 1700);
+    setTimeout(function () { el.remove(); done(); }, 2100);
+  }
+  /* вторая фаза: на половине сердец босс вырастает, разгорается аура, стихия усиливается */
+  function bossPhase2(m) {
+    m.p2 = true; m.big = 1.15;
+    var sw = $('sceneWrap'); sw.classList.remove('rage'); void sw.offsetWidth; sw.classList.add('rage');
+    setTimeout(function () { floater('ВТОРАЯ ФАЗА!', m.x, 60, '#F09595'); bubbleAt('<b>' + esc(line(['Это была лишь разминка!', 'Теперь я серьёзен!', 'Узри мою истинную форму!', 'Ты меня разбудил…'], RUDE_RAGE)) + '</b>', m, 'say bad'); }, 650);
+  }
   function approach(i) {
     var R = G.room, o = R.objs[i]; R.idx = i;
     var stop = o.type === 'mon' ? o.x - (A.MON[o.key].lm ? 62 : A.MON[o.key].boss ? 66 : 50) : o.type === 'chest' ? o.x - 34 : o.type === 'altar' ? o.x - 30 : o.x - 26;
     setPanel('<p class="msg">Идём…</p>');
     walkTo(stop, function () {
-      if (o.type === 'mon') { R.mon = o; R.monTurn = 0; ask(); }
+      if (o.type === 'mon' && (o.boss || o.exam) && !o.intro) { o.intro = true; bossIntro(o, function () { if (G.room === R) { R.mon = o; R.monTurn = 0; ask(); } }); }
+      else if (o.type === 'mon') { R.mon = o; R.monTurn = 0; ask(); }
       else if (o.type === 'chest') openChest(o);
       else if (o.type === 'altar') useAltar(o);
       else exitRoom();
@@ -949,7 +985,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
     if (R.run && R.run % LUCK_RUN === 0) setTimeout(luckChest, 700);
     else if (clean && R.run >= LUCK_RUN - 3) setTimeout(function () { floater('Серия ' + R.run + ' — до сундука удачи ' + (LUCK_RUN - R.run % LUCK_RUN), 240, 60, '#97C459'); }, 500);
     if (ok) { quest('right'); if (kind === 'task') quest('task'); if (clean && R.mode === 'err') quest('fix'); }
-    var drop = function () { m.hp = m.items.length; if (!m.hp) { m.dead = true; if (m.guard) { m.tpAt = now(); m.state = 'idle'; m.st = m.tpAt; sfx('chest'); quest('guard'); } else { setMon(m, 'death'); sfx('kill'); } } };
+    var drop = function () { m.hp = m.items.length; if (m.boss && !m.exam && !m.p2 && m.hp > 0 && m.hp <= Math.ceil(m.max / 2) && m.max >= 4) bossPhase2(m); if (!m.hp) { m.dead = true; if (m.guard) { m.tpAt = now(); m.state = 'idle'; m.st = m.tpAt; sfx('chest'); quest('guard'); } else { setMon(m, 'death'); sfx('kill'); } } };
     if (ok) {
       R.right++;
       var hw = X.hit(power, m), bonus = Math.min(20, Math.max(0, hw.dmg - power) * 2); R.crit = (R.combo >= 1.5 && Math.random() < (R.combo - 1)) || ((S.lvl || 1) >= 4 && Math.random() < 0.1);   /* с ур. 4 — +10% крит */
@@ -990,6 +1026,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
       panel.appendChild(row2); row2.querySelector('[data-nx]').onclick = ask; return;
     }
     if (S.hp <= 0) return setTimeout(defeat, 500);
+    if (m.mimic && m.dead) return setTimeout(function () { if (G.room === R) { R.mon = null; mimicLoot(); } }, WATCH_MS);
     if (m.boss && !m.dead && !m.raged && m.items.length >= 3 && Math.random() < RAGE_CHANCE) return setTimeout(function () { if (G.room === R && R.mon === m) bossRage(m); }, WATCH_MS);
     var btns = [];
     if (m.dead && m.boss) btns.push(btn('Босс повержен! Открыть железный сундук', 'primary', 'Enter', function () { R.mon = null; bossLoot(); }));
@@ -1015,7 +1052,26 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
   function bump() { var e = $('hudCombo'); e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump'); }
   function setMon(m, st) { m.state = st; m.st = now(); var d = A.monDur(m.key, st); if (st !== 'death') setTimeout(function () { if (m.state === st) { m.state = 'idle'; m.st = now(); } }, d); }
   function heroAttack(onHit) { var h = G.hero; h.attackAt = now(); setTimeout(onHit, 230); }
+  /* Мимик: иногда сундук оказывается монстром — 2–3 вопроса темы; победил — двойная добыча */
+  var MIMIC_CHANCE = 0.18;
+  function maybeMimic(o) {
+    var R = G.room; if (o.mimicChecked || R.f.exam) return false; o.mimicChecked = true;
+    if (Math.random() > MIMIC_CHANCE) return false;
+    var ids = orderIds(poolIds(R.f)).slice(0, 2 + Math.floor(Math.random() * 2)); if (!ids.length) return false;
+    var m = mkMon('mimic', ids.map(qi), { mimic: true }); m.x = o.x; m.state = 'attack'; m.st = now();
+    R.objs[R.objs.indexOf(o)] = m; R.mon = m; R.monTurn = 0; roomLabels(); sfx('guard');
+    floater('Это МИМИК!', m.x, 70, '#F09595');
+    bubbleAt('<b>' + esc(line(['Сюрприз! Я не сундук!', 'Попался, жадина!', 'Хотел добычу? Заработай!'], RUDE_RAGE)) + '</b>', m, 'say bad');
+    setTimeout(function () { if (G.room === R && R.mon === m) ask(); }, 1600);
+    return true;
+  }
+  function mimicLoot() {
+    var R = G.room, L1 = X.loot('chest'), L2 = X.loot('chest'), L = { iq: L1.iq + L2.iq, items: L1.items.concat(L2.items), weapon: L1.weapon || L2.weapon };
+    R.iq += L.iq; sfx('chest'); D.persist(); hud(); roomLabels();
+    setPanel('<div class="qtext">Мимик повержен — двойная добыча!</div>' + lootHtml(L), [btn('Идти дальше', 'primary', 'Enter', goNext), btn('Рюкзак', 'ghost', null, openBag)]);
+  }
   function openChest(o) {
+    if (maybeMimic(o)) return;
     var R = G.room, L = X.loot('chest'), gain = L.iq;
     o.open = true; o.openAt = now(); R.iq += gain; sfx('chest');
     var info = roomInfo(R.f, R.k); info.chest = true; S.rooms[rkey(R.f, R.k)] = info; D.persist(); hud();
@@ -1559,7 +1615,7 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
     }
     if (G.scene === 'house') { A.bgHouse(c, t); c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(SAGE_X, A.FLOOR_Y + 8, 16, 4, 0, 0, 7); c.fill(); A.drawMonster(c, 'sage', 'idle', t, SAGE_X, A.FLOOR_Y + 8); drawIntruder(c, t); }
     else if (G.scene === 'hall') A.bgHall(c, t);
-    else if (G.scene === 'room' && G.room) A.bgRoom(c, t, { exit: true, exitOpen: G.room.objs.every(function (o) { return o.type !== 'mon' || o.dead; }), seed: G.room.k, goo: G.room.floor % 3 === 0, hole: G.room.floor % 2 === 0 });
+    else if (G.scene === 'room' && G.room) A.bgRoom(c, t, { theme: themeOf(G.room.f), exit: true, exitOpen: G.room.objs.every(function (o) { return o.type !== 'mon' || o.dead; }), seed: G.room.k, goo: G.room.floor % 3 === 0, hole: G.room.floor % 2 === 0 });
     else return;
     var fy = A.FLOOR_Y + 8;
     /* объекты комнаты */
@@ -1583,7 +1639,10 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
         }
         c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(o.x, fy, rw, 5, 0, 0, 7); c.fill();
         if (A.MON[o.key].twin && !o.dead) A.drawMonster(c, o.key, st, t - o.st + 200, o.x + 14, fy, others ? 0.3 : 0.5);   /* «тень» Двойника */
-        A.drawMonster(c, o.key, st, t - o.st, o.x, fy, others ? 0.6 : 1);
+        var MM = A.MON[o.key], mh = A.monHeight(o.key) * (o.big || 1);
+        if (MM.el && !o.dead && (o.boss || o.p2)) A.elemAura(c, MM.el, o.x, fy, mh, t, o.p2 ? 2 : 1);   /* аура стихии у боссов */
+        A.drawMonster(c, o.key, st, t - o.st, o.x, fy, others ? 0.6 : 1, o.big, o.p2 ? (MM.tint || '') + ' saturate(1.5) brightness(1.15)' : null);
+        if (MM.el && !o.dead) A.elemFx(c, MM.el, o.x, fy, mh, t, o.boss ? (o.p2 ? 3 : 2) : 1);   /* частицы стихии */
         if (!o.dead) A.hearts(c, o.x, monTop(o) - 12, o.hp, o.max);
         if (o.summonAt && t - o.summonAt < 900) {   /* пешка появляется в облаке искр */
           var sk = (t - o.summonAt) / 900;

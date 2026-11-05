@@ -151,12 +151,64 @@
     overlord: { t: 'big_demon_idle', name: 'Владыка Экзамена', s: 4.4, boss: true },
     ogre: { t: 'ogre_idle', name: 'Огр', s: 3.4, boss: true },
     bzombie: { t: 'big_zombie_idle', name: 'Большой зомби', s: 3.4, boss: true },
-    demon: { t: 'big_demon_idle', name: 'Демон', s: 3.4, boss: true }
+    demon: { t: 'big_demon_idle', name: 'Демон', s: 3.4, boss: true },
+    /* новые монстры из того же набора */
+    pumpkin: { t: 'pumpkin_dude_idle', name: 'Тыквоголовый', s: 3 },
+    icezombie: { t: 'ice_zombie', name: 'Ледяной зомби', s: 3, el: 'ice' },
+    muddy: { t: 'muddy', name: 'Грязевик', s: 3, el: 'poison' },
+    doc: { t: 'doc_idle', name: 'Чумной доктор', s: 3 },
+    angel: { t: 'angel_idle', name: 'Падший ангел', s: 3, el: 'gold' },
+    tslug: { t: 'tiny_slug', name: 'Слизнячок', s: 3 },
+    tgoblin: { t: 'goblin_idle', name: 'Гоблин-вор', s: 3 },
+    lizard: { t: 'lizard_m_idle', name: 'Ящер-наёмник', s: 2.8 },
+    knight: { t: 'knight_m_idle', name: 'Чёрный рыцарь', s: 2.8, tint: 'grayscale(0.7) brightness(0.55) contrast(1.3)', el: 'shadow' },
+    delf: { t: 'elf_m_idle', name: 'Тёмный эльф', s: 2.8, tint: 'hue-rotate(250deg) brightness(0.8)', el: 'shadow' },
+    dwarf: { t: 'dwarf_m_idle', name: 'Гном-громила', s: 3 },
+    mimic: { t: 'chest_mimic_open', name: 'Мимик', s: 2.6 },
+    /* цветные варианты: та же картинка, своя стихия и частицы */
+    fimp: { t: 'imp_idle', name: 'Огненный бесёнок', s: 3, tint: 'hue-rotate(-25deg) saturate(1.8) brightness(1.15)', el: 'fire' },
+    iimp: { t: 'imp_idle', name: 'Ледяной бесёнок', s: 3, tint: 'hue-rotate(185deg) saturate(1.2) brightness(1.1)', el: 'ice' },
+    pchort: { t: 'chort_idle', name: 'Ядовитый чёрт', s: 3, tint: 'hue-rotate(95deg) saturate(1.5)', el: 'poison' },
+    schort: { t: 'chort_idle', name: 'Теневой чёрт', s: 3, tint: 'grayscale(0.5) hue-rotate(240deg) brightness(0.7)', el: 'shadow' },
+    forc: { t: 'orc_warrior_idle', name: 'Орк-поджигатель', s: 3, tint: 'hue-rotate(-60deg) saturate(1.6)', el: 'fire' },
+    iorc: { t: 'masked_orc_idle', name: 'Морозный орк', s: 3, tint: 'hue-rotate(150deg) saturate(1.1) brightness(1.15)', el: 'ice' },
+    gskel: { t: 'skelet_idle', name: 'Золотой скелет', s: 3, tint: 'sepia(1) saturate(3) brightness(1.15)', el: 'gold' },
+    bnecro: { t: 'necromancer', name: 'Кровавый некромант', s: 3, tint: 'hue-rotate(-40deg) saturate(2)', el: 'blood' },
+    pswamp: { t: 'swampy', name: 'Болотный ужас', s: 3.2, tint: 'saturate(1.6) brightness(0.9)', el: 'poison' },
+    /* боссы-демоны: крупнее, со своей стихией и аурой */
+    dfire: { t: 'big_demon_idle', name: 'Огненный демон', s: 3.8, boss: true, tint: 'hue-rotate(-15deg) saturate(1.7) brightness(1.1)', el: 'fire' },
+    dice: { t: 'big_demon_idle', name: 'Ледяной демон', s: 3.8, boss: true, tint: 'hue-rotate(185deg) saturate(1.3) brightness(1.1)', el: 'ice' },
+    dshadow: { t: 'big_demon_idle', name: 'Теневой демон', s: 3.8, boss: true, tint: 'grayscale(0.6) hue-rotate(250deg) brightness(0.65) contrast(1.3)', el: 'shadow' },
+    dblood: { t: 'big_demon_idle', name: 'Кровавый демон', s: 3.8, boss: true, tint: 'saturate(2.2) brightness(0.85)', el: 'blood' },
+    dpoison: { t: 'big_demon_idle', name: 'Ядовитый демон', s: 3.8, boss: true, tint: 'hue-rotate(95deg) saturate(1.5)', el: 'poison' },
+    dgold: { t: 'big_demon_idle', name: 'Золотой демон', s: 3.8, boss: true, tint: 'sepia(1) saturate(3.5) brightness(1.2)', el: 'gold' },
+    zking: { t: 'big_zombie_idle', name: 'Король зомби', s: 3.8, boss: true, tint: 'hue-rotate(70deg) saturate(1.3)', el: 'poison' },
+    ochief: { t: 'ogre_idle', name: 'Вождь огров', s: 3.8, boss: true, tint: 'hue-rotate(320deg) saturate(1.5)', el: 'fire' }
+  };
+  /* частицы стихии вокруг монстра: огонь — искры вверх, лёд — снежинки, яд — пузыри, тень — дымка, кровь — капли, золото — блёстки */
+  var EL_COL = { fire: ['255,140,40', '255,210,90'], ice: ['190,230,255', '255,255,255'], poison: ['120,220,90', '190,255,120'], shadow: ['150,110,230', '70,40,120'], blood: ['220,40,50', '150,10,20'], gold: ['255,215,90', '255,250,200'] };
+  A.elemFx = function (c, el, x, fy, h, t, k) {
+    var col = EL_COL[el]; if (!col) return; k = k || 1;
+    for (var i = 0; i < 10 * k; i++) {
+      var p = ((t / (el === 'ice' ? 2600 : 1600)) + i / (10 * k)) % 1, sx = x - h * 0.35 + ((i * 53) % 100) / 100 * h * 0.7;
+      var py = el === 'ice' || el === 'blood' ? fy - h + p * h : fy - p * h * 1.1;
+      var px = sx + Math.sin(t / 400 + i) * (el === 'shadow' ? 6 : 2);
+      c.fillStyle = 'rgba(' + col[i % 2] + ',' + (el === 'shadow' ? 0.5 : 0.85) * (1 - Math.abs(p - 0.5) * 1.6) + ')';
+      var s = el === 'poison' ? 3 : el === 'shadow' ? 4 : 2; c.fillRect(Math.round(px), Math.round(py), s, s);
+    }
+  };
+  A.elemAura = function (c, el, x, fy, h, t, k) {
+    var col = EL_COL[el]; if (!col) return;
+    var a = (0.16 + 0.08 * Math.sin(t / 280)) * (k || 1), g = c.createRadialGradient(x, fy - h / 2, 6, x, fy - h / 2, h * 0.85);
+    g.addColorStop(0, 'rgba(' + col[0] + ',' + a.toFixed(3) + ')'); g.addColorStop(1, 'rgba(' + col[0] + ',0)');
+    c.fillStyle = g; c.fillRect(x - h, fy - h * 1.5, h * 2, h * 1.6);
   };
   /* состояния: idle / attack / hit / death; t — время в состоянии (мс) */
-  A.drawMonster = function (c, key, state, t, x, y, alpha) {
+  A.drawMonster = function (c, key, state, t, x, y, alpha, big, tint) {
     var M = A.MON[key]; if (!M) return;
     c.save(); c.globalAlpha = alpha == null ? 1 : alpha;
+    if ((tint || M.tint) && 'filter' in c) c.filter = tint || M.tint;   /* цветной вариант (там, где браузер умеет фильтры холста) */
+    if (big && big !== 1) M = { lm: M.lm, t: M.t, s: M.s * big, h: M.h, fly: M.fly };
     if (M.lm) {
       var set = A.lm[M.lm], sh = state === 'hit' ? set.takehit : state === 'attack' ? set.attack : state === 'death' ? set.death : set.idle;
       var n = Math.round(sh.width / 150), fps = state === 'idle' ? 8 : 14, f = Math.floor(t / 1000 * fps);
@@ -234,18 +286,55 @@
   }
   A.FLOOR_Y = 214;
 
+  /* МИРЫ ТЕМ: у каждой темы своя гамма стен и пола, свой декор и частицы в воздухе */
+  A.THEMES = {
+    crypt: { name: 'Склеп', wall: null, floor: null, fx: 'dust' },
+    ice: { name: 'Ледяная пещера', wall: '#7fb6ff', floor: '#a8d4ff', fx: 'snow', deco: 'icicles' },
+    lava: { name: 'Лавовые залы', wall: '#ff7a45', floor: '#ff9a55', fx: 'embers', deco: 'cracks' },
+    library: { name: 'Запретная библиотека', wall: '#d8b27a', floor: '#c99a62', fx: 'dust', deco: 'shelves' },
+    swamp: { name: 'Гнилое болото', wall: '#7fae5c', floor: '#6f9a4e', fx: 'bubbles', deco: 'fog' },
+    temple: { name: 'Храм мудрецов', wall: '#f0dfae', floor: '#e6cf94', fx: 'sparkle', deco: 'fountain' },
+    shadow: { name: 'Теневой разлом', wall: '#8e74d6', floor: '#7a62bf', fx: 'wisps', deco: 'runes' },
+    blood: { name: 'Багровая арена', wall: '#d65a5a', floor: '#c24848', fx: 'embers', deco: 'cracks' }
+  };
+  function tintArea(c, col, y0, y1) { if (!col) return; c.save(); c.globalCompositeOperation = 'multiply'; c.fillStyle = col; c.fillRect(0, y0, W, y1 - y0); c.restore(); }
+  function themeDeco(c, th, t) {
+    if (th.deco === 'icicles') { c.fillStyle = 'rgba(220,240,255,.85)'; for (var i = 0; i < W; i += 23) { var hh = 8 + (i * 7) % 14; c.beginPath(); c.moveTo(i, 32); c.lineTo(i + 6, 32); c.lineTo(i + 3, 32 + hh); c.fill(); } }
+    if (th.deco === 'cracks') { for (var k = 0; k < 7; k++) { var x = (k * 71 + 20) % W, a = 0.5 + 0.3 * Math.sin(t / 300 + k); c.fillStyle = 'rgba(255,120,30,' + a.toFixed(2) + ')'; c.fillRect(x, A.FLOOR_Y + 10 + (k % 3) * 14, 22, 2); c.fillRect(x + 8, A.FLOOR_Y + 12 + (k % 3) * 14, 2, 6); } }
+    if (th.deco === 'shelves') { [[24, 60], [380, 60]].forEach(function (p) { c.fillStyle = '#3a2412'; c.fillRect(p[0], p[1], 70, 90); for (var r = 0; r < 3; r++) for (var b = 0; b < 8; b++) { c.fillStyle = ['#a32d2d', '#185fa5', '#3b6d11', '#ba7517', '#534ab7', '#0f6e56'][(b + r * 3) % 6]; c.fillRect(p[0] + 4 + b * 8, p[1] + 6 + r * 28, 6, 20); } }); }
+    if (th.deco === 'fog') { for (var f = 0; f < 4; f++) { var fx = ((t / 60 + f * 140) % (W + 160)) - 80; c.fillStyle = 'rgba(140,200,110,.10)'; c.beginPath(); c.ellipse(fx, A.FLOOR_Y - 6, 90, 14, 0, 0, 7); c.fill(); } }
+    if (th.deco === 'fountain') { var ff = Math.floor(t / 150) % 3; A.tile(c, 'wall_fountain_top_1', 232, 48); A.tile(c, 'wall_fountain_mid_blue_anim_f' + ff, 232, 64); A.tile(c, 'wall_fountain_basin_blue_anim_f' + ff, 232, 80); }
+    if (th.deco === 'runes') { for (var r2 = 0; r2 < 5; r2++) { var ra = 0.35 + 0.3 * Math.sin(t / 500 + r2 * 1.3); c.strokeStyle = 'rgba(180,140,255,' + ra.toFixed(2) + ')'; c.lineWidth = 2; c.beginPath(); c.arc(60 + r2 * 90, 120, 9, 0, 7); c.moveTo(60 + r2 * 90 - 6, 120); c.lineTo(60 + r2 * 90 + 6, 120); c.stroke(); } }
+  }
+  function themeFx(c, th, t) {
+    var n = 26;
+    for (var i = 0; i < n; i++) {
+      var p = (t / (th.fx === 'snow' ? 7000 : 5000) + i / n) % 1, x = (i * 97 + Math.sin(t / 900 + i) * 12) % W, y;
+      if (th.fx === 'snow') { y = p * H; c.fillStyle = 'rgba(235,245,255,.8)'; c.fillRect(x, y, 2, 2); }
+      else if (th.fx === 'embers') { y = H - p * H; c.fillStyle = 'rgba(255,' + (120 + (i % 4) * 30) + ',40,' + (1 - p).toFixed(2) + ')'; c.fillRect(x, y, 2, 2); }
+      else if (th.fx === 'bubbles') { y = A.FLOOR_Y + 30 - p * 60; c.strokeStyle = 'rgba(150,230,120,' + (1 - p).toFixed(2) + ')'; c.strokeRect(x, y, 3, 3); }
+      else if (th.fx === 'sparkle') { y = 40 + (i * 37) % 150; if ((Math.floor(t / 200) + i) % 9 === 0) { c.fillStyle = 'rgba(255,240,180,.9)'; c.fillRect(x, y, 2, 2); } }
+      else if (th.fx === 'wisps') { y = 60 + (i * 41) % 140 + Math.sin(t / 700 + i) * 8; c.fillStyle = 'rgba(160,120,240,' + (0.15 + 0.15 * Math.sin(t / 600 + i)).toFixed(2) + ')'; c.fillRect(x, y, 6, 2); }
+      else { y = 40 + (i * 29) % 170 + p * 10; c.fillStyle = 'rgba(220,210,190,.18)'; c.fillRect(x, y, 1, 1); }
+    }
+  }
   A.bgRoom = function (c, t, opt) {
     opt = opt || {};
+    var th = A.THEMES[opt.theme] || A.THEMES.crypt;
     c.fillStyle = '#0c0a12'; c.fillRect(0, 0, W, H);
     wall(c, 32, A.FLOOR_Y, 0.25);
+    tintArea(c, th.wall, 16, A.FLOOR_Y);
     /* колонны и знамёна */
     [70, 200, 330, 450].forEach(function (x, i) { A.tile(c, 'column', x - 8, A.FLOOR_Y - 48); if (i < 3) A.tile(c, ['wall_banner_red', 'wall_banner_blue', 'wall_banner_green'][(i + (opt.seed || 0)) % 3], x + 57, 70); });
     if (opt.goo) A.tile(c, 'wall_goo', 150, 110);
     if (opt.hole) A.tile(c, 'wall_hole_1', 400, 140);
     floorRow(c, A.FLOOR_Y);
+    tintArea(c, th.floor, A.FLOOR_Y, H);
+    themeDeco(c, th, t);
     [135, 265, 395].forEach(function (x) { A.torch(c, x, 96, t + x * 7); });
     /* дверь-выход справа */
     if (opt.exit) { A.tile(c, 'doors_frame_left', W - 52, A.FLOOR_Y - 32); A.tile(c, opt.exitOpen ? 'doors_leaf_open' : 'doors_leaf_closed', W - 52, A.FLOOR_Y - 32); }
+    themeFx(c, th, t);
     vignette(c, 0.55);
   };
 

@@ -237,6 +237,19 @@
         var byId = {}; pool.forEach(function (q) { byId[q.id] = q; });
         return { n: i + 1, id: lec.id, label: lec.label, title: lec.title, texts: texts, pool: pool, byId: byId, tasks: tasks, taskById: taskById, rooms: rooms, final: lec.label === 'Итог', subj: 'cpp' };
       });
+      /* «Практика»: все задания «напиши код» — отдельный этаж, комната = тема (по порядку лекций).
+         На этажах лекций остаются только тестовые вопросы. */
+      var pRooms = [], pTasks = [], pTexts = [];
+      floors.forEach(function (f) {
+        pTexts = pTexts.concat(f.texts);
+        if (f.tasks.length) {
+          pRooms.push({ k: pRooms.length, sec: null, secs: f.texts, boss: false, qs: [], tasks: f.tasks.map(function (t) { return t.id; }), src: f.n, label: (f.final ? 'Итог курса' : 'Тема ' + f.n) + ': ' + f.title });
+          pTasks = pTasks.concat(f.tasks);
+        }
+        f.rooms.forEach(function (r) { r.tasks = []; });
+      });
+      var pById = {}; pTasks.forEach(function (t) { pById[t.id] = t; });
+      floors.push({ n: 17, id: 'cpp-practice', label: 'Практика', title: 'Практика: пишем код по темам', texts: pTexts, pool: [], byId: {}, tasks: pTasks, taskById: pById, rooms: pRooms, final: false, practice: true, subj: 'cpp' });
       D.SUBJ.cpp = { id: 'cpp', title: 'C++ (ООП)', short: 'C++', floors: floors, unitWord: 'Этаж' };
       return floors;
     });

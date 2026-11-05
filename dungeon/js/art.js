@@ -243,6 +243,15 @@
   /* сердечки над головой (пиксельные, из атласа) */
   A.hearts = function (c, cx, y, n, max) {
     var w = 12, x0 = Math.round(cx - max * w / 2);
+    if (max > 8) {   /* много сердец (эпик, мини-босс): полоска здоровья + сердечко с числом */
+      var bw = 64, bx = Math.round(cx - bw / 2 + 7), by = y + 3;
+      A.tile(c, 'ui_heart_full', bx - 15, y, 0.9);
+      c.fillStyle = 'rgba(10,8,16,.85)'; c.fillRect(bx - 1, by - 1, bw + 2, 8);
+      c.fillStyle = '#E24B4A'; c.fillRect(bx, by, Math.round(bw * Math.max(0, n) / max), 6);
+      c.fillStyle = 'rgba(255,255,255,.25)'; c.fillRect(bx, by, Math.round(bw * Math.max(0, n) / max), 2);
+      c.fillStyle = '#fff'; c.font = 'bold 9px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(n + ' / ' + max, bx + bw / 2, by + 3); c.textAlign = 'left';
+      return;
+    }
     for (var i = 0; i < max; i++) A.tile(c, i < n ? 'ui_heart_full' : 'ui_heart_empty', x0 + i * w, y, 0.9);
   };
 

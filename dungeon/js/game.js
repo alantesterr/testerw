@@ -52,7 +52,7 @@
     hud(); window.scrollTo(0, 0);
   }
   /* «Тема 3» у предметов по силлабусу, «Этаж 3» у C++ */
-  function fname(f) { return f.rep || f.drill || f.arena ? f.title : f.lab ? 'Лабы: EWB' : f.syll ? 'Тема ' + f.n : f.final ? 'Финальный этаж' : 'Этаж ' + f.n; }
+  function fname(f) { return f.practice ? 'Практика' : f.rep || f.drill || f.arena ? f.title : f.lab ? 'Лабы: EWB' : f.syll ? 'Тема ' + f.n : f.final ? 'Финальный этаж' : 'Этаж ' + f.n; }
   /* тема по номеру (у лаб EWB номер 16, поэтому не по индексу) */
   function floorBy(n) { if (n === 'arena' && G.arena) return G.arena; if (n === 'rep' && G.rep) return G.rep; if (n === 'exam' && G.exf) return G.exf; return D.floors.filter(function (f) { return f.n === +n; })[0] || D.floors[0]; }
   /* ---------- ПЕЩЕРА ТЕМЫ («Тропа знаний») ----------
@@ -60,7 +60,7 @@
      Все вопросы темы при каждом проходе случайно раскиданы по комнатам (за проход попадутся все).
      Пройденные комнаты горят золотом; можно вернуться в любую открытую; «Возродить монстров» — проход заново
      (тогда монстры спрашивают и «наоборот»). Состояние прохода: S.runs[f.id]. */
-  function caveOn(f) { return !!f && !f.drill && !f.rep && !f.exam && !f.arena && typeof f.n === 'number'; }
+  function caveOn(f) { return !!f && !f.practice && !f.drill && !f.rep && !f.exam && !f.arena && typeof f.n === 'number'; }
   function caveN(f) { return f.rooms.filter(function (r) { return !r.boss; }).length; }
   function caveRun(f, reset) {
     S.runs = S.runs || {};
@@ -489,7 +489,7 @@
   }
   function startRun() {
     var fl = modeFloors(); if (!fl.length) return go('path');
-    for (var i = 0; i < fl.length; i++) { var f = fl[i], k = f.rooms.findIndex(function (r) { return !r.boss && (!roomInfo(f, r.k).done || !D.stats(r.qs).clean); }); if (k >= 0) return go('room', { f: f.n, k: k }); }
+    for (var i = 0; i < fl.length; i++) { var f = fl[i], k = f.rooms.findIndex(function (r) { return !r.boss && (!roomInfo(f, r.k).done || !D.stats(rq(r)).clean); }); if (k >= 0) return go('room', { f: f.n, k: k }); }
     go('path');
   }
 
@@ -593,9 +593,10 @@
   }
 
   /* ---------- ПУТЬ C++ (как ветка Duolingo) ---------- */
-  var UNITS = [[1, 3, 'Раздел 1 · к РК1', 'Основы: алгоритмы, операции, ветвления'], [4, 6, 'Раздел 2 · к РК1', 'Циклы, массивы, функции, строки'], [7, 9, 'Раздел 3 · к РК2', 'ООП: принципы, классы, среда C++ Builder'], [10, 12, 'Раздел 4 · к РК2', 'Формы, события, иерархия классов'], [13, 15, 'Раздел 5 · к экзамену', 'Конструкторы, свойства, компоненты'], [16, 16, 'Финал', 'Смешанные сложные вопросы по всему курсу']];
+  var UNITS = [[1, 3, 'Раздел 1 · к РК1', 'Основы: алгоритмы, операции, ветвления'], [4, 6, 'Раздел 2 · к РК1', 'Циклы, массивы, функции, строки'], [7, 9, 'Раздел 3 · к РК2', 'ООП: принципы, классы, среда C++ Builder'], [10, 12, 'Раздел 4 · к РК2', 'Формы, события, иерархия классов'], [13, 15, 'Раздел 5 · к экзамену', 'Конструкторы, свойства, компоненты'], [16, 16, 'Финал', 'Смешанные сложные вопросы по всему курсу'], [17, 17, 'Практика', 'Пишем код: задания по темам, по порядку']];
   function floorMastery(f) { return D.mastery(f.pool.map(function (q) { return q.id; })); }
-  function poolIds(f) { return f.pool.map(function (q) { return q.id; }); }
+  function poolIds(f) { return f.practice ? f.tasks.map(function (t) { return t.id; }) : f.pool.map(function (q) { return q.id; }); }
+  function rq(r) { return r.qs.length || !r.tasks ? r.qs : r.tasks; }   /* вопросы комнаты; в «Практике» — её задания */
   function statLine(st) { return 'увидено ' + st.seen + ' / ' + st.total + (st.bad ? ' · <b class="bad">к повтору: ' + st.bad + '</b>' : ''); }
   var UNITS_ARCH = [[1, 5, 'РК1 · темы 1–5', 'Числа в памяти, IEEE 754, логика, Карно, комбинационные схемы'], [6, 8, 'РК2 · темы 6–8', 'Триггеры, счётчики, процессор и система команд'], [16, 16, 'Лабораторные', 'Программа Electronics Workbench (EWB)']];
   function enterPath() {
@@ -610,7 +611,7 @@
       D.floors.filter(function (f) { return f.n >= u[0] && f.n <= u[1] && (!rk || rkOf(f) === rk); }).forEach(function (f) {
         var m = floorMastery(f), st = D.stats(poolIds(f)), cls = m >= 85 ? 'm3' : m >= 50 ? 'm2' : m > 0 ? 'm1' : '';
         /* тема = дверь: номер на табличке, название, полоска освоения, ✓ за «начисто» */
-        h += '<button class="tdoor' + (f.n === cur ? ' cur' : '') + (st.clean ? ' clean' : '') + '" data-f="' + f.n + '" title="' + esc(f.title) + '"><span class="td-arch"><span class="td-plate">' + (f.final ? '★' : f.lab ? 'Л' : f.drill ? f.title : f.n) + '</span>' + (st.clean ? '<i class="td-medal">✓</i>' : '') + '<span class="td-knob"></span></span><b>' + esc(f.drill ? (f.sub || f.title) : f.title) + '</b><span class="td-bar"><i style="width:' + m + '%"></i></span><small>освоено ' + m + '%' + (st.bad ? ' · <b class="bad">ошибок ' + st.bad + '</b>' : '') + '</small></button>';
+        h += '<button class="tdoor' + (f.n === cur ? ' cur' : '') + (st.clean ? ' clean' : '') + '" data-f="' + f.n + '" title="' + esc(f.title) + '"><span class="td-arch"><span class="td-plate">' + (f.final ? '★' : f.practice ? '⌨' : f.lab ? 'Л' : f.drill ? f.title : f.n) + '</span>' + (st.clean ? '<i class="td-medal">✓</i>' : '') + '<span class="td-knob"></span></span><b>' + esc(f.drill ? (f.sub || f.title) : f.title) + '</b><span class="td-bar"><i style="width:' + m + '%"></i></span><small>освоено ' + m + '%' + (st.bad ? ' · <b class="bad">ошибок ' + st.bad + '</b>' : '') + '</small></button>';
       });
       h += '</div>';
     });
@@ -661,11 +662,12 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     }
     show(false); where(fname(f) + ' · ' + f.title);
     var m = floorMastery(f), fst = D.stats(poolIds(f)), bad = D.badIds(f).length;
-    var nextK = f.rooms.findIndex(function (r) { return !roomInfo(f, r.k).done || !D.stats(r.qs).clean; });
+    var nextK = f.rooms.findIndex(function (r) { return !roomInfo(f, r.k).done || !D.stats(rq(r)).clean; });
     var h = '<div class="path-head"><h1>' + esc(fname(f)) + '</h1><span class="tag teal">освоено ' + m + '%</span>' + (fst.clean ? '<span class="tag gold">пройдено начисто ✓</span>' : '') + '</div>' +
-      '<p class="hallnote">' + esc(f.title) + '. Вопросов: ' + statLine(fst) + '. В каждой комнате монстров ровно столько, чтобы спросить все её вопросы и задания. Ошибся — монстр бьёт тебя и задаст этот вопрос ещё раз чуть позже, пропустить нельзя. Ошибки и ответы с подсказкой ещё раз спросит страж у выхода (у него сердечки не тратятся). Так комната становится «чисто ✓».</p>' + tipHtml('floor2') + '<div class="rooms">';
+      (f.practice ? '<p class="hallnote">Здесь только задания «напиши код». Комната = тема курса, по порядку. Реши задание в голове или на бумаге, открой решение и честно отметь «Знал» или «Не знал». У алтаря — лекция этой темы. Заданий: ' + statLine(fst) + '.</p>' : '') +
+      '<p class="hallnote"' + (f.practice ? ' hidden' : '') + '>' + esc(f.title) + '. Вопросов: ' + statLine(fst) + '. В каждой комнате монстров ровно столько, чтобы спросить все её вопросы и задания. Ошибся — монстр бьёт тебя и задаст этот вопрос ещё раз чуть позже, пропустить нельзя. Ошибки и ответы с подсказкой ещё раз спросит страж у выхода (у него сердечки не тратятся). Так комната становится «чисто ✓».</p>' + tipHtml('floor2') + '<div class="rooms">';
     f.rooms.forEach(function (r) {
-      var ri = roomInfo(f, r.k), rm = D.mastery(r.qs), st = D.stats(r.qs), stars = rm >= 85 ? '★★★' : rm >= 50 ? '★★☆' : rm > 0 ? '★☆☆' : '☆☆☆';
+      var ri = roomInfo(f, r.k), rm = D.mastery(rq(r)), st = D.stats(rq(r)), stars = rm >= 85 ? '★★★' : rm >= 50 ? '★★☆' : rm > 0 ? '★☆☆' : '☆☆☆';
       var status = st.clean && ri.done ? '<span class="tag gold">чисто ✓</span>' : ri.done ? '<span class="tag">есть что пройти ещё раз</span>' : '';
       h += '<button class="room' + (st.clean && ri.done ? ' done' : '') + (r.boss ? ' boss' : '') + (r.k === nextK ? ' cur' : '') + '" data-k="' + r.k + '"><b>' + (r.boss ? (f.syll ? 'Босс темы' : 'Босс этажа') : 'Комната ' + (r.k + 1)) + '</b><span>' + esc(r.boss ? 'неувиденные и слабые вопросы всей ' + (f.syll ? 'темы' : 'лекции') : (r.sec ? r.sec.title : r.label || '')) + (r.tasks && r.tasks.length ? ' · заданий: ' + r.tasks.length : '') + '</span><div class="stars">' + stars + '</div><span>' + statLine(st) + '</span>' + status + '</button>';
     });
@@ -706,26 +708,31 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
       out.push(mkMon(themeBoss(f), qs.slice(cut).concat(ts), { strong: true, boss: true }));
       return out.filter(function (m) { return m.hp; });
     }
+    /* сколько монстров: обычно 2–4, изредка 5. Вопросов много — монстров не больше, просто у них больше сердец
+       (6+ — «Эпический», 10+ — «Мини-босс»). Вопросы не убавляются. */
+    var N = qs.length + ts.length, target = N <= 3 ? 1 : N <= 7 ? 2 : N <= 14 ? 3 : 4;
+    if (N >= 12 && r() < 0.1) target = 5;
     /* Двойник: два похожих понятия подряд (неверный вариант одного вопроса — верный ответ другого) */
-    var pair = twinPair(f, qs);
+    var pair = target >= 2 ? twinPair(f, qs) : null;
     if (pair) {
       var inPair = {}; pair.forEach(function (x) { inPair[x.id] = 1; }); qs = qs.filter(function (x) { return !inPair[x.id]; });
       out.push(mkMon('twin', pair, { twin: true }));
     }
     /* Софист (только предметы по силлабусу): 2 вопроса «наоборот» — дан ответ, выбери вопрос */
-    if ((f.arena || (caveOn(f) && caveRun(f).revived > 0)) && qs.length >= 4) {   /* Софист — только у возрождённых монстров и в Хаос-забеге */
+    if ((f.arena || (caveOn(f) && caveRun(f).revived > 0)) && qs.length >= 4 && target - out.length >= 2) {   /* Софист — только у возрождённых монстров и в Хаос-забеге */
       var rev = qs.filter(function (x) { return revOk(f, f.byId[x.id]); }).slice(0, f.arena ? 2 : 3);
       if (rev.length >= 2) {
         qs = qs.filter(function (x) { return rev.indexOf(x) < 0; });
         out.push(mkMon('sophist', rev.map(function (x) { return { t: 'r', id: x.id }; }), { sophist: true }));
       }
     }
-    var n = Math.max(1, Math.min(5, Math.ceil((qs.length + ts.length) / 4)));
+    var all = qs.concat(ts), n = Math.max(1, Math.min(all.length, target - out.length));
     for (var i = 0; i < n; i++) {
-      var part = qs.slice(Math.floor(i * qs.length / n), Math.floor((i + 1) * qs.length / n)); if (i === n - 1) part = part.concat(ts);
+      var part = all.slice(Math.floor(i * all.length / n), Math.floor((i + 1) * all.length / n));   /* задания — у последних монстров */
       var key = ros[Math.floor(r() * ros.length)], tries = 0;   /* в одной комнате монстры не повторяются */
       while (out.some(function (o) { return o.key === key; }) && tries++ < 8) key = ros[Math.floor(r() * ros.length)];
-      out.push(mkMon(key, part, { strong: !!A.MON[key].lm && (part.length >= 4 || (i === n - 1 && ts.length > 0)) }));
+      var hp = part.length, tier = hp >= 10 ? 'mini' : hp >= 6 ? 'epic' : null;
+      out.push(mkMon(key, part, { strong: tier ? true : !!A.MON[key].lm && (hp >= 4 || part.some(function (x) { return x.t === 't'; })), tier: tier, big: tier === 'mini' ? 1.3 : tier === 'epic' ? 1.15 : undefined }));
     }
     out = out.filter(function (m) { return m.hp; });
     /* порядок: обычный монстр, Двойник, …, Софист, последний обычный */
@@ -811,19 +818,20 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     if (f.arena) where('🌀 ' + arenaLine(f));
     if (caveOn(f) && !isErr) { var cn = caveN(f), cl = caveRun(f).cleared.slice(0, cn).filter(Boolean).length; where(fname(f) + ' · ' + (a.k >= cn ? 'логово босса' : 'комната ' + (a.k + 1) + ' из ' + cn + ' · до босса ' + (cn - cl))); }
     if (!isErr && !f.rep && !f.exam && !f.arena) { S.at = { s: D.subjId, f: f.n, k: a.k }; D.persist(); }
-    var info = isErr ? { done: false } : roomInfo(f, a.k), st = D.stats(room.qs);
+    var info = isErr ? { done: false } : roomInfo(f, a.k), st = D.stats(rq(room));
     var mode = isErr ? 'err' : caveOn(f) ? (caveRun(f).cleared[a.k] ? 'clean' : 'run') : (a.again || !info.done || !st.clean || f.drill) ? 'run' : 'clean';
     var items = mode === 'clean' ? [] : roomItems(f, room, isErr);
     if ((G.sessAns || 0) < 2 && !isErr && !f.exam && items.length > 3) {   /* лёгкий старт: первые 1–2 вопроса сессии — из почти выученных, быстрый успех */
       var easy = items.filter(function (x) { var r = x.t === "q" && D.save.srs[x.id]; return r && !D.isBad(x.id) && r.l >= 2; }).slice(0, 2 - (G.sessAns || 0));
       if (easy.length) items = easy.concat(items.filter(function (x) { return easy.indexOf(x) < 0; }));
     }
-    G.room = { floor: f.n, f: f, k: a.k, room: room, mode: mode, items: items, objs: buildRoom(f, a.k, mode, items), idx: -1, combo: 1, recent: [], turns: 0, right: 0, wrong: 0, iq: 0, briefOpen: false, mon: null, m0: D.mastery(room.qs), mistakes: [], problems: [], cheats: [], errs: {}, errItem: {}, fixed: 0, st0: st };
+    G.room = { floor: f.n, f: f, k: a.k, room: room, mode: mode, items: items, objs: buildRoom(f, a.k, mode, items), idx: -1, combo: 1, recent: [], turns: 0, right: 0, wrong: 0, iq: 0, briefOpen: false, mon: null, m0: D.mastery(rq(room)), mistakes: [], problems: [], cheats: [], errs: {}, errItem: {}, fixed: 0, st0: st };
     G.hero.x = 36; G.hero.dir = 1;
     roomIdle();
     var nq = items.filter(function (x) { return x.t === 'q'; }).length, nt = items.length - nq;
     var msg = mode === 'clean' ? 'Комната чиста ✓: все вопросы увидены, ошибок нет. Монстров нет — но можно пройти её ещё раз для закрепления.'
       : mode === 'err' ? 'Зал ошибок: здесь только твои ошибки этой лекции (' + nq + '). Исправь их — и зал запрётся.'
+      : f.practice ? 'Практика · ' + (room.label || '') + ': ' + nt + ' ' + plural(nt, 'задание', 'задания', 'заданий') + ' «напиши код». Реши, открой решение и честно отметь. «Не знал» — задание ещё раз спросит страж у выхода.'
       : room.boss ? 'Босс спросит ' + nq + ' ' + plural(nq, 'вопрос', 'вопроса', 'вопросов') + ' всей лекции — сначала те, что ты ещё не видел, и слабые.'
       : 'В комнате ' + nq + ' ' + plural(nq, 'вопрос', 'вопроса', 'вопросов') + (nt ? ' и ' + nt + ' ' + plural(nt, 'задание', 'задания', 'заданий') : '') + ' — у монстров ровно столько сердечек. Ошибся — вопрос вернётся через пару вопросов. Ошибки и подсказки ещё раз спросит страж у выхода.';
     panel.insertAdjacentHTML('afterbegin', '<div class="wave-msg' + (mode === 'clean' ? ' ok' : '') + '">' + esc(msg) + '</div>' + tipHtml('room2'));
@@ -832,7 +840,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   function nextObj() { var R = G.room; for (var i = 0; i < R.objs.length; i++) { var o = R.objs[i]; if ((o.type === 'mon' && !o.dead) || (o.type === 'chest' && !o.open) || (o.type === 'altar' && !o.used) || o.type === 'exit') return i; } return R.objs.length - 1; }
   /* редкость босса в Хаос-забеге: чем реже, тем злее (чаще ярость, больше пешек и сердец у пешек) */
   var BOSS_RAR = [{ n: 'Обычный', rage: 0.12, pawn: [1, 1], max: 1, col: '#B4B2C4' }, { n: 'Редкий', rage: 0.22, pawn: [1, 2], max: 1, col: '#85B7EB' }, { n: 'Эпический', rage: 0.32, pawn: [2, 3], max: 2, col: '#AFA9EC' }, { n: 'Легендарный', rage: 0.45, pawn: [3, 3], max: 3, col: '#FAC775' }];
-  function monName(o) { return o.guard ? 'Страж выхода' : (o.rar != null ? BOSS_RAR[o.rar].n + ' ' : '') + A.MON[o.key].name; }
+  function monName(o) { return o.guard ? 'Страж выхода' : (o.rar != null ? BOSS_RAR[o.rar].n + ' ' : o.tier === 'mini' ? 'Мини-босс ' : o.tier === 'epic' ? 'Эпический ' : '') + A.MON[o.key].name; }
   /* страж: появляется, когда все монстры повержены, если были ошибки или подсказки */
   /* что спросит страж: ВСЕ вопросы, где брал подсказку (чит) + случайно 1–5 из ошибок комнаты
      (чаще ошибался — выше в очереди). Нет ни подсказок, ни ошибок — стража нет. */
@@ -906,7 +914,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     var altar = R.objs.some(function (o) { return o.type === 'altar' && !o.used; });
     return 'В комнате: ' + (altar ? 'алтарь знаний · ' : '') + (mons ? mons + ' ' + (mons === 1 ? 'монстр' : mons < 5 ? 'монстра' : 'монстров') : 'монстров нет') + (chest ? ' · сундук' : '') + ' · выход';
   }
-  function monTop(o) { return A.FLOOR_Y + 8 - A.monHeight(o.key) - (A.MON[o.key].fly ? 40 : 6); }
+  function monTop(o) { return A.FLOOR_Y + 8 - A.monHeight(o.key) * (o.big || 1) - (A.MON[o.key].fly ? 40 : 6); }
   function roomLabels() { var R = G.room; if (!R) return; labels(R.objs.filter(function (o) { return o.type === 'mon' && !o.dead; }).map(function (o) { return { text: monName(o), x: o.x, y: monTop(o) - 14, color: o.boss || o.guard ? '#F09595' : o.strong ? '#FAC775' : '#e8e4f8' }; }).concat(R.objs.filter(function (o) { return o.type === 'chest' && !o.open; }).map(function (o) { return { text: 'Сундук', x: o.x, y: A.FLOOR_Y - 36, color: '#FAC775' }; })).concat(R.objs.filter(function (o) { return o.type === 'altar' && !o.used; }).map(function (o) { return { text: 'Алтарь знаний', x: o.x, y: A.FLOOR_Y - 70, color: '#CECBF6' }; }))); }
   /* «Время прочитать вопрос»: сначала вопрос без вариантов — успеть прочитать и вспомнить ответ самому (так запоминается сильнее).
      Нажал «Показать варианты» или любую клавишу ответа — сразу показываем. */
@@ -984,7 +992,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     var R = G.room, i = autoOn() && R.mode !== 'clean' ? nextObjAuto() : nextObj(), o = R.objs[i];
     var what = o.type === 'mon' ? (o.boss ? 'босс «' + monName(o) + '»' : o.guard ? 'страж выхода (' + o.hp + ' ♥ — твои ошибки и подсказки)' : monName(o) + ' (' + o.hp + ' ♥)') : o.type === 'chest' ? 'сундук' : o.type === 'altar' ? 'алтарь знаний (прочитать раздел лекции)' : 'выход';
     var sec = R.room.sec;
-    var st = D.stats(R.room.qs), nm = R.room.errHall ? 'Зал ошибок' : R.room.boss ? 'Босс этажа' : 'Комната ' + (R.k + 1);
+    var st = D.stats(rq(R.room)), nm = R.room.errHall ? 'Зал ошибок' : R.room.boss ? 'Босс этажа' : 'Комната ' + (R.k + 1);
     var bs = [btn('Идти дальше', 'primary', 'Enter', function () { approach(i); })];
     if (caveOn(R.f)) bs.push(btn('🗺 Пещера', 'ghost', null, openCaveMap));
     if (R.mode === 'clean' && o.type === 'exit') bs.push(btn('Пройти ещё раз', 'ghost', null, function () { go('room', { f: R.f.n, k: R.k, again: 1 }); }));
@@ -1032,7 +1040,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     setPanel('<p class="msg">Идём…</p>');
     walkTo(stop, function () {
       if (o.type === 'mon' && (o.boss || o.exam) && !o.intro) { o.intro = true; bossIntro(o, function () { if (G.room === R) { R.mon = o; R.monTurn = 0; ask(); } }); }
-      else if (o.type === 'mon') { R.mon = o; R.monTurn = 0; ask(); }
+      else if (o.type === 'mon') { if (o.tier && !o.intro) { o.intro = true; floater((o.tier === 'mini' ? 'Мини-босс' : 'Эпический') + ' · ' + o.hp + ' ♥', o.x, 64, '#FAC775'); sfx('guard'); } R.mon = o; R.monTurn = 0; ask(); }
       else if (o.type === 'chest') openChest(o);
       else if (o.type === 'altar') useAltar(o);
       else exitRoom();
@@ -1397,10 +1405,10 @@ if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает д
       return caveTransition(f, R.k, nk, function () { go("room", { f: f.n, k: nk }); });
     }
     if (isErr) R.room.qs = D.badIds(f);
-    var st = D.stats(R.room.qs);
+    var st = D.stats(rq(R.room));
     sfx(st.clean ? 'win' : 'ok');
     var bonus = first ? 10 : st.clean && !R.st0.clean ? 15 : 3; S.iq += bonus; R.iq += bonus; D.persist(); hud();
-    var m = D.mastery(R.room.qs), next = isErr || boss ? null : f.rooms[R.k + 1], acc = R.right + R.wrong ? Math.round(R.right / (R.right + R.wrong) * 100) : 100;
+    var m = D.mastery(rq(R.room)), next = isErr || boss ? null : f.rooms[R.k + 1], acc = R.right + R.wrong ? Math.round(R.right / (R.right + R.wrong) * 100) : 100;
     var title = isErr ? (st.bad ? 'Зал ошибок пройден' : 'Все ошибки исправлены! Зал заперт') : st.clean ? (boss ? 'Босс повержен — этаж под контролем!' : 'Комната чиста ✓') : (boss ? 'Босс этажа повержен!' : 'Комната пройдена!');
     var h = '<div class="sum-head"><div><div class="qtext">' + esc(title) + '</div>' + (isErr ? '' : '<div class="sum-stars">' + stars(m) + '</div>') + '</div>' +
       '<div class="sum-cards"><div><b>' + R.right + '</b><span>верно</span></div><div><b>' + R.wrong + '</b><span>ошибок</span></div><div><b>' + acc + '%</b><span>точность</span></div><div class="iq"><b>+' + R.iq + '</b><span>IQ</span></div></div></div>' + (isErr ? '' :
@@ -1481,11 +1489,13 @@ if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает д
 
   /* ---------- КНИЖКА: вся лекция, открывается на нужной странице ---------- */
   var BK = null;
+  /* в «Практике» книга — лекция той темы, чьи задания в комнате */
+  function bookFloor(R) { return R.f.practice && R.room.src ? floorBy(R.room.src) : R.f; }
   function openBookRoom() {
     var R = G.room; if (!R || !R.f.texts.length) return;
     var sec = (R.mon && R.briefSec) || R.room.sec || (R.room.secs || [])[0];
-    var idx = Math.max(0, R.f.texts.indexOf(sec));
-    openBook({ f: R.f, start: idx, mark: (R.room.secs || []).map(function (s) { return s.id; }), cur: sec ? sec.id : null });
+    var bf = bookFloor(R), idx = Math.max(0, bf.texts.indexOf(sec));
+    openBook({ f: bf, start: idx, mark: (R.room.secs || []).map(function (s) { return s.id; }), cur: sec ? sec.id : null });
   }
   function openBook(o) {
     var el = $('book'); if (!el) { el = document.createElement('div'); el.id = 'book'; document.body.appendChild(el); }
@@ -1522,9 +1532,9 @@ if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает д
   /* ---------- АЛТАРЬ ЗНАНИЙ ---------- */
   function useAltar(o) {
     var R = G.room, secs = R.room.secs || [], first = !o.used;
-    setPanel('<div class="qtext">Алтарь знаний</div><p class="msg">Над камнем парит книга. Она откроет разделы этой комнаты целиком: «' + esc(secs.map(function (s) { return s.title; }).join('», «')) + '». Прочитай — и монстры станут понятнее.</p>',
+    setPanel('<div class="qtext">Алтарь знаний</div><p class="msg">Над камнем парит книга. ' + (R.f.practice ? 'Она откроет лекцию этой темы: «' + esc(bookFloor(R).title) + '»' : 'Она откроет разделы этой комнаты целиком: «' + esc(secs.map(function (s) { return s.title; }).join('», «')) + '»') + '. Прочитай — и монстры станут понятнее.</p>',
       [btn('Открыть книгу', 'primary', 'Enter', function () {
-        openBook({ f: R.f, start: Math.max(0, R.f.texts.indexOf(secs[0])), mark: secs.map(function (s) { return s.id; }), cur: null, altar: first, onClose: function () {
+        openBook({ f: bookFloor(R), start: Math.max(0, bookFloor(R).texts.indexOf(secs[0])), mark: secs.map(function (s) { return s.id; }), cur: null, altar: first, onClose: function () {
           if (!o.used) { o.used = true; var info = roomInfo(R.f, R.k); info.altar = true; S.rooms[rkey(R.f, R.k)] = info; S.iq += 5; R.iq += 5; var healed = S.hp < S.maxHp; if (healed) S.hp++; D.persist(); hud();
             floater('+5 IQ', o.x, 120, '#CECBF6'); if (healed) floater('+1 ♥', o.x, 150, '#9FE1CB'); }
           roomIdle();
@@ -1936,7 +1946,7 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
         c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(o.x, fy, rw, 5, 0, 0, 7); c.fill();
         if (A.MON[o.key].twin && !o.dead) A.drawMonster(c, o.key, st, t - o.st + 200, o.x + 14, fy, others ? 0.3 : 0.5);   /* «тень» Двойника */
         var MM = A.MON[o.key], mh = A.monHeight(o.key) * (o.big || 1);
-        if (MM.el && !o.dead && (o.boss || o.p2)) A.elemAura(c, MM.el, o.x, fy, mh, t, o.p2 ? 2 : 1);   /* аура стихии у боссов */
+        if (MM.el && !o.dead && (o.boss || o.p2 || o.tier === 'mini')) A.elemAura(c, MM.el, o.x, fy, mh, t, o.p2 ? 2 : 1);   /* аура стихии у боссов */
         A.drawMonster(c, o.key, st, t - o.st, o.x, fy, others ? 0.6 : 1, o.big, o.p2 ? (MM.tint || '') + ' saturate(1.5) brightness(1.15)' : null);
         if (MM.el && !o.dead) A.elemFx(c, MM.el, o.x, fy, mh, t, o.boss ? (o.p2 ? 3 : 2) : 1);   /* частицы стихии */
         if (!o.dead) A.hearts(c, o.x, monTop(o) - 12, o.hp, o.max);
@@ -1967,7 +1977,7 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
   /* ошибка в одном кадре не должна останавливать всю игру */
   function loop(t) { requestAnimationFrame(loop); try { draw(t); } catch (e) { if (!loop.warned) { loop.warned = 1; console.error(e); } } }
   /* для проверки: мгновенно довести героя до цели (вкладка в фоне не анимируется) */
-  window.DGame = { G: G, next: function () { goNext(); }, skip: function () { var h = G.hero; if (h.target != null) { h.x = h.target; h.target = null; var cb = h.onArrive; h.onArrive = null; if (cb) cb(); } } };
+  window.DGame = { G: G, go: function (s, a) { go(s, a); }, next: function () { goNext(); }, skip: function () { var h = G.hero; if (h.target != null) { h.x = h.target; h.target = null; var cb = h.onArrive; h.onArrive = null; if (cb) cb(); } } };
 
   /* ---------- старт ---------- */
   Promise.all([A.load(), D.load()]).then(function () {

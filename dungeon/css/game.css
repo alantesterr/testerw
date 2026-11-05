@@ -476,3 +476,10 @@ details.brief.was-err summary{color:#FAC775}
 .cave-done .row{justify-content:center}
 .confetti{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(#FAC775 2px,transparent 2px),radial-gradient(#5DCAA5 2px,transparent 2px),radial-gradient(#E24B4A 2px,transparent 2px),radial-gradient(#AFA9EC 2px,transparent 2px);background-size:60px 70px,80px 60px,70px 90px,90px 80px;background-position:0 0,20px 30px,40px 10px,10px 50px;animation:confetti 3s linear infinite;opacity:.7}
 @keyframes confetti{from{background-position:0 -100px,20px -70px,40px -90px,10px -50px}to{background-position:0 400px,20px 430px,40px 410px,10px 450px}}
+/* выбор режима: две большие карточки */
+.modes{display:grid;gap:10px}
+.mode-card{display:grid;grid-template-columns:44px 1fr;grid-template-rows:auto auto;column-gap:12px;text-align:left;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;cursor:pointer}
+.mode-card:hover{border-color:var(--line2);background:var(--card2)}
+.mode-card .mi{grid-row:1/3;font-size:30px;align-self:center;text-align:center}
+.mode-card b{font-size:18px}
+.mode-card span:last-child{font-size:13px;color:var(--mute);line-height:1.4}

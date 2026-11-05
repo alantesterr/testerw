@@ -575,6 +575,33 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
     R.objs.splice(ei, 0, g); roomLabels();
     return g;
   }
+  /* ---------- ЯРОСТЬ БОССА: изредка (раз за бой) рычит, трясёт сцену и призывает пешку ----------
+     Пешка — обычный монстр с 1–3 сердцами (вопросы темы, сначала слабые); если были ошибки —
+     иногда мини-страж с этими ошибками. После пешки бой с боссом продолжается. */
+  var RAGE_CHANCE = 0.14;
+  var SAY_RAGE = ['РРРА! Слуги, ко мне!', 'Ты меня разозлил!', 'Хватит! Взять его!', 'Ну всё, держись!'];
+  function bossRage(m) {
+    var R = G.room; m.raged = true; setMon(m, 'attack'); sfx('hurt');
+    bubbleSay(pick(rude() && Math.random() < 0.6 ? RUDE_RAGE : SAY_RAGE), 'bad');
+    var sw = $('sceneWrap'); sw.classList.remove('rage'); void sw.offsetWidth; sw.classList.add('rage');
+    floater('ЯРОСТЬ БОССА!', m.x, 64, '#F09595');
+    setTimeout(function () {
+      if (G.room !== R) return;
+      var bossIds = {}; m.items.forEach(function (it) { bossIds[it.id] = 1; });
+      var errs = Object.keys(R.errs).map(function (k) { return R.errItem[k]; }), mini = errs.length && Math.random() < 0.35, mon;
+      if (mini) mon = mkMon(GUARD, errs.slice(0, 1 + Math.floor(Math.random() * 3)), { guard: true, mini: true });
+      else {
+        var n = 1 + Math.floor(Math.random() * 3), ros = ROSTER[Math.min(3, tierOf(R.f))];
+        var ids = orderIds(poolIds(R.f)).filter(function (id) { return !bossIds[id]; }).slice(0, n);
+        if (!ids.length) return afterAnswer(true);
+        mon = mkMon(ros[Math.floor(Math.random() * ros.length)], ids.map(qi), { pawn: true });
+      }
+      mon.x = m.x - 34; mon.state = 'idle'; mon.st = now(); mon.summonAt = now();
+      R.objs.splice(R.objs.indexOf(m), 0, mon); R.mon = null; roomLabels(); hideBubble(); sfx('guard');
+      setPanel('<div class="wave-msg">Босс в ярости призвал ' + (mini ? 'мини-стража с твоими ошибками' : 'пешку «' + esc(monName(mon)) + '»') + ' (' + mon.hp + ' ♥). Победи её — и бой с боссом продолжится.</div>',
+        [btn('Сразиться', 'primary', 'Enter', function () { approach(R.objs.indexOf(mon)); })]);
+    }, 1500);
+  }
   function goNext() {
     var R = G.room; R.mon = null; R.bubble = null; G.buttons = []; hideBubble();
     var g = maybeGuard(); roomLabels();
@@ -785,6 +812,15 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
   var SAY_EXAM = ['Экзамен окончен… посмотрим, что ты набрал.', 'Время сдавать зачётку!', 'Ты дошёл до конца. Неплохо…'];
   var SAY_BOSS = ['Невозможно!', 'Ты прошёл всю тему?!', 'Я… повержен…'], SAY_GUARD = ['Ещё встретимся…', 'Я вернусь, когда ты ошибёшься.', 'Сегодня ты сильнее. Пока!', 'Жди меня у следующей двери…', 'Запомнил тебя. До встречи!', 'Исчезаю… но не навсегда.'];
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  /* 18+: монстры иногда матерятся (по умолчанию включено, выключается в Настройках) */
+  function rude() { return S.cfg.rude !== false; }
+  var RUDE_HIT = ['Сука, больно!', 'Блядь!', 'Ёб твою мать!', 'Ах ты ж сука!', 'Пиздец, как больно!', 'Да ну нахуй!', 'Твою ж мать!', 'Ебать, ты сильный!'];
+  var RUDE_DIE = ['Пиздец…', 'Ну нахуй эту учёбу…', 'Ёбаный отличник!', 'Хуёво мне…', 'Пиздец, он всё выучил!', 'Сука… я ещё вернусь…', 'Блядь, за что?!'];
+  var RUDE_BAD = ['Хуйню ответил!', 'Учи, блядь!', 'Опять хуйня!', 'Пиздец ты гений…', 'Нихуя ты не знаешь!', 'Ха! Мимо, лошара!'];
+  var RUDE_CHEAT = ['Сука, ты подсмотрел!', 'Читер ебаный!', 'Нихуя себе, с подсказкой!', 'Так нечестно, блядь!'];
+  var RUDE_RAGE = ['Ну всё, сука, держись!', 'Ебать, ты меня взбесил!', 'Слуги, нахуй его!', 'Пиздец тебе!'];
+  var RUDE_GUARD = ['Ещё встретимся, сука…', 'Я вернусь, блядь!', 'Запомнил тебя, умник хренов.'];
+  function line(norm, rudeSet) { return rude() && rudeSet && Math.random() < 0.45 ? pick(rudeSet) : pick(norm); }
 
   /* после ответа панель ненадолго гаснет, чтобы было видно удар героя или атаку монстра */
   var WATCH_MS = 1560;
@@ -812,9 +848,9 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
     var kill = !m.items.length && (m.guard ? clean : ok);
 if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает дольше — панель и облачко ждут конца телепорта */
     /* верно, но с подсказкой (Google, 50/50, лампа, ИИ…) — монстр возмущается */
-    if (ok && R.assisted) bubbleSay(pick(m.guard ? SAY_GUARD_CHEAT : SAY_CHEAT), 'cheat');
-    else if (kill) bubbleSay(pick(m.exam ? SAY_EXAM : m.guard ? SAY_GUARD : m.boss ? SAY_BOSS : SAY_DIE), 'die');
-    else bubbleSay(m.guard ? (ok ? 'Верно. Исправлено.' : 'Неверно. Спрошу ещё раз.') : pick(ok ? SAY_OK : SAY_BAD), ok ? 'ok' : 'bad');
+    if (ok && R.assisted) bubbleSay(m.guard ? pick(SAY_GUARD_CHEAT) : line(SAY_CHEAT, RUDE_CHEAT), 'cheat');
+    else if (kill) bubbleSay(m.exam ? pick(SAY_EXAM) : m.guard ? line(SAY_GUARD, RUDE_GUARD) : m.boss ? line(SAY_BOSS, RUDE_DIE) : line(SAY_DIE, RUDE_DIE), 'die');
+    else bubbleSay(m.guard ? (ok ? 'Верно. Исправлено.' : 'Неверно. Спрошу ещё раз.') : ok ? line(SAY_OK, m.exam ? null : RUDE_HIT) : line(SAY_BAD, m.exam ? null : RUDE_BAD), ok ? 'ok' : 'bad');
     R.run = clean ? (R.run || 0) + 1 : 0; if (R.run === 5) quest('row5');
     if (R.run && R.run % LUCK_RUN === 0) setTimeout(luckChest, 700);
     else if (clean && R.run >= LUCK_RUN - 3) setTimeout(function () { floater('Серия ' + R.run + ' — до сундука удачи ' + (LUCK_RUN - R.run % LUCK_RUN), 240, 60, '#97C459'); }, 500);
@@ -859,6 +895,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
       panel.appendChild(row2); row2.querySelector('[data-nx]').onclick = ask; return;
     }
     if (S.hp <= 0) return setTimeout(defeat, 500);
+    if (m.boss && !m.dead && !m.raged && m.items.length >= 3 && Math.random() < RAGE_CHANCE) return setTimeout(function () { if (G.room === R && R.mon === m) bossRage(m); }, WATCH_MS);
     var btns = [];
     if (m.dead && m.boss) btns.push(btn('Босс повержен! Открыть железный сундук', 'primary', 'Enter', function () { R.mon = null; bossLoot(); }));
     else if (m.dead && ok && !R.assisted) {
@@ -1229,6 +1266,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
 '<div class="set-row"><div><b>Перевод C++ в облачке</b><span>Вопросы C++ на английском: в облачке у монстра оригинал, под ним перевод; под вариантами — мелкий перевод.</span></div><label class="sw"><input type="checkbox" id="setCppTr"' + (c2.cppTr !== false ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Вопрос на весь экран</b><span>Сцена прячется, вопрос крупнее. После ответа видно удар. Клавиша F.</span></div><label class="sw"><input type="checkbox" id="setFocus"' + (S.focus ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Звуки</b><span>Удар, ошибка, сундук, победа.</span></div><label class="sw"><input type="checkbox" id="setSound"' + (c2.sound !== false ? ' checked' : '') + '><i></i></label></div>' +
+      '<div class="set-row"><div><b>Реплики 18+ (мат)</b><span>Монстры иногда матерятся, когда получают урон, бьют или умирают. Выключи — будут только приличные фразы.</span></div><label class="sw"><input type="checkbox" id="setRude"' + (c2.rude !== false ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Обучение</b><span>Снова показать подсказки для новичка.</span></div><button class="btn ghost" id="setTut">Показать снова</button></div>' +
       '<div class="set-row"><div><b>Сбросить прогресс</b><span>Удалит освоение, IQ, предметы и огонёк на этом устройстве.</span></div><button class="btn warn" id="setReset">Сбросить</button></div>' +
       '<p class="hint">Графика: «Monsters Creatures Fantasy» (Luiz Melo) и «DungeonTileset II» (0x72) — CC0. Герой, факелы и сцены нарисованы для StudyPlay.</p></div>';
@@ -1238,6 +1276,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
 $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
       $('setFocus').onchange = function () { S.focus = this.checked; D.persist(); };
       $('setSound').onchange = function () { c2.sound = this.checked; D.persist(); if (this.checked) sfx('ok'); };
+      $('setRude').onchange = function () { c2.rude = this.checked; D.persist(); };
       $('setTut').onclick = function () { S.tips = {}; D.persist(); this.textContent = 'Готово ✓'; };
       $('setReset').onclick = function () { if (this.dataset.sure) { localStorage.removeItem('sp-dungeon-v1'); location.reload(); } else { this.dataset.sure = 1; this.textContent = 'Точно? Нажми ещё раз'; } };
     });
@@ -1431,6 +1470,10 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
         if (A.MON[o.key].twin && !o.dead) A.drawMonster(c, o.key, st, t - o.st + 200, o.x + 14, fy, others ? 0.3 : 0.5);   /* «тень» Двойника */
         A.drawMonster(c, o.key, st, t - o.st, o.x, fy, others ? 0.6 : 1);
         if (!o.dead) A.hearts(c, o.x, monTop(o) - 12, o.hp, o.max);
+        if (o.summonAt && t - o.summonAt < 900) {   /* пешка появляется в облаке искр */
+          var sk = (t - o.summonAt) / 900;
+          for (var pi = 0; pi < 18; pi++) { var pang = pi * 0.349, pr = 6 + sk * 34; c.fillStyle = 'rgba(' + (pi % 2 ? '226,75,74' : '250,199,117') + ',' + (1 - sk).toFixed(2) + ')'; c.fillRect(Math.round(o.x + Math.cos(pang) * pr), Math.round(fy - 24 + Math.sin(pang) * pr * 0.7), 3, 3); }
+        }
       }
     });
     /* герой */

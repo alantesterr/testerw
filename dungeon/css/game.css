@@ -426,3 +426,4 @@ b.bad,.bad{color:#F7A3A3}
 .td-bar{width:100%;height:6px;border-radius:4px;background:#2a2540;overflow:hidden}.td-bar i{display:block;height:100%;background:#5DCAA5}
 .tdoor.soon{opacity:.5;cursor:default}.tdoor.soon .td-arch{filter:grayscale(1)}
 @media (max-width:420px){.doors{grid-template-columns:repeat(2,1fr);gap:10px}.td-arch{width:64px;height:82px}}
+#hudWhere.low{color:#F09595;font-weight:700}

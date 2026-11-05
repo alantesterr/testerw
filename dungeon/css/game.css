@@ -467,9 +467,7 @@ details.brief.was-err summary{color:#FAC775}
 
 /* ---------- пещера: картинка спуска и карта ---------- */
 .cave-ov{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;z-index:5;cursor:pointer;animation:caveIn .25s ease-out}
-.cave-ov.out{animation:caveOut .25s ease-in forwards}
 @keyframes caveIn{from{opacity:0}to{opacity:1}}
-@keyframes caveOut{to{opacity:0}}
 .cave-map{width:100%;max-width:720px;display:block;margin:0 auto;border-radius:10px;image-rendering:pixelated;cursor:pointer;background:#100c16}
 .cave-done{text-align:center;padding:30px 10px;position:relative;overflow:hidden}
 .cave-done h1{font-size:clamp(22px,4vw,34px);margin:6px 0}
@@ -488,6 +486,48 @@ details.brief.was-err summary{color:#FAC775}
 .opts{transition:opacity .35s}
 .recall-msg{color:#CECBF6;font-weight:700;margin:10px 0;animation:hotPulse 1.2s infinite}
 .recall-msg .linkbtn{background:none;border:0;color:var(--mute);text-decoration:underline dotted;font:inherit;font-weight:400;cursor:pointer;margin-left:6px}
-#panel>*{animation:panelIn .22s ease-out}
-@keyframes panelIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .high-note .btn{margin-left:8px}
+
+/* ---------- плавность и спокойствие (2026-11-05) ---------- */
+/* переход по пещере: камера наезжает на комнату, потом картинка мягко «растворяется» в комнате */
+.cave-ov{animation:caveIn .5s ease-out}
+.cave-ov.out{animation:caveOut .9s ease-in-out forwards}
+@keyframes caveOut{to{opacity:0;transform:scale(1.08)}}
+.cave-msg{animation:hotPulse 2.4s ease-in-out infinite}
+/* вход в комнату: сцена проявляется из темноты */
+#sceneWrap.enter #scene{animation:sceneIn .9s ease-out}
+@keyframes sceneIn{from{opacity:0;filter:brightness(.4);transform:scale(1.04)}to{opacity:1;filter:none;transform:none}}
+/* панель меняется мягче */
+#panel>*{animation:panelIn .38s ease-out}
+@keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* время прочитать вопрос: тихая полоска вместо мигания */
+.recall-msg{animation:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;color:#CECBF6;font-weight:600;margin:12px 0;transition:opacity .25s}
+.recall-msg.out{opacity:0}
+.recall-msg .read-bar{flex-basis:100%;height:4px;border-radius:3px;background:rgba(206,203,246,.14);overflow:hidden;display:block}
+.recall-msg .read-bar b{display:block;height:100%;width:0;background:linear-gradient(90deg,#7F77DD,#5DCAA5);border-radius:3px;animation:readBar linear forwards}
+@keyframes readBar{to{width:100%}}
+.opts.reveal .opt{animation:optIn .45s ease-out backwards}
+.opts.reveal .opt:nth-child(2){animation-delay:.07s}.opts.reveal .opt:nth-child(3){animation-delay:.14s}.opts.reveal .opt:nth-child(4){animation-delay:.21s}.opts.reveal .opt:nth-child(5){animation-delay:.28s}
+@keyframes optIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+/* «Загуглить» — крупно, наверху рядом с «Перевести» */
+.ggl-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;margin-right:8px;border-radius:999px;border:1.5px solid #85B7EB;background:rgba(133,183,235,.14);color:#cfe3fa;font:inherit;font-size:15px;font-weight:800;cursor:pointer;white-space:nowrap}
+.ggl-btn:hover{background:rgba(133,183,235,.26)}
+.ggl-btn[hidden]{display:none}
+.ggl-btn[data-hot]{border-color:#FAC775;color:#FAC775;background:rgba(250,199,117,.14);animation:hotGlow 1.8s ease-in-out 4}
+.ggl-btn.pop,.book-btn.pop{animation:popIn .5s cubic-bezier(.2,1.4,.4,1)}
+.ggl-btn.pop[data-hot]{animation:popIn .5s cubic-bezier(.2,1.4,.4,1),hotGlow 1.8s ease-in-out .5s 4}
+@keyframes popIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes hotGlow{0%,100%{box-shadow:0 0 0 0 rgba(250,199,117,0)}50%{box-shadow:0 0 0 5px rgba(250,199,117,.3)}}
+/* книга: заметная кнопка, видна сразу; через 30 с мягко подсвечивается */
+.book-btn{display:inline-flex;align-items:baseline;gap:8px;padding:8px 14px;border-radius:10px;border:1.5px solid #AFA9EC;background:rgba(175,169,236,.12);color:#e6e3fb;font:inherit;font-size:14.5px;font-weight:700;cursor:pointer}
+.book-btn small{font-weight:400;color:var(--mute);font-size:12px}
+.book-btn:hover{background:rgba(175,169,236,.24)}
+.book-btn[data-hot]{border-color:#FAC775;animation:hotGlow 1.8s ease-in-out 3}
+.book-btn[data-hot]::after{content:"← можно подсмотреть";font-size:12px;font-weight:600;color:#FAC775;animation:hotPulse 1.6s ease-in-out 3}
+/* «Кратко из лекции» всегда снизу и плавно опускается */
+details.brief.drop{animation:briefDrop .8s cubic-bezier(.2,.8,.3,1),briefGlow 1.6s ease-in-out .8s 2;border:1.5px solid #FAC775;transform-origin:top}
+@keyframes briefDrop{from{opacity:0;transform:translateY(-18px) scaleY(.85);max-height:0}60%{max-height:600px}to{opacity:1;transform:none;max-height:600px}}
+details.brief[open]>.rich{animation:richIn .45s ease-out}
+@keyframes richIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.cave-ov,.cave-ov.out,#sceneWrap.enter #scene,#panel>*,.opts.reveal .opt,details.brief.drop,.ggl-btn,.book-btn{animation-duration:.01s!important}}
+@media (max-width:520px){.ggl-btn{font-size:13.5px;padding:6px 10px;margin-right:6px}.book-btn{font-size:13.5px;padding:7px 11px}.book-btn[data-hot]::after{content:"←"}}

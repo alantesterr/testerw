@@ -432,3 +432,7 @@ b.bad,.bad{color:#F7A3A3}
 #sceneWrap.rage::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 60px 10px rgba(226,75,74,.65);animation:rageFlash 1.2s ease-out forwards}
 @keyframes rageShake{0%,100%{transform:none}20%{transform:translate(-4px,2px)}40%{transform:translate(4px,-2px)}60%{transform:translate(-3px,-1px)}80%{transform:translate(3px,1px)}}
 @keyframes rageFlash{from{opacity:1}to{opacity:0}}
+.hud-lv{display:flex;flex-direction:column;align-items:center;line-height:1.1;font-size:11px;color:#FAC775;font-weight:700;flex:none}
+.hud-lv b{font-size:15px;color:#fff}
+.hud-lv i{display:block;width:34px;height:4px;border-radius:3px;background:#2a2540;overflow:hidden;margin-top:2px}.hud-lv u{display:block;height:100%;background:#FAC775;text-decoration:none}
+@media (max-width:400px){.hud-lv i{width:26px}}

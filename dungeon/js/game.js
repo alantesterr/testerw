@@ -15,12 +15,36 @@
   var now = function () { return performance.now(); };
 
   /* ---------- HUD ---------- */
+  /* ---------- УРОВНИ ГЕРОЯ: опыт = весь заработанный IQ (покупки его не уменьшают) ----------
+     Ур. 2 — 100 опыта, 3 — 300, 4 — 600, 5 — 1000, … (50·n·(n+1)).
+     Награды: каждые 2 уровня +1 ♥ (до 10), с ур. 3 — «второй шанс» (первая ошибка в комнате без урона),
+     с ур. 4 — +10% к шансу крита. */
+  function heroLevel(xp) { var lv = 1; while (xp >= 50 * lv * (lv + 1)) lv++; return lv; }
+  function lvlNeed(lv) { return 50 * lv * (lv + 1); }
+  function trackXp() {
+    if (S.iqSeen == null) { S.iqSeen = S.iq; S.xp = S.xp || S.iq; }
+    if (S.iq > S.iqSeen) S.xp = (S.xp || 0) + (S.iq - S.iqSeen);
+    S.iqSeen = S.iq;
+    var lv = heroLevel(S.xp || 0), was = S.lvl || 1;
+    S.lvl = lv; var hp = Math.min(10, 5 + Math.floor((lv - 1) / 2));
+    if (hp > S.maxHp) { S.hp += hp - S.maxHp; S.maxHp = hp; }
+    if (lv > was) { setTimeout(function () { floater('⭐ Уровень ' + lv + '!', 240, 44, '#FAC775'); sfx('win'); toast(lvPerkText(lv), '#FAC775'); }, 300); D.persist(); }
+  }
+  function lvPerkText(lv) {
+    var p = ['Уровень ' + lv + '!'];
+    if (lv % 2 === 1) p.push('+1 ♥ (теперь ' + Math.min(10, 5 + Math.floor((lv - 1) / 2)) + ')');
+    if (lv === 3) p.push('«Второй шанс»: первая ошибка в комнате без урона');
+    if (lv === 4) p.push('+10% к шансу крита');
+    return p.join(' · ');
+  }
   function hud() {
+    trackXp();
     $('hud').hidden = false; updBack();
     var h = '';
     for (var i = 0; i < S.maxHp; i++) h += '<i style="background-image:url(' + (i < S.hp ? A.heartUrl.ui_heart_full : A.heartUrl.ui_heart_empty) + ')"></i>';
     $('hudHearts').innerHTML = h;
     $('hudIq').textContent = S.iq;
+    var lv = S.lvl || 1, x0 = lv > 1 ? lvlNeed(lv - 1) : 0, x1 = lvlNeed(lv); $('hudLv').firstElementChild.textContent = lv; $('hudLvBar').style.width = Math.round(Math.min(1, ((S.xp || 0) - x0) / (x1 - x0)) * 100) + '%'; $('hudLv').title = 'Уровень героя ' + lv + ' · опыт ' + (S.xp || 0) + ' / ' + x1 + ' · ' + lvPerkText(lv + 1).replace(/^Уровень \d+! · ?/, 'дальше: ');
     var r = G.room;
     $('hudCombo').hidden = !r;
     if (r) $('hudComboV').textContent = '×' + r.combo.toFixed(1);
@@ -904,7 +928,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
     var drop = function () { m.hp = m.items.length; if (!m.hp) { m.dead = true; if (m.guard) { m.tpAt = now(); m.state = 'idle'; m.st = m.tpAt; sfx('chest'); quest('guard'); } else { setMon(m, 'death'); sfx('kill'); } } };
     if (ok) {
       R.right++;
-      var hw = X.hit(power, m), bonus = Math.min(20, Math.max(0, hw.dmg - power) * 2); R.crit = R.combo >= 1.5 && Math.random() < (R.combo - 1);
+      var hw = X.hit(power, m), bonus = Math.min(20, Math.max(0, hw.dmg - power) * 2); R.crit = (R.combo >= 1.5 && Math.random() < (R.combo - 1)) || ((S.lvl || 1) >= 4 && Math.random() < 0.1);   /* с ур. 4 — +10% крит */
       if (hw.note) setTimeout(function () { floater(hw.note, m.x, 90, '#FF9600'); }, 260);
       R.combo = Math.min(3, Math.round((R.combo + 0.1) * 10) / 10);
       var gain = Math.round(2 * R.combo) + (kind === 'task' ? 3 : 0) + bonus + (R.crit ? 3 : 0); S.iq += gain; R.iq += gain;
@@ -925,6 +949,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
         sfx('hurt');
         if (m.exam) { G.hero.hurtAt = now(); floater('✗ неверно', G.hero.x, 110, '#F09595'); drop(); D.persist(); hud(); return afterAnswer(false); }   /* экзамен: бьёт для вида, сердечки не тратятся */
         if (S.shieldOn) { S.shieldOn = false; floater('Щит выдержал!', G.hero.x, 110, '#85B7EB'); }
+        else if ((S.lvl || 1) >= 3 && !R.second) { R.second = true; floater('Второй шанс! Без урона', G.hero.x, 110, '#FAC775'); }   /* ур. 3+: первая ошибка в комнате без урона */
         else { var cost = X.hurtCost(); S.hp = Math.max(0, S.hp - cost); G.hero.hurtAt = now(); floater('−' + cost + ' ♥', G.hero.x, 110, '#F09595'); }
         if (S.hp <= 0 && X.take('feather')) { S.hp = 3; setTimeout(function () { floater('Перо феникса! +3 ♥', G.hero.x, 80, '#FF9600'); }, 400); }
         drop(); floater('вопрос вернётся', m.x, 90, '#FAC775');
@@ -1002,6 +1027,12 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
     }
     var nextF = modeFloors().filter(function (x) { return x.n > f.n; })[0];
     var fst = D.stats(poolIds(f)); if (fst.clean) h += '<p class="wave-msg ok">🏅 ' + esc(fname(f)) + ' — пройдено начисто!</p>';
+    /* золотой сундук: первый раз тема пройдена начисто (все вопросы увидены, ни одной ошибки) — богатая награда и медаль на двери */
+    S.gold = S.gold || {};
+    if (fst.clean && !f.rep && !f.exam && !S.gold[f.id]) {
+      S.gold[f.id] = Date.now(); var GL = X.loot('gold'); R.iq += GL.iq; D.persist(); hud(); sfx('chest');
+      h += '<div class="wave-msg ok">🏆 Золотой сундук за «' + esc(fname(f)) + '» без ошибок!</div>' + lootHtml(GL);
+    }
     var main = next ? btn(st.clean ? 'Следующая комната' : 'Пропустить → следующая комната', 'primary', 'Enter', function () { go('room', { f: f.n, k: R.k + 1 }); })
       : isErr ? btn('Дальше', 'primary', 'Enter', function () { go('floor', f.n); })
       : btn(nextF ? 'Дальше: ' + fname(nextF) : 'К пути', 'primary', 'Enter', function () { if (nextF) go('floor', nextF.n); else go('path'); });

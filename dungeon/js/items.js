@@ -63,14 +63,14 @@
   function pickW(rare) { var pool = Object.keys(X.WEAPONS).filter(function (k) { return k !== 'wood' && X.WEAPONS[k].rar === rare; }); return pool[Math.floor(Math.random() * pool.length)]; }
   X.loot = function (kind) {
     /* kind: 'chest' — обычный сундук, 'boss' — железный сундук босса */
-    var out = { iq: kind === 'boss' ? 30 + Math.floor(Math.random() * 21) : 10 + Math.floor(Math.random() * 16), items: [], weapon: null };
+    var out = { iq: kind === 'gold' ? 60 + Math.floor(Math.random() * 41) : kind === 'boss' ? 30 + Math.floor(Math.random() * 21) : 10 + Math.floor(Math.random() * 16), items: [], weapon: null };
     var common = ['potion', 'potion', 'fifty', 'bulb', 'google', 'shield'], rare = ['ai', 'bigpot', 'ice'];
-    var n = kind === 'boss' ? 2 : 1;
-    for (var i = 0; i < n; i++) out.items.push(Math.random() < (kind === 'boss' ? 0.4 : 0.15) ? rare[Math.floor(Math.random() * rare.length)] : common[Math.floor(Math.random() * common.length)]);
+    var n = kind === 'gold' ? 3 : kind === 'boss' ? 2 : 1;
+    for (var i = 0; i < n; i++) out.items.push(Math.random() < (kind === 'gold' ? 0.7 : kind === 'boss' ? 0.4 : 0.15) ? rare[Math.floor(Math.random() * rare.length)] : common[Math.floor(Math.random() * common.length)]);
     S.pity = (S.pity || 0) + 1;
-    var r = Math.random(), wChance = kind === 'boss' ? 0.45 : 0.08;
+    var r = Math.random(), wChance = kind === 'boss' ? 0.7 : kind === 'gold' ? 1 : 0.08;   /* босс — чаще оружие, золотой сундук темы — всегда */
     if (S.pity >= 10 || r < wChance) {
-      var roll = Math.random(), rar = kind === 'boss' ? (roll < 0.08 ? 3 : roll < 0.4 ? 2 : 1) : (roll < 0.02 ? 3 : roll < 0.2 ? 2 : 1);
+      var roll = Math.random(), rar = kind === 'gold' ? (roll < 0.3 ? 3 : 2) : kind === 'boss' ? (roll < 0.15 ? 3 : roll < 0.6 ? 2 : 1) : (roll < 0.02 ? 3 : roll < 0.2 ? 2 : 1);
       if (S.pity >= 10) rar = Math.max(rar, 2);
       out.weapon = pickW(rar); S.pity = 0;
     }

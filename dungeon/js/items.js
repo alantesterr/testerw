@@ -30,7 +30,8 @@
   };
   X.RAR = ['обычное', 'редкое', 'эпическое', 'легендарное'];
   X.RAR_COL = ['#4a4370', '#378ADD', '#7F77DD', '#EF9F27'];
-  X.REPAIR = 80;
+  /* прочность убрана: оружие больше не ломается и не требует починки */
+  Object.keys(X.WEAPONS).forEach(function (k) { X.WEAPONS[k].dur = 0; X.WEAPONS[k].desc = X.WEAPONS[k].desc.replace(/,? ?не ломается/, ''); });
 
   /* ---------- инвентарь ---------- */
   if (!S.inv) S.inv = { items: { potion: 2, fifty: 1, bulb: 1 }, weapons: [{ k: 'wood', dur: 0 }], hand: 0 };

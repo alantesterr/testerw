@@ -195,6 +195,7 @@
   /* частицы стихии вокруг монстра: огонь — искры вверх, лёд — снежинки, яд — пузыри, тень — дымка, кровь — капли, золото — блёстки */
   var EL_COL = { fire: ['255,140,40', '255,210,90'], ice: ['190,230,255', '255,255,255'], poison: ['120,220,90', '190,255,120'], shadow: ['150,110,230', '70,40,120'], blood: ['220,40,50', '150,10,20'], gold: ['255,215,90', '255,250,200'] };
   A.elemFx = function (c, el, x, fy, h, t, k) {
+    if (A.lite) return;   /* облегчённый режим: без частиц */
     var col = EL_COL[el]; if (!col) return; k = k || 1;
     for (var i = 0; i < 10 * k; i++) {
       var p = ((t / (el === 'ice' ? 2600 : 1600)) + i / (10 * k)) % 1, sx = x - h * 0.35 + ((i * 53) % 100) / 100 * h * 0.7;
@@ -205,6 +206,7 @@
     }
   };
   A.elemAura = function (c, el, x, fy, h, t, k) {
+    if (A.lite) return;
     var col = EL_COL[el]; if (!col) return;
     var a = (0.16 + 0.08 * Math.sin(t / 280)) * (k || 1), g = c.createRadialGradient(x, fy - h / 2, 6, x, fy - h / 2, h * 0.85);
     g.addColorStop(0, 'rgba(' + col[0] + ',' + a.toFixed(3) + ')'); g.addColorStop(1, 'rgba(' + col[0] + ',0)');
@@ -214,7 +216,7 @@
   A.drawMonster = function (c, key, state, t, x, y, alpha, big, tint) {
     var M = A.MON[key]; if (!M) return;
     c.save(); c.globalAlpha = alpha == null ? 1 : alpha;
-    if ((tint || M.tint) && 'filter' in c) c.filter = tint || M.tint;   /* цветной вариант (там, где браузер умеет фильтры холста) */
+    if ((tint || M.tint) && !A.lite && 'filter' in c) c.filter = tint || M.tint;   /* цветной вариант (там, где браузер умеет фильтры холста) */
     if (big && big !== 1) M = { lm: M.lm, t: M.t, s: M.s * big, h: M.h, fly: M.fly };
     if (M.lm) {
       var set = A.lm[M.lm], sh = state === 'hit' ? set.takehit : state === 'attack' ? set.attack : state === 'death' ? set.death : set.idle;
@@ -314,6 +316,7 @@
     if (th.deco === 'runes') { for (var r2 = 0; r2 < 5; r2++) { var ra = 0.35 + 0.3 * Math.sin(t / 500 + r2 * 1.3); c.strokeStyle = 'rgba(180,140,255,' + ra.toFixed(2) + ')'; c.lineWidth = 2; c.beginPath(); c.arc(60 + r2 * 90, 120, 9, 0, 7); c.moveTo(60 + r2 * 90 - 6, 120); c.lineTo(60 + r2 * 90 + 6, 120); c.stroke(); } }
   }
   function themeFx(c, th, t) {
+    if (A.lite) return;
     var n = 26;
     for (var i = 0; i < n; i++) {
       var p = (t / (th.fx === 'snow' ? 7000 : 5000) + i / n) % 1, x = (i * 97 + Math.sin(t / 900 + i) * 12) % W, y;
@@ -385,26 +388,6 @@
     c.fillStyle = '#5a3a1e'; c.fillRect(392, 176, 78, 38); c.fillStyle = '#8f2f37'; c.fillRect(398, 168, 70, 16); c.fillStyle = '#efe6d8'; c.fillRect(448, 164, 18, 10);
     /* дверь на улицу слева */
     c.fillStyle = '#2b1a0d'; c.fillRect(8, 130, 40, 84); c.fillStyle = '#6b4526'; c.fillRect(12, 134, 32, 80); c.fillStyle = '#ffd25a'; c.fillRect(38, 172, 3, 3);
-    vignette(c, 0.45);
-  };
-
-  A.bgYard = function (c, t) {
-    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0d1230'); g.addColorStop(1, '#2a2552'); c.fillStyle = g; c.fillRect(0, 0, W, H);
-    for (var i = 0; i < 60; i++) { var x = (i * 97) % W, y = (i * 53) % 110; c.fillStyle = (Math.floor(t / 400) + i) % 7 ? '#c9d3ff' : '#5a6290'; c.fillRect(x, y, 1, 1); }
-    c.fillStyle = '#f2f4ff'; c.beginPath(); c.arc(410, 46, 14, 0, 7); c.fill();
-    /* холмы и деревья */
-    c.fillStyle = '#16233a'; c.beginPath(); c.moveTo(0, 170); c.quadraticCurveTo(120, 120, 240, 160); c.quadraticCurveTo(360, 120, 480, 160); c.lineTo(480, 270); c.lineTo(0, 270); c.fill();
-    [[40, 150], [95, 160], [430, 152], [470, 166]].forEach(function (p) { c.fillStyle = '#0f1a14'; c.beginPath(); c.moveTo(p[0], p[1] - 46); c.lineTo(p[0] - 18, p[1]); c.lineTo(p[0] + 18, p[1]); c.fill(); c.fillRect(p[0] - 2, p[1], 4, 10); });
-    c.fillStyle = '#1f3d22'; c.fillRect(0, A.FLOOR_Y, W, H - A.FLOOR_Y); for (var gx = 0; gx < W; gx += 6) { c.fillStyle = '#2d5a2c'; c.fillRect(gx, A.FLOOR_Y - ((gx * 7) % 4), 2, 4); }
-    /* домик слева */
-    c.fillStyle = '#5a3a1e'; c.fillRect(20, 150, 86, 64); c.fillStyle = '#7a2a2a'; c.beginPath(); c.moveTo(12, 152); c.lineTo(63, 114); c.lineTo(114, 152); c.fill();
-    c.fillStyle = '#ffcf6a'; c.fillRect(34, 166, 16, 14); c.fillStyle = '#2b1a0d'; c.fillRect(70, 176, 20, 38);
-    /* вход в подземелье: каменная арка и лестница вниз */
-    c.fillStyle = '#5c5966'; c.fillRect(250, 112, 120, 102); c.fillStyle = '#4a4752'; for (var sy = 116; sy < 214; sy += 10) for (var sx = 250; sx < 370; sx += 20) c.fillRect(sx + (sy % 20 ? 10 : 0), sy, 18, 1);
-    c.fillStyle = '#07060c'; c.fillRect(272, 146, 76, 68); c.beginPath(); c.arc(310, 146, 38, Math.PI, 0); c.fill();
-    for (var st = 0; st < 6; st++) { c.fillStyle = st % 2 ? '#3a3742' : '#2c2a33'; c.fillRect(280 + st * 3, 168 + st * 8, 60 - st * 6, 6); }
-    c.fillStyle = '#6e6b78'; c.fillRect(276, 100, 68, 14);
-    A.torch(c, 244, 140, t); A.torch(c, 376, 140, t + 400);
     vignette(c, 0.45);
   };
 })();

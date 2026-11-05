@@ -147,6 +147,7 @@
     swampy: { t: 'swampy', name: 'Болотник', s: 3 },
     twin: { t: 'wogol_idle', name: 'Двойник', s: 3, twin: true },
     sophist: { t: 'necromancer', name: 'Софист', s: 3 },
+    sage: { t: 'wizzard_m_idle', name: 'Мудрец', s: 2.6 },
     ogre: { t: 'ogre_idle', name: 'Огр', s: 3.4, boss: true },
     bzombie: { t: 'big_zombie_idle', name: 'Большой зомби', s: 3.4, boss: true },
     demon: { t: 'big_demon_idle', name: 'Демон', s: 3.4, boss: true }

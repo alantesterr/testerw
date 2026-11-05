@@ -20,8 +20,6 @@
     var h = '';
     for (var i = 0; i < S.maxHp; i++) h += '<i style="background-image:url(' + (i < S.hp ? A.heartUrl.ui_heart_full : A.heartUrl.ui_heart_empty) + ')"></i>';
     $('hudHearts').innerHTML = h;
-    $('hudStreak').textContent = S.streak || 0;
-    $('hudFlame').classList.toggle('off', !D.streakAlive());
     $('hudIq').textContent = S.iq;
     var r = G.room;
     $('hudCombo').hidden = !r;
@@ -108,7 +106,6 @@
     if (mapOk) items.push(['map', '🗺', D.subj.drill ? 'Уровни ИКТ' : D.subj.syll ? 'Карта тем' : 'Карта этажей', subjTitle(), function () { closeModal(); go('path'); }]);
     if (G.scene !== 'house') items.push(['house', '🏠', 'Домик', 'предметы, экзамен, задания дня', function () { closeModal(); go('house'); }]);
     items.push(['bag', '🎒', 'Рюкзак', 'предметы и оружие', function () { closeModal(); openBag(); }]);
-    items.push(['shop', '🧙', 'Лавка мудреца', 'IQ → предметы', function () { closeModal(); openShop(); }]);
     items.push(['set', '⚙', 'Настройки', 'перевод, звук, крупный вопрос', function () { closeModal(); openSettings(); }]);
     var h = '<header class="md-top"><b>Меню</b><span class="grow"></span><button class="btn ghost" data-close aria-label="Закрыть">✕</button></header><div class="md-body"><div class="menu-list">' +
       items.map(function (it, i) { return '<button class="menu-it' + (i === 0 ? ' first' : '') + '" data-mi="' + i + '"><span class="mi-ic">' + it[1] + '</span><b>' + esc(it[2]) + '</b><span class="mi-sub">' + esc(it[3]) + '</span></button>'; }).join('') +
@@ -141,20 +138,35 @@
     }).join('') + SOON.map(function (x) { return '<div class="subj soon"><b>' + esc(x[0]) + '</b><span>' + x[1] + '</span></div>'; }).join('') + '</div>';
   }
   function wireSubj(root) { (root || panel).querySelectorAll('[data-subj]').forEach(function (b) { b.onclick = function () { go('subject', b.getAttribute('data-subj')); }; }); }
+  /* ДОМИК: всё нажимается прямо на картинке — дверь (в подземелье) и Мудрец (лавка) */
+  var SAGE_X = 150;
+  function toDungeon() { S.seenIntro = true; S.mode = null; D.persist(); walkTo(30, function () { go('hall'); }); }
   function enterHouse() {
     show(true); where('Домик героя'); G.hero.x = 240; G.hero.dir = 1;
     var intro = !S.seenIntro;
+    labels([{ text: '◂ В подземелье (нажми на дверь)', x: 92, y: 124, color: '#FAC775' }, { text: 'Мудрец · лавка', x: SAGE_X, y: 136, color: '#CECBF6' }]);
     setPanel(
       (intro ? '<div class="qtext">Добро пожаловать в Подземелье знаний!</div>' +
-        '<p class="msg">Игра для подготовки к РК и экзамену. У каждого предмета своё подземелье: этаж = тема (лекция). В комнатах монстры задают вопросы. Ответил верно — монстр теряет сердечко. Ошибся — монстр бьёт тебя (−1 ♥), а этот вопрос он задаст ещё раз через несколько вопросов. Сердечки сверху — твои жизни, огонёк — сколько дней подряд ты занимаешься, IQ — награда за ответы.</p>'
-        : '<div class="qtext">Домик</div><p class="msg">Выбери предмет — увидишь все темы и свой прогресс. Прогресс сохраняется после каждого ответа.</p>') +
-        '<p class="hint">Предметы — нажми, чтобы открыть темы:</p>' + subjCards() + dailyHtml(),
-      [btn('⚔ В подземелье', 'primary', 'Enter', function () { S.seenIntro = true; S.mode = null; D.persist(); go('hall'); }),
+        '<p class="msg">Игра для подготовки к РК и экзамену. В комнатах монстры задают вопросы: верно — монстр теряет сердечко, ошибся — бьёт тебя (−1 ♥) и спросит этот вопрос ещё раз. IQ — награда за ответы, на него Мудрец продаёт предметы.</p>'
+        : '<div class="qtext">Домик</div>') +
+        '<p class="hint">Нажми на <b>дверь</b> слева — в подземелье. <b>Мудрец</b> продаёт предметы за IQ.</p>',
+      [btn('⚔ В подземелье', 'primary', 'Enter', toDungeon),
        btn('🎓 Экзамен', 'ghost', null, function () { openEntry('exam'); }),
-       btn('Лавка мудреца', 'ghost', null, openShop), btn('Рюкзак', 'ghost', null, openBag)]);
-    wireSubj();
+       btn('🎒 Рюкзак', 'ghost', null, openBag)]);
     if (S.hp < S.maxHp) { S.hp = S.maxHp; D.persist(); }
   }
+  /* что можно нажать на сцене (в координатах холста 480×270) */
+  function hotspots() {
+    if (G.scene === 'house') return [{ x0: 4, x1: 52, y0: 126, y1: 216, fn: toDungeon }, { x0: SAGE_X - 22, x1: SAGE_X + 22, y0: 150, y1: 216, fn: openShop }];
+    if (G.scene === 'hall') return DOORS.filter(function (d) { return D.SUBJ[d[0]]; }).map(function (d) {
+      var w = d[0] === 'cpp' ? 48 : 39; return { x0: d[1] - w, x1: d[1] + w, y0: A.FLOOR_Y - w * 2 - 8, y1: A.FLOOR_Y + 4, fn: function () { enterDoor(d); } };
+    });
+    return [];
+  }
+  function sceneXY(e) { var r = $('scene').getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * A.W, y: (e.clientY - r.top) / r.height * A.H }; }
+  function hotAt(e) { var p = sceneXY(e); return hotspots().filter(function (h) { return p.x >= h.x0 && p.x <= h.x1 && p.y >= h.y0 && p.y <= h.y1; })[0]; }
+  $('scene').addEventListener('click', function (e) { if (G.modal || BK || G.hero.target != null) return; var h = hotAt(e); if (h) h.fn(); });
+  $('scene').addEventListener('mousemove', function (e) { $('scene').style.cursor = hotAt(e) ? 'pointer' : ''; });
   /* ---------- ПРЕДМЕТ: темы силлабуса 1–15 с процентами ---------- */
   function enterSubject(id) {
     D.useSubject(id); show(false); where(subjTitle());
@@ -288,12 +300,12 @@
     show(true); where('Холл подземелья'); G.hero.x = 240; A.hallGlow = D.subjId;
     var open = DOORS.filter(function (d) { return D.SUBJ[d[0]]; });
     labels(DOORS.map(function (d) { var sj = D.SUBJ[d[0]]; return { text: d[2] + ' · ' + (sj ? D.progress(D.subjIds(sj)) + '%' : 'скоро'), x: d[1], y: d[0] === 'cpp' ? 92 : 112, color: d[3] }; }));
-    var bs = open.map(function (d) {
-      var mine = D.subjId === d[0];
-      return btn('Войти: ' + d[4], mine ? 'primary' : 'ghost', mine ? 'Enter' : null, function () { D.useSubject(d[0]); walkTo(d[1], function () { go('path'); }); });
-    });
-    setPanel('<div class="qtext">Холл</div><p class="msg">Каждая дверь — подземелье одного предмета. Герой у тебя один, IQ, сердечки и огонёк общие. Процент — сколько вопросов предмета ты хотя бы раз решил верно.</p>', bs);
+    /* двери нажимаются прямо на картинке; Enter — дверь последнего предмета */
+    setPanel('<div class="qtext">Холл</div><p class="hint">Нажми на <b>дверь</b> предмета — герой войдёт в его подземелье. Процент — сколько вопросов ты хотя бы раз решил верно.</p>');
+    var last = DOORS.filter(function (d) { return d[0] === D.subjId && D.SUBJ[d[0]]; })[0] || open[0];
+    G.buttons = last ? [btn('Войти', 'primary', 'Enter', function () { enterDoor(last); })] : [];
   }
+  function enterDoor(d) { D.useSubject(d[0]); A.hallGlow = d[0]; walkTo(d[1], function () { go('path'); }); }
 
   /* ---------- ПУТЬ C++ (как ветка Duolingo) ---------- */
   var UNITS = [[1, 3, 'Раздел 1 · к РК1', 'Основы: алгоритмы, операции, ветвления'], [4, 6, 'Раздел 2 · к РК1', 'Циклы, массивы, функции, строки'], [7, 9, 'Раздел 3 · к РК2', 'ООП: принципы, классы, среда C++ Builder'], [10, 12, 'Раздел 4 · к РК2', 'Формы, события, иерархия классов'], [13, 15, 'Раздел 5 · к экзамену', 'Конструкторы, свойства, компоненты'], [16, 16, 'Финал', 'Смешанные сложные вопросы по всему курсу']];
@@ -750,7 +762,7 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
   function resolve(ok, power, kind) {
     var R = G.room, m = R.mon, it = m.items.shift(), clean = ok && !R.assisted; peek(); watchHit();
     R.turns++;
-    if (D.touchStreak()) floater('Огонёк +1 день!', 240, 40, '#FF9600');
+    D.touchStreak();
     if (m.guard) { if (clean) R.fixed++; else m.items.push(it); }
     else {
       if (!ok) { var pos = Math.min(m.items.length, 2 + Math.floor(Math.random() * 3)); m.items.splice(pos, 0, it); var ek = it.t + it.id; R.errs[ek] = (R.errs[ek] || 0) + 1; R.errItem[ek] = it; }
@@ -1129,7 +1141,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
   }
   function durBar(w) { var W = X.WEAPONS[w.k]; if (!W.dur) return '<span class="muted">не ломается</span>'; var p = Math.max(0, w.dur) / W.dur; return '<div class="durbar"><i style="width:' + Math.round(p * 100) + '%;background:' + (p > 0.5 ? '#5DCAA5' : p > 0.25 ? '#EF9F27' : '#E24B4A') + '"></i></div><span class="muted">прочность ' + Math.max(0, w.dur) + ' / ' + W.dur + (w.dur <= 0 ? ' — сломан, бьёт как обычный' : '') + '</span>'; }
   function openBag() {
-    var h = '<header class="md-top"><b>Рюкзак</b><span class="grow"></span><span class="hud-iq"><span>IQ</span><b>' + S.iq + '</b></span><button class="btn ghost" data-close>✕</button></header><div class="md-body">';
+    var h = '<header class="md-top"><b>Рюкзак</b><button class="btn ghost" data-shop>🛒 Купить за IQ</button><span class="grow"></span><span class="hud-iq"><span>IQ</span><b>' + S.iq + '</b></span><button class="btn ghost" data-close>✕</button></header><div class="md-body">';
     h += '<h4>Оружие <small>(в руке — то, чем бьёшь)</small></h4>';
     S.inv.weapons.forEach(function (w, i) {
       var W = X.WEAPONS[w.k], inHand = i === S.inv.hand;
@@ -1139,12 +1151,12 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
     var any = false;
     Object.keys(X.ITEMS).forEach(function (k) { var n = X.count(k); if (!n) return; any = true; var it = X.ITEMS[k];
       h += '<div class="it" style="border-color:' + X.RAR_COL[it.rar] + '"><img src="' + X.iconUrl(it.icon) + '" alt=""><em>×' + n + '</em><b>' + esc(it.name) + '</b><span>' + esc(it.desc) + '</span></div>'; });
-    if (!any) h += '<p class="muted">Пусто. Предметы падают из сундуков и продаются в лавке в домике.</p>';
+    if (!any) h += '<p class="muted">Пусто. Предметы падают из сундуков; купить — кнопка «🛒 Купить за IQ» выше или у Мудреца в домике.</p>';
     h += '</div><p class="hint">Предметы для вопроса (50/50, лампа, Google, ИИ) используются в бою с хотбара под вопросом. Если ответил с подсказкой, вопрос засчитывается как «не знал» и вернётся ещё раз — так подсказки не мешают учиться. Перо феникса и ледяной кристалл срабатывают сами.</p></div>';
-    modal(h, function (el) { el.querySelectorAll('[data-hand]').forEach(function (b) { b.onclick = function () { S.inv.hand = +b.getAttribute('data-hand'); D.persist(); openBag(); }; }); });
+    modal(h, function (el) { el.querySelector('[data-shop]').onclick = openShop; el.querySelectorAll('[data-hand]').forEach(function (b) { b.onclick = function () { S.inv.hand = +b.getAttribute('data-hand'); D.persist(); openBag(); }; }); });
   }
   function openShop() {
-    var h = '<header class="md-top"><b>Лавка мудреца</b><span class="grow"></span><span class="hud-iq"><span>IQ</span><b>' + S.iq + '</b></span><button class="btn ghost" data-close>✕</button></header><div class="md-body"><p class="muted">Плати своим IQ — его дают за верные ответы, прочитанные алтари, задания, сундуки и боссов.</p><h4>Расходники</h4><div class="shop-grid">';
+    var h = '<header class="md-top"><b>Лавка мудреца</b><button class="btn ghost" data-bag>🎒 Рюкзак</button><span class="grow"></span><span class="hud-iq"><span>IQ</span><b>' + S.iq + '</b></span><button class="btn ghost" data-close>✕</button></header><div class="md-body"><p class="muted">Плати своим IQ — его дают за верные ответы, прочитанные алтари, задания, сундуки и боссов.</p><h4>Расходники</h4><div class="shop-grid">';
     Object.keys(X.ITEMS).forEach(function (k) { var it = X.ITEMS[k], can = S.iq >= it.price;
       h += '<div class="shop-it" style="border-color:' + X.RAR_COL[it.rar] + '">' + (it.rar ? '<span class="rar" style="background:' + X.RAR_COL[it.rar] + '">' + X.RAR[it.rar] + '</span>' : '') + '<img src="' + X.iconUrl(it.icon) + '" alt=""><b>' + esc(it.name) + '</b><span>' + esc(it.desc) + '</span><small>у тебя: ' + X.count(k) + '</small><button class="btn ' + (can ? 'primary' : '') + '" data-buy="' + k + '"' + (can ? '' : ' disabled') + '>IQ ' + it.price + '</button></div>'; });
     h += '</div><h4>Оружие</h4><div class="shop-grid">';
@@ -1155,6 +1167,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
     if (worn.length) { h += '<h4>Починка (IQ ' + X.REPAIR + ')</h4>'; worn.forEach(function (x) { var W = X.WEAPONS[x.w.k]; h += slotCard(X.iconUrl(W.icon), W.name, esc(W.desc), '<button class="btn ' + (S.iq >= X.REPAIR ? 'primary' : '') + '" data-fix="' + x.i + '"' + (S.iq >= X.REPAIR ? '' : ' disabled') + '>Починить</button>', W.rar, durBar(x.w)); }); }
     h += '</div>';
     modal(h, function (el) {
+      el.querySelector('[data-bag]').onclick = openBag;
       el.querySelectorAll('[data-buy]').forEach(function (b) { b.onclick = function () { var k = b.getAttribute('data-buy'), it = X.ITEMS[k]; if (S.iq < it.price) return; S.iq -= it.price; X.add(k); D.persist(); openShop(); }; });
       el.querySelectorAll('[data-buyw]').forEach(function (b) { b.onclick = function () { var k = b.getAttribute('data-buyw'), W = X.WEAPONS[k]; if (S.iq < W.price) return; S.iq -= W.price; X.addWeapon(k); S.inv.hand = S.inv.weapons.length - 1; D.persist(); openShop(); }; });
       el.querySelectorAll('[data-fix]').forEach(function (b) { b.onclick = function () { if (S.iq < X.REPAIR) return; var w = S.inv.weapons[+b.getAttribute('data-fix')]; S.iq -= X.REPAIR; w.dur = X.WEAPONS[w.k].dur; D.persist(); openShop(); }; });
@@ -1232,6 +1245,7 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
     return S.daily;
   }
   function quest(k, amount) {
+    return;   /* задания дня убраны (по просьбе) — вызовы оставлены, чтобы не трогать бой */
     var dl = daily(), changed = false;
     dl.list.forEach(function (it) {
       var q = QUESTS[it.i]; if (q.k !== k || it.done) return;
@@ -1341,7 +1355,7 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
       var d = h.target - h.x; if (Math.abs(d) < 1.5) { h.x = h.target; h.target = null; var cb = h.onArrive; h.onArrive = null; if (cb) cb(); }
       else { h.x += Math.sign(d) * Math.min(Math.abs(d), dt * 0.12); h.dir = Math.sign(d); walking = true; }
     }
-    if (G.scene === 'house') A.bgHouse(c, t);
+    if (G.scene === 'house') { A.bgHouse(c, t); c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(SAGE_X, A.FLOOR_Y + 8, 16, 4, 0, 0, 7); c.fill(); A.drawMonster(c, 'sage', 'idle', t, SAGE_X, A.FLOOR_Y + 8); }
     else if (G.scene === 'hall') A.bgHall(c, t);
     else if (G.scene === 'room' && G.room) A.bgRoom(c, t, { exit: true, exitOpen: G.room.objs.every(function (o) { return o.type !== 'mon' || o.dead; }), seed: G.room.k, goo: G.room.floor % 3 === 0, hole: G.room.floor % 2 === 0 });
     else return;

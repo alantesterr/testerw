@@ -444,3 +444,23 @@ b.bad,.bad{color:#F7A3A3}
 .boss-title.out{animation:bossOut .4s ease-in forwards}
 @keyframes bossIn{from{opacity:0;transform:scale(1.25)}to{opacity:1;transform:none}}
 @keyframes bossOut{to{opacity:0}}
+
+/* ---------- экран вопроса: проще, подсказки по нарастающей ---------- */
+.qtext{font-size:clamp(17px,2.2vw,20px);line-height:1.45}
+.qlinks{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 2px;align-items:center}
+.qlinks .linkbtn{background:none;border:0;padding:4px 2px;color:var(--mute);font:inherit;font-size:13.5px;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.qlinks .linkbtn:hover{color:var(--text)}
+.qlinks .linkbtn[hidden]{display:none}
+.qlinks .linkbtn.know{margin-left:auto;text-decoration:none;font-size:12.5px}
+.qlinks .linkbtn[data-hot]{color:#FAC775;font-weight:700;animation:hotPulse 1.4s infinite}
+.qlinks .linkbtn[data-hot]::before{content:"➜ ";animation:hotArrow 1s infinite;display:inline-block}
+@keyframes hotPulse{0%,100%{opacity:1}50%{opacity:.6}}
+@keyframes hotArrow{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
+details.brief.later{display:none}
+details.brief.glow{animation:briefGlow 1.6s ease-in-out 3;border-color:#FAC775}
+details.brief.was-err{border-color:#EF9F27}
+details.brief.was-err summary{color:#FAC775}
+@keyframes briefGlow{0%,100%{box-shadow:0 0 0 0 rgba(250,199,117,0)}50%{box-shadow:0 0 0 4px rgba(250,199,117,.35)}}
+.door-hint{position:absolute;transform:translateY(-50%);background:rgba(10,8,16,.85);color:#FAC775;font-weight:800;font-size:clamp(12px,1.6vw,16px);padding:5px 10px;border-radius:8px;border:1px solid #FAC775;white-space:nowrap;pointer-events:none;animation:hotPulse 1.4s infinite}
+.door-hint .dh-arrow{display:inline-block;animation:dhArrow .8s infinite}
+@keyframes dhArrow{0%,100%{transform:translateX(0)}50%{transform:translateX(-6px)}}

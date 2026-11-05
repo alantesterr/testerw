@@ -13,13 +13,11 @@
     bigpot:   { name: 'Большое зелье', desc: 'все сердечки восстановлены', price: 120, icon: 'flask_big_red', rar: 1 },
     fifty:    { name: 'Свиток 50/50', desc: 'убирает 2 неверных варианта', price: 60, icon: '@scroll', key: 'H', rar: 0, assist: true },
     bulb:     { name: 'Лампа-подсказка', desc: 'намёк из лекции к вопросу', price: 45, icon: '@bulb', key: 'L', rar: 0, assist: true },
-    google:   { name: 'Око Google', desc: 'поиск вопроса в Google', price: 35, icon: '@google', key: 'G', rar: 0, assist: true },
-    ai:       { name: 'Кристалл ИИ', desc: 'ИИ объяснит вопрос', price: 70, icon: '@ai', key: 'I', rar: 1, assist: true },
     shield:   { name: 'Щит', desc: 'следующая ошибка без урона', price: 70, icon: '@shield', key: 'S', rar: 0 },
     feather:  { name: 'Перо феникса', desc: 'оживляет с 3 сердцами (само)', price: 400, icon: '@feather', rar: 3 },
     ice:      { name: 'Ледяной кристалл', desc: 'спасёт огонёк, если пропустишь 1 день (само)', price: 150, icon: '@ice', rar: 1 }
   };
-  X.HOTBAR = ['potion', 'bigpot', 'fifty', 'bulb', 'google', 'ai', 'shield'];
+  X.HOTBAR = ['potion', 'bigpot', 'fifty', 'bulb', 'shield'];   /* Око Google и Кристалл ИИ убраны: Google — ссылкой под вопросом */
   X.WEAPONS = {
     wood:   { name: 'Деревянный меч', desc: 'обычный удар, не ломается', icon: 'weapon_rusty_sword', dur: 0, rar: 0 },
     steel:  { name: 'Стальной клинок', desc: 'сильный удар: +2 IQ за каждый верный ответ', icon: 'weapon_knight_sword', dur: 30, price: 180, rar: 1 },
@@ -42,7 +40,7 @@
   X.count = function (k) { return S.inv.items[k] || 0; };
   X.add = function (k, n) { S.inv.items[k] = (S.inv.items[k] || 0) + (n || 1); };
   X.take = function (k) { if (!X.count(k)) return false; S.inv.items[k]--; return true; };
-  X.weapon = function () { var w = S.inv.weapons[S.inv.hand] || S.inv.weapons[0]; return w; };
+  X.weapon = function () { return { k: 'wood', dur: 0 }; };   /* оружие убрано: у всех обычный удар */
   X.addWeapon = function (k) { var W = X.WEAPONS[k]; S.inv.weapons.push({ k: k, dur: W.dur }); };
 
   /* урон оружия: base — сколько сердец снимает удар без оружия */
@@ -65,12 +63,12 @@
   X.loot = function (kind) {
     /* kind: 'chest' — обычный сундук, 'boss' — железный сундук босса */
     var out = { iq: kind === 'gold' ? 60 + Math.floor(Math.random() * 41) : kind === 'boss' ? 30 + Math.floor(Math.random() * 21) : 10 + Math.floor(Math.random() * 16), items: [], weapon: null };
-    var common = ['potion', 'potion', 'fifty', 'bulb', 'google', 'shield'], rare = ['ai', 'bigpot', 'ice'];
+    var common = ['potion', 'potion', 'fifty', 'bulb', 'shield'], rare = ['bigpot', 'ice', 'feather'];
     var n = kind === 'gold' ? 3 : kind === 'boss' ? 2 : 1;
     for (var i = 0; i < n; i++) out.items.push(Math.random() < (kind === 'gold' ? 0.7 : kind === 'boss' ? 0.4 : 0.15) ? rare[Math.floor(Math.random() * rare.length)] : common[Math.floor(Math.random() * common.length)]);
     S.pity = (S.pity || 0) + 1;
     var r = Math.random(), wChance = kind === 'boss' ? 0.7 : kind === 'gold' ? 1 : 0.08;   /* босс — чаще оружие, золотой сундук темы — всегда */
-    if (S.pity >= 10 || r < wChance) {
+    if (false && (S.pity >= 10 || r < wChance)) {   /* оружие убрано из добычи */
       var roll = Math.random(), rar = kind === 'gold' ? (roll < 0.3 ? 3 : 2) : kind === 'boss' ? (roll < 0.15 ? 3 : roll < 0.6 ? 2 : 1) : (roll < 0.02 ? 3 : roll < 0.2 ? 2 : 1);
       if (S.pity >= 10) rar = Math.max(rar, 2);
       out.weapon = pickW(rar); S.pity = 0;

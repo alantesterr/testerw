@@ -15,36 +15,12 @@
   var now = function () { return performance.now(); };
 
   /* ---------- HUD ---------- */
-  /* ---------- УРОВНИ ГЕРОЯ: опыт = весь заработанный IQ (покупки его не уменьшают) ----------
-     Ур. 2 — 100 опыта, 3 — 300, 4 — 600, 5 — 1000, … (50·n·(n+1)).
-     Награды: каждые 2 уровня +1 ♥ (до 10), с ур. 3 — «второй шанс» (первая ошибка в комнате без урона),
-     с ур. 4 — +10% к шансу крита. */
-  function heroLevel(xp) { var lv = 1; while (xp >= 50 * lv * (lv + 1)) lv++; return lv; }
-  function lvlNeed(lv) { return 50 * lv * (lv + 1); }
-  function trackXp() {
-    if (S.iqSeen == null) { S.iqSeen = S.iq; S.xp = S.xp || S.iq; }
-    if (S.iq > S.iqSeen) S.xp = (S.xp || 0) + (S.iq - S.iqSeen);
-    S.iqSeen = S.iq;
-    var lv = heroLevel(S.xp || 0), was = S.lvl || 1;
-    S.lvl = lv; var hp = Math.min(10, 5 + Math.floor((lv - 1) / 2));
-    if (hp > S.maxHp) { S.hp += hp - S.maxHp; S.maxHp = hp; }
-    if (lv > was) { setTimeout(function () { floater('⭐ Уровень ' + lv + '!', 240, 44, '#FAC775'); sfx('win'); toast(lvPerkText(lv), '#FAC775'); }, 300); D.persist(); }
-  }
-  function lvPerkText(lv) {
-    var p = ['Уровень ' + lv + '!'];
-    if (lv % 2 === 1) p.push('+1 ♥ (теперь ' + Math.min(10, 5 + Math.floor((lv - 1) / 2)) + ')');
-    if (lv === 3) p.push('«Второй шанс»: первая ошибка в комнате без урона');
-    if (lv === 4) p.push('+10% к шансу крита');
-    return p.join(' · ');
-  }
   function hud() {
-    trackXp();
     $('hud').hidden = false; updBack();
     var h = '';
     for (var i = 0; i < S.maxHp; i++) h += '<i style="background-image:url(' + (i < S.hp ? A.heartUrl.ui_heart_full : A.heartUrl.ui_heart_empty) + ')"></i>';
     $('hudHearts').innerHTML = h;
     $('hudIq').textContent = S.iq;
-    var lv = S.lvl || 1, x0 = lv > 1 ? lvlNeed(lv - 1) : 0, x1 = lvlNeed(lv); $('hudLv').firstElementChild.textContent = lv; $('hudLvBar').style.width = Math.round(Math.min(1, ((S.xp || 0) - x0) / (x1 - x0)) * 100) + '%'; $('hudLv').title = 'Уровень героя ' + lv + ' · опыт ' + (S.xp || 0) + ' / ' + x1 + ' · ' + lvPerkText(lv + 1).replace(/^Уровень \d+! · ?/, 'дальше: ');
     var r = G.room;
     $('hudCombo').hidden = true; $('hudIq').parentNode.hidden = !!r;   /* в бою — только сердечки и уровень; IQ и комбо всплывают цифрами */
   }
@@ -68,6 +44,7 @@
   function go(scene, arg) {
     if (scene !== 'exam' && G.exTimer) { clearInterval(G.exTimer); G.exTimer = null; }
     G.scene = scene; labels([]); G.hero.onArrive = null; G.hero.target = null;
+    clearTimeout(G.idleT); document.querySelectorAll('.door-hint').forEach(function (e) { e.remove(); });
     if (scene !== 'room') G.room = null;
     G.intruder = null;
     clearTimeout(G.watchT); $('app').classList.remove('watch'); hideBubble();
@@ -226,15 +203,15 @@
   function enterHouse() {
     show(true); where('Домик героя'); G.hero.x = 240; G.hero.dir = 1;
     var intro = !S.seenIntro;
-    labels([{ text: '◂ В подземелье (нажми на дверь)', x: 92, y: 124, color: '#FAC775' }, { text: 'Мудрец · лавка', x: SAGE_X, y: 136, color: '#CECBF6' }]);
+    labels([{ text: 'Мудрец · лавка', x: SAGE_X, y: 136, color: '#CECBF6' }]);
     setPanel(
       (intro ? '<div class="qtext">Добро пожаловать в Подземелье знаний!</div>' +
         '<p class="msg">Игра для подготовки к РК и экзамену. В комнатах монстры задают вопросы: верно — монстр теряет сердечко, ошибся — бьёт тебя (−1 ♥) и спросит этот вопрос ещё раз. IQ — награда за ответы, на него Мудрец продаёт предметы.</p>'
-        : '<div class="qtext">Домик</div>') +
-        '<p class="hint">Нажми на <b>дверь</b> слева — в подземелье. <b>Мудрец</b> продаёт предметы за IQ.</p>',
-      (contBtn() ? [contBtn()] : []).concat([btn('⚔ Готовиться', contBtn() ? 'ghost' : 'primary', contBtn() ? null : 'Enter', openArena), btn('🚪 В подземелье', 'ghost', null, toDungeon),
-       btn('🎓 Экзамен', 'ghost', null, function () { openEntry('exam'); }),
-       btn('🎒 Рюкзак', 'ghost', null, openBag)]));
+        : '<div class="qtext">Домик</div><p class="hint">Продолжай с того места, где остановился.</p>') +
+        '',
+      [contBtn() || btn('▶ Начать', 'primary', 'Enter', toDungeon), btn('🎒 Рюкзак', 'ghost', null, openBag)]);
+    clearTimeout(G.idleT); G.idleT = setTimeout(doorHint, 120000);   /* стоишь дома 2 минуты — подсказка про дверь */
+    if (S.maxHp > 5) { S.maxHp = 5; S.hp = Math.min(S.hp, 5); }   /* уровней больше нет — 5 сердечек у всех */
     if (S.hp < S.maxHp) { S.hp = S.maxHp; D.persist(); }
     if (!G.intruder) setTimeout(function () { if (G.scene === 'house') maybeIntruder(); }, 1500);
   }
@@ -281,6 +258,13 @@
     D.persist(); hud();
     panel.insertAdjacentHTML('beforeend', '<div class="verdict ' + (ok ? 'ok' : 'bad') + '">' + esc(msg) + '</div>');
     setTimeout(function () { if (G.intruder === I) { G.intruder = null; hideBubble(); if (G.scene === 'house') enterHouse(); } }, 3200);
+  }
+  /* подсказка про дверь: показывается, только если стоишь в домике 2 минуты и никуда не идёшь */
+  function doorHint() {
+    if (G.scene !== 'house' || G.modal) return;
+    labels([{ text: 'Мудрец · лавка', x: SAGE_X, y: 136, color: '#CECBF6' }]);
+    var el = document.createElement('div'); el.className = 'door-hint'; el.innerHTML = '<span class="dh-arrow">⬅</span> Нажми на дверь — спустишься в подземелье';
+    el.style.left = (54 / A.W * 100) + '%'; el.style.top = (150 / A.H * 100) + '%'; $('floaters').appendChild(el);
   }
   /* что можно нажать на сцене (в координатах холста 480×270) */
   function hotspots() {
@@ -712,12 +696,24 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
   }
   function monTop(o) { return A.FLOOR_Y + 8 - A.monHeight(o.key) - (A.MON[o.key].fly ? 40 : 6); }
   function roomLabels() { var R = G.room; if (!R) return; labels(R.objs.filter(function (o) { return o.type === 'mon' && !o.dead; }).map(function (o) { return { text: monName(o), x: o.x, y: monTop(o) - 14, color: o.boss || o.guard ? '#F09595' : o.strong ? '#FAC775' : '#e8e4f8' }; }).concat(R.objs.filter(function (o) { return o.type === 'chest' && !o.open; }).map(function (o) { return { text: 'Сундук', x: o.x, y: A.FLOOR_Y - 36, color: '#FAC775' }; })).concat(R.objs.filter(function (o) { return o.type === 'altar' && !o.used; }).map(function (o) { return { text: 'Алтарь знаний', x: o.x, y: A.FLOOR_Y - 70, color: '#CECBF6' }; }))); }
+  /* подсказки появляются по нарастающей, пока вопрос висит без ответа (30 / 60 / 120 с) */
+  var HINT_T = [30000, 60000, 120000];
+  function hintTimers(R, q) {
+    var bk = panel.querySelector('[data-ql="book"]'), gg = panel.querySelector('[data-ql="ggl"]');
+    if (bk) bk.onclick = openBookRoom;
+    if (gg) gg.onclick = function () { openGoogle(q); };
+    var alive = function () { return G.room === R && R.q === q && !R.answered; };
+    var show = function (el, hot) { if (!el || !alive()) return; el.hidden = false; if (hot) el.setAttribute('data-hot', ''); };
+    setTimeout(function () { show(bk); }, HINT_T[0]);
+    setTimeout(function () { if (!alive()) return; var b = panel.querySelector('details.brief.later'); if (b) { b.classList.remove('later'); b.classList.add('glow'); } else show(bk, true); }, HINT_T[1]);
+    setTimeout(function () { show(gg, true); }, HINT_T[2]);
+  }
   /* «✓ Знаю — не спрашивай»: вопрос засчитывается как верный и дальше почти не попадается (вернуть — в Настройках) */
   function markKnown(q) {
     var R = G.room; if (!R || R.answered || R.q !== q) return;
     D.save.known = D.save.known || {}; D.save.known[q.id] = 1; D.persist();
     toast('Отмечено «Знаю» — этот вопрос больше почти не попадётся', '#9FE1CB');
-    var kr = panel.querySelector('.know-row'); if (kr) kr.remove();
+    var kr = panel.querySelector('.linkbtn.know'); if (kr) kr.remove();
     if (q.type === 'keyboard') answer(true, q.answer);
     else { var rights = q.opts.map(function (o, i) { return o.right ? i : -1; }).filter(function (i) { return i >= 0; }); answer(true, rights.length > 1 ? rights : rights[0]); }
   }
@@ -819,7 +815,7 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     var bl = bsec.blocks, pick = [bl[bi]];
     if (/^(code|out)$/.test(bl[bi].t)) { if (bl[bi - 1] && /^(p|note|ul|ol)$/.test(bl[bi - 1].t)) pick.unshift(bl[bi - 1]); }
     else if (bl[bi + 1] && /^(code|out)$/.test(bl[bi + 1].t)) pick.push(bl[bi + 1]);
-    return '<details class="brief"' + (R.briefOpen ? ' open' : '') + '><summary>Кратко из лекции · ' + esc(bsec.title) + '</summary><div class="rich">' + D.blocks(pick) + '</div></details>';
+    return '<details class="brief"' + (R.briefOpen ? ' open' : '') + '><summary>Кратко из лекции</summary><div class="rich">' + D.blocks(pick) + '</div></details>';
   }
   function wireBrief() { var R = G.room, det = panel.querySelector('details.brief'); if (det) det.ontoggle = function () { R.briefOpen = det.open; }; }
   function ask() {
@@ -828,21 +824,30 @@ screenEl.querySelectorAll('[data-rep]').forEach(function (b) { b.onclick = funct
     R.monTurn++;
     var isTask = it.t === 't', t = isTask ? R.f.taskById[it.id] : null;
     focusOn(true);
-    var head = '<div class="row"><span class="tag ' + (m.boss || m.strong || m.guard ? 'gold' : 'red') + '">' + esc(monName(m)) + (m.boss ? ' · босс' : m.guard ? ' · твои ошибки' : m.twin ? ' · похожие понятия' : m.sophist ? ' · вопрос наоборот' : m.strong ? ' · сильный' : '') + '</span><span class="tag teal">' + (isTask ? 'Задание' : 'Тест') + '</span><span class="tag">' + m.hp + ' ♥</span><span class="grow"></span>' + (isTask ? '' : trBtn()) + icoBtns(!isTask) + '</div>';
+    var head = '<div class="row"><span class="tag ' + (m.boss || m.strong || m.guard ? 'gold' : 'red') + '">' + esc(monName(m)) + (m.boss ? ' · босс' : m.guard ? ' · твои ошибки' : m.twin ? ' · похожие понятия' : m.sophist ? ' · вопрос наоборот' : m.strong ? ' · сильный' : '') + '</span><span class="tag">' + m.hp + ' ♥</span><span class="grow"></span>' + (isTask ? icoBtns(false) : trBtn()) + '</div>';
     R.assisted = false; R.fiftyUsed = false; R.hinted = false; R.tr = null; R.answered = false;
     if (isTask) return askTask(head, t);
     var q = it.t === 'r' ? reverseQ(R.f, R.f.byId[it.id]) : R.f.byId[it.id]; R.q = q; R.recent.push(q.id); if (R.recent.length > 6) R.recent.shift();
     var right = q.type === 'keyboard' ? q.answer : (q.opts.filter(function (o) { return o.right; })[0] || {}).t;
-    var h = head + tipHtml('q2') + briefHtml(q.q + ' ' + (right || '')) + '<div class="qtext">' + D.md(q.q) + '</div>' + (q.img ? '<div class="qimg"><img src="' + esc(q.img) + '" alt="Картинка к вопросу"></div>' : '');
+    /* подсказки по нарастающей: сначала только вопрос и варианты; книга через 30 с, «Кратко из лекции» через 60 с, Google через 120 с.
+       Ошибался здесь раньше — суть из лекции раскрыта сразу; ошибался 2+ раз — сразу подсвечен Google. */
+    var rec = D.save.srs[q.id], errs = rec ? rec.w || 0 : 0, hadErr = !R.f.exam && !q.rev && (errs > 0 || D.isBad(q.id));
+    var brief = R.f.exam ? '' : briefHtml(q.q + ' ' + (right || ''));
+    if (brief) brief = hadErr ? brief.replace('<details class="brief"', '<details class="brief was-err" open').replace('<summary>Кратко из лекции</summary>', '<summary>Ты здесь ошибался — вот суть</summary>') : brief.replace('<details class="brief"', '<details class="brief later"');
+    var h = head + tipHtml('q3') + '<div class="qtext">' + D.md(q.q) + '</div>' + (q.img ? '<div class="qimg"><img src="' + esc(q.img) + '" alt="Картинка к вопросу"></div>' : '');
     if (q.type === 'keyboard') h += '<div class="kb"><input id="kbIn" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Что выведет программа? Впиши ответ"><button class="btn primary" id="kbGo">Ответить<kbd>Enter</kbd></button></div>';
     else {
       var order = q.opts.map(function (_, i) { return i; }); for (var i = order.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var tt = order[i]; order[i] = order[j]; order[j] = tt; }
       R.order = order;
       h += '<div class="opts">' + order.map(function (oi, n) { return '<button class="opt" data-o="' + oi + '"><span class="n">' + (n + 1) + '</span><span>' + D.md(q.opts[oi].t) + '</span></button>'; }).join('') + '</div>';
     }
-    if (!R.f.exam && !q.rev) h += '<div class="row know-row"><button class="btn ghost" data-know title="Отметить как выученный — больше почти не будет попадаться">✓ Знаю — не спрашивай</button></div>';
-    h += hotbarHtml() + '<div class="hint">Клавиши: ' + (q.type === 'keyboard' ? 'Enter — ответить' : '1–' + q.opts.length + ' — выбрать ответ') + ' · T — перевести · B — книжка · F — весь экран</div>';
+    var hasBook = R.f.texts && R.f.texts.length && !R.f.exam;
+    if (!R.f.exam) h += '<div class="qlinks">' + (hasBook ? '<button class="linkbtn" data-ql="book"' + (hadErr ? '' : ' hidden') + '>📖 Открыть книгу</button>' : '') +
+      '<button class="linkbtn" data-ql="ggl"' + (errs >= 2 ? ' data-hot' : ' hidden') + '>🔎 Загуглить</button>' +
+      (!q.rev ? '<button class="linkbtn know" data-know title="Отметить как выученный — больше почти не будет попадаться">✓ Знаю</button>' : '') + '</div>' + brief;
+    h += hotbarHtml();
     setPanel(h); wireIco(); wireTr(); wireHotbar(); wireBrief(); R.trB = null; bubbleQ(q, m); autoTrBubble(q, m);
+    hintTimers(R, q);
     var kb0 = panel.querySelector('[data-know]'); if (kb0) kb0.onclick = function () { markKnown(q); };
     if (S.cfg.autoTr) toggleTr();
     G.buttons = [];
@@ -1043,7 +1048,7 @@ if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает д
     var drop = function () { m.hp = m.items.length; if (m.boss && !m.exam && !m.p2 && m.hp > 0 && m.hp <= Math.ceil(m.max / 2) && m.max >= 4) bossPhase2(m); if (!m.hp) { m.dead = true; if (m.guard) { m.tpAt = now(); m.state = 'idle'; m.st = m.tpAt; sfx('chest'); } else { setMon(m, 'death'); sfx('kill'); } } };
     if (ok) {
       R.right++;
-      var hw = X.hit(power, m), bonus = Math.min(20, Math.max(0, hw.dmg - power) * 2); R.crit = (R.combo >= 1.5 && Math.random() < (R.combo - 1)) || ((S.lvl || 1) >= 4 && Math.random() < 0.1);   /* с ур. 4 — +10% крит */
+      var hw = X.hit(power, m), bonus = Math.min(20, Math.max(0, hw.dmg - power) * 2); R.crit = (R.combo >= 1.5 && Math.random() < (R.combo - 1));
       if (hw.note) setTimeout(function () { floater(hw.note, m.x, 90, '#FF9600'); }, 260);
       R.combo = Math.min(3, Math.round((R.combo + 0.1) * 10) / 10); if (R.combo >= 1.3) setTimeout(function () { floater('комбо ×' + R.combo.toFixed(1), G.hero.x, 70, '#FAC775'); }, 380);
       var gain = Math.round(2 * R.combo) + (kind === 'task' ? 3 : 0) + bonus + (R.crit ? 3 : 0); S.iq += gain; R.iq += gain;
@@ -1064,7 +1069,6 @@ if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает д
         sfx('hurt');
         if (m.exam) { G.hero.hurtAt = now(); floater('✗ неверно', G.hero.x, 110, '#F09595'); drop(); D.persist(); hud(); return afterAnswer(false); }   /* экзамен: бьёт для вида, сердечки не тратятся */
         if (S.shieldOn) { S.shieldOn = false; floater('Щит выдержал!', G.hero.x, 110, '#85B7EB'); }
-        else if ((S.lvl || 1) >= 3 && !R.second) { R.second = true; floater('Второй шанс! Без урона', G.hero.x, 110, '#FAC775'); }   /* ур. 3+: первая ошибка в комнате без урона */
         else { var cost = X.hurtCost(); S.hp = Math.max(0, S.hp - cost); G.hero.hurtAt = now(); floater('−' + cost + ' ♥', G.hero.x, 110, '#F09595'); }
         if (S.hp <= 0 && X.take('feather')) { S.hp = 3; setTimeout(function () { floater('Перо феникса! +3 ♥', G.hero.x, 80, '#FF9600'); }, 400); }
         drop(); floater('вопрос вернётся', m.x, 90, '#FAC775');
@@ -1208,7 +1212,7 @@ if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает д
 
   /* ---------- режим «на весь экран» ---------- */
   var appEl = $('app');
-  function focusOn(on) { appEl.classList.toggle('focus', !!(on && S.focus)); appEl.classList.remove('peek'); }
+  function focusOn(on) { appEl.classList.remove('focus'); appEl.classList.remove('peek'); }   /* режим «весь экран» убран */
   function peek() { if (appEl.classList.contains('focus')) { appEl.classList.add('peek'); window.scrollTo(0, 0); } }
   function toggleFocus() { S.focus = !S.focus; D.persist(); if (G.room && G.room.mon) { appEl.classList.toggle('focus', S.focus); appEl.classList.remove('peek'); var b = panel.querySelector('[data-ico="focus"]'); if (b) b.title = S.focus ? 'Свернуть (F)' : 'На весь экран (F)'; } }
   var ICO_BOOK = '<svg viewBox="0 0 24 24"><path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z" fill="#F1E4C8"/><path d="M12 6v14" stroke="#3C3489" stroke-width="2"/><path d="M5 9h5M5 12h5M14 9h5M14 12h5" stroke="#7F77DD" stroke-width="1.5"/></svg>';
@@ -1286,7 +1290,7 @@ if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает д
   function hotbarHtml() {
     if (G.room && G.room.f.exam) return '<p class="hint">Экзамен: подсказки и предметы недоступны — как на настоящем.</p>';
     var w = X.weapon(), W = X.WEAPONS[w.k], h = '<div class="hotbar" role="toolbar" aria-label="Предметы">';
-    h += '<button class="slot weapon" data-hb="#bag" title="' + esc(W.name + ' — ' + W.desc) + '"><img src="' + X.iconUrl(W.icon) + '" alt="">' + (W.dur ? '<i class="dur"><b style="width:' + Math.round(Math.max(0, w.dur) / W.dur * 100) + '%;background:' + (w.dur / W.dur > 0.5 ? '#5DCAA5' : w.dur / W.dur > 0.25 ? '#EF9F27' : '#E24B4A') + '"></b></i>' : '') + '</button>';
+    /* оружия больше нет — слот оружия убран */
     X.HOTBAR.forEach(function (k) {
       var it = X.ITEMS[k], n = X.count(k); if (!n) return;
       h += '<button class="slot" data-hb="' + k + '" title="' + esc(it.name + ' — ' + it.desc) + (it.key ? ' (' + it.key + ')' : '') + '"><img src="' + X.iconUrl(it.icon) + '" alt="">' + '<em>×' + n + '</em>' + (it.key ? '<kbd>' + it.key + '</kbd>' : '') + '</button>';
@@ -1453,11 +1457,6 @@ if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает д
   function durBar(w) { var W = X.WEAPONS[w.k]; if (!W.dur) return ''; var p = Math.max(0, w.dur) / W.dur; return '<div class="durbar"><i style="width:' + Math.round(p * 100) + '%;background:' + (p > 0.5 ? '#5DCAA5' : p > 0.25 ? '#EF9F27' : '#E24B4A') + '"></i></div><span class="muted">прочность ' + Math.max(0, w.dur) + ' / ' + W.dur + (w.dur <= 0 ? ' — сломан, бьёт как обычный' : '') + '</span>'; }
   function openBag() {
     var h = '<header class="md-top"><b>Рюкзак</b><button class="btn ghost" data-shop>🛒 Купить за IQ</button><span class="grow"></span><span class="hud-iq"><span>IQ</span><b>' + S.iq + '</b></span><button class="btn ghost" data-close>✕</button></header><div class="md-body">';
-    h += '<h4>Оружие <small>(в руке — то, чем бьёшь)</small></h4>';
-    S.inv.weapons.forEach(function (w, i) {
-      var W = X.WEAPONS[w.k], inHand = i === S.inv.hand;
-      h += slotCard(X.iconUrl(W.icon), W.name + (inHand ? ' · в руке' : ''), esc(X.RAR[W.rar]) + ' · ' + esc(W.desc), inHand ? '<span class="tag teal">в руке</span>' : '<button class="btn" data-hand="' + i + '">Взять</button>', W.rar, durBar(w));
-    });
     h += '<h4>Предметы</h4><div class="it-grid">';
     var any = false;
     Object.keys(X.ITEMS).forEach(function (k) { var n = X.count(k); if (!n) return; any = true; var it = X.ITEMS[k];
@@ -1470,15 +1469,10 @@ if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает д
     var h = '<header class="md-top"><b>Лавка мудреца</b><button class="btn ghost" data-bag>🎒 Рюкзак</button><span class="grow"></span><span class="hud-iq"><span>IQ</span><b>' + S.iq + '</b></span><button class="btn ghost" data-close>✕</button></header><div class="md-body"><p class="muted">Плати своим IQ — его дают за верные ответы, прочитанные алтари, задания, сундуки и боссов.</p><h4>Расходники</h4><div class="shop-grid">';
     Object.keys(X.ITEMS).forEach(function (k) { var it = X.ITEMS[k], can = S.iq >= it.price;
       h += '<div class="shop-it" style="border-color:' + X.RAR_COL[it.rar] + '">' + (it.rar ? '<span class="rar" style="background:' + X.RAR_COL[it.rar] + '">' + X.RAR[it.rar] + '</span>' : '') + '<img src="' + X.iconUrl(it.icon) + '" alt=""><b>' + esc(it.name) + '</b><span>' + esc(it.desc) + '</span><small>у тебя: ' + X.count(k) + '</small><button class="btn ' + (can ? 'primary' : '') + '" data-buy="' + k + '"' + (can ? '' : ' disabled') + '>IQ ' + it.price + '</button></div>'; });
-    h += '</div><h4>Оружие</h4><div class="shop-grid">';
-    Object.keys(X.WEAPONS).forEach(function (k) { var W = X.WEAPONS[k]; if (!W.price) return; var can = S.iq >= W.price;
-      h += '<div class="shop-it" style="border-color:' + X.RAR_COL[W.rar] + '"><span class="rar" style="background:' + X.RAR_COL[W.rar] + '">' + X.RAR[W.rar] + '</span><img src="' + X.iconUrl(W.icon) + '" alt=""><b>' + esc(W.name) + '</b><span>' + esc(W.desc) + '</span><small>прочность ' + W.dur + '</small><button class="btn ' + (can ? 'primary' : '') + '" data-buyw="' + k + '"' + (can ? '' : ' disabled') + '>IQ ' + W.price + '</button></div>'; });
-    h += '</div>';
-    h += '</div>';
+    h += '</div></div>';
     modal(h, function (el) {
       el.querySelector('[data-bag]').onclick = openBag;
       el.querySelectorAll('[data-buy]').forEach(function (b) { b.onclick = function () { var k = b.getAttribute('data-buy'), it = X.ITEMS[k]; if (S.iq < it.price) return; S.iq -= it.price; X.add(k); D.persist(); openShop(); }; });
-      el.querySelectorAll('[data-buyw]').forEach(function (b) { b.onclick = function () { var k = b.getAttribute('data-buyw'), W = X.WEAPONS[k]; if (S.iq < W.price) return; S.iq -= W.price; X.addWeapon(k); S.inv.hand = S.inv.weapons.length - 1; D.persist(); openShop(); }; });
     });
   }
   function openSettings() {
@@ -1487,7 +1481,6 @@ if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает д
       '<div class="set-row"><div><b>Язык перевода вопросов</b><span>На этот язык переводит кнопка «Перевести» (A→Я) и автоперевод.</span></div><div class="seg">' + Object.keys(X.LANGS).map(function (l) { return '<button data-lang="' + l + '" aria-pressed="' + (c2.trLang === l) + '">' + X.LANGS[l] + '</button>'; }).join('') + '</div></div>' +
       '<div class="set-row"><div><b>Автоперевод</b><span>Каждый вопрос сразу показывается в переводе. Оригинал — по ссылке «оригинал» под вопросом.</span></div><label class="sw"><input type="checkbox" id="setAuto"' + (c2.autoTr ? ' checked' : '') + '><i></i></label></div>' +
 '<div class="set-row"><div><b>Перевод C++ в облачке</b><span>Вопросы C++ на английском: в облачке у монстра оригинал, под ним перевод; под вариантами — мелкий перевод.</span></div><label class="sw"><input type="checkbox" id="setCppTr"' + (c2.cppTr !== false ? ' checked' : '') + '><i></i></label></div>' +
-      '<div class="set-row"><div><b>Вопрос на весь экран</b><span>Сцена прячется, вопрос крупнее. После ответа видно удар. Клавиша F.</span></div><label class="sw"><input type="checkbox" id="setFocus"' + (S.focus ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Звуки</b><span>Удар, ошибка, сундук, победа.</span></div><label class="sw"><input type="checkbox" id="setSound"' + (c2.sound !== false ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Реплики 18+ (мат)</b><span>Монстры иногда матерятся, когда получают урон, бьют или умирают. Выключи — будут только приличные фразы.</span></div><label class="sw"><input type="checkbox" id="setRude"' + (c2.rude !== false ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Автопереход и автопоход</b><span>После ответа сам переходит к следующему вопросу, герой сам идёт к монстрам, сундукам и выходу. Меньше нажатий.</span></div><label class="sw"><input type="checkbox" id="setAutoGo"' + (c2.auto !== false ? ' checked' : '') + '><i></i></label></div>' +
@@ -1501,7 +1494,6 @@ if (kill && m.guard) watchHit(tpms() + 300);   /* страж исчезает д
       el.querySelectorAll('[data-lang]').forEach(function (b) { b.onclick = function () { c2.trLang = b.getAttribute('data-lang'); D.persist(); openSettings(); }; });
       $('setAuto').onchange = function () { c2.autoTr = this.checked; D.persist(); };
 $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
-      $('setFocus').onchange = function () { S.focus = this.checked; D.persist(); };
       $('setSound').onchange = function () { c2.sound = this.checked; D.persist(); if (this.checked) sfx('ok'); };
       $('setRude').onchange = function () { c2.rude = this.checked; D.persist(); };
       $('setLite').onchange = function () { c2.lite = this.checked; D.persist(); };
@@ -1545,6 +1537,7 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
     /* новые ключи (…2), чтобы обновлённые подсказки увидели и те, кто уже закрыл старые */
     floor2: 'Комнаты темы идут по порядку — в каждой спросят все её вопросы. Последняя комната — босс: вопросы всей темы. Свои ошибки повторишь у стража на выходе и в «🔁 Повторении» на карте.',
     room2: 'Жми «Идти дальше» (Enter) — герой сам подойдёт к монстру, сундуку или алтарю (если у темы есть лекция). Сердечки монстра = сколько вопросов он задаст.',
+    q3: 'Просто выбери ответ (или клавиши 1–5). Застрял — внизу сами появятся «📖 Открыть книгу», потом «Кратко из лекции», потом «🔎 Загуглить». «✓ Знаю» убирает лёгкий вопрос.',
     q2: 'Вопрос задаёт монстр в облачке, варианты — внизу (клавиши 1–5). Не знаешь — «🔎 Google» объяснит ответ, но такой вопрос потом спросит страж. «…» в облачке опускает вопрос вниз.'
   };
   function tipHtml(k) {
@@ -1590,7 +1583,6 @@ $('setCppTr').onchange = function () { c2.cppTr = this.checked; D.persist(); };
       if (hk) { e.preventDefault(); useItem(hk); return; }
     }
     if ((e.key === 'b' || e.key === 'B' || e.key === 'и' || e.key === 'И') && G.scene === 'room') { e.preventDefault(); openBookRoom(); return; }
-    if ((e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') && G.scene === 'room' && G.room && G.room.mon) { e.preventDefault(); var fb = panel.querySelector('[data-ico="focus"]'); if (fb) fb.click(); else toggleFocus(); return; }
     if (e.key === 'Enter' && G.buttons && G.buttons.length) { e.preventDefault(); var b = G.buttons.filter(function (x) { return x.key === 'Enter'; })[0] || G.buttons[0]; b.fn(); return; }
     if (/^[1-9]$/.test(e.key)) { var opts = (G.scene === 'exam' ? screenEl : panel).querySelectorAll('.opt:not([disabled])'); var el = opts[+e.key - 1]; if (el) { e.preventDefault(); el.click(); } }
     /* Esc — меню-пауза (как в играх), Backspace — назад (не во время боя и экзамена) */

@@ -714,7 +714,7 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
     shadow: ['schort', 'knight', 'delf', 'necro', 'wogol', 'skeleton'],
     blood: ['bnecro', 'fimp', 'chort', 'knight', 'orc', 'skeleton']
   };
-  var THEME_BOSS = { crypt: ['zking', 'bzombie'], library: ['dshadow', 'demon'], ice: ['dice'], swamp: ['dpoison', 'zking'], lava: ['dfire', 'ochief'], temple: ['dgold'], shadow: ['dshadow'], blood: ['dblood', 'ochief'] };
+  var THEME_BOSS = { crypt: ['zking', 'bzombie'], library: ['evilwiz', 'dshadow'], ice: ['dice'], swamp: ['dpoison', 'zking'], lava: ['demonslime', 'dfire', 'ochief'], temple: ['dgold', 'evilwiz'], shadow: ['swizard', 'dshadow'], blood: ['demonslime', 'dblood'] };
   function themeOf(f) {
     if (!f) return 'crypt'; if (f.exam) return 'blood'; if (f.rep) return 'temple';
     var n = typeof f.n === 'number' ? f.n : 1; return THEME_ORDER[(n - 1 + (THEME_OFF[f.subj] || 0)) % THEME_ORDER.length];
@@ -737,7 +737,7 @@ if (f.drill && !isErr) room = Object.assign({}, room, { qs: D.drillPick(f, 10) }
   }
   function approach(i) {
     var R = G.room, o = R.objs[i]; R.idx = i;
-    var stop = o.type === 'mon' ? o.x - (A.MON[o.key].lm ? 62 : A.MON[o.key].boss ? 66 : 50) : o.type === 'chest' ? o.x - 34 : o.type === 'altar' ? o.x - 30 : o.x - 26;
+    var stop = o.type === 'mon' ? o.x - (A.MON[o.key].lm && A.MON[o.key].boss ? 92 : A.MON[o.key].lm ? 62 : A.MON[o.key].boss ? 66 : 50) : o.type === 'chest' ? o.x - 34 : o.type === 'altar' ? o.x - 30 : o.x - 26;
     setPanel('<p class="msg">Идём…</p>');
     walkTo(stop, function () {
       if (o.type === 'mon' && (o.boss || o.exam) && !o.intro) { o.intro = true; bossIntro(o, function () { if (G.room === R) { R.mon = o; R.monTurn = 0; ask(); } }); }
@@ -1426,7 +1426,7 @@ if (kill && m.guard) watchHit(TP_MS + 300);   /* страж исчезает д�
       '<div class="set-row"><div><b>Реплики 18+ (мат)</b><span>Монстры иногда матерятся, когда получают урон, бьют или умирают. Выключи — будут только приличные фразы.</span></div><label class="sw"><input type="checkbox" id="setRude"' + (c2.rude !== false ? ' checked' : '') + '><i></i></label></div>' +
       '<div class="set-row"><div><b>Обучение</b><span>Снова показать подсказки для новичка.</span></div><button class="btn ghost" id="setTut">Показать снова</button></div>' +
       '<div class="set-row"><div><b>Сбросить прогресс</b><span>Удалит освоение, IQ, предметы и огонёк на этом устройстве.</span></div><button class="btn warn" id="setReset">Сбросить</button></div>' +
-      '<p class="hint">Графика: «Monsters Creatures Fantasy» (Luiz Melo) и «DungeonTileset II» (0x72) — CC0. Герой, факелы и сцены нарисованы для StudyPlay.</p></div>';
+      '<p class="hint">Графика: «Monsters Creatures Fantasy» и «Evil Wizard» (Luiz Melo) и «DungeonTileset II» (0x72) — CC0. Демон-Слизень и Владыка Экзамена: «Boss: Demon Slime» by chierit — CC BY 4.0, chierit.itch.io/boss-demon-slime. Герой, факелы и сцены нарисованы для StudyPlay.</p></div>';
     modal(h, function (el) {
       el.querySelectorAll('[data-lang]').forEach(function (b) { b.onclick = function () { c2.trLang = b.getAttribute('data-lang'); D.persist(); openSettings(); }; });
       $('setAuto').onchange = function () { c2.autoTr = this.checked; D.persist(); };

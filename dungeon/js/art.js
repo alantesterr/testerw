@@ -14,8 +14,12 @@
   /* ---------- атлас 0x72 ---------- */
   A.tiles = {};
   A.anim = {};           /* имя → [кадры] */
-  var LM = ['mushroom', 'goblin', 'skeleton', 'flyingeye'];
-  var LM_FILES = { mushroom: ['idle', 'attack', 'takehit', 'death'], goblin: ['idle', 'attack', 'takehit', 'death'], skeleton: ['idle', 'attack', 'takehit', 'death'], flyingeye: ['flight', 'attack', 'takehit', 'death'] };
+  var LM = ['mushroom', 'goblin', 'skeleton', 'flyingeye', 'evilwizard', 'demonslime'];
+  var LM_FILES = { mushroom: ['idle', 'attack', 'takehit', 'death'], goblin: ['idle', 'attack', 'takehit', 'death'], skeleton: ['idle', 'attack', 'takehit', 'death'], flyingeye: ['flight', 'attack', 'takehit', 'death'],
+    evilwizard: ['idle', 'attack', 'takehit', 'death'], demonslime: ['idle', 'attack', 'takehit', 'death'] };
+  /* размер кадра и «ноги» в кадре: у Luiz Melo 150×150 (ноги на 100-й строке), у Demon Slime (chierit) 288×160 */
+  var LM_META = { demonslime: { fw: 288, cx: 145, foot: 158, flip: false }, evilwizard: { fw: 150, cx: 75, foot: 100, flip: false } };
+  function lmMeta(k) { return LM_META[k] || { fw: 150, cx: 75, foot: 100, flip: true }; }
   A.lm = {};
 
   A.load = function () {
@@ -148,7 +152,10 @@
     twin: { t: 'wogol_idle', name: 'Двойник', s: 3, twin: true },
     sophist: { t: 'necromancer', name: 'Софист', s: 3 },
     sage: { t: 'wizzard_m_idle', name: 'Мудрец', s: 2.6 },
-    overlord: { t: 'big_demon_idle', name: 'Владыка Экзамена', s: 4.4, boss: true },
+    overlord: { lm: 'demonslime', name: 'Владыка Экзамена', s: 1.45, h: 150, boss: true, tint: 'hue-rotate(-25deg) saturate(1.5) brightness(1.05)', el: 'blood' },
+    evilwiz: { lm: 'evilwizard', name: 'Злой колдун', s: 1.7, h: 70, boss: true, el: 'fire' },
+    demonslime: { lm: 'demonslime', name: 'Демон-Слизень', s: 1.25, h: 140, boss: true, el: 'fire' },
+    swizard: { lm: 'evilwizard', name: 'Теневой колдун', s: 1.7, h: 70, boss: true, tint: 'hue-rotate(230deg) brightness(0.85)', el: 'shadow' },
     ogre: { t: 'ogre_idle', name: 'Огр', s: 3.4, boss: true },
     bzombie: { t: 'big_zombie_idle', name: 'Большой зомби', s: 3.4, boss: true },
     demon: { t: 'big_demon_idle', name: 'Демон', s: 3.4, boss: true },
@@ -211,11 +218,11 @@
     if (big && big !== 1) M = { lm: M.lm, t: M.t, s: M.s * big, h: M.h, fly: M.fly };
     if (M.lm) {
       var set = A.lm[M.lm], sh = state === 'hit' ? set.takehit : state === 'attack' ? set.attack : state === 'death' ? set.death : set.idle;
-      var n = Math.round(sh.width / 150), fps = state === 'idle' ? 8 : 14, f = Math.floor(t / 1000 * fps);
+      var mt = lmMeta(M.lm), fh = sh.height, n = Math.round(sh.width / mt.fw), fps = state === 'idle' ? 8 : 14, f = Math.floor(t / 1000 * fps);
       if (state === 'death') f = Math.min(n - 1, f); else f %= n;
-      /* в кадрах Luiz Melo персонаж в центре 150×150, ноги примерно на 100-й строке */
-      c.translate(x, y); c.scale(-1, 1);
-      var k = M.s; c.drawImage(sh, f * 150, 0, 150, 150, -75 * k, (-100 - (M.fly ? 18 : 0)) * k, 150 * k, 150 * k);
+      /* персонаж в центре кадра, ноги на строке mt.foot */
+      c.translate(x, y); if (mt.flip) c.scale(-1, 1);
+      var k = M.s; c.drawImage(sh, f * mt.fw, 0, mt.fw, fh, -mt.cx * k, (-mt.foot - (M.fly ? 18 : 0)) * k, mt.fw * k, fh * k);
     } else {
       var fr = A.anim[M.t] || [A.tiles[M.t]], k = Math.floor(t / 120) % fr.length, tt = fr[k] || fr[0], s = M.s;
       var dx = 0, rot = 0;
@@ -229,7 +236,7 @@
     c.restore();
   };
   A.monHeight = function (key) { var M = A.MON[key]; if (M.lm) return M.h * M.s * 0.72; var t = (A.anim[M.t] || [A.tiles[M.t]])[0]; return t.h * M.s; };
-  A.monDur = function (key, state) { var M = A.MON[key]; if (M.lm) { var sh = A.lm[M.lm][state === 'hit' ? 'takehit' : state]; return sh ? Math.round(sh.width / 150) / 14 * 1000 : 400; } return state === 'death' ? 700 : 350; };
+  A.monDur = function (key, state) { var M = A.MON[key]; if (M.lm) { var sh = A.lm[M.lm][state === 'hit' ? 'takehit' : state]; return sh ? Math.round(sh.width / lmMeta(M.lm).fw) / 14 * 1000 : 400; } return state === 'death' ? 700 : 350; };
 
   /* сердечки над головой (пиксельные, из атласа) */
   A.hearts = function (c, cx, y, n, max) {

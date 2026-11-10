@@ -30,14 +30,87 @@
   /* ---------------- Прогресс вопросов (сохраняется) ---------------- */
   var PQ_KEY = 'sp-player-quiz';
   var pq = SP.store.get(PQ_KEY, null);
-  function bankMap() { var m = {}; SP.bank.all().forEach(function (q) { m[E.qid(q)] = q; }); return m; }
+  /* ---------------- Откуда вопросы: свои тесты (Тестер) + тесты из папок предметов ----------------
+     Выбор хранится в «sp-player-src»: { own: да/нет, files: ['предмет|файл', …] }.
+     Тесты из папок загружаются при открытии Плеера (файлы курса — с сайта, свои — с устройства). */
+  var SRC_KEY = 'sp-player-src';
+  var src = SP.store.get(SRC_KEY, null) || { own: true, files: [] };
+  if (!Array.isArray(src.files)) src.files = [];
+  var extra = {}, extraErr = {}, srcReady = !src.files.length;
+  function fkey(s, f) { return SP.lc(SP.hub.cleanName(s.name)) + '|' + f.name; }
+  function folderTests() {
+    var out = [];
+    ((SP.hub.data() || {}).subjects || []).forEach(function (s) {
+      (s.tests || []).forEach(function (f) { if (f.kind !== 'link' && (f.content || f.path || f.id)) out.push({ s: s, f: f, key: fkey(s, f) }); });
+    });
+    return out;
+  }
+  function testBlob(f) {
+    if (f.content) return Promise.resolve(SP.dataURLtoBlob(f.content, f.type));
+    if (f.base && f.path) return SP.hub.fetchSite(f.path).then(function (r) { return r.r.blob(); });
+    return SP.hub.loadAllContent().then(function () { return f.content ? SP.dataURLtoBlob(f.content, f.type) : null; });
+  }
+  function loadFolderTest(k) {
+    if (extra[k]) return Promise.resolve(extra[k]);
+    var t = folderTests().filter(function (x) { return x.key === k; })[0];
+    if (!t) return Promise.resolve(null);
+    return testBlob(t.f).then(function (blob) {
+      if (!blob) throw new Error('no content');
+      var name = /\.studyplay$/i.test(t.f.name) ? t.f.name + '.json' : (t.f.name || 'test.txt');
+      return E.readFile(new File([blob], name, { type: blob.type }));
+    }).then(function (r) { extra[k] = r.out; delete extraErr[k]; return r.out; }, function () { extraErr[k] = 1; return null; });
+  }
+  function loadSelected() {
+    return Promise.all(src.files.map(loadFolderTest)).then(function () {
+      srcReady = src.files.every(function (k) { return extra[k] || extraErr[k]; });
+      if (built) { bankUI(); srcUI(); renderFeed(); }
+    });
+  }
+  function saveSrc() { SP.store.set(SRC_KEY, src); }
+  /* все вопросы для Плеера (без повторов) */
+  function allQ() {
+    var out = src.own ? SP.bank.all().slice() : [];
+    src.files.forEach(function (k) { if (extra[k]) out = out.concat(extra[k]); });
+    var seen = {};
+    return out.filter(function (q) { var id = E.qid(q); if (seen[id]) return false; seen[id] = 1; return true; });
+  }
+  function srcUI() {
+    var el = $('srcBox'); if (!el) return;
+    var list = folderTests(), groups = [], by = {};
+    list.forEach(function (x) { var g = by[x.s.id]; if (!g) { g = by[x.s.id] = { name: SP.hub.cleanName(x.s.name), items: [] }; groups.push(g); } g.items.push(x); });
+    var cnt = function (k) { return extra[k] ? T('player.srcQ', { n: extra[k].length }) : extraErr[k] ? T('player.srcFail') : src.files.indexOf(k) >= 0 ? T('player.srcLoading') : ''; };
+    var h = '<label class="check"><input type="checkbox" data-src-own' + (src.own ? ' checked' : '') + '><span>' + esc(T('player.srcOwn')) + ' <span class="subtle small">' + esc(T('player.srcQ', { n: SP.bank.all().length })) + '</span></span></label>';
+    h += '<details class="src-folders"' + (src.files.length ? ' open' : '') + '><summary class="small">' + SP.icon('folder', 'ic-sm') + ' ' + esc(T('player.srcFolders')) + (src.files.length ? ' · ' + src.files.length : '') + '</summary>';
+    if (!groups.length) h += '<p class="small subtle">' + esc(T('player.srcNone')) + '</p>';
+    groups.forEach(function (g) {
+      h += '<div class="src-group"><div class="xsmall subtle src-subj">' + esc(g.name) + '</div>' + g.items.map(function (x) {
+        var on = src.files.indexOf(x.key) >= 0;
+        return '<label class="check"><input type="checkbox" data-src-file="' + esc(x.key) + '"' + (on ? ' checked' : '') + '><span>' + esc(x.f.name) + (on ? ' <span class="subtle small">' + esc(cnt(x.key)) + '</span>' : '') + '</span></label>';
+      }).join('') + '</div>';
+    });
+    el.innerHTML = h + '</details>';
+    var own = el.querySelector('[data-src-own]'); own.onchange = function () { src.own = own.checked; saveSrc(); bankUI(); renderFeed(); };
+    var det = el.querySelector('details'); det.ontoggle = function () { srcOpen = det.open; };
+    if (srcOpen !== null) det.open = srcOpen;
+    SP.$$('[data-src-file]', el).forEach(function (cb) {
+      cb.onchange = function () {
+        var k = cb.getAttribute('data-src-file');
+        src.files = src.files.filter(function (x) { return x !== k; }); if (cb.checked) src.files.push(k);
+        saveSrc(); srcUI();
+        if (cb.checked) loadFolderTest(k).then(function () { srcUI(); bankUI(); renderFeed(); }); else { bankUI(); renderFeed(); }
+      };
+    });
+  }
+  var srcOpen = null;
+  function bankMap() { var m = {}; allQ().forEach(function (q) { m[E.qid(q)] = q; }); return m; }
   /* «Подпись» набора вопросов: если набор поменялся, прогресс начинается заново (история остаётся) */
   function bankSig() {
-    var s = SP.bank.all().map(E.qid).sort().join(','), h = 5381;
+    var s = allQ().map(E.qid).sort().join(','), h = 5381;
     for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
-    return SP.bank.all().length + ':' + (h >>> 0).toString(36);
+    return allQ().length + ':' + (h >>> 0).toString(36);
   }
   function ensurePq() {
+    if (pq && !srcReady) return pq;   /* тесты из папок ещё грузятся — прогресс не трогаем */
     var sig = bankSig();
     if (!pq || pq.sig !== sig) {
       var keepHistory = pq && Array.isArray(pq.history) ? pq.history : [];
@@ -99,6 +172,7 @@
       '<aside class="player-side stack">' +
       '<section class="card"><div class="card-head"><div><div class="card-title">' + SP.icon('list-checks') + '<span data-i18n="player.testsTitle"></span></div><div class="card-sub" id="bankStatus"></div></div></div>' +
       '<div class="stack">' +
+      '<div class="field"><span class="label" data-i18n="player.srcTitle"></span><div class="stack-sm" id="srcBox"></div></div>' +
       '<div class="row"><a class="btn btn-sm" href="#/tester">' + SP.icon('upload') + '<span data-i18n="player.loadTests"></span></a></div>' +
       '<div class="field"><span class="label" data-i18n="player.every"></span><div class="row row-nowrap"><input class="input input-num" id="minInput" type="number" min="0" max="1440" inputmode="numeric" data-i18n-attr="aria-label:player.minutes"><span class="small muted" data-i18n="player.min"></span><input class="input input-num" id="secInput" type="number" min="0" max="59" inputmode="numeric" data-i18n-attr="aria-label:player.seconds"><span class="small muted" data-i18n="player.sec"></span></div></div>' +
       '<div class="field"><label class="label" for="questionsInput" data-i18n="player.perTest"></label><input class="input input-num" id="questionsInput" type="number" min="1" max="100" inputmode="numeric"></div>' +
@@ -363,7 +437,7 @@
   }
   function updateToast() {
     var left = nextAt - watch;
-    if (!quizOpen && left > 0 && left <= warnAt() && SP.bank.all().length) {
+    if (!quizOpen && left > 0 && left <= warnAt() && allQ().length) {
       toast.classList.add('show'); toastTime.textContent = fmt(left);
       if (!warned) { warned = true; toast.classList.add('pulse'); setTimeout(function () { toast.classList.remove('pulse'); }, 6000); beep(); }
     } else { toast.classList.remove('show', 'pulse'); if (left > warnAt()) warned = false; }
@@ -419,7 +493,7 @@
   }
   function openQuiz() {
     if (quizOpen) return;
-    if (!SP.bank.all().length) { snack(T('player.noBank')); nextAt = watch + intervalSec; return; }
+    if (!allQ().length) { snack(T('player.noBank')); nextAt = watch + intervalSec; return; }
     ensurePq();
     if (!pq.batch || pq.batch.qi >= pq.batch.ids.length) {
       if (!takeBatch()) { pq.pool = SP.shuffle(Object.keys(bankMap())); savePq(); takeBatch(); }
@@ -566,7 +640,7 @@
   /* ---------------- Лента вопросов под плеером ---------------- */
   function renderFeed() {
     var el = $('feedCard'); if (!el) return;
-    var hasBank = SP.bank.all().length > 0;
+    var hasBank = allQ().length > 0;
     if (hasBank) ensurePq();
     var hist = pq ? pq.history : [], okN = hist.filter(function (h) { return h.ok; }).length, b = pq && pq.batch;
     /* оставшиеся вопросы текущей порции: первый из них — «текущий», если вопросы открыты */
@@ -633,7 +707,7 @@
     syncSettingsUI(); saveProgress(); updateUI(); renderFeed(); SP.toast(T('player.saved'), 'success');
   }
   function bankUI() {
-    var n = SP.bank.all().length, st = $('bankStatus');
+    var n = allQ().length, st = $('bankStatus');
     st.innerHTML = n ? '<span class="text-success">' + SP.icon('circle-check', 'ic-sm') + ' ' + esc(T('player.bankN', { n: n })) + '</span>' : '<span class="text-warning">' + SP.icon('triangle-alert', 'ic-sm') + ' ' + esc(T('player.noBankShort')) + '</span>';
   }
 
@@ -747,7 +821,7 @@
       el.addEventListener('error', function () { if (el.getAttribute('src')) snack(T('player.cantPlay')); });
     });
 
-    loadSettings(); updateVolUI(); bankUI(); renderQueue(); renderMenu(); resetStage(); updateUI(); renderFeed();
+    loadSettings(); updateVolUI(); bankUI(); srcUI(); loadSelected(); renderQueue(); renderMenu(); resetStage(); updateUI(); renderFeed();
     setInterval(tick, 250);
     restore();
   }
@@ -787,7 +861,7 @@
   SP.views.register('player', {
     titleKey: 'nav.player',
     mount: function (el) { root = el; build(); },
-    show: function () { if (built) { bankUI(); renderFeed(); } },
+    show: function () { if (built) { bankUI(); srcUI(); renderFeed(); } },
     hide: function () {
       if (!built) return;
       if (fsEl()) try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) { /* ничего */ }
@@ -796,11 +870,13 @@
     },
     refresh: function () {
       if (!built) return;
-      SP.applyI18n(root); renderQueue(); renderMenu(); bankUI(); renderFeed(); lastIcon = ''; updateVolUI(); updateUI();
+      SP.applyI18n(root); renderQueue(); renderMenu(); bankUI(); srcUI(); renderFeed(); lastIcon = ''; updateVolUI(); updateUI();
       setBtn(nextBtn, 'skip-forward', 'player.next'); setBtn(gearBtn, 'settings', 'player.settings'); setBtn(miniBtn, 'picture-in-picture-2', miniOn ? 'player.miniBack' : 'player.mini'); onFS();
       if (current < 0) resetStage(); else { var it = queue[current]; if (it) { nowMeta.textContent = it.kind === 'youtube' ? T('player.ytMeta') : /^local/.test(it.kind) ? T(isAudioKind() ? 'player.localAudio' : 'player.localVideo') : T('player.direct'); } }
       if (quizOpen) { if (pq && pq.batch) renderQ(); }
     }
   });
-  SP.on('bank', function () { if (built) { bankUI(); renderFeed(); } });
+  SP.on('bank', function () { if (built) { bankUI(); srcUI(); renderFeed(); } });
+  /* список папок появился или обновился — догружаем выбранные тесты */
+  SP.on('hub', function () { if (built) { srcUI(); if (!srcReady) loadSelected(); } });
 })();

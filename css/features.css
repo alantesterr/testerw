@@ -1225,3 +1225,10 @@ html, body { overflow-x: clip; }
 .shk-wl.k-cons .shk-wk, .shk-card.k-cons .shk-kind, .shk-det-kind.k-cons { color: var(--k-cons-b); }
 .tt-l.k-exam { --kc: var(--k-exam-b); }
 .tt-l.k-cons { --kc: var(--k-cons-b); }
+
+/* Плеер: «Откуда вопросы» — свои тесты и тесты из папок предметов */
+.src-folders > summary { cursor: pointer; padding: 0.25rem 0; color: var(--text-2); }
+.src-folders[open] > summary { margin-bottom: 0.25rem; }
+.src-group { margin: 0.35rem 0 0.15rem; }
+.src-subj { margin-bottom: 0.15rem; font-weight: 600; }
+.src-group .check span { overflow-wrap: anywhere; }

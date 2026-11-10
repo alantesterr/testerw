@@ -149,7 +149,7 @@ SP.I18N.kk = {
   'subjects.noContent': 'Файл мазмұны қолжетімсіз', 'subjects.openFail': 'Ашу мүмкін болмады:', 'subjects.noPreview': 'Алдын ала қарау қолжетімсіз',
   'subjects.noPreviewText': 'Файлды жүктеп алып, қолайлы бағдарламада ашыңыз.', 'subjects.slide': '{n} слайдтың {i}-сі', 'subjects.pptxNote': 'Мәтіндік көрініс: безендіру өзгеше болуы мүмкін.',
 
-  'tester.gameTitle': 'Білім зынданы — C++ ойыны', 'tester.gameSub': 'C++ сұрақтары мен конспектісі ойын түрінде: дәріс-қабаттар, құбыжықтар, қате күзетшісі, күндік тапсырмалар.', 'tester.gamePlay': 'Ойнау',
+
   'tester.sub': 'Тесттерді жүктеп, жаттығыңыз. Сұрақтар мен нұсқалар араластырылады.', 'tester.help': 'Бұл қалай жұмыс істейді', 'tester.editQuestions': 'Сұрақ редакторы',
   'tester.step1': '1. Тест файлдары', 'tester.formats': 'TXT, DOC, DOCX немесе .studyplay.json · бірнеше файл болады', 'tester.filesOf': '{max} ішінен {n}',
   'tester.dropHint': 'Файлдарды осында сүйреңіз немесе батырманы басыңыз', 'tester.pick': 'Файл таңдау', 'tester.addMore': 'Тағы файл қосу', 'tester.limit': '{max} файл шегі',
@@ -244,7 +244,7 @@ SP.I18N.kk = {
   'player.noteFirst': 'Бейне кідіртілді. Жауаптардан кейін ол {t} уақытынан жалғасады.', 'player.noteNext': 'Бейне кідіртілді ({t}). Көруге кез келген уақытта оралуға болады.',
   'player.qOf': '{n} сұрақтың {i}-сі', 'player.backToVideo': 'Бейнеге оралу', 'player.showResult': 'Нәтижені көрсету', 'player.resultOf': 'Дұрыс: {n} ішінен {a}',
   'player.seenOf': 'Базадан өтілген сұрақтар: {n} ішінен {a}', 'player.errsN': 'қателер: {n}', 'player.allSeen': 'Базаның барлық сұрақтарынан өттіңіз!',
-  'player.allSeenErrs': 'Базаның барлық сұрақтарынан өттіңіз — қателерді талдау қалды.', 'player.more': 'Тағы сұрақтар ({n} қалды)',
+  'player.allSeenErrs': 'Базаның барлық сұрақтары болды. Қате жіберген сұрақтар қайта келеді — бәріне дұрыс жауап бергенде шеңбер аяқталады.', 'player.learnedOf': 'үйренілді: {a} / {n}', 'player.more': 'Тағы сұрақтар ({n} қалды)',
   'player.newRound': 'Барлық сұрақтар бойынша жаңа айналым', 'player.resume': 'Көруді жалғастыру', 'player.feedTitle': 'Сұрақтар таспасы',
   'player.feedSub': 'Жауап берілді: {a} · дұрыс: {ok} · қате: {bad}', 'player.askNow': 'Сұрақтар қазір', 'player.lgRight': 'дұрыс', 'player.lgWrong': 'қате',
   'player.lgCurrent': 'ағымдағы', 'player.lgNext': 'алдағы', 'player.nextIn': 'Келесі сұрақтарға дейін', 'player.pillDone': '{n}-сұрақ: {r}', 'player.feedEmpty': 'Әзірге сұрақ жоқ',
@@ -367,7 +367,7 @@ Object.assign(SP.I18N.kk, {
   'schedule.gap': 'Терезе · {m} мин',
   'shk.letters': 'Д,С,С,Б,Ж,С',
   'shk.kind.lec': 'Дәрістер', 'shk.kind.lab': 'Зертханалық', 'shk.kind.pr': 'Практикалар', 'shk.kind.sem': 'Семинарлар',
-  'shk.kind.prsem': 'Практикалар, семинарлар', 'shk.kind.sro': 'СӨЖ', 'shk.kind.srop': 'ОСӨЖ',
+  'shk.kind.exam': 'Емтихан', 'shk.kind.cons': 'Консультация', 'shk.kind.prsem': 'Практикалар, семинарлар', 'shk.kind.sro': 'СӨЖ', 'shk.kind.srop': 'ОСӨЖ',
   'jr.sub': 'Пәндер журналы және бағалар калькуляторы',
   'jr.teacher': 'Оқытушы', 'jr.teachers': 'Оқытушылар', 'jr.teacherField': 'Оқытушы(лар)',
   'jr.cur': 'Орт. ағым.', 'jr.rating': 'Рейтинг', 'jr.exam': 'Емтихан', 'jr.final': 'Қорытынды',

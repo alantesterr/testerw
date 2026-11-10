@@ -57,7 +57,8 @@
   function info(l) {
     var raw = String(l.name || '').replace(/\s+/g, ' ').trim(), code = l.code || '', ab = '';
     var mc = raw.match(/^\(?(\d{3,})\)\s*(.*)$/); if (mc) { code = code || mc[1]; raw = mc[2]; }
-    var ma = raw.match(ABBR_RE); if (ma && ma[1].trim()) { raw = ma[1].trim(); ab = ma[2]; }
+    var ek = SP.hub.examKind(raw); if (ek) { raw = ek.name; ab = ek.ab; }
+    var ma = raw.match(ABBR_RE); if (ma && ma[1].trim()) { raw = ma[1].trim(); ab = ab || ma[2]; }
     var mk = raw.match(/^(.*?)\s*[—–-]\s*(Лекция|Практика|Практическое занятие|Лабораторная(?: работа)?|Семинар)$/iu); if (mk) { raw = mk[1].trim(); ab = ab || abbrFromKind(mk[2]); }
     if (!ab) ab = abbrFromKind(l.kind);
     var sj = SP.hub.getSubject(l.subjectId);
@@ -75,10 +76,10 @@
   }
   /* Полное название типа пары для режима Shokan */
   function kindLong(ab) {
-    var k = { 'Л': 'lec', 'ЛЗ': 'lab', 'ЛР': 'lab', 'П': 'pr', 'ПЗ': 'pr', 'С': 'sem', 'СПЗ': 'prsem', 'СРО': 'sro', 'СРОП': 'srop' }[ab];
+    var k = { 'Л': 'lec', 'ЛЗ': 'lab', 'ЛР': 'lab', 'П': 'pr', 'ПЗ': 'pr', 'С': 'sem', 'СПЗ': 'prsem', 'СРО': 'sro', 'СРОП': 'srop', 'ЭКЗ': 'exam', 'КОНС': 'cons' }[ab];
     return k ? SP.t('shk.kind.' + k) : '';
   }
-  function kindCls(ab) { return ({ 'Л': 'k-lec', 'ЛЗ': 'k-lab', 'ЛР': 'k-lab', 'П': 'k-pr', 'ПЗ': 'k-pr', 'С': 'k-sem', 'СПЗ': 'k-sem' })[ab] || 'k-oth'; }
+  function kindCls(ab) { return ({ 'Л': 'k-lec', 'ЛЗ': 'k-lab', 'ЛР': 'k-lab', 'П': 'k-pr', 'ПЗ': 'k-pr', 'С': 'k-sem', 'СПЗ': 'k-sem', 'ЭКЗ': 'k-exam', 'КОНС': 'k-cons' })[ab] || 'k-oth'; }
   function fmtDM(d) { return p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear(); }
 
   /* ---------- Переключатели ---------- */
@@ -246,7 +247,7 @@
     var when = SP.t(DAY_KEYS[l.day] || 'day.mon') + ', ' + date + ', ' + String(s.start || '').slice(0, 5) + ' - ' + String(s.end || '').slice(0, 5);
     var place = [x.building, x.room].filter(Boolean).join(', ');
     return '<div class="shk-det"><button type="button" class="shk-back" id="shkBack">' + SP.icon('chevron-left') + '<span>' + esc(SP.t('nav.schedule')) + '</span></button>' +
-      '<div class="shk-det-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</div><h2 class="shk-det-name">' + esc(x.name) + '</h2>' +
+      '<div class="shk-det-kind ' + kindCls(x.ab) + '">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</div><h2 class="shk-det-name">' + esc(x.name) + '</h2>' +
       '<ul class="shk-det-list"><li>' + esc(when) + '</li>' + (place ? '<li>' + esc(place) + '</li>' : '') + (x.teacher ? '<li>' + esc(x.teacher) + '</li>' : '') +
       '</ul>' + (function (lk) { return lk.length ? '<div class="lk-btns">' + linkButtons(lk) + '</div>' : ''; })(lessonLinks(lessonLink(l, mon))) +
       '<button type="button" class="btn btn-primary shk-det-go" data-sid="' + esc(x.sid) + '">' + SP.icon('folder') + '<span>' + esc(SP.t('schedule.openFolder')) + '</span></button></div>';
@@ -294,7 +295,7 @@
         var ls = lessonsAt(d, s.id);
         if (!ls.length) { h += '<td class="shk-empty"></td>'; return; }
         var x = info(ls[0]), lk = [].concat.apply([], ls.map(function (l) { return lessonLinks(lessonLink(l, mon)); }));
-        h += '<td class="shk-fill"><button type="button" class="shk-wl' + (lk.length ? ' has-lk' : '') + '" data-lid="' + weekLessons().indexOf(ls[0]) + '" title="' + esc(x.name + (kindLong(x.ab) ? ' · ' + kindLong(x.ab) : '') + (lk.length ? ' · ' + SP.t('schedule.hasLinks', { l: lk.map(function (k) { return k.label; }).join(', ') }) : '')) + '">' + linkBadge(lk) + '<span class="shk-wn">' + esc(x.name) + '</span><span class="shk-wk">' + esc(kindLong(x.ab) || x.ab) + (ls.length > 1 ? ' +' + (ls.length - 1) : '') + '</span></button></td>';
+        h += '<td class="shk-fill"><button type="button" class="shk-wl ' + kindCls(x.ab) + (lk.length ? ' has-lk' : '') + '" data-lid="' + weekLessons().indexOf(ls[0]) + '" title="' + esc(x.name + (kindLong(x.ab) ? ' · ' + kindLong(x.ab) : '') + (lk.length ? ' · ' + SP.t('schedule.hasLinks', { l: lk.map(function (k) { return k.label; }).join(', ') }) : '')) + '">' + linkBadge(lk) + '<span class="shk-wn">' + esc(x.name) + '</span><span class="shk-wk">' + esc(kindLong(x.ab) || x.ab) + (ls.length > 1 ? ' +' + (ls.length - 1) : '') + '</span></button></td>';
       });
       h += '</tr>';
     });
@@ -314,7 +315,7 @@
       h += '<li class="shk-row' + (ls.length ? ' has' : '') + '"><div class="shk-time"><b>' + esc(String(s.start).slice(0, 5)) + '</b><span>' + esc(String(s.end).slice(0, 5)) + '</span></div><div class="shk-slot">';
       if (ls.length) h += ls.map(function (l) {
         var x = info(l), lk = lessonLinks(lessonLink(l, mon));
-        return '<button type="button" class="shk-card' + (lk.length ? ' has-lk' : '') + '" data-lid="' + weekLessons().indexOf(l) + '">' + linkBadge(lk) + '<span class="shk-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</span><span class="shk-name">' + esc(x.name) + '</span></button>' +
+        return '<button type="button" class="shk-card ' + kindCls(x.ab) + (lk.length ? ' has-lk' : '') + '" data-lid="' + weekLessons().indexOf(l) + '">' + linkBadge(lk) + '<span class="shk-kind">' + esc((kindLong(x.ab) || x.ab || '').toLocaleUpperCase(SP.locale())) + '</span><span class="shk-name">' + esc(x.name) + '</span></button>' +
           linkChips(lk, 'shk-chips');
       }).join('');
       else if (i > first && i < last) h += '<span class="shk-gap">' + esc(SP.t('schedule.gap', { m: toMin(s.end) - toMin(s.start) })) + '</span>';

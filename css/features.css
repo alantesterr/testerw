@@ -1217,3 +1217,11 @@ html, body { overflow-x: clip; }
   html.shk-full, html.shk-full body { overscroll-behavior-x: none; }
   .sch-page.mode-shokan { touch-action: pan-y; }
 }
+/* Экзамен и консультация (из Platonus «ЭКЗ» / «Конс»): как в приложении Shokan — зелёный и синий */
+:root { --k-exam-b: #16a34a; --k-cons-b: #2563eb; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --k-exam-b: #3ecf7a; --k-cons-b: #5b9bff; } }
+:root[data-theme="dark"] { --k-exam-b: #3ecf7a; --k-cons-b: #5b9bff; }
+.shk-wl.k-exam .shk-wk, .shk-card.k-exam .shk-kind, .shk-det-kind.k-exam { color: var(--k-exam-b); }
+.shk-wl.k-cons .shk-wk, .shk-card.k-cons .shk-kind, .shk-det-kind.k-cons { color: var(--k-cons-b); }
+.tt-l.k-exam { --kc: var(--k-exam-b); }
+.tt-l.k-cons { --kc: var(--k-cons-b); }

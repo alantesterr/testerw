@@ -25,7 +25,7 @@
     var full = questions.map(function (x) { return Object.assign({}, x, { opts: (x.opts || []).map(function (o) { return Object.assign({}, o); }) }); });
     var quiz = fresh(full), ans = quiz.map(function () { return null; }), cur = 0, sel = new Set(), round = 1, tr = {}, trOn = {}, finished = false;
 
-    function reset(list) { quiz = list; ans = quiz.map(function () { return null; }); cur = 0; sel = new Set(); tr = {}; trOn = {}; finished = false; show(); }
+    function reset(list) { quiz = list; reps = {}; ans = quiz.map(function () { return null; }); cur = 0; sel = new Set(); tr = {}; trOn = {}; finished = false; show(); }
 
     function navHtml() {
       var btn = function (i) { var a = ans[i]; return '<button type="button" class="qn' + (a ? (a.ok ? ' ok' : ' bad') : '') + (i === cur ? ' cur' : '') + '" data-i="' + i + '" aria-label="' + esc(SP.t('quiz.goTo', { n: i + 1 })) + '"' + (i === cur ? ' aria-current="step"' : '') + '>' + (i + 1) + '</button>'; };
@@ -102,11 +102,25 @@
       if (q.n === 1) submitSel([i]);
       else { if (sel.has(i)) sel.delete(i); else sel.add(i); show(); }
     }
-    function submitSel(s) { var q = quiz[cur]; ans[cur] = { sel: s, ok: E.checkChoice(q, s) }; sel = new Set(); show(); focusNext(); }
+    /* Память ошибок: записать ответ; при ошибке этот же вопрос тихо вернётся
+       через 3–7 вопросов (не больше 3 повторов за тест), пока не ответишь верно. */
+    var reps = {};
+    function remember(q, ok) {
+      var id = E.qid(q); SP.mem.record(id, ok);
+      if (ok || finished) return;
+      reps[id] = (reps[id] || 0) + 1; if (reps[id] > 3) return;
+      for (var j = cur + 1; j < quiz.length; j++) if (!ans[j] && E.qid(quiz[j]) === id) return;
+      var pos = Math.min(quiz.length, cur + 3 + Math.floor(Math.random() * 5));
+      var copy = Object.assign({}, q, { opts: SP.shuffle((q.opts || []).map(function (o) { return Object.assign({}, o); })), _rep: true });
+      quiz.splice(pos, 0, copy); ans.splice(pos, 0, null);
+      var shift = function (o) { var n = {}; Object.keys(o).forEach(function (k) { var i = +k; n[i >= pos ? i + 1 : i] = o[k]; }); return n; };
+      tr = shift(tr); trOn = shift(trOn);
+    }
+    function submitSel(s) { var q = quiz[cur]; ans[cur] = { sel: s, ok: E.checkChoice(q, s) }; remember(q, ans[cur].ok); sel = new Set(); show(); focusNext(); }
     function submitKb() {
       var q = quiz[cur], inp = SP.$('#kbAns', host), typed = inp ? inp.value : '';
       if (!typed.trim()) { if (inp) { inp.setAttribute('aria-invalid', 'true'); inp.focus(); } return; }
-      ans[cur] = { sel: [], typed: typed, ok: E.checkKeyboard(q, typed) }; show(); focusNext();
+      ans[cur] = { sel: [], typed: typed, ok: E.checkKeyboard(q, typed) }; remember(q, ans[cur].ok); show(); focusNext();
     }
     function focusNext() { var b = SP.$('#qNext', host) || SP.$('#qFin', host); if (b) b.focus(); }
 
@@ -129,17 +143,19 @@
 
     function finish() {
       finished = true;
-      var okN = ans.filter(function (a) { return a && a.ok; }).length, bad = ans.filter(function (a) { return a && !a.ok; }).length, skip = ans.length - okN - bad;
-      var pct = Math.round(okN / quiz.length * 100);
-      var wrong = quiz.filter(function (q, i) { return !ans[i] || !ans[i].ok; });
-      var errs = quiz.map(function (q, i) { return { q: q, i: i, a: ans[i] }; }).filter(function (x) { return !x.a || !x.a.ok; }).map(function (x) {
+      /* итог — по первым попыткам; тихие повторы ошибок (_rep) в счёт не идут */
+      var base = quiz.map(function (_, i) { return i; }).filter(function (i) { return !quiz[i]._rep; });
+      var okN = base.filter(function (i) { return ans[i] && ans[i].ok; }).length, bad = base.filter(function (i) { return ans[i] && !ans[i].ok; }).length, skip = base.length - okN - bad;
+      var pct = Math.round(okN / (base.length || 1) * 100);
+      var wrong = base.filter(function (i) { return !ans[i] || !ans[i].ok; }).map(function (i) { return quiz[i]; });
+      var errs = base.map(function (i) { return { q: quiz[i], i: i, a: ans[i] }; }).filter(function (x) { return !x.a || !x.a.ok; }).map(function (x) {
         var right = E.isKb(x.q) ? x.q.answer : x.q.opts.filter(function (o) { return o.right; }).map(function (o) { return o.t; }).join('; ');
         return '<div class="err-item"><div class="row"><span class="badge ' + (x.a ? 'badge-danger' : '') + '">' + (x.i + 1) + '</span>' + (x.a ? '' : '<span class="small subtle">' + esc(SP.t('quiz.skipped')) + '</span>') + '</div>' + E.richHtml(x.q.q, true) + '<div class="small"><b class="text-success">' + esc(SP.t('quiz.correct')) + ':</b> ' + esc(right) + '</div></div>';
       }).join('');
       var tone = pct >= 90 ? 'success' : pct >= 50 ? 'warning' : 'danger';
       host.innerHTML = '<div class="quiz stack">' +
         '<section class="card result-card"><div class="result-score ' + tone + '"><span class="result-pct">' + pct + '%</span><span class="small">' + esc(SP.t(pct >= 90 ? 'quiz.great' : pct >= 50 ? 'quiz.good' : 'quiz.tryAgain')) + '</span></div>' +
-        '<div class="result-stats"><div><b class="text-success">' + okN + '</b><span>' + esc(SP.t('quiz.statRight')) + '</span></div><div><b class="text-danger">' + bad + '</b><span>' + esc(SP.t('quiz.statWrong')) + '</span></div><div><b>' + skip + '</b><span>' + esc(SP.t('quiz.statSkip')) + '</span></div><div><b>' + quiz.length + '</b><span>' + esc(SP.t('quiz.statTotal')) + '</span></div></div>' +
+        '<div class="result-stats"><div><b class="text-success">' + okN + '</b><span>' + esc(SP.t('quiz.statRight')) + '</span></div><div><b class="text-danger">' + bad + '</b><span>' + esc(SP.t('quiz.statWrong')) + '</span></div><div><b>' + skip + '</b><span>' + esc(SP.t('quiz.statSkip')) + '</span></div><div><b>' + base.length + '</b><span>' + esc(SP.t('quiz.statTotal')) + '</span></div></div>' +
         '<p class="muted small">' + esc(round > 1 ? SP.t('quiz.round', { n: round }) + '. ' : '') + esc(wrong.length ? SP.t('quiz.canRedo') : SP.t('quiz.perfect')) + '</p>' +
         '<div class="btn-group">' + (wrong.length ? '<button type="button" class="btn btn-primary" id="rRedo">' + SP.icon('rotate-ccw') + '<span>' + esc(SP.t('quiz.redo', { n: wrong.length })) + '</span></button>' : '') +
         (round > 1 ? '<button type="button" class="btn" id="rFull">' + SP.icon('list-checks') + '<span>' + esc(SP.t('quiz.fullAgain')) + '</span></button>' : '') +
@@ -150,7 +166,7 @@
       var $ = function (s) { return SP.$(s, host); };
       var rd = $('#rRedo'); if (rd) rd.onclick = function () { round++; reset(fresh(wrong)); };
       var rf = $('#rFull'); if (rf) rf.onclick = function () { round = 1; reset(fresh(full)); };
-      $('#rAgain').onclick = function () { reset(fresh(quiz)); };
+      $('#rAgain').onclick = function () { reset(fresh(quiz.filter(function (q) { return !q._rep; }))); };
       $('#rReview').onclick = function () { cur = 0; show(); };
       $('#rHome').onclick = function () { if (opts.onExit) opts.onExit(); };
       if (opts.onFinish) opts.onFinish({ pct: pct, ok: okN, bad: bad, total: quiz.length });

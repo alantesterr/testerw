@@ -20,9 +20,6 @@
       actions: '<button type="button" class="btn btn-ghost" id="tHelp">' + SP.icon('circle-help') + '<span>' + esc(SP.t('tester.help')) + '</span></button>' +
         '<a class="btn" href="#/designer">' + SP.icon('square-pen') + '<span>' + esc(SP.t('tester.editQuestions')) + '</span></a>'
     });
-    /* Игра «Подземелье знаний» (отдельная страница dungeon/) */
-    html += '<section class="card game-card"><div class="card-head"><div><div class="card-title">' + SP.icon('circle-play') + esc(SP.t('tester.gameTitle')) + '</div><div class="card-sub">' + esc(SP.t('tester.gameSub')) + '</div></div>' +
-      '<a class="btn btn-primary" href="dungeon/index.html">' + SP.icon('play') + '<span>' + esc(SP.t('tester.gamePlay')) + '</span></a></div></section>';
     /* Шаг 1 — файлы */
     html += '<section class="card drop-card" id="tDrop"><div class="card-head"><div><div class="card-title">' + SP.icon('upload') + esc(SP.t('tester.step1')) + '</div><div class="card-sub">' + esc(SP.t('tester.formats')) + '</div></div>' +
       '<span class="badge">' + esc(SP.t('tester.filesOf', { n: st.files.length, max: SP.bank.MAX })) + '</span></div>' +
@@ -73,7 +70,8 @@
     SP.bank.sync();
     var all = SP.bank.all(); if (!all.length) return;
     var n = SP.clamp(parseInt(SP.$('#tCnt', root).value, 10) || 1, 1, all.length);
-    var list = SP.shuffle(all).slice(0, n);
+    /* сначала ошибки, которым пора повториться, и новые вопросы (память ошибок общая с Плеером) */
+    var list = SP.mem.pick(all, n, SP.testEngine.qid);
     root.innerHTML = '<div class="page"><div id="quizHost"></div></div>';
     running = SP.Quiz(SP.$('#quizHost', root), list, { title: SP.bank.state().name || SP.t('nav.tester'), onExit: stop });
   }

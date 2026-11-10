@@ -149,7 +149,7 @@ SP.I18N.en = {
   'subjects.noContent': 'File content is not available', 'subjects.openFail': 'Could not open:', 'subjects.noPreview': 'Preview not available',
   'subjects.noPreviewText': 'Download the file and open it in a suitable app.', 'subjects.slide': 'Slide {i} of {n}', 'subjects.pptxNote': 'Text-only view: formatting may differ.',
 
-  'tester.gameTitle': 'Dungeon of Knowledge — a C++ game', 'tester.gameSub': 'The same C++ questions and notes as a game: lecture floors, monsters, a mistakes guardian, daily quests.', 'tester.gamePlay': 'Play',
+
   'tester.sub': 'Load tests and practise. Questions and options are shuffled.', 'tester.help': 'How it works', 'tester.editQuestions': 'Question editor',
   'tester.step1': '1. Test files', 'tester.formats': 'TXT, DOC, DOCX or .studyplay.json · several files allowed', 'tester.filesOf': '{n} of {max}',
   'tester.dropHint': 'Drag files here or press the button', 'tester.pick': 'Choose file', 'tester.addMore': 'Add another file', 'tester.limit': 'Limit of {max} files',
@@ -244,7 +244,7 @@ SP.I18N.en = {
   'player.noteFirst': 'The video is paused. After the answers it continues from {t}.', 'player.noteNext': 'The video is paused ({t}). You can go back to watching at any time.',
   'player.qOf': 'Question {i} of {n}', 'player.backToVideo': 'Back to video', 'player.showResult': 'Show result', 'player.resultOf': 'Correct: {a} of {n}',
   'player.seenOf': 'Bank questions covered: {a} of {n}', 'player.errsN': 'mistakes: {n}', 'player.allSeen': 'You have covered all bank questions!',
-  'player.allSeenErrs': 'You have covered all bank questions — mistakes are left to review.', 'player.more': 'More questions ({n} left)',
+  'player.allSeenErrs': 'You have seen every bank question. Missed ones will come back — the round ends when all are answered correctly.', 'player.learnedOf': 'learned: {a} of {n}', 'player.more': 'More questions ({n} left)',
   'player.newRound': 'New round through all questions', 'player.resume': 'Continue watching', 'player.feedTitle': 'Question feed',
   'player.feedSub': 'Answered: {a} · correct: {ok} · wrong: {bad}', 'player.askNow': 'Questions now', 'player.lgRight': 'correct', 'player.lgWrong': 'wrong',
   'player.lgCurrent': 'current', 'player.lgNext': 'upcoming', 'player.nextIn': 'Next questions in', 'player.pillDone': 'Question {n}: {r}', 'player.feedEmpty': 'No questions yet',
@@ -367,7 +367,7 @@ Object.assign(SP.I18N.en, {
   'schedule.gap': 'Gap · {m} min',
   'shk.letters': 'M,T,W,T,F,S',
   'shk.kind.lec': 'Lectures', 'shk.kind.lab': 'Labs', 'shk.kind.pr': 'Practicals', 'shk.kind.sem': 'Seminars',
-  'shk.kind.prsem': 'Practicals, seminars', 'shk.kind.sro': 'Self-study', 'shk.kind.srop': 'Guided self-study',
+  'shk.kind.exam': 'Exam', 'shk.kind.cons': 'Consultation', 'shk.kind.prsem': 'Practicals, seminars', 'shk.kind.sro': 'Self-study', 'shk.kind.srop': 'Guided self-study',
   'jr.sub': 'Subject journal and grade calculator',
   'jr.teacher': 'Teacher', 'jr.teachers': 'Teachers', 'jr.teacherField': 'Teacher(s)',
   'jr.cur': 'Avg. cur.', 'jr.rating': 'Rating', 'jr.exam': 'Exam', 'jr.final': 'Final',

@@ -43,13 +43,23 @@
       var keepHistory = pq && Array.isArray(pq.history) ? pq.history : [];
       var map = bankMap(), ids = Object.keys(map);
       var seen = {}; keepHistory.forEach(function (h) { seen[h.id] = 1; });
-      pq = { sig: sig, pool: SP.shuffle(ids.filter(function (id) { return !seen[id]; })), errs: (pq && pq.errs || []).filter(function (id) { return map[id]; }), history: keepHistory, batch: null, done: 0, redoN: 0 };
+      pq = { sig: sig, pool: SP.shuffle(ids.filter(function (id) { return !seen[id]; })), errs: (pq && pq.errs || []).filter(function (id) { return map[id]; }), history: keepHistory, batch: null, done: 0, redoN: 0, memMoved: !!(pq && pq.memMoved) };
       if (!pq.pool.length && ids.length) pq.pool = SP.shuffle(ids);
       savePq();
     }
+    if (!pq.memMoved) { syncErrs(); savePq(); }
     return pq;
   }
   function savePq() { SP.store.set(PQ_KEY, pq); }
+  /* ошибки теперь живут в общей памяти (SP.mem); pq.errs — только их список для счётчиков */
+  function syncErrs() {
+    if (!pq) return;
+    var map = bankMap();
+    if (pq.errs && pq.errs.length && !pq.memMoved) pq.errs.forEach(function (id) { if (map[id] && !SP.mem.isBad(id)) SP.mem.record(id, false); });
+    pq.memMoved = true;
+    pq.errs = Object.keys(map).filter(SP.mem.isBad);
+  }
+  function learnedN() { return Object.keys(bankMap()).filter(SP.mem.learned).length; }
   function answerText(q, r) {
     if (!q) return '';
     if (E.isKb(q)) return r && r.typed != null ? r.typed : '';
@@ -390,11 +400,21 @@
 
   /* ---------------- Вопросы во время просмотра ---------------- */
   function takeBatch() {
+    /* Порция: ошибки, которым пора вернуться (до 40%), потом новые вопросы круга; иногда один уже выученный —
+       для закрепления. Когда новых нет, а ошибки остались — порция из ошибок: круг закончится, только когда
+       на все вопросы ответишь верно. Всё перемешано, повторы ничем не отмечены. */
     ensurePq();
-    var map = bankMap();
-    if (!pq.pool.length) return null;
-    var ids = pq.pool.splice(0, Math.min(qPerTest, pq.pool.length)).filter(function (id) { return map[id]; });
-    pq.batch = { kind: 'main', ids: ids, qi: 0, results: [], order: {} };
+    var map = bankMap(), all = Object.keys(map), M = SP.mem, ids = [], used = {};
+    var add = function (id) { if (ids.length < qPerTest && map[id] && !used[id]) { used[id] = 1; ids.push(id); return true; } return false; };
+    var bad = all.filter(M.isBad).sort(function (a, b) { return M.due(a) - M.due(b); });
+    var nDue = Math.ceil(qPerTest * 0.4);
+    bad.filter(M.isDue).forEach(function (id) { if (nDue > 0 && add(id)) nDue--; });
+    if (qPerTest >= 4 && Math.random() < 0.35) { var known = SP.shuffle(all.filter(function (id) { return M.learned(id) && pq.pool.indexOf(id) < 0; })); if (known.length) add(known[0]); }
+    while (ids.length < qPerTest && pq.pool.length) add(pq.pool.shift());
+    if (!pq.pool.length) bad.forEach(add);
+    syncErrs();
+    if (!ids.length) return null;
+    pq.batch = { kind: 'main', ids: SP.shuffle(ids), qi: 0, results: [], order: {} };
     savePq(); return pq.batch;
   }
   function openQuiz() {
@@ -497,7 +517,7 @@
     }
     qAnswered = { ok: ok };
     b.results.push({ id: id, ok: ok });
-    if (ok) pq.errs = pq.errs.filter(function (x) { return x !== id; }); else if (pq.errs.indexOf(id) < 0) pq.errs.push(id);
+    SP.mem.record(id, ok); syncErrs();   /* память ошибок: ошибка сама вернётся через несколько вопросов */
     pq.history.push(Object.assign({ id: id, ok: ok, at: Date.now(), pos: Math.round(savedPos), q: q.q.slice(0, 600), right: rightText(q).slice(0, 400), ex: String(q.ex || '').slice(0, 2000), kb: kb }, r));
     savePq();
     $('pqVerdict').innerHTML = '<div class="alert ' + (ok ? 'alert-success' : 'alert-danger') + '">' + SP.icon(ok ? 'circle-check' : 'circle-x') + '<div class="alert-body"><b>' + esc(T(ok ? 'quiz.right' : 'quiz.wrong')) + '</b>' + (!ok ? '<span>' + esc(T('quiz.correctIs', { a: rightText(q) })) + '</span>' : '') + '</div></div>' + E.explainHtml(q);
@@ -523,11 +543,11 @@
     var badList = (sum.bad || []).map(function (id) { var q = map[id]; return q ? '<div class="err-item">' + E.richHtml(q.q, true) + '<div class="small"><b class="text-success">' + esc(T('quiz.correct')) + ':</b> ' + esc(rightText(q)) + '</div></div>' : ''; }).join('');
     if (!quizOpen) { savedPos = M.time(); M.pause(); quizOpen = true; quizModal.classList.add('show'); }
     shell('<div class="result-score ' + (pct >= 90 ? 'success' : pct >= 50 ? 'warning' : 'danger') + '"><span class="result-pct">' + pct + '%</span><span class="small">' + esc(T('player.resultOf', { a: okN, n: n })) + '</span></div>' +
-      '<p class="small muted">' + esc(T('player.seenOf', { a: seen, n: total })) + (pq.errs.length ? ' · ' + esc(T('player.errsN', { n: pq.errs.length })) : '') + '</p>' +
+      '<p class="small muted">' + esc(T('player.seenOf', { a: seen, n: total })) + ' · ' + esc(T('player.learnedOf', { a: learnedN(), n: total })) + '</p>' +
       (pq.pool.length ? '' : '<div class="alert alert-success">' + SP.icon('circle-check') + '<div class="alert-body">' + esc(T(pq.errs.length ? 'player.allSeenErrs' : 'player.allSeen')) + '</div></div>') +
       (badList ? '<div class="stack-sm">' + badList + '</div>' : '') +
-      '<div class="pq-foot wrap">' + (pq.errs.length ? '<button type="button" class="btn" id="pqRedo">' + SP.icon('rotate-ccw') + '<span>' + esc(T('quiz.redo', { n: pq.errs.length })) + '</span></button>' : '') +
-      (pq.pool.length ? '<button type="button" class="btn" id="pqMore">' + SP.icon('list-checks') + '<span>' + esc(T('player.more', { n: pq.pool.length })) + '</span></button>' : '<button type="button" class="btn" id="pqRound">' + SP.icon('refresh-cw') + '<span>' + esc(T('player.newRound')) + '</span></button>') +
+      '<div class="pq-foot wrap">' +
+      (pq.pool.length || pq.errs.length ? '<button type="button" class="btn" id="pqMore">' + SP.icon('list-checks') + '<span>' + esc(T('player.more', { n: pq.pool.length + pq.errs.length })) + '</span></button>' : '<button type="button" class="btn" id="pqRound">' + SP.icon('refresh-cw') + '<span>' + esc(T('player.newRound')) + '</span></button>') +
       '<button type="button" class="btn btn-primary" id="pqResume">' + SP.icon('play') + '<span>' + esc(T('player.resume')) + '</span></button></div>');
     $('pqResume').onclick = function () { closeQuiz(true); };
     var mo = $('pqMore'); if (mo) mo.onclick = function () { takeBatch(); renderQ(); renderFeed(); };
@@ -556,7 +576,7 @@
     var nextBatch = pq ? pq.pool.slice(0, qPerTest) : [];
     var html = '<div class="card-head"><div><div class="card-title">' + SP.icon('list-checks') + esc(T('player.feedTitle')) + '</div>' +
       '<div class="card-sub">' + (hasBank ? esc(T('player.feedSub', { a: hist.length, ok: okN, bad: hist.length - okN })) : esc(T('player.noBankShort'))) + '</div></div>' +
-      '<div class="row">' + (pq && pq.errs.length ? '<button type="button" class="btn btn-sm" id="feedRedo">' + SP.icon('rotate-ccw') + '<span>' + esc(T('quiz.redo', { n: pq.errs.length })) + '</span></button>' : '') +
+      '<div class="row">' +
       (hasBank ? '<button type="button" class="btn btn-sm btn-primary" id="feedNow"' + (current < 0 ? ' disabled' : '') + '>' + SP.icon('play') + '<span>' + esc(T('player.askNow')) + '</span></button>' : '') + '</div></div>';
     if (!hasBank) { el.innerHTML = html + '<div class="empty">' + SP.icon('list-checks', 'ic-xl') + '<p>' + esc(T('player.noBankText')) + '</p><a class="btn btn-primary" href="#/tester">' + SP.icon('upload') + '<span>' + esc(T('player.loadTests')) + '</span></a></div>'; wireFeed(); return; }
     html += '<div class="feed-legend xsmall"><span><i class="lg ok"></i>' + esc(T('player.lgRight')) + '</span><span><i class="lg bad"></i>' + esc(T('player.lgWrong')) + '</span><span><i class="lg cur"></i>' + esc(T('player.lgCurrent')) + '</span><span><i class="lg next"></i>' + esc(T('player.lgNext')) + '</span>' +

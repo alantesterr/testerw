@@ -75,7 +75,18 @@
 
   /* ---------- Названия предметов и занятий ---------- */
   var CODE_RE = /^[\s(\[№#]*(?:[A-Za-zА-Яа-яЁё]{1,6}[-‑–]?\s?)?\d{2,}[\s)\].:–—-]*/u;
-  function cleanName(n) { var s = String(n == null ? '' : n).replace(/\s+/g, ' ').trim(); var r = s.replace(CODE_RE, '').trim(); return r || s; }
+  /* Экзамен и консультация приходят из Platonus как «Философия ЭКЗ» / «… Конс».
+     Это тот же предмет: пометку отрезаем от названия, а тип пары — 'ЭКЗ' или 'КОНС'. */
+  var EXAM_RE = /^(.*?)(?:[\s ]+[(\[]?|[\s ]*[(\[])\s*(экз(?:амен)?|емтихан|exam|конс(?:ультация)?|кеңес|consult(?:ation)?)\.?\s*[)\]]?$/iu;
+  function examKind(n) {
+    var m = String(n == null ? '' : n).replace(/\s+/g, ' ').trim().match(EXAM_RE);
+    if (!m || !m[1].trim()) return null;
+    return { name: m[1].trim(), ab: /^(экз|емт|exam)/i.test(m[2]) ? 'ЭКЗ' : 'КОНС' };
+  }
+  function cleanName(n) {
+    var s = String(n == null ? '' : n).replace(/\s+/g, ' ').trim(); var r = s.replace(CODE_RE, '').trim() || s;
+    var ek = examKind(r); return ek ? ek.name : r;
+  }
   var ABBR_RE = /^(.*?)[\s ]+(СПЗ|СРОП|СРО|ЛЗ|ЛР|ПЗ|Л|П|С)$/u;
   function kindAbbr(k) {
     k = String(k || '').trim(); var x = k.toLowerCase(); if (!x) return '';
@@ -87,7 +98,8 @@
   }
   function kindClass(ab) { return ({ 'Л': 'k-lecture', 'П': 'k-practice', 'ПЗ': 'k-practice', 'ЛЗ': 'k-lab', 'ЛР': 'k-lab', 'С': 'k-seminar', 'СПЗ': 'k-seminar' })[ab] || 'k-other'; }
   function lessonView(l, sj) {
-    var name = cleanName(l.name || (sj && sj.name) || SP.t('hub.subject')), ab = '';
+    var ek = examKind(String(l.name || '').replace(CODE_RE, ''));
+    var name = cleanName(l.name || (sj && sj.name) || SP.t('hub.subject')), ab = ek ? ek.ab : '';
     var m1 = name.match(/^(.*?)\s*[—–-]\s*(Лекция|Практика|Практическое занятие|Лабораторная(?: работа)?|Семинар)$/iu);
     if (m1 && m1[1].trim()) { name = m1[1].trim(); ab = kindAbbr(m1[2]); }
     else { var m = name.match(ABBR_RE); if (m && m[1].trim()) { name = m[1].trim(); ab = m[2]; } }
@@ -623,7 +635,7 @@
     restoreRemoved: function () { data.removed = {}; save(); applyLayers(); },
     clearOwn: function () { data.own = null; if (data.pref === 'own') data.pref = 'auto'; save(); applyLayers(); },
     setOwn: function (timeSlots, schedule) { data.own = { timeSlots: timeSlots, schedule: schedule }; data.pref = 'own'; save(); applyLayers(); },
-    getSubject: getSubject, findMine: findMine, cleanName: cleanName, lessonView: lessonView, kindClass: kindClass,
+    getSubject: getSubject, findMine: findMine, cleanName: cleanName, examKind: examKind, lessonView: lessonView, kindClass: kindClass,
     normUrl: normUrl, sameFile: sameFile, uid: uid,
     persistFile: persistFile, dropFile: dropFile, loadAllContent: loadAllContent, idb: IDB,
     base: function () { return base; },

@@ -142,11 +142,153 @@
   }
 
   /* ---------- Чтение файлов ---------- */
+  /* Картинки и таблицы из Word. В тексте картинка временно стоит меткой \u0002адрес\u0003; потом метка
+     становится <question_image> (если стоит до первого варианта) или <variant_image> (если после варианта). */
+  var IMG_A = '\u0002', IMG_B = '\u0003';
+  function placeImages(text) {
+    return String(text).replace(/\u0002([^\u0003]*)\u0003/g, function (m, src, at, all) {
+      if (!src) return '';
+      var before = all.slice(0, at), q = before.lastIndexOf('<question'), v = Math.max(before.lastIndexOf('<variant>'), before.lastIndexOf('<variantright>'));
+      return v > q ? '<variant_image>' + src + '</variant_image>' : '\n<question_image>' + src + '</question_image>\n';
+    });
+  }
+  /* Таблица (например, ячейки Excel в вопросе) → картинка, чтобы выглядела как в Word */
+  function tableImg(rows) {
+    rows = rows.filter(function (r) { return r.some(function (c) { return String(c).trim(); }); });
+    if (!rows.length) return '';
+    var cols = Math.max.apply(null, rows.map(function (r) { return r.length; })), cv = document.createElement('canvas'), c = cv.getContext('2d');
+    var font = '15px Arial, sans-serif', pad = 10, rh = 30, w = [];
+    c.font = font;
+    for (var j = 0; j < cols; j++) w[j] = Math.max(36, Math.max.apply(null, rows.map(function (r) { return c.measureText(String(r[j] || '').trim()).width; })) + pad * 2);
+    var W = w.reduce(function (a, b) { return a + b; }, 0) + 1, H = rows.length * rh + 1;
+    cv.width = W * 2; cv.height = H * 2; c.scale(2, 2);
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H); c.strokeStyle = '#9aa3b2'; c.lineWidth = 1; c.font = font; c.textBaseline = 'middle'; c.fillStyle = '#111827';
+    rows.forEach(function (r, i) {
+      var x = 0.5;
+      for (var j = 0; j < cols; j++) { c.strokeRect(x, i * rh + 0.5, w[j], rh); c.fillText(String(r[j] || '').trim(), x + pad, i * rh + rh / 2 + 0.5); x += w[j]; }
+    });
+    return cv.toDataURL('image/png');
+  }
+  /* DOCX: текст + картинки + таблицы (mammoth → HTML → текст с метками) */
+  function docxToText(html) {
+    var doc = new DOMParser().parseFromString('<div>' + html + '</div>', 'text/html'), out = [];
+    (function walk(n) {
+      if (n.nodeType === 3) { out.push(n.nodeValue); return; }
+      if (n.nodeType !== 1) return;
+      var tag = n.tagName.toLowerCase();
+      if (tag === 'img') { out.push(IMG_A + (n.getAttribute('src') || '') + IMG_B); return; }
+      if (tag === 'table') {
+        var rows = [].map.call(n.querySelectorAll('tr'), function (tr) { return [].map.call(tr.children, function (td) { return td.textContent.replace(/\s+/g, ' '); }); });
+        var hasTag = /<(question|variant)/i.test(n.textContent);
+        if (hasTag) { [].forEach.call(n.childNodes, walk); out.push('\n'); return; }   /* вопросы, свёрстанные таблицей, — читаем как текст */
+        out.push(IMG_A + tableImg(rows) + IMG_B + '\n'); return;
+      }
+      if (tag === 'br') { out.push('\n'); return; }
+      [].forEach.call(n.childNodes, walk);
+      if (/^(p|li|h[1-6]|div|tr)$/.test(tag)) out.push('\n');
+    })(doc.body.firstChild);
+    return placeImages(out.join(''));
+  }
+  /* Старый Word (.doc): текст внутри хранится в UTF-16; картинки — в том же файле по порядку,
+     а в тексте на их месте стоит символ \x01. Таблицы — ячейки через \x07. */
+  function b64(bytes) { var s = '', CH = 0x8000; for (var i = 0; i < bytes.length; i += CH) s += String.fromCharCode.apply(null, bytes.subarray(i, i + CH)); return btoa(s); }
+  function docPictures(bytes) {
+    var out = [], n = bytes.length;
+    for (var i = 0; i < n - 8; i++) {
+      if (bytes[i] === 0x89 && bytes[i + 1] === 0x50 && bytes[i + 2] === 0x4E && bytes[i + 3] === 0x47 && bytes[i + 4] === 0x0D && bytes[i + 5] === 0x0A) {
+        for (var j = i + 8; j < n - 8; j++) if (bytes[j] === 0x49 && bytes[j + 1] === 0x45 && bytes[j + 2] === 0x4E && bytes[j + 3] === 0x44) { out.push('data:image/png;base64,' + b64(bytes.subarray(i, j + 8))); i = j + 7; break; }
+      } else if (bytes[i] === 0xFF && bytes[i + 1] === 0xD8 && bytes[i + 2] === 0xFF && (bytes[i + 3] & 0xF0) === 0xE0) {
+        for (var k = i + 4; k < n - 1; k++) if (bytes[k] === 0xFF && bytes[k + 1] === 0xD9) { out.push('data:image/jpeg;base64,' + b64(bytes.subarray(i, k + 2))); i = k + 1; break; }
+      }
+    }
+    return out;
+  }
+  function docTable(seg) {
+    var t = seg.split('\x07'); if (t[t.length - 1] === '') t.pop();
+    for (var n = 2; n <= 12; n++) {
+      if (t.length % (n + 1)) continue;
+      var ok = true; for (var i = n; i < t.length; i += n + 1) if (t[i].trim()) { ok = false; break; }
+      if (!ok) continue;
+      var rows = []; for (var r = 0; r < t.length; r += n + 1) rows.push(t.slice(r, r + n));
+      return tableImg(rows);
+    }
+    return '';
+  }
+  /* Файл старого Word — это «папка в файле» (Compound File): потоки WordDocument, 1Table/0Table, Data
+     лежат кусками-секторами вперемешку. Собираем нужный поток по цепочке секторов. */
+  function cfbStreams(bytes) {
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), u32 = function (o) { return dv.getUint32(o, true); };
+    var ss = 1 << dv.getUint16(0x1E, true), mss = 1 << dv.getUint16(0x20, true), cutoff = u32(0x38);
+    var sec = function (n) { return 512 + n * ss; }, END = 0xFFFFFFFA;
+    var fatSecs = []; for (var i = 0; i < 109; i++) { var v = u32(0x4C + i * 4); if (v < END) fatSecs.push(v); }
+    for (var dif = u32(0x44), guard = 0; dif < END && guard < 1000; guard++) { for (var k = 0; k < ss / 4 - 1; k++) { var w = u32(sec(dif) + k * 4); if (w < END) fatSecs.push(w); } dif = u32(sec(dif) + ss - 4); }
+    var fat = []; fatSecs.forEach(function (s) { for (var k = 0; k < ss / 4; k++) fat.push(u32(sec(s) + k * 4)); });
+    var chain = function (start, table, size, read) { var out = [], n = start, g = 0; while (n < END && g++ < 1e6) { out.push(read(n)); n = table[n]; } var all = new Uint8Array(out.reduce(function (a, b) { return a + b.length; }, 0)), p = 0; out.forEach(function (b) { all.set(b, p); p += b.length; }); return size != null ? all.subarray(0, size) : all; };
+    var big = function (n) { var o = sec(n); return bytes.subarray(o, Math.min(bytes.length, o + ss)); };
+    var dir = chain(u32(0x30), fat, null, big), ents = [];
+    for (var e = 0; e + 128 <= dir.length; e += 128) {
+      var nl = dir[e + 0x40] | (dir[e + 0x41] << 8), name = '';
+      for (var c = 0; c + 1 < nl - 1; c += 2) name += String.fromCharCode(dir[e + c] | (dir[e + c + 1] << 8));
+      var dd = new DataView(dir.buffer, dir.byteOffset + e, 128);
+      ents.push({ name: name, type: dir[e + 0x42], start: dd.getUint32(0x74, true), size: dd.getUint32(0x78, true) });
+    }
+    var root = ents[0], mini = root ? chain(root.start, fat, root.size, big) : new Uint8Array(0);
+    var miniFat = u32(0x3C) < END ? (function () { var b = chain(u32(0x3C), fat, null, big), a = []; for (var k = 0; k + 4 <= b.length; k += 4) a.push((b[k] | (b[k + 1] << 8) | (b[k + 2] << 16) | (b[k + 3] << 24)) >>> 0); return a; })() : [];
+    var get = function (name) {
+      var en = ents.filter(function (x) { return x.name === name && x.type === 2; })[0]; if (!en) return null;
+      if (en.size < cutoff) return chain(en.start, miniFat, en.size, function (n) { return mini.subarray(n * mss, n * mss + mss); });
+      return chain(en.start, fat, en.size, big);
+    };
+    return { get: get };
+  }
+  /* Текст документа по «таблице кусков» (piece table): куски бывают в UTF-16 и в 8-битной кодировке */
+  function docPieceText(cf) {
+    var wd = cf.get('WordDocument'); if (!wd || wd.length < 0x1AA) return '';
+    var dw = new DataView(wd.buffer, wd.byteOffset, wd.byteLength);
+    var tbl = cf.get((dw.getUint16(0x0A, true) & 0x0200) ? '1Table' : '0Table'); if (!tbl) return '';
+    var fcClx = dw.getUint32(0x01A2, true), lcbClx = dw.getUint32(0x01A6, true);
+    var clx = tbl.subarray(fcClx, fcClx + lcbClx), p = 0, dc = new DataView(clx.buffer, clx.byteOffset, clx.byteLength);
+    while (p < clx.length && clx[p] === 0x01) p += 3 + dc.getUint16(p + 1, true);
+    if (clx[p] !== 0x02) return '';
+    var lcb = dc.getUint32(p + 1, true), plc = p + 5, n = (lcb - 4) / 12, out = '';
+    var d16 = new TextDecoder('utf-16le'), d8 = new TextDecoder('windows-1252');
+    for (var i = 0; i < n; i++) {
+      var cp0 = dc.getUint32(plc + i * 4, true), cp1 = dc.getUint32(plc + (i + 1) * 4, true), pcd = plc + (n + 1) * 4 + i * 8;
+      var fc = dc.getUint32(pcd + 2, true), comp = fc & 0x40000000, len = cp1 - cp0;
+      if (comp) { var o8 = (fc & 0x3FFFFFFF) / 2; out += d8.decode(wd.subarray(o8, o8 + len)); }
+      else out += d16.decode(wd.subarray(fc, fc + len * 2));
+    }
+    /* только основной текст (без колонтитулов и сносок): ccpText из FIB */
+    var ccpText = dw.getUint32(0x4C, true);
+    return ccpText > 0 && ccpText <= out.length ? out.slice(0, ccpText) : out;
+  }
+  function docBinaryText(bytes) {
+    var cf = null, t = '';
+    try { cf = cfbStreams(bytes); t = docPieceText(cf); } catch (e) { t = ''; }
+    if (t.indexOf('<question>') < 0) return '';
+    t = t.slice(t.indexOf('<question>'));
+    /* поля Word: «\x13 код \x14 результат \x15» — код (например HYPERLINK "…") убираем, результат оставляем */
+    t = t.replace(/\x13[^\x13\x14\x15]*\x14/g, '').replace(/\x13[^\x13\x15]*\x15/g, '').replace(/[\x13\x15]/g, '');
+    /* таблицы → картинка */
+    t = t.replace(/(?:[^\r\x07<]*\x07){3,}/g, function (seg) { var src = docTable(seg); return src ? '\r' + IMG_A + src + IMG_B + '\r' : seg.replace(/\x07+/g, ' '); });
+    /* картинки: каждая метка \x01 (подряд идущие — одна картинка) → следующая картинка файла */
+    var data = null; try { data = cf.get('Data'); } catch (e) { data = null; }
+    var pics = data ? docPictures(data) : [], marks = t.match(/\x01[\x01\s]*/g) || [], k = 0;
+    t = t.replace(/\x01[\x01\s]*/g, function () { return pics.length === marks.length ? IMG_A + pics[k++] + IMG_B + '\n' : ' '; });
+    t = t.replace(/\r/g, '\n').replace(/[\x0b\x0c]/g, '\n').replace(/[\x00-\x01\x04-\x08\x0e-\x1f]/g, ' ');
+    return placeImages(t);
+  }
   function readTextDocument(f) {
     var name = f.name.toLowerCase();
     if (/\.docx$/.test(name)) {
       if (!window.mammoth) return Promise.reject(new Error(SP.t('tester.err.noDocxLib')));
-      return f.arrayBuffer().then(function (ab) { return window.mammoth.extractRawText({ arrayBuffer: ab }); }).then(function (r) { return r.value; });
+      return f.arrayBuffer().then(function (ab) {
+        return window.mammoth.convertToHtml({ arrayBuffer: ab }).then(function (r) {
+          var t = docxToText(r.value);
+          if (/<question/i.test(t)) return t;
+          return window.mammoth.extractRawText({ arrayBuffer: ab }).then(function (x) { return x.value; });
+        }, function () { return window.mammoth.extractRawText({ arrayBuffer: ab }).then(function (x) { return x.value; }); });
+      });
     }
     if (/\.txt$/.test(name)) return f.text();
     if (/\.doc$/.test(name)) {
@@ -154,7 +296,9 @@
         var bytes = new Uint8Array(ab), t = '';
         try { t = new TextDecoder('utf-8', { fatal: false }).decode(bytes); } catch (e) { /* ничего */ }
         if (t.indexOf('<question>') < 0) try { t = new TextDecoder('windows-1251', { fatal: false }).decode(bytes); } catch (e) { /* ничего */ }
-        if (/^\s*\{\\rtf/i.test(t)) t = t.replace(/\\par[d]?/gi, '\n').replace(/\\'[0-9a-f]{2}/gi, '').replace(/\\[a-z]+\d* ?/gi, '').replace(/[{}]/g, '');
+        if (/^\s*\{\\rtf/i.test(t)) return t.replace(/\\par[d]?/gi, '\n').replace(/\\'[0-9a-f]{2}/gi, '').replace(/\\[a-z]+\d* ?/gi, '').replace(/[{}]/g, '');
+        /* настоящий старый Word: текст в UTF-16 + картинки внутри файла */
+        if (bytes[0] === 0xD0 && bytes[1] === 0xCF) { var d = docBinaryText(bytes); if (d) return d; }
         return t;
       });
     }

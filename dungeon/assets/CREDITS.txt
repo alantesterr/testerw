@@ -1,7 +1,0 @@
-Graphics credits:
-- "Monsters Creatures Fantasy" by Luiz Melo — https://luizmelo.itch.io/monsters-creatures-fantasy — CC0 1.0
-- "Evil Wizard" by Luiz Melo — https://luizmelo.itch.io/evil-wizard — CC0 1.0 (assets/monsters/evilwizard)
-- "16x16 DungeonTileset II" by 0x72 (Robert) — https://0x72.itch.io/dungeontileset-ii — CC0 1.0
-- "Boss: Demon Slime" (FREE v1.0) by chierit — https://chierit.itch.io/boss-demon-slime — CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
-  Used in assets/monsters/demonslime: individual frames joined into strips (idle, cleave → attack, take_hit, death); recolored in game for the exam boss.
-Hero sprite, torches, scenes and UI: drawn for StudyPlay.

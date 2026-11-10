@@ -10,6 +10,8 @@
   'use strict';
   var SP = window.SP, esc = SP.esc;
   var root = null, selected = null, tab = 'materials', query = '';
+  /* при открытии предмета сначала «Тесты» (если они есть), иначе «Файлы» */
+  function firstTab(id) { var s = SP.hub.getSubject(id); return s && (s.tests || []).length ? 'tests' : 'materials'; }
   var sui = Object.assign({ collapsed: false }, SP.store.get('sp-subjects-ui', {}));
   var selMode = false, selSet = {}, showHidden = false;
 
@@ -455,8 +457,8 @@
 
   SP.views.register('subjects', {
     titleKey: 'nav.subjects',
-    mount: function (el, params) { root = el; if (params && params[0]) selected = params[0]; render(); },
-    show: function (params) { if (params && params[0]) { if (selected !== params[0]) { tab = 'materials'; showHidden = false; } selected = params[0]; } else if (window.innerWidth < 900) selected = null; render(); },
+    mount: function (el, params) { root = el; if (params && params[0]) { selected = params[0]; tab = firstTab(selected); } render(); },
+    show: function (params) { if (params && params[0]) { if (selected !== params[0]) { tab = firstTab(params[0]); showHidden = false; } selected = params[0]; } else if (window.innerWidth < 900) selected = null; render(); },
     refresh: render
   });
   SP.on('hub', function () { if (root && SP.views.current() === 'subjects') render(); });

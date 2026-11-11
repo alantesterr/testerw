@@ -1,5 +1,5 @@
 {
-    "version":  "2026-11-11.4",
+    "version":  "2026-11-11.5",
     "files":  [
                   {
                       "subject":  "Философия",
@@ -28,6 +28,20 @@
                       "name":  "ИКТ Экзамен (РК1 + РК2 + Экзамен).doc",
                       "path":  "data/ir-252/files/Информационно-коммуникационные технологии/ИКТ Экзамен (РК1 + РК2 + Экзамен).doc",
                       "size":  350720
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "test",
+                      "name":  "C++ Тест 1 (РК1, темы 1–6).docx",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тест 1 (РК1, темы 1–6).docx",
+                      "size":  47457
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "test",
+                      "name":  "C++ Тест 2 (ООП, темы 7–15).docx",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тест 2 (ООП, темы 7–15).docx",
+                      "size":  49808
                   },
                   {
                       "subject":  "Object-Oriented Programming (Borland C ++ Builder)",

@@ -1,5 +1,5 @@
 {
-    "version":  "2026-11-10.1",
+    "version":  "2026-11-11.1",
     "files":  [
                   {
                       "subject":  "Философия",
@@ -41,7 +41,7 @@
                       "kind":  "test",
                       "name":  "ИКТ Экзамен (РК1 + РК2 + Экзамен).doc",
                       "path":  "data/ir-252/files/Информационно-коммуникационные технологии/ИКТ Экзамен (РК1 + РК2 + Экзамен).doc",
-                      "size":  288256
+                      "size":  350720
                   },
                   {
                       "subject":  "Object-Oriented Programming (Borland C ++ Builder)",

@@ -1,5 +1,5 @@
 {
-    "version":  "2026-11-11.5",
+    "version":  "2026-11-11.6",
     "files":  [
                   {
                       "subject":  "Философия",
@@ -42,6 +42,69 @@
                       "name":  "C++ Тест 2 (ООП, темы 7–15).docx",
                       "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тест 2 (ООП, темы 7–15).docx",
                       "size":  49808
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "test",
+                      "name":  "C++ Тема 07 — Принципы ООП.docx",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 07 — Принципы ООП.docx",
+                      "size":  2878
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "test",
+                      "name":  "C++ Тема 08 — Классы и объекты.docx",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 08 — Классы и объекты.docx",
+                      "size":  2594
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "test",
+                      "name":  "C++ Тема 09 — Среда C++ Builder.docx",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 09 — Среда C++ Builder.docx",
+                      "size":  2706
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "test",
+                      "name":  "C++ Тема 10 — Структура проекта и формы.docx",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 10 — Структура проекта и формы.docx",
+                      "size":  2504
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "test",
+                      "name":  "C++ Тема 11 — Свойства, методы и события формы.docx",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 11 — Свойства, методы и события формы.docx",
+                      "size":  3746
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "test",
+                      "name":  "C++ Тема 12 — Наследование и виртуальные функции.docx",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 12 — Наследование и виртуальные функции.docx",
+                      "size":  3187
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "test",
+                      "name":  "C++ Тема 13 — Конструкторы и деструкторы.docx",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 13 — Конструкторы и деструкторы.docx",
+                      "size":  3125
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "test",
+                      "name":  "C++ Тема 14 — Свойства классов.docx",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 14 — Свойства классов.docx",
+                      "size":  3116
+                  },
+                  {
+                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
+                      "kind":  "test",
+                      "name":  "C++ Тема 15 — Пользовательский компонент.docx",
+                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 15 — Пользовательский компонент.docx",
+                      "size":  3195
                   },
                   {
                       "subject":  "Object-Oriented Programming (Borland C ++ Builder)",

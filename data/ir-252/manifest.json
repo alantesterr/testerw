@@ -1,5 +1,5 @@
 {
-    "version":  "2026-11-11.6",
+    "version":  "2026-11-11.7",
     "files":  [
                   {
                       "subject":  "Философия",
@@ -105,13 +105,6 @@
                       "name":  "C++ Тема 15 — Пользовательский компонент.docx",
                       "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 15 — Пользовательский компонент.docx",
                       "size":  3195
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C_questions_English.txt",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C_questions_English.txt",
-                      "size":  40420
                   },
                   {
                       "subject":  "Object-Oriented Programming (Borland C ++ Builder)",

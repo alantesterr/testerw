@@ -223,40 +223,37 @@
   }
 
   /* ---------- Ошибки ---------- */
+  /* ---------- Ошибки: сразу тест по ошибкам ----------
+     Неверно — вопрос вернётся через 3 вопроса. Верно — вернётся ещё раз позже;
+     после 2 верных ответов подряд вопрос сам уходит из ошибок. */
   function errors(s, list) {
-    onKey(null);
-    var p = prog(s.id), errs = list.filter(function (q) { return p.err[q.id]; });
-    var h = top('Ошибки: ' + s.name, errs.length ? 'Здесь все вопросы, где ты ошибся. Вопрос уходит, когда ответишь верно ' + LEARN + ' раза подряд.' : '', '/');
-    if (!errs.length) { app.innerHTML = h + '<div class="ex-card ex-center"><p>Ошибок нет 🎉</p><button class="btn btn-primary" data-go="/' + s.id + '/learn">Продолжить по порядку</button></div>'; wireGo(); return; }
-    h += '<div class="ex-btns" style="margin-bottom:12px"><button class="btn btn-primary" id="exTrain">Тренировать ошибки (' + errs.length + ')</button><button class="btn" id="exClr">Очистить ошибки</button></div><div class="ex-list">' +
-      errs.map(function (q) { var e = p.err[q.id]; return '<div class="ex-li"><div class="qq">' + rich(q.q) + img(q.img) + '</div><div class="aa">✓ ' + rich(rightText(q)) + '</div>' + (e.s ? '<div class="ex-pill" style="margin-top:6px">верно подряд: ' + e.s + ' из ' + LEARN + '</div>' : '') + E.explainHtml(q) + '</div>'; }).join('') + '</div>';
-    app.innerHTML = h; wireGo();
-    document.getElementById('exTrain').onclick = function () { train(s, SP.shuffle(errs.slice())); };
-    document.getElementById('exClr').onclick = function () { if (confirm('Очистить папку ошибок?')) { p.err = {}; save(); errors(s, list); } };
-  }
-  /* тренировка: неверный ответ — вопрос вернётся через 3 вопроса */
-  function train(s, queue) {
-    var total = queue.length, learned = 0;
+    var p = prog(s.id), queue = SP.shuffle(list.filter(function (q) { return p.err[q.id]; })), total = queue.length, learned = 0;
     (function step() {
+      var left = Object.keys(prog(s.id).err).length;
       if (!queue.length) {
         onKey(null);
-        app.innerHTML = top('Ошибки: ' + s.name, '', '/') + '<div class="ex-card ex-center"><p>Круг по ошибкам закончен</p><div class="ex-big">' + learned + ' / ' + total + '</div><p>выучено и убрано из ошибок</p>' +
-          '<div class="ex-btns" style="justify-content:center"><button class="btn btn-primary" data-go="/' + s.id + '/errors">К ошибкам (' + Object.keys(prog(s.id).err).length + ')</button><button class="btn" data-go="/">На главную</button></div></div>';
-        wireGo(); return;
+        app.innerHTML = top('Ошибки: ' + s.name, '', '/') + '<div class="ex-card ex-center">' +
+          (total ? '<p>Работа над ошибками закончена</p><div class="ex-big">' + learned + ' / ' + total + '</div><p>выучено и убрано из ошибок</p>' : '<p>Ошибок нет 🎉</p>') +
+          '<div class="ex-btns" style="justify-content:center">' + (left ? '<button class="btn btn-primary" id="exAgain">Ещё круг (' + left + ')</button>' : '<button class="btn btn-primary" data-go="/' + s.id + '/learn">Продолжить по порядку</button>') +
+          '<button class="btn" data-go="/">На главную</button></div></div>';
+        wireGo();
+        var ag = document.getElementById('exAgain'); if (ag) ag.onclick = function () { errors(s, list); };
+        return;
       }
-      var q = queue.shift();
-      app.innerHTML = top('Ошибки: ' + s.name, 'Осталось в круге: ' + (queue.length + 1) + ' · выучено: ' + learned, '/' + s.id + '/errors') + '<div id="exHost"></div>';
+      var q = queue.shift(), e = prog(s.id).err[q.id] || { s: 0 };
+      app.innerHTML = top('Ошибки: ' + s.name, 'Осталось в ошибках: ' + left + ' · выучено сейчас: ' + learned + ' · вопрос уходит после ' + LEARN + ' верных ответов подряд', '/') + '<div id="exHost"></div>';
       var a = askQ(app.querySelector('#exHost'), q, {
-        head: '<span>Повторение ошибки</span>', reveal: true, search: true, nav: '<span class="grow"></span><button class="btn btn-primary" id="exNext">Дальше →</button>',
+        head: '<span>Работа над ошибками</span><span class="ex-pill">верно подряд: ' + (e.s || 0) + ' из ' + LEARN + '</span>', reveal: true, search: true,
+        nav: '<button class="btn btn-ghost" data-go="/">Выйти</button><span class="grow"></span><button class="btn btn-primary" id="exNext">Дальше →</button>',
         onDone: function (ok) {
-          if (record(s.id, q.id, ok, true)) learned++;
-          else if (prog(s.id).err[q.id]) queue.splice(Math.min(3, queue.length), 0, q);
+          if (record(s.id, q.id, ok, true)) { learned++; toast('Выучен — убран из ошибок'); }
+          else if (prog(s.id).err[q.id]) queue.splice(Math.min(ok ? 5 : 3, queue.length), 0, q);
           document.getElementById('exNext').focus();
         }
       });
       wireGo();
       document.getElementById('exNext').onclick = function () { if (!a.done()) a.giveUp(); else step(); };
-      onKey(function (e) { if (a.key(e)) return; if (e.key === 'Enter' && a.done()) { e.preventDefault(); step(); } });
+      onKey(function (ev) { if (a.key(ev)) return; if (ev.key === 'Enter' && a.done()) { ev.preventDefault(); step(); } });
     })();
   }
 

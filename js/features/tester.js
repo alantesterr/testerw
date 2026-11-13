@@ -104,7 +104,7 @@
   SP.views.register('tester', {
     titleKey: 'nav.tester',
     mount: function (el) { root = el; render(); },
-    show: function () { render(); },
+    show: function () { SP.hub.checkUpdate(); render(); },
     refresh: function () { if (!running) render(); }
   });
   SP.on('bank', function () { if (root && SP.views.current() === 'tester') render(); });

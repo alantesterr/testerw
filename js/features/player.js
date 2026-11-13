@@ -861,7 +861,7 @@
   SP.views.register('player', {
     titleKey: 'nav.player',
     mount: function (el) { root = el; build(); },
-    show: function () { if (built) { bankUI(); srcUI(); renderFeed(); } },
+    show: function () { SP.hub.checkUpdate(); if (built) { bankUI(); srcUI(); renderFeed(); } },
     hide: function () {
       if (!built) return;
       if (fsEl()) try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) { /* ничего */ }

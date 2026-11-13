@@ -228,13 +228,23 @@
       return changed;
     });
   }
-  /* Проверка новой версии курса (тихо, раз в минуту) */
+  /* Проверка новой версии курса (тихо, не чаще раза в минуту).
+     Новая версия ставится сама: меняются только файлы и папки курса (base),
+     свои файлы, тесты и папки человека остаются (см. stripLayers / applyLayers). */
   var lastChk = 0, pendBase = null;
   function checkUpdate() {
     if (Date.now() - lastChk < 60000) return Promise.resolve(null);
     lastChk = Date.now();
-    return fetchBase().then(function (r) { if (r && base && baseChanged(r)) { pendBase = r; SP.emit('hub-update', r); } return pendBase; });
+    return fetchBase().then(function (r) {
+      if (r && base && baseChanged(r)) {
+        base = r; pendBase = null; SP.store.set(baseKey(), base); applyLayers();
+        SP.toast(SP.t('hub.courseUpdated', { v: r.version || '—' }), 'success');
+      }
+      return null;
+    });
   }
+  /* вернулись на вкладку сайта — проверить, не обновились ли материалы курса */
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkUpdate(); });
   function acceptUpdate() { if (!pendBase) return; base = pendBase; pendBase = null; SP.store.set(baseKey(), base); applyLayers(); SP.toast(SP.t('hub.courseUpdated', { v: base.version || '—' }), 'success'); }
 
   /* Путь к файлу курса на сайте (с учётом папки группы и разных записей кириллицы) */

@@ -1232,3 +1232,5 @@ html, body { overflow-x: clip; }
 .src-group { margin: 0.35rem 0 0.15rem; }
 .src-subj { margin-bottom: 0.15rem; font-weight: 600; }
 .src-group .check span { overflow-wrap: anywhere; }
+.sj-exam { text-decoration: none; color: inherit; border: 1px solid var(--accent, #6d5efc); margin-bottom: var(--sp-2); }
+.sj-exam .fi-folder { color: var(--accent, #6d5efc); }

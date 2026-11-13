@@ -623,3 +623,4 @@ Object.assign(SP.I18N.kk, { 'common.undo': 'Болдырмау', 'common.undone'
 Object.assign(SP.I18N.kk, { 'schedule.hasLinks': 'сілтемелер: {l}', 'schedule.lkJoin': '{s} кіру', 'schedule.lkOpen': '{s} ашу' });
 
 Object.assign(SP.I18N.kk, { 'nav.settingsShort': 'Баптаулар', 'settings.phonePlayer': 'Төменгі панельдегі ойнатқыш (телефон)' });
+Object.assign(SP.I18N.kk, { 'sj.exam': 'Емтихан', 'sj.examSub': 'Дайындық: прогресс, қателер, сынақ емтихан' });

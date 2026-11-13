@@ -69,7 +69,9 @@
         '<span class="count" aria-live="polite">' + esc(SP.t('subjects.selected', { n: nSel })) + '</span>' +
         '<button type="button" class="btn btn-danger btn-sm" id="sjDelSel"' + (nSel ? '' : ' disabled') + '>' + SP.icon('trash-2') + '<span>' + esc(SP.t('common.delete')) + '</span></button></div>';
     }
-    h += '<nav class="sj-items" aria-label="' + esc(SP.t('nav.subjects')) + '">' + (items.length ? items.map(function (s) {
+    /* папка «Экзамен» — ведёт на отдельный сайт подготовки (exam/) */
+    var examLink = selMode ? '' : '<a class="sj-item sj-exam" href="exam/index.html"><span class="fi-folder">' + SP.icon('folder') + '</span><span class="meta"><b>' + esc(SP.t('sj.exam')) + '</b><small>' + esc(SP.t('sj.examSub')) + '</small></span>' + SP.icon('chevron-right', 'sj-chev') + '</a>';
+    h += '<nav class="sj-items" aria-label="' + esc(SP.t('nav.subjects')) + '">' + examLink + (items.length ? items.map(function (s) {
       var mats = (s.materials || []).length, tests = (s.tests || []).length, kn = SP.notes && SP.notes.has(s.name);
       var btn = '<button type="button" class="sj-item" data-sub="' + esc(s.id) + '"' + (active && s.id === active.id ? ' aria-current="true"' : '') + '>' +
         '<span class="fi-folder">' + SP.icon('folder') + '</span><span class="meta"><b>' + esc(SP.hub.cleanName(s.name)) + '</b>' +

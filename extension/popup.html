@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  body { width: 340px; margin: 0; padding: 14px; font: 14px/1.4 system-ui, "Segoe UI", sans-serif; background: #161a21; color: #e8ebf0; }
+  h1 { font-size: 15px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  h1 img { width: 22px; height: 22px; border-radius: 6px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0; }
+  .card { background: #1d222b; border: 1px solid #2a303b; border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
+  input[type=number], select, textarea { background: #0f1217; color: #e8ebf0; border: 1px solid #2a303b; border-radius: 8px; padding: 6px 8px; font: inherit; }
+  input[type=number] { width: 70px; } select { width: 150px; }
+  textarea { width: 100%; height: 60px; resize: vertical; font-size: 12px; }
+  label.ck { display: flex; gap: 6px; align-items: center; margin: 4px 0; }
+  .sw { position: relative; width: 46px; height: 26px; flex: none; }
+  .sw input { opacity: 0; width: 0; height: 0; }
+  .sw span { position: absolute; inset: 0; background: #3a404c; border-radius: 99px; cursor: pointer; transition: .2s; }
+  .sw span:before { content: ""; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .sw input:checked + span { background: #2fb36b; } .sw input:checked + span:before { transform: translateX(20px); }
+  button { width: 100%; padding: 8px; border-radius: 9px; border: 1px solid #2a303b; background: #232937; color: #e8ebf0; font: inherit; cursor: pointer; margin-top: 6px; }
+  button.p { background: #3b6cf6; border-color: #3b6cf6; color: #fff; }
+  .muted { color: #9aa3b2; font-size: 12px; }
+  .bar { height: 6px; background: #0f1217; border-radius: 99px; overflow: hidden; margin-top: 6px; } .bar i { display: block; height: 100%; background: #3b6cf6; }
+  a { color: #8fb0ff; }
+</style>
+</head>
+<body>
+<h1><img src="icon.png" alt="">StudyPlay: тесты во время видео</h1>
+<div class="row"><b id="stTxt">Включено</b><label class="sw"><input type="checkbox" id="on"><span></span></label></div>
+<div class="muted" id="status"></div>
+<div class="bar"><i id="prog" style="width:0"></i></div>
+
+<div class="card">
+  <div class="row"><span>Вопросы каждые (мин видео)</span><input type="number" id="every" min="1" max="240"></div>
+  <div class="row"><span>Предупредить за (сек)</span><input type="number" id="warn" min="0" max="300"></div>
+  <div class="row"><span>Вопросов за раз</span><input type="number" id="count" min="1" max="30"></div>
+  <div class="row"><span>Какие вопросы</span><select id="mode"><option value="mix">Ошибки + новые</option><option value="errors">Только ошибки</option><option value="all">Все подряд</option></select></div>
+  <label class="ck"><input type="checkbox" id="skip"> Можно пропускать вопрос</label>
+</div>
+
+<div class="card">
+  <b>Предметы</b>
+  <div id="subs"></div>
+</div>
+
+<div class="card">
+  <b>Где не показывать</b>
+  <div class="muted">Сайты-исключения, по одному в строке (например youtube.com — когда смотришь по работе).</div>
+  <textarea id="off"></textarea>
+  <button id="offHere">Выключить на этом сайте</button>
+  <button id="pause">Пауза на 1 час</button>
+</div>
+
+<button class="p" id="now">Проверить сейчас (вопросы на этой вкладке)</button>
+<button id="openExam">Открыть «Экзамен» (обновить вопросы)</button>
+<p class="muted" id="bankInfo"></p>
+<script src="popup.js"></script>
+</body>
+</html>

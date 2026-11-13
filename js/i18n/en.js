@@ -622,3 +622,4 @@ Object.assign(SP.I18N.en, { 'common.undo': 'Undo', 'common.undone': 'Restored', 
 Object.assign(SP.I18N.en, { 'schedule.hasLinks': 'links: {l}', 'schedule.lkJoin': 'Join {s}', 'schedule.lkOpen': 'Open {s}' });
 
 Object.assign(SP.I18N.en, { 'nav.settingsShort': 'Settings', 'settings.phonePlayer': 'Player in the bottom bar (phone)' });
+Object.assign(SP.I18N.en, { 'sj.exam': 'Exam', 'sj.examSub': 'Prep: progress, mistakes, mock exam' });

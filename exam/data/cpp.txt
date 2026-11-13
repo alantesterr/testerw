@@ -1,0 +1,1492 @@
+<question>Что такое идентификатор?
+<variantright>имя объекта в программе
+<variant>динамическая память
+<variant>массив, состоящий из набора элементов
+<variant>способ передачи программы
+<variant>слова, предназначенные для компилятора
+
+<question>Что такое массив?
+<variantright>последовательность значений одного типа под одним именем
+<variant>данные, расположенные в ячейках
+<variant>тип, определяющий размер
+<variant>указатель, использующий динамическую память
+<variant>набор типов, определяющий ссылку
+
+<question>С какой функции начинается выполнение любой программы на C?
+<variantright>main()
+<variant>random
+<variant>randomize()
+<variant>clrscr()
+<variant>в каждой программе по-разному
+
+<question>Где находятся библиотечные функции?
+<variantright>в библиотечных файлах
+<variant>на компакт-диске
+<variant>в Интернете
+<variant>в оперативной памяти компьютера
+<variant>Нет правильного ответа
+
+<question>Последовательность символов из латинских букв и цифр, которая обязательно начинается с буквы, называется ...
+<variantright>идентификатор
+<variant>константа
+<variant>функция
+<variant>комментарий
+<variant>Нет правильного ответа
+
+<question>Какое ключевое слово используется для объявления констант в C?
+<variantright>const
+<variant>var
+<variant>int
+<variant>procedure
+<variant>Все перечисленные верны
+
+<question>Для чего нужна операция return (выражение)?
+<variantright>возвращает значение выражения в оператор, который вызвал функцию
+<variant>такого оператора в C нет
+<variant>используется, когда функция не возвращает значения
+<variant>придаёт программе красоту
+<variant>назначение не определено, по правилам должна стоять в конце программы
+
+<question>В каком заголовочном файле находится прототип функции `rand()`?
+<variantright>#include "stdlib.h"
+<variant>#include "conio.h"
+<variant>#include "math.h"
+<variant>#include "iostream.h"
+<variant>#include "stdio.h"
+
+<question>Как называется переменная, которая объявлена внутри функции и известна только в ней?
+<variantright>локальная переменная
+<variant>глобальная переменная
+<variant>неизвестная переменная
+<variant>известная переменная
+<variant>рекурсивная переменная
+
+<question>Если смешать типы float и double, какой тип получится в результате?
+<variantright>double
+<variant>float
+<variant>long
+<variant>int
+<variant>short
+
+<question>Как называется переменная, объявленная вне любого блока и функции?
+<variantright>глобальная переменная
+<variant>локальная переменная
+<variant>базовая переменная
+<variant>известная переменная
+<variant>унарная переменная
+
+<question>Для чего в заголовке функции используется ключевое слово `void`?
+<variantright>показывает, что функция не возвращает значения
+<variant>показывает, что функция возвращает значение
+<variant>в заголовке функции void не используется
+<variant>показывает, что функция хранит значение
+<variant>Нет правильного ответа
+
+<question>Что такое переменная?
+<variantright>область памяти с определённым именем, в которой хранятся данные определённого типа
+<variant>хранение в памяти данных неопределённого типа
+<variant>деление классов памяти на несколько частей
+<variant>выражение из операндов, знаков операций и скобок, задающее значение определённого типа
+<variant>Нет правильного ответа
+
+<question>Для чего используется директива `#define`?
+<variantright>чтобы задать значение константы
+<variant>для макросов
+<variant>для символа, управляющего условной компиляцией
+<variant>выражение из операндов, знаков операций и скобок, задающее значение определённого типа
+<variant>Нет правильного ответа
+
+<question>Какое расширение у исходных (заголовочных) файлов с функциями и определёнными данными и как они называются?
+<variantright>".h", ".h-файлы"
+<variant>".htp", ".htp-файлы"
+<variant>".c", ".c-файлы"
+<variant>".f", ".f-файлы"
+<variant>Нет правильного ответа
+
+<question>Какой вариант правильно объявляет массив из 10 вещественных чисел?
+<variantright>float a[10];
+<variant>int a[10];
+<variant>float a(10);
+<variant>float a[1..10];
+<variant>int a[1..10];
+
+<question>Что такое переменная?
+<variantright>величина, которая принимает разные значения во время работы программы
+<variant>деление класса памяти на несколько областей
+<variant>последовательность программ
+<variant>выполнение определённого условия алгоритма
+<variant>Нет правильного ответа
+
+<question>Каким словом записывается оператор выбора?
+<variantright>switch
+<variant>return
+<variant>for
+<variant>if
+<variant>class
+
+<question>Если смешать типы long и float, какой тип получится в результате?
+<variantright>float
+<variant>char
+<variant>int
+<variant>double
+<variant>Нет правильного ответа
+
+<question>Как записывается операция остатка от деления?
+<variantright>%
+<variant>/
+<variant>\
+<variant>&
+<variant><<
+
+<question>Правильное объявление целой переменной a:
+<variantright>int a;
+<variant>a int;
+<variant>integer a;
+<variant>float a;
+<variant>char a;
+
+<question>В каком варианте `sizeof` записан правильно?
+<variantright>sizeof (type)
+<variant>sizeof type
+<variant>sizeof [type]
+<variant>sizeof: type
+<variant>sizeof_ type
+
+<question>Какой вариант правильно обозначает логическое отрицание?
+<variantright>! (восклицательный знак)
+<variant>= (знак равенства)
+<variant>\ (обратная косая черта)
+<variant>& (амперсанд)
+<variant>? (вопросительный знак)
+
+<question>Правильное объявление массива a из 12 целых чисел:
+<variantright>int a[12];
+<variant>float a[12];
+<variant>char a[12];
+<variant>int a(12);
+<variant>float a[10];
+
+<question>В какие символы заключается тело функции?
+<variantright>{ }
+<variant>/ /
+<variant>( )
+<variant>* *
+<variant>/* */
+
+<question>Внутри каких символов пишется комментарий в C?
+<variantright>/* */
+<variant>< >
+<variant>(* *)
+<variant>* *
+<variant>{ }
+
+<question>Если смешать типы short и int, в результате получится ...
+<variantright>int
+<variant>short
+<variant>char
+<variant>float
+<variant>double
+
+<question>Что означает `float a[10];`?
+<variantright>объявление массива a из 10 вещественных чисел
+<variant>объявление последовательности целых чисел от 1 до 10
+<variant>объявление матрицы a размером 10x10
+<variant>объявление последовательности вещественных чисел от 1 до 10
+<variant>Нет правильного ответа
+
+<question>Какой оператор используется для выхода из switch?
+<variantright>break
+<variant>do
+<variant>case
+<variant>return
+<variant>default
+
+<question>Что означает операция `*=`?
+<variantright>умножить и присвоить
+<variant>присваивание
+<variant>умножение
+<variant>комментарий
+<variant>умножить каждый элемент
+
+<question>Что такое лексема?
+<variantright>наименьшая смысловая единица языка
+<variant>словосочетания
+<variant>предложения
+<variant>тело программы
+<variant>смена страницы
+
+<question>Что означает запись `int n;`?
+<variantright>переменная n принимает целые значения
+<variant>задан спецификатор n
+<variant>переменная n принимает вещественные значения
+<variant>тело программы
+<variant>Нет правильного ответа
+
+<question>Заглавные и строчные буквы, обозначающие один и тот же символ, в C ...
+<variantright>считаются разными
+<variant>считаются одинаковыми
+<variant>меняются в зависимости от компилятора
+<variant>меняются в зависимости от версии языка
+<variant>Все перечисленные верны
+
+<question>Имена, которые дают переменным, константам, типам данных и функциям, называются ...
+<variantright>идентификаторы
+<variant>ключевые слова
+<variant>директивы
+<variant>указатели
+<variant>Нет правильного ответа
+
+<question>Какой формат `printf()` выводит вещественное число?
+<variantright>%f
+<variant>%u
+<variant>%o
+<variant>%x
+<variant>Нет правильного ответа
+
+<question>Как объявляется вещественный тип одинарной точности?
+<variantright>float
+<variant>double
+<variant>char
+<variant>int
+<variant>Нет правильного ответа
+
+<question>Как объявляется вещественный тип двойной точности?
+<variantright>double
+<variant>float
+<variant>char
+<variant>int
+<variant>Нет правильного ответа
+
+<question>Как объявляется символьный тип данных?
+<variantright>char
+<variant>double
+<variant>float
+<variant>int
+<variant>Нет правильного ответа
+
+<question>Что такое ключевые слова?
+<variantright>слова из специального зарезервированного набора
+<variant>обычные идентификаторы
+<variant>операции
+<variant>функции
+<variant>Нет правильного ответа
+
+<question>Первый системный программный продукт, написанный на C?
+<variantright>UNIX
+<variant>MS-DOS
+<variant>NC
+<variant>Windows XP
+<variant>Нет правильного ответа
+
+<question>Какое условие в C правильно проверяет, что индекс массива нечётный?
+<variantright>if (i%2==1)
+<variant>if (i%2=1)
+<variant>if (i%2==0)
+<variant>if (i%2!=1)
+<variant>Нет правильного ответа
+
+<question>Какой фрагмент объявления переменных в C правильный?
+<variantright>main () { int x, y; float a, b; char c;}
+<variant>main ()  int x, y; {float a, b; char c;}
+<variant>{main ();  int x, y; float, a, b;  char c;}
+<variant>main ()  int x, y;  float a, b; char x;
+<variant>Нет правильного ответа
+
+<question>Как задаётся логический тип в C?
+<variantright>bool
+<variant>в C логический тип не задаётся
+<variant>char
+<variant>string
+<variant>Нет правильного ответа
+
+<question>Какие значения может принимать логическая величина в C?
+<variantright>true, false
+<variant>+ и -
+<variant>0 и 1
+<variant>0, 255
+<variant>Нет правильного ответа
+
+<question>Чему равно в C выражение `5/2`?
+<variantright>2
+<variant>2.5
+<variant>1
+<variant>5
+<variant>Нет правильного ответа
+<explain>Целое / целое = целое, дробная часть отбрасывается: 5/2 = 2.
+
+<question>Чему равно в C выражение `7/2`?
+<variantright>3
+<variant>2
+<variant>3.5
+<variant>5
+<variant>Нет правильного ответа
+<explain>Целочисленное деление: 7/2 = 3 (дробь отбрасывается).
+
+<question>Чему равно в C выражение `7/3`?
+<variantright>2
+<variant>2.5
+<variant>3
+<variant>3.3
+<variant>Нет правильного ответа
+
+<question>Чему равно в C выражение `5%2`?
+<variantright>1
+<variant>2
+<variant>2.5
+<variant>3
+<variant>Нет правильного ответа
+<explain>% — остаток от деления: 5 = 2·2 + 1.
+
+<question>Чему равно в C выражение `7%2`?
+<variantright>1
+<variant>3
+<variant>3.5
+<variant>4
+<variant>Нет правильного ответа
+
+<question>Какая операция в C находит целую часть от деления целого на целое (как div в Pascal)?
+<variantright>/
+<variant>%
+<variant>\
+<variant>&
+<variant>Нет правильного ответа
+
+<question>Какое выражение в C НЕ увеличивает значение переменной на 1?
+<variantright>x*=1
+<variant>x++
+<variant>x=x+1
+<variant>x+=1
+<variant>Нет правильного ответа
+
+<question>Как в C записать оператор, который даёт случайное целое число в диапазоне [-20, 50]?
+<variantright>random(70)-20;
+<variant>random(50)-20;
+<variant>random(30)+20;
+<variant>random(50);
+<variant>Нет правильного ответа
+
+<question>В каком диапазоне будет значение x после `x = random(20)-5`?
+<variantright>[-5,15]
+<variant>[5,20]
+<variant>[-5,20]
+<variant>[5,15]
+<variant>Нет правильного ответа
+
+<question>Какой оператор в Borland C++ Builder запускает генератор случайных чисел, чтобы при каждом запуске программы получались разные числа?
+<variantright>randomize();
+<variant>time();
+<variant>getch();
+<variant>main();
+<variant>Нет правильного ответа
+
+<question>Чему равно x после `x=0; x++; x=x+1; x=x*x;`?
+<variantright>4
+<variant>2
+<variant>0
+<variant>3
+<variant>Нет правильного ответа
+<explain>0 → 1 → 2 → 2·2 = 4.
+
+<question>Чему равно x после `x=0; x++; x=x*1; x=x*x;`?
+<variantright>1
+<variant>2
+<variant>0
+<variant>4
+<variant>Нет правильного ответа
+
+<question>Какому оператору в C равносильно `n%=3`?
+<variantright>n=n%3
+<variant>n=n/3
+<variant>n=n*3
+<variant>n=n\3
+<variant>Нет правильного ответа
+
+<question>Укажите правильную программу для вычисления объёма куба с заданной стороной:
+<variantright>v=pow (a,3);
+<variant>v=pow (a,4);
+<variant>v=pow (a,2);
+<variant>v=a*a;
+<variant>Нет правильного ответа
+
+<question>Правильное условие в C для проверки, что индекс массива чётный:
+<variantright>if (i%2==0)
+<variant>if (a[i]%2==0)
+<variant>if (i%2==1)
+<variant>if (i%2=0)
+<variant>Нет правильного ответа
+
+<question>Что вычисляет программа `{ float x=60, y; y=atan(x*3.14/180); cout<< y;}`?
+<variantright>арктангенс
+<variant>арккотангенс
+<variant>тангенс
+<variant>котангенс
+<variant>Нет правильного ответа
+
+<question>В каком файле определена стандартная функция `pow(x,y);`?
+<variantright>math.h
+<variant>iostream.h
+<variant>stdlib.h
+<variant>conio.h
+<variant>Нет правильного ответа
+
+<question>Что выведет `cout<<sqrt(pow(5,4));`?
+<variantright>25
+<variant>625
+<variant>5
+<variant>15
+<variant>Нет правильного ответа
+<explain>5⁴ = 625, корень из 625 = 25.
+
+<question>Укажите унарную операцию инкремента в C:
+<variantright>++
+<variant>--
+<variant>//
+<variant>/*
+<variant>Нет правильного ответа
+
+<question>Укажите унарную операцию декремента в C:
+<variantright>--
+<variant>++
+<variant>*/
+<variant>//
+<variant>Нет правильного ответа
+
+<question>Как в C записать десятичный логарифм lg x?
+<variantright>log10(x)
+<variant>ln (x)
+<variant>log (10x)
+<variant>lg(x)
+<variant>Нет правильного ответа
+
+<question>Если сначала x=2, чему равно x после `x*=(x+1)`?
+<variantright>6
+<variant>5
+<variant>4
+<variant>3
+<variant>Нет правильного ответа
+<explain>x = 2·(2+1) = 6.
+
+<question>Какая функция в C возвращает модуль (абсолютное значение) вещественного аргумента?
+<variantright>fabs (x)
+<variant>labs (x)
+<variant>absx (x)
+<variant>fabc (x)
+<variant>Нет правильного ответа
+
+<question>Какую директиву подключают в C, чтобы использовать команды ввода-вывода?
+<variantright># include "iostream.h"
+<variant># include "conio.h"
+<variant># include "stdio.h"
+<variant># include "math.h"
+<variant>Нет правильного ответа
+
+<question>Оператор вывода в C:
+<variantright>cout<<
+<variant>cin>>
+<variant>getch()
+<variant>scanf()
+<variant>Нет правильного ответа
+
+<question>Оператор ввода в C++:
+<variantright>cin>>
+<variant>cout<<
+<variant>printf()
+<variant>getch()
+<variant>Нет правильного ответа
+
+<question>Что делает оператор `getch();`?
+<variantright>ждёт нажатия любой клавиши, но не выводит её на экран
+<variant>очищает экран
+<variant>возвращает значение функции
+<variant>обозначает конец программы
+<variant>Нет правильного ответа
+
+<question>Сколько раз повторится цикл?
+```cpp
+for (x=1; x <= 10; x=x+2)
+```
+<variantright>5
+<variant>10
+<variant>15
+<variant>20
+<variant>Нет правильного ответа
+<explain>x = 1, 3, 5, 7, 9 — пять раз.
+
+<question>Сколько раз повторится цикл?
+```cpp
+x=2; while (x<10) {y=x*x; x=x+2;}
+```
+<variantright>4
+<variant>5
+<variant>10
+<variant>3
+<variant>Нет правильного ответа
+<explain>x = 2, 4, 6, 8 — четыре раза.
+
+<question>Сколько раз повторится цикл?
+```cpp
+x=7; while (x <=10) { cout<<x; x++; }
+```
+<variantright>4
+<variant>5
+<variant>6
+<variant>7
+<variant>Нет правильного ответа
+<explain>x = 7, 8, 9, 10 — четыре раза.
+
+<question>Сколько раз повторится цикл?
+```cpp
+x=7; while (x <10) { cout<<x; x++; }
+```
+<variantright>3
+<variant>4
+<variant>5
+<variant>6
+<variant>Нет правильного ответа
+<explain>x = 7, 8, 9 — три раза (10 уже не меньше 10).
+
+<question>Чему будет равно k после выполнения программы?
+```cpp
+k=0; for (x=1;x <=10; x++) if (x % 3==0) k++;
+```
+<variantright>3
+<variant>4
+<variant>5
+<variant>2
+<variant>Нет правильного ответа
+<explain>Числа от 1 до 10, делящиеся на 3: 3, 6, 9 → k = 3.
+
+<question>Чему будет равно k после выполнения программы?
+```cpp
+k=0; for (x=1;x <=10; x++) if (x % 5==0) k++;
+```
+<variantright>2
+<variant>3
+<variant>4
+<variant>5
+<variant>Нет правильного ответа
+<explain>Делятся на 5: 5 и 10 → k = 2.
+
+<question>Чему будет равно k после выполнения программы?
+```cpp
+k=0; for (x=1;x <=10; x++) if (x % 9==0) k++;
+```
+<variantright>1
+<variant>2
+<variant>3
+<variant>4
+<variant>Нет правильного ответа
+
+<question>Запись цикла с предусловием в C:
+<variantright>while (условие) {тело цикла}
+<variant>do {тело цикла} while (условие)
+<variant>for (начальное значение; конечное значение; шаг)
+<variant>for (конечное значение; начальное значение; шаг)
+<variant>Нет правильного ответа
+
+<question>Запись цикла с постусловием в C:
+<variantright>do {тело цикла} while (условие)
+<variant>while (условие) {тело цикла}
+<variant>for (начальное значение; конечное значение; шаг)
+<variant>for (конечное значение; начальное значение; шаг)
+<variant>Нет правильного ответа
+
+<question>Запись цикла с параметром в C:
+<variantright>for (начальное значение; конечное значение; шаг)
+<variant>while (условие) {тело цикла}
+<variant>do {тело цикла} while (условие)
+<variant>switch () {}
+<variant>Нет правильного ответа
+
+<question>Сколько видов операторов цикла в C?
+<variantright>3
+<variant>2
+<variant>1
+<variant>4
+<variant>Нет правильного ответа
+<explain>for, while, do-while.
+
+<question>В каком заголовочном файле определена функция `getch()`?
+<variantright>conio.h
+<variant>stdio.h
+<variant>iostream.h
+<variant>stdlib.h
+<variant>Нет правильного ответа
+
+<question>Массив в C — это
+<variantright>набор элементов одного типа
+<variant>набор элементов разных типов
+<variant>последовательность переменных
+<variant>набор любых элементов
+<variant>Нет правильного ответа
+
+<question>Функция очистки экрана в C:
+<variantright>clrscr();
+<variant>clear screen();
+<variant>cls();
+<variant>clean();
+<variant>Нет правильного ответа
+
+<question>Какой заголовочный файл подключают, чтобы использовать функцию очистки экрана?
+<variantright>conio.h
+<variant>stdio.h
+<variant>iostream.h
+<variant>stdlib.h
+<variant>Нет правильного ответа
+
+<question>Какой заголовочный файл подключают, чтобы использовать функцию случайных чисел?
+<variantright>stdlib.h
+<variant>iostream.h
+<variant>stdio.h
+<variant>conio.h
+<variant>Нет правильного ответа
+
+<question>Какому числу в C соответствует «false» (ложь)?
+<variantright>0
+<variant>1
+<variant>ни одному числу не приравнивается
+<variant>-1
+<variant>Нет правильного ответа
+
+<question>Какому числу в C соответствует «true» (истина)?
+<variantright>1
+<variant>0
+<variant>-1
+<variant>ни одному числу не приравнивается
+<variant>Нет правильного ответа
+
+<question>Что означает 1 как результат вычисления условия?
+<variantright>истина (true)
+<variant>ложь (false)
+<variant>результат правильной компиляции программы
+<variant>boolean
+<variant>Нет правильного ответа
+
+<question>Что означает 0 как результат вычисления условия?
+<variantright>ложь (false)
+<variant>истина (true)
+<variant>результат правильной компиляции программы
+<variant>boolean
+<variant>Нет правильного ответа
+
+<question>Выражение `(1 != 1)` в C истинно или ложно?
+<variantright>ложно
+<variant>не имеет смысла
+<variant>истинно
+<variant>неизвестно
+<variant>Нет правильного ответа
+
+<question>Кто создал язык C?
+<variantright>Деннис Ритчи
+<variant>Билл Гейтс
+<variant>Дж. Нейман
+<variant>Бьёрн Страуструп
+<variant>Нет правильного ответа
+<explain>C — Деннис Ритчи. C++ — Бьёрн Страуструп (не путать).
+
+<question>Управляющий символ `\n` в C:
+<variantright>переход на новую строку
+<variant>переход на следующую страницу
+<variant>написать символ \ n раз
+<variant>пробел
+<variant>Нет правильного ответа
+
+<question>Управляющий символ `\t` в C:
+<variantright>горизонтальная табуляция
+<variant>переход на новую строку
+<variant>переход на следующую страницу
+<variant>написать символ \ t раз
+<variant>Нет правильного ответа
+
+<question>Выражение, равносильное `s=s+x`:
+<variantright>s+=x
+<variant>s=x++
+<variant>s=s++
+<variant>s=+x
+<variant>Нет правильного ответа
+
+<question>Что НЕ входит в алфавит языка C?
+<variantright>заглавные буквы русского алфавита
+<variant>специальные символы
+<variant>строчные и заглавные буквы латинского алфавита
+<variant>арабские цифры 0-9
+<variant>Нет правильного ответа
+
+<question>Диапазон значений типа `char` в C:
+<variantright>-128…127
+<variant>0…65365
+<variant>-65365…65365
+<variant>-256…255
+<variant>Нет правильного ответа
+
+<question>Как в C записать функцию arccos(x)?
+<variantright>acos(x)
+<variant>cosa(x)
+<variant>acos[x]
+<variant>acos{x}
+<variant>Нет правильного ответа
+
+<question>Для чего в операторе `cout<<` нужна фраза в кавычках?
+<variantright>для наглядности, её можно и не писать
+<variant>чтобы не переходить на следующую строку
+<variant>чтобы перейти на следующую строку
+<variant>чтобы вывести вопросительный знак
+<variant>Нет правильного ответа
+
+<question>Какая логическая операция называется «логическое умножение» (И)?
+<variantright>&&
+<variant>||
+<variant>!
+<variant>:
+<variant>Нет правильного ответа
+
+<question>Какая логическая операция называется «логическая сумма» (ИЛИ)?
+<variantright>||
+<variant>&&
+<variant>:
+<variant>!
+<variant>Нет правильного ответа
+
+<question>Чему равно выражение `k=(3/2)*(3%2)`?
+<variantright>1
+<variant>2
+<variant>0.5
+<variant>3
+<variant>Нет правильного ответа
+<explain>3/2 = 1 (целое деление), 3%2 = 1 → 1·1 = 1.
+
+<question>Даны объявления:
+```cpp
+int a,b,c,n; float d,e;
+```
+Какого типа значение выражения `d+1`?
+<variantright>float
+<variant>int
+<variant>char
+<variant>bool
+<variant>Нет правильного ответа
+
+<question>Оператор ввода значений переменных в компьютер:
+<variantright>cin>>
+<variant>cout<<
+<variant>printf()
+<variant>getch()
+<variant>Нет правильного ответа
+
+<question>В каком операторе цикла выход из цикла происходит, когда условие истинно?
+<variantright>do {} while(условие)
+<variant>while (условие) { }
+<variant>for
+<variant>switch
+<variant>Нет правильного ответа
+<explain>Так отмечено в базе — запомни пару: «истинно → do-while», «не истинно → while».
+
+<question>В каком операторе цикла выход из цикла происходит, когда условие не истинно?
+<variantright>while (условие) { }
+<variant>do {} while(условие)
+<variant>for
+<variant>switch
+<variant>Нет правильного ответа
+
+<question>Чему равно k в `k=ceil(3.226);`?
+<variantright>4
+<variant>3
+<variant>2
+<variant>3.5
+<variant>Нет правильного ответа
+<explain>ceil — округление вверх (потолок): 3.226 → 4.
+
+<question>Чему равно k в `k=floor(3.63);`?
+<variantright>3
+<variant>4
+<variant>2
+<variant>3.5
+<variant>Нет правильного ответа
+<explain>floor — округление вниз (пол): 3.63 → 3.
+
+<question>Какой оператор условный?
+<variantright>if
+<variant>for
+<variant>while
+<variant>switch
+<variant>Нет правильного ответа
+
+<question>Какой оператор называется оператором выбора?
+<variantright>switch
+<variant>for
+<variant>if
+<variant>while
+<variant>Нет правильного ответа
+
+<question>Какая функция находит квадратный корень?
+<variantright>sqrt()
+<variant>sqr()
+<variant>pov()
+<variant>sgrt()
+<variant>Нет правильного ответа
+
+<question>Как в C записать x в степени y?
+<variantright>pow(x,y)
+<variant>povv(x,y)
+<variant>sqr(x,y)
+<variant>sqrt(x,y)
+<variant>Нет правильного ответа
+
+<question>Как записать корень 5-й степени из x?
+<variantright>pow(x,1/5.)
+<variant>sqrt(x,1/5)
+<variant>sqrt(x,5)
+<variant>pow(x,1/5)
+<variant>Нет правильного ответа
+<explain>Точка в `1/5.` важна: `1/5` — целое деление и даёт 0.
+
+<question>Какой формат `printf()` выводит строку?
+<variantright>%s
+<variant>%f
+<variant>%u
+<variant>%o
+<variant>Нет правильного ответа
+
+<question>Какой формат `printf()` выводит вещественное число?
+<variantright>%f
+<variant>%o
+<variant>%u
+<variant>%s
+<variant>Нет правильного ответа
+
+<question>Формат `printf()` для вывода беззнакового десятичного целого:
+<variantright>%u
+<variant>%s
+<variant>%o
+<variant>%f
+<variant>Нет правильного ответа
+
+<question>Формат `printf()` для вывода беззнакового восьмеричного целого:
+<variantright>%o
+<variant>%f
+<variant>%s
+<variant>%u
+<variant>Нет правильного ответа
+
+<question>Какой формат `printf()` выводит беззнаковое шестнадцатеричное целое?
+<variantright>%x
+<variant>%u
+<variant>%s
+<variant>%f
+<variant>Нет правильного ответа
+
+<question>Какой формат `printf()` выводит вещественное число в экспоненциальной форме?
+<variantright>%e
+<variant>%f
+<variant>%s
+<variant>%x
+<variant>Нет правильного ответа
+
+<question>Определённая последовательность операций и описаний, выполняющая некоторые действия, называется ...?
+<variantright>функция
+<variant>процедура
+<variant>рекурсия
+<variant>код
+<variant>Нет правильного ответа
+
+<question>Как называются параметры в начале описания функции?
+<variantright>формальные
+<variant>фактические
+<variant>аргумент
+<variant>глобальные
+<variant>Нет правильного ответа
+
+<question>С какой функции начинается выполнение любой программы на C? (повтор)
+<variantright>main()
+<variant>random
+<variant>randomize()
+<variant>clrscr()
+<variant>Нет правильного ответа
+
+<question>Как называется функция, которая вызывает сама себя?
+<variantright>рекурсия
+<variant>процедура
+<variant>функция
+<variant>оператор
+<variant>Нет правильного ответа
+
+<question>Для чего нужна операция return (выражение)? (повтор)
+<variantright>возвращает значение выражения в оператор, который вызвал функцию
+<variant>такого оператора в C нет
+<variant>используется, когда функция не возвращает значения
+<variant>назначение не определено, по правилам должна стоять в конце программы
+<variant>Нет правильного ответа
+
+<question>..... помогает компилятору определить количество и тип аргументов, передаваемых в функцию.
+<variantright>прототип функции
+<variant>идентификатор функции
+<variant>прототип файла
+<variant>локальный прототип
+<variant>Нет правильного ответа
+
+<question>Для чего в заголовке функции используется ключевое слово `void`? (повтор)
+<variantright>показывает, что функция не возвращает значения
+<variant>показывает, что функция возвращает значение
+<variant>в заголовке функции void не используется
+<variant>показывает, что функция хранит значение
+<variant>Нет правильного ответа
+
+<question>Что такое оператор ветвления?
+<variantright>разделение алгоритма на несколько путей в зависимости от того, выполняется условие или нет
+<variant>оператор, проверяющий выполнение только одного условия
+<variant>оператор, проверяющий невыполнение условий
+<variant>оператор, отвечающий за выполнение любой программы на C
+<variant>Нет правильного ответа
+
+<question>Какая функция определяет длину строки?
+<variantright>strlen
+<variant>strcpy
+<variant>strcat
+<variant>strcmp
+<variant>Нет правильного ответа
+
+<question>В какие символы заключается тело функции? (повтор)
+<variantright>{}
+<variant>()
+<variant>[]
+<variant><>
+<variant>Нет правильного ответа
+
+<question>В каком заголовочном файле прототип функции `strlen()`?
+<variantright>string.h
+<variant>conio.h
+<variant>iostream.h
+<variant>stdlib.h
+<variant>Нет правильного ответа
+
+<question>string.h — это библиотека:
+<variantright>строковых функций
+<variant>основного ввода / вывода
+<variant>графических функций
+<variant>математических функций
+<variant>Нет правильного ответа
+
+<question>Какой получим ответ?
+```cpp
+int i=10;
+cout <<  i++;
+cout  << ++i;
+```
+<variantright>10, 12
+<variant>11, 12
+<variant>10, 11
+<variant>10, 10
+<variant>Нет правильного ответа
+<explain>i++ сначала выводит 10, потом i = 11; ++i сначала делает 12, потом выводит 12.
+
+<question>В какой части программы на C объявляются переменные?
+<variantright>в любом месте, но до первого использования переменной
+<variant>в конце
+<variant>только в начале
+<variant>нигде
+<variant>Нет правильного ответа
+
+<question>Какая функция читает строку из файла?
+<variantright>fgets()
+<variant>fgetc()
+<variant>fputs()
+<variant>fread()
+<variant>Нет правильного ответа
+<explain>fgets — get string (читать), fputs — put string (записать).
+
+<question>Какая функция записывает строку в файл?
+<variantright>fputs()
+<variant>fread()
+<variant>fgets()
+<variant>fwrite()
+<variant>Нет правильного ответа
+
+<question>С какого числа начинаются индексы массива?
+<variantright>0
+<variant>1
+<variant>2
+<variant>-1
+<variant>Нет правильного ответа
+
+<question>Если в конце программы написано `return ;`, какой тип возвращает функция?
+<variantright>void
+<variant>int
+<variant>float
+<variant>char
+<variant>Нет правильного ответа
+
+<question>Что даёт программа?
+```cpp
+int a[3][3];
+for(int i=0;i<3;i++)
+for(int j=0;j<3;j++)
+cin>>a[i][j];
+int m=a[1][1],s=0;
+for(int i=0;i<3;i++)
+s+=a[i][i];
+cout<<s;
+```
+<variantright>сумму элементов главной диагонали матрицы
+<variant>сумму чётных элементов массива
+<variant>сумму всех элементов матрицы
+<variant>сумму нечётных элементов массива
+<variant>Нет правильного ответа
+<explain>a[i][i] — элементы, где номер строки равен номеру столбца, это главная диагональ.
+
+<question>Какие значения принимает i в `for(i=1;i<10;i+=2)`?
+<variantright>1 3 5 7 9
+<variant>2 4 6 8 10
+<variant>1 2 3 4 5
+<variant>1 3 5 7 9 10
+<variant>Нет правильного ответа
+
+<question>Укажите правильный способ вычислить x в 4-й степени.
+<variantright>pow(x,4);
+<variant>pow(x/4);
+<variant>pow(x*4);
+<variant>pow(x;4);
+<variant>Нет правильного ответа
+
+<question>Какая функция записывает данные в файл?
+<variantright>fprintf ()
+<variant>fread ()
+<variant>fscanf ()
+<variant>fgets ()
+<variant>Нет правильного ответа
+
+<question>Какая функция читает данные из файла?
+<variantright>fscanf()
+<variant>fprintf ()
+<variant>fgets ()
+<variant>fwrite ()
+<variant>Нет правильного ответа
+
+<question>Что делает функция `strcat(stroka1, stroka2)`?
+<variantright>соединяет строки stroka1 и stroka2 и записывает результат в stroka1
+<variant>сравнивает строки stroka1 и stroka2
+<variant>ищет в первой строке любой символ второй строки
+<variant>ищет вторую строку внутри первой
+<variant>Нет правильного ответа
+<explain>cat = concatenate (соединить).
+
+<question>Что делает функция `strcmp(stroka1,stroka2)`?
+<variantright>сравнивает две строки
+<variant>ищет в первой строке любой символ второй строки
+<variant>соединяет две строки
+<variant>ищет вторую строку внутри первой
+<variant>Нет правильного ответа
+<explain>cmp = compare (сравнить).
+
+<question>Какой результат у кода?
+```cpp
+main() { printf("%d\n",strcmp("Salem","Salem")); getch(); }
+```
+<variantright>0
+<variant>1
+<variant>2
+<variant>7
+<variant>Нет правильного ответа
+<explain>strcmp возвращает 0, если строки одинаковые.
+
+<question>Что делает функция `strcpy(str1,str2)`?
+<variantright>копирует строку: строка из str2 копируется в str1
+<variant>сравнивает две строки
+<variant>соединяет две строки
+<variant>ищет вторую строку внутри первой
+<variant>Нет правильного ответа
+<explain>cpy = copy (копировать).
+
+<question>Что делает функция `strstr(str1, str2)`?
+<variantright>ищет вторую строку внутри первой
+<variant>соединяет две строки
+<variant>сравнивает две строки
+<variant>копирует строку
+<variant>Нет правильного ответа
+
+<question>Что делает функция `strrev(str)`?
+<variantright>переворачивает строку задом наперёд
+<variant>копирует строку
+<variant>сравнивает строки
+<variant>удаляет строку
+<variant>Нет правильного ответа
+<explain>rev = reverse (перевернуть).
+
+<question>Функция `strncpy(S1,CS2,k)`:
+<variantright>копирует первые k символов строки CS2 в S1
+<variant>удаляет первые k символов строки CS2 из S1
+<variant>удаляет k символов из строк S1 и CS2
+<variant>копирует последние k символов строки CS2 в S1
+<variant>Нет правильного ответа
+
+<question>Функция `strnset(S,ch,k)`:
+<variantright>повторяет символ ch k раз в строке S
+<variant>удаляет символ ch k раз в строке S
+<variant>заменяет символ ch в строке S на символ k
+<variant>убирает символы ch и k из строки S
+<variant>Нет правильного ответа
+
+<question>Функция `strncat(S1,CS2,k)`:
+<variantright>добавляет первые k символов строки CS2 к строке S1
+<variant>добавляет последние k символов строки CS2 к строке S1
+<variant>добавляет k символов к строкам CS2 и S1
+<variant>повторяет символ CS2 k раз в строке S1
+<variant>Нет правильного ответа
+
+<question>Функция `strlwr(S)`:
+<variantright>переводит символы строки S в строчные (маленькие) буквы
+<variant>переводит символы строки S в заглавные буквы
+<variant>переводит символы строки S в римские цифры
+<variant>переводит символы строки S в арабские цифры
+<variant>Нет правильного ответа
+<explain>lwr = lower (нижний регистр), upr = upper (верхний).
+
+<question>Функция `strupr(S)`:
+<variantright>переводит символы строки S в заглавные буквы
+<variant>переводит символы строки S в строчные буквы
+<variant>переводит символы строки S в римские цифры
+<variant>переводит символы строки S в арабские цифры
+<variant>Нет правильного ответа
+
+<question>Для чего нужна функция `strncmp(CS1,CS2,k)`?
+<variantright>сравнивает только первые k символов строк CS1 и CS2
+<variant>сравнивает только последние k символов строк CS1 и CS2
+<variant>добавляет первые k символов CS1 к CS2
+<variant>добавляет последние k символов CS1 к CS2
+<variant>Нет правильного ответа
+
+<question>Функция `stricmp(CS1,CS2)`:
+<variantright>при сравнении не учитывает разницу между заглавными и строчными буквами
+<variant>при сравнении учитывает разницу между заглавными и строчными буквами
+<variant>сравнивает две строки
+<variant>соединяет две строки
+<variant>Нет правильного ответа
+<explain>i = ignore case (без учёта регистра).
+
+<question>Функция `strchr(CS,ch)`:
+<variantright>просматривает строку CS слева направо, пока не найдёт символ ch
+<variant>просматривает строку CS с конца к началу, пока не найдёт символ ch
+<variant>сравнивает две строки
+<variant>соединяет две строки
+<variant>Нет правильного ответа
+
+<question>Функция `strrchr(CS,ch)`:
+<variantright>просматривает строку CS с конца к началу, пока не найдёт символ ch
+<variant>просматривает строку CS слева направо, пока не найдёт символ ch
+<variant>сравнивает две строки
+<variant>соединяет две строки
+<variant>Нет правильного ответа
+<explain>Лишняя r = reverse — поиск с конца.
+
+<question>Что вычисляет программа?
+```cpp
+s=0;
+for(i=0; i<3; i++)
+for(j=0; j<3; j++)
+if (j<i) s+=a[i][j];
+printf("\ns=%i",s);
+getch();
+```
+<variantright>сумму элементов ниже главной диагонали массива
+<variant>сумму элементов выше главной диагонали массива
+<variant>сумму элементов главной диагонали массива
+<variant>сумму элементов побочной диагонали массива
+<variant>Нет правильного ответа
+<explain>j < i — столбец меньше строки, это ниже главной диагонали.
+
+<question>Что определяет функция?
+```cpp
+int m(int x, int y)
+{ int t;
+if (x<y) t=x;
+else t=y;
+return t;}
+```
+<variantright>меньшее из двух целых чисел
+<variant>большее из двух целых чисел
+<variant>равенство двух целых чисел
+<variant>меньшее из двух вещественных чисел
+<variant>Нет правильного ответа
+
+<question>Что определяет функция?
+```cpp
+int m(int x, int y)
+{ if (x>y)
+return (x);
+else return (y);}
+```
+<variantright>большее из двух целых чисел
+<variant>меньшее из двух целых чисел
+<variant>равенство двух целых чисел
+<variant>меньшее из двух вещественных чисел
+<variant>Нет правильного ответа
+
+<question>Какая функция закрывает файл после окончания работы с ним?
+<variantright>fclose()
+<variant>fexit()
+<variant>fgets()
+<variant>fgetc()
+<variant>Нет правильного ответа
+
+<question>Укажите функцию открытия файла в C.
+<variantright>fopen()
+<variant>fclose()
+<variant>fexit()
+<variant>fnew()
+<variant>Нет правильного ответа
+
+<question>Какие значения принимает i?
+```cpp
+for (int i=100; i>0; i-=10)
+```
+<variantright>100,90,80,70,60,50,40,30,20,10
+<variant>50,40,30,20,10
+<variant>100,80,60,40,20
+<variant>90,70,50,30,10
+<variant>Нет правильного ответа
+
+<question>Как называется математическая библиотека стандартных арифметических функций?
+<variantright>math.h
+<variant>match.h
+<variant>matem.h
+<variant>stdlib.h
+<variant>Нет правильного ответа
+
+<question>Какие значения принимает i?
+```cpp
+for (int i=100; i<=150; i+=10)
+```
+<variantright>100,110,120,130,140,150
+<variant>110,120,130,140,150
+<variant>100,110,120,130,140
+<variant>110,110,120,130,140,160
+<variant>Нет правильного ответа
+
+<question>Что вычисляет фрагмент программы?
+```cpp
+for (i=0; i<=n; i++)
+cin>>a[i];
+s2=0;
+for (i=0; i<=n; i++)
+if (i %2== 0) s2=s2+a[i];
+cout<<s2;
+```
+<variantright>сумму только элементов с чётными номерами
+<variant>сумму только элементов с нечётными номерами
+<variant>сумму всех элементов
+<variant>количество элементов, равных 0
+<variant>Нет правильного ответа
+<explain>Проверяется индекс i, а не значение: i%2==0 — чётные номера.
+
+<question>Что вычисляет фрагмент программы?
+```cpp
+for (i=0; i<=n; i++)
+cin>>a[i];
+s2=0;
+for (i=0; i<=n; i++)
+if (i %2!= 0) s2=s2+a[i];
+cout<<s2;
+```
+<variantright>сумму только элементов с нечётными номерами
+<variant>сумму только элементов с чётными номерами
+<variant>количество элементов, не равных 0
+<variant>сумму всех элементов
+<variant>Нет правильного ответа
+
+<question>Чему равна переменная a после вызова функции?
+```cpp
+int inc2(int vv)
+{
+vv++;
+return vv;
+}
+void main()
+{int a,b=5;
+a=inc2(b);
+}
+```
+<variantright>6
+<variant>5
+<variant>7
+<variant>8
+<variant>Нет правильного ответа
+
+<question>Что выведет код?
+```cpp
+int const a = 5; a++; cout << a;
+```
+<variantright>код выдаст ошибку
+<variant>6
+<variant>5
+<variant>0
+<variant>Нет правильного ответа
+<explain>Константу менять нельзя — a++ даёт ошибку компиляции.
+
+<question>Какой тип данных НЕ относится к C++?
+<variantright>real
+<variant>int
+<variant>float
+<variant>double
+<variant>Нет правильного ответа
+<explain>real — тип из Pascal.
+
+<question>Чему равна переменная a после выполнения кода?
+```cpp
+int a; for(a = 0; a < 10; a++) cout<<a;
+```
+<variantright>9
+<variant>10
+<variant>0
+<variant>1
+<variant>Нет правильного ответа
+<explain>В базе ответ 9 (последнее выведенное число). Строго после цикла a = 10, но на экзамене выбирай 9.
+
+<question>Какой оператор НЕ является оператором цикла в C++?
+<variantright>repeat until
+<variant>while
+<variant>do while
+<variant>for
+<variant>Нет правильного ответа
+<explain>repeat until — цикл из Pascal.
+
+<question>Функция, находящая модуль целого числа:
+<variantright>abs(x)
+<variant>abc(x)
+<variant>fabs(x)
+<variant>fabc(x)
+<variant>Нет правильного ответа
+<explain>abs — для целых, fabs — для вещественных (f = float).
+
+<question>Как записывается арккосинус в C++?
+<variantright>acos(x)
+<variant>asin[x]
+<variant>atan(x)
+<variant>acos{x}
+<variant>Нет правильного ответа
+
+<question>Функция округления числа вверх:
+<variantright>ceil(x)
+<variant>floor(x)
+<variant>fabs(x)
+<variant>log(x)
+<variant>Нет правильного ответа
+<explain>ceil — потолок (вверх), floor — пол (вниз).
+
+<question>Функция округления числа вниз:
+<variantright>floor(x)
+<variant>ceil(x)
+<variant>exp(x)
+<variant>fabs(x)
+<variant>Нет правильного ответа
+
+<question>Какой результат у кода?
+```cpp
+char s1[ 50 ] = "jack";
+char s2[ 50 ] = "jill";
+char s3[ 50 ] , *sptr;
+cout << strlen( s1 ) + strlen( s2 ) << endl;
+```
+<variantright>8
+<variant>7
+<variant>9
+<variant>10
+<variant>Нет правильного ответа
+<explain>strlen("jack") = 4, strlen("jill") = 4 → 8.
+
+<question>Что НЕ является знаком сравнения?
+<variantright>=
+<variant>==
+<variant><
+<variant>!=
+<variant>Нет правильного ответа
+<explain>= — это присваивание, сравнение — ==.
+
+<question>Как ещё называют массив с двумя индексами?
+<variantright>матрица
+<variant>одномерный массив
+<variant>динамический массив
+<variant>неоднородный массив
+<variant>Нет правильного ответа
+
+<question>Если int n=3, какой будет результат?
+```cpp
+switch(n) {
+case 2: cout << "aaa"; break;
+case 3: cout << "bbb"; break;
+default: cout << "vvv"; break; }
+```
+<variantright>bbb
+<variant>aaa
+<variant>vvv
+<variant>код не выполнится
+<variant>Нет правильного ответа
+
+<question>Если int n=45, какой будет результат?
+```cpp
+switch(n) {
+case 23: cout << "aaa";
+case 45: cout << "bbb";
+default: cout << "vvv";
+break; }
+```
+<variantright>bbbvvv
+<variant>bbb
+<variant>vvv
+<variant>aaa
+<variant>Нет правильного ответа
+<explain>После case 45 нет break, поэтому выполнение «проваливается» в default: bbb + vvv.
+
+<question>Число, по которому обращаются к одному элементу массива, называется ....
+<variantright>индекс
+<variant>тип
+<variant>матрица
+<variant>среднее арифметическое
+<variant>Нет правильного ответа
+
+<question>Элементы массива связаны тем, что у них одинаковые ...
+<variantright>типы
+<variant>размеры
+<variant>имена
+<variant>значения
+<variant>Нет правильного ответа
+
+<question>Процесс упорядочивания элементов массива называется ....
+<variantright>сортировка
+<variant>поиск
+<variant>проверка
+<variant>изменение
+<variant>Нет правильного ответа
+
+<question>Операция инкремента применяется:
+<variantright>к переменным
+<variant>к константам
+<variant>к выражениям
+<variant>к строкам
+<variant>Нет правильного ответа
+
+<question>К каким числам применяется операция `%`?
+<variantright>к целым
+<variant>к вещественным
+<variant>к дробным
+<variant>к целым и вещественным
+<variant>Нет правильного ответа
+
+<question>Логическое «и» обозначается так:
+<variantright>&&
+<variant>&
+<variant>|
+<variant>||
+<variant>Нет правильного ответа
+
+<question>Логическое «или» обозначается так:
+<variantright>||
+<variant>&&
+<variant>&
+<variant>|
+<variant>Нет правильного ответа
+
+<question>Логическое «не равно» обозначается так:
+<variantright>!=
+<variant>|=
+<variant>=!
+<variant>=|
+<variant>Нет правильного ответа

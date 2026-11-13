@@ -24,22 +24,43 @@
   chrome.runtime.onMessage.addListener(function (m) {
     if (!m || m.type !== 'sp-quiz-now') return;
     if (window === window.top) startQuiz();
-    else document.querySelectorAll('video').forEach(function (v) { v.pause(); });
+    else allVideos().forEach(function (v) { v.pause(); });
   });
 
+  /* все <video> на странице, в том числе спрятанные внутри shadow DOM плееров */
+  function allVideos(root, out) {
+    out = out || [];
+    (root || document).querySelectorAll('video').forEach(function (v) { out.push(v); });
+    (root || document).querySelectorAll('*').forEach(function (el) { if (el.shadowRoot) allVideos(el.shadowRoot, out); });
+    return out;
+  }
+  var lastT = new WeakMap(), vids = [], scanAt = 0;
+  /* видео «играет», если не на паузе, со звуком, заметного размера и его время реально идёт */
   function playingVideo() {
-    var vs = document.querySelectorAll('video');
-    for (var i = 0; i < vs.length; i++) {
-      var v = vs[i];
-      if (!v.paused && !v.ended && v.readyState > 2 && !v.muted && v.volume > 0 && v.offsetWidth > 200 && v.offsetHeight > 100) return v;
+    if (Date.now() - scanAt > 3000) { vids = allVideos(); scanAt = Date.now(); }
+    var found = null;
+    for (var i = 0; i < vids.length; i++) {
+      var v = vids[i], prev = lastT.get(v), t = v.currentTime;
+      lastT.set(v, t);
+      var r = v.getBoundingClientRect();
+      if (!v.paused && !v.ended && !v.muted && v.volume > 0 && r.width >= 160 && r.height >= 90 && prev != null && t !== prev) found = v;
     }
-    return null;
+    return found;
+  }
+  /* для окошка расширения: где сейчас найдено играющее видео */
+  var seenAt = 0;
+  function seen(v) {
+    if (Date.now() - seenAt < 4000) return; seenAt = Date.now();
+    chrome.storage.local.set({ seen: { host: topHost(), frame: location.hostname, t: Date.now(), off: !active() } });
   }
 
   /* каждую секунду: если видео играет — копим время; раз в 5 с пишем в общий счётчик */
   setInterval(function () {
-    if (open || !active() || !chrome.runtime || !chrome.runtime.id) return;
-    if (!playingVideo()) return;
+    if (open || !chrome.runtime || !chrome.runtime.id) return;
+    var v = playingVideo();
+    if (!v) return;
+    seen(v);
+    if (!active()) return;
     acc++;
     if (acc < 5) return;
     var add = acc; acc = 0;
@@ -91,8 +112,10 @@
 
   /* ---------- Подбор вопросов ---------- */
   function pick(d, n) {
-    var bank = d.bank || {}, errs = d.errs || {}, pool = [], errPool = [];
-    (cfg.subjects || []).forEach(function (id) {
+    var bank = Object.assign({}, d.bank || {}), errs = Object.assign({}, d.errs || {}, d.myErrs || {}), pool = [], errPool = [], subs = (cfg.subjects || []).slice();
+    /* свои тесты, загруженные в расширение (включённые галочкой) */
+    (d.my || []).forEach(function (t) { if (t.on) { bank['my:' + t.id] = { name: t.name, qs: t.qs }; subs.push('my:' + t.id); } });
+    subs.forEach(function (id) {
       var b = bank[id]; if (!b) return; var e = {}; (errs[id] || []).forEach(function (q) { e[q] = 1; });
       b.qs.forEach(function (q) { var x = { s: id, name: b.name, q: q }; pool.push(x); if (e[q.id]) errPool.push(x); });
     });
@@ -104,10 +127,10 @@
 
   function startQuiz() {
     if (open) return; open = true;
-    chrome.storage.local.get(['bank', 'errs'], function (d) {
+    chrome.storage.local.get(['bank', 'errs', 'my', 'myErrs'], function (d) {
       var list = pick(d, Math.max(1, cfg.count | 0));
       var paused = [];
-      document.querySelectorAll('video').forEach(function (v) { if (!v.paused) { v.pause(); paused.push(v); } });
+      allVideos().forEach(function (v) { if (!v.paused) { v.pause(); paused.push(v); } });
       var m = mount(), bg = document.createElement('div'); bg.className = 'bg'; m.root.appendChild(bg);
       /* сайт не должен ловить клавиши, пока открыт тест */
       var stopKeys = function (e) { e.stopPropagation(); }; ['keydown', 'keyup', 'keypress'].forEach(function (t) { bg.addEventListener(t, stopKeys); });
@@ -170,13 +193,13 @@
 
   /* ответ: в очередь для сайта + локально обновляем список ошибок */
   function save(subj, qid, ok) {
-    chrome.storage.local.get(['pending', 'errs', 'streak', 'stats'], function (d) {
-      var p = d.pending || [], errs = d.errs || {}, st = d.streak || {}, stats = d.stats || { r: 0, w: 0 };
-      p.push({ rid: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), subj: subj, qid: qid, ok: ok });
+    chrome.storage.local.get(['pending', 'errs', 'myErrs', 'streak', 'stats'], function (d) {
+      var p = d.pending || [], mine = subj.indexOf('my:') === 0, errs = (mine ? d.myErrs : d.errs) || {}, st = d.streak || {}, stats = d.stats || { r: 0, w: 0 };
+      if (!mine) p.push({ rid: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), subj: subj, qid: qid, ok: ok });
       var e = errs[subj] || (errs[subj] = []), key = subj + '|' + qid, at = e.indexOf(qid);
       if (ok) { stats.r++; if (at >= 0) { st[key] = (st[key] || 0) + 1; if (st[key] >= 2) { e.splice(at, 1); delete st[key]; } } }
       else { stats.w++; if (at < 0) e.push(qid); st[key] = 0; }
-      chrome.storage.local.set({ pending: p.slice(-2000), errs: errs, streak: st, stats: stats });
+      var o = { pending: p.slice(-2000), streak: st, stats: stats }; o[mine ? 'myErrs' : 'errs'] = errs; chrome.storage.local.set(o);
     });
   }
 })();

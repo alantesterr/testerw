@@ -59,3 +59,4 @@ body { background: var(--bg); color: var(--text); }
 .ex-opt.right { color: var(--success-text, #1a7f52); }
 .ex-opt.wrong { color: var(--danger-text, #c4282d); }
 .ex-opt .code, .ex-q .code { color: var(--text); }
+.ex-search { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }

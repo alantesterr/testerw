@@ -54,3 +54,16 @@ $('now').onclick = function () {
 };
 $('openExam').onclick = function () { chrome.tabs.create({ url: EXAM_URL }); };
 setInterval(paint, 2000);
+
+/* «Мои тесты» и проверка: видит ли расширение видео сейчас */
+$('myTests').onclick = function () { chrome.tabs.create({ url: chrome.runtime.getURL('tests.html') }); };
+function diag() {
+  chrome.storage.local.get(['seen', 'my'], function (d) {
+    var s = d.seen, fresh = s && Date.now() - s.t < 12000, myOn = (d.my || []).filter(function (t) { return t.on; }).length;
+    $('diag').innerHTML = (fresh
+      ? '✅ Видео играет: <b>' + s.host + '</b>' + (s.frame !== s.host ? ' <span class="muted">(плеер: ' + s.frame + ')</span>' : '') + (s.off ? '<br><span class="muted">но тут тесты выключены (исключение, пауза или выключено)</span>' : '<br><span class="muted">время идёт — вопросы будут по таймеру</span>')
+      : '⏸ Сейчас не вижу играющего видео.<br><span class="muted">Запусти видео со звуком. Если вкладку открыли до установки или обновления расширения — обнови её (F5).</span>') +
+      (myOn ? '<br><span class="muted">Своих тестов включено: ' + myOn + '</span>' : '');
+  });
+}
+diag(); setInterval(diag, 2000);

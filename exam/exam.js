@@ -58,6 +58,19 @@
       bank[s.id] = list; return list;
     }));
   }
+  /* свой случайный порядок вопросов для каждого предмета — чтобы запоминался вопрос, а не его место.
+     Перемешивается при первом запуске и после каждого сброса; новые вопросы встают в случайные места. */
+  function ordered(s, list) {
+    var p = prog(s.id), byId = {}, out = [];
+    list.forEach(function (q) { byId[q.id] = q; });
+    var order = (p.order || []).filter(function (id) { return byId[id]; }), have = {};
+    order.forEach(function (id) { have[id] = 1; });
+    var fresh = SP.shuffle(list.filter(function (q) { return !have[q.id]; }).map(function (q) { return q.id; }));
+    fresh.forEach(function (id) { order.splice(Math.floor(Math.random() * (order.length + 1)), 0, id); });
+    if (fresh.length || !p.order || p.order.length !== order.length) { p.order = order; save(); }
+    order.forEach(function (id) { out.push(byId[id]); });
+    return out;
+  }
   function subj(id) { return SUBJ.filter(function (s) { return s.id === id; })[0]; }
   function counts(s) {
     var p = prog(s.id), list = bank[s.id], tot = list ? list.length : s.total, r = 0, w = 0;
@@ -102,7 +115,7 @@
       '<div class="ex-btns" style="margin-top:12px"><button class="btn btn-sm" id="exExport">Сохранить прогресс в файл</button><button class="btn btn-sm" id="exImport">Загрузить прогресс из файла</button></div>' +
       '<p class="ex-ext" id="exExt">' + (document.documentElement.getAttribute('data-sp-ext') ? '✓ Расширение «тесты во время видео» подключено — вопросы ему переданы.' : 'Расширение для Chrome «тесты во время видео» не найдено.') + '</p></section>';
     app.innerHTML = h; wireGo();
-    app.querySelectorAll('[data-reset]').forEach(function (b) { b.onclick = function () { var s = subj(b.getAttribute('data-reset')); if (confirm('Сбросить прогресс «' + s.name + '»? Начнёшь с первого вопроса. Папка ошибок останется.')) { var p = prog(s.id); p.pos = 0; p.st = {}; save(); home(); toast('Прогресс сброшен'); } }; });
+    app.querySelectorAll('[data-reset]').forEach(function (b) { b.onclick = function () { var s = subj(b.getAttribute('data-reset')); if (confirm('Сбросить прогресс «' + s.name + '»? Вопросы перемешаются в новом порядке, папка ошибок останется.')) { var p = prog(s.id); p.pos = 0; p.st = {}; delete p.order; save(); home(); toast('Прогресс сброшен, вопросы перемешаны'); } }; });
     app.querySelectorAll('[data-clear]').forEach(function (b) { b.onclick = function () { var s = subj(b.getAttribute('data-clear')); if (confirm('Очистить папку ошибок «' + s.name + '»?')) { prog(s.id).err = {}; save(); home(); toast('Ошибки очищены'); } }; });
     document.getElementById('exExport').onclick = function () {
       var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(P)], { type: 'application/json' }));
@@ -124,8 +137,11 @@
     if (kb) h += '<div class="ex-kb"><input class="input" id="exKb" placeholder="Введи ответ" autocomplete="off"><button class="btn btn-primary" id="exCheck">Проверить</button></div>';
     else h += (multi ? '<p class="ex-pill" style="margin:0 0 8px">Несколько правильных ответов</p>' : '') + '<div class="ex-opts">' + order.map(function (oi, n) { var o = q.opts[oi]; return '<button class="ex-opt" data-o="' + oi + '"><span class="k">' + (n + 1) + '</span><span>' + rich(o.t) + img(o.img) + '</span></button>'; }).join('') + '</div>' +
       (multi ? '<div class="ex-nav"><button class="btn btn-primary" id="exCheck">Проверить</button></div>' : '');
+    /* сверхпоиск и режим ИИ Google — как в обычных тестах (в пробном экзамене их нет) */
+    if (opt.search) h += '<div class="ex-search"><button class="btn btn-sm" id="exSuper" title="Запрос в Google: вопрос и все варианты с просьбой разобрать каждый">🔎 Сверхпоиск</button><button class="btn btn-sm" id="exAi" title="Тот же запрос в режиме ИИ Google">✨ Режим ИИ</button></div>';
     h += '<div id="exRes"></div><div class="ex-nav">' + (opt.nav || '') + '</div>' + (opt.hint === false ? '' : '<p class="ex-hint">1–' + (kb ? '' : order.length) + ' — выбрать · Enter — дальше</p>') + '</div>';
     host.innerHTML = h;
+    if (opt.search) { host.querySelector('#exSuper').onclick = function () { E.google(E.aiPrompt(q)); }; host.querySelector('#exAi').onclick = function () { E.google(E.aiPrompt(q), true); }; }
     var btns = host.querySelectorAll('.ex-opt');
     function finish(ok) {
       if (done) return; done = true;
@@ -170,7 +186,7 @@
     var nav = '<button class="btn" id="exPrev"' + (p.pos ? '' : ' disabled') + '>←</button><button class="btn btn-ghost" id="exDunno">Не знаю</button><span class="grow"></span>' +
       '<button class="btn btn-ghost" data-go="/' + s.id + '/map">Карта</button><button class="btn btn-primary" id="exNext">Дальше →</button>';
     var a = askQ(app.querySelector('#exHost'), q, {
-      head: head, reveal: true, nav: nav,
+      head: head, reveal: true, nav: nav, search: true,
       onDone: function (ok) { if (record(s.id, q.id, ok)) toast('Вопрос выучен и убран из ошибок'); document.getElementById('exDunno').disabled = true; document.getElementById('exNext').focus(); }
     });
     wireGo();
@@ -186,7 +202,7 @@
     app.innerHTML = top(s.name, '', '/') + '<div class="ex-card ex-center"><p>Предмет пройден до конца</p><div class="ex-big">' + Math.round(c.r / c.tot * 100) + '%</div><p>Верно: <b>' + c.r + '</b> · ошибок: <b>' + c.w + '</b> · не отвечено: ' + (c.tot - c.done) + '</p>' +
       '<div class="ex-btns" style="justify-content:center;margin-top:12px"><button class="btn btn-primary" data-go="/' + s.id + '/errors">Разобрать ошибки (' + c.err + ')</button><button class="btn" id="exAgain">Пройти заново</button><button class="btn" data-go="/' + s.id + '/map">Карта вопросов</button></div></div>';
     wireGo();
-    document.getElementById('exAgain').onclick = function () { if (confirm('Начать предмет заново? Отметки ✓/✗ сбросятся, папка ошибок останется.')) { var p = prog(s.id); p.pos = 0; p.st = {}; save(); learn(s, list); } };
+    document.getElementById('exAgain').onclick = function () { if (confirm('Начать предмет заново? Отметки ✓/✗ сбросятся, вопросы перемешаются, папка ошибок останется.')) { var p = prog(s.id); p.pos = 0; p.st = {}; delete p.order; save(); learn(s, ordered(s, list)); } };
   }
 
   /* ---------- Карта вопросов ---------- */
@@ -231,7 +247,7 @@
       var q = queue.shift();
       app.innerHTML = top('Ошибки: ' + s.name, 'Осталось в круге: ' + (queue.length + 1) + ' · выучено: ' + learned, '/' + s.id + '/errors') + '<div id="exHost"></div>';
       var a = askQ(app.querySelector('#exHost'), q, {
-        head: '<span>Повторение ошибки</span>', reveal: true, nav: '<span class="grow"></span><button class="btn btn-primary" id="exNext">Дальше →</button>',
+        head: '<span>Повторение ошибки</span>', reveal: true, search: true, nav: '<span class="grow"></span><button class="btn btn-primary" id="exNext">Дальше →</button>',
         onDone: function (ok) {
           if (record(s.id, q.id, ok, true)) learned++;
           else if (prog(s.id).err[q.id]) queue.splice(Math.min(3, queue.length), 0, q);
@@ -311,7 +327,7 @@
     app.innerHTML = '<p class="ex-loading">Загружаю вопросы «' + esc(s.name) + '»…</p>';
     getBank(s).then(function (list) {
       if (location.hash.indexOf('/' + s.id) < 0) return;
-      ({ learn: learn, map: map, errors: errors, mock: mock, all: all }[mode] || learn)(s, list);
+      ({ learn: learn, map: map, errors: errors, mock: mock, all: all }[mode] || learn)(s, mode === 'learn' || mode === 'map' || !m[2] ? ordered(s, list) : list);
     }).catch(function () { app.innerHTML = top(s.name, '', '/') + '<div class="ex-card">Не удалось загрузить вопросы. Проверь интернет и обнови страницу.</div>'; wireGo(); });
   }
   window.addEventListener('hashchange', function () { window.scrollTo(0, 0); render(); });

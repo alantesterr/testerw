@@ -183,17 +183,16 @@
     var head = '<span>Вопрос <b>' + (p.pos + 1) + '</b> из ' + list.length + '</span><span>' + (st === 'r' ? '<span class="ex-pill">раньше: ✓ верно</span>' : st === 'w' ? '<span class="ex-pill">раньше: ✗ ошибка</span>' : '<span class="ex-pill">новый</span>') + '</span>';
     app.innerHTML = top(s.name, 'Пройдено ' + c.done + ' из ' + c.tot + ' · <span style="color:var(--success-text)">✓ ' + c.r + '</span> · <span style="color:var(--danger-text)">✗ ' + c.w + '</span> · в ошибках: ' + c.err, '/') +
       '<div class="ex-bar" style="margin-bottom:14px"><i class="g" style="width:' + c.r / c.tot * 100 + '%"></i><i class="r" style="width:' + c.w / c.tot * 100 + '%"></i></div><div id="exHost"></div>';
-    var nav = '<button class="btn" id="exPrev"' + (p.pos ? '' : ' disabled') + '>←</button><button class="btn btn-ghost" id="exDunno">Не знаю</button><span class="grow"></span>' +
-      '<button class="btn btn-ghost" data-go="/' + s.id + '/map">Карта</button><button class="btn btn-primary" id="exNext">Дальше →</button>';
+    var nav = '<button class="btn" id="exPrev"' + (p.pos ? '' : ' disabled') + '>← Назад</button><span class="grow"></span>' +
+      '<button class="btn btn-primary" id="exNext">Дальше →</button>';
     var a = askQ(app.querySelector('#exHost'), q, {
       head: head, reveal: true, nav: nav, search: true,
-      onDone: function (ok) { if (record(s.id, q.id, ok)) toast('Вопрос выучен и убран из ошибок'); document.getElementById('exDunno').disabled = true; document.getElementById('exNext').focus(); }
+      onDone: function (ok) { if (record(s.id, q.id, ok)) toast('Вопрос выучен и убран из ошибок'); document.getElementById('exNext').focus(); }
     });
     wireGo();
     function next() { if (!a.done()) { p.pos++; save(); return learn(s, list); } p.pos++; save(); learn(s, list); }
     document.getElementById('exNext').onclick = next;
     document.getElementById('exPrev').onclick = function () { learn(s, list, p.pos - 1); };
-    document.getElementById('exDunno').onclick = function () { a.giveUp(); };
     onKey(function (e) { if (a.key(e)) return; if (e.key === 'Enter' && a.done()) { e.preventDefault(); next(); } if (e.key === 'ArrowLeft' && p.pos) learn(s, list, p.pos - 1); if (e.key === 'ArrowRight') next(); });
   }
   function finished(s, list) {

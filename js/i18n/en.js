@@ -623,3 +623,4 @@ Object.assign(SP.I18N.en, { 'schedule.hasLinks': 'links: {l}', 'schedule.lkJoin'
 
 Object.assign(SP.I18N.en, { 'nav.settingsShort': 'Settings', 'settings.phonePlayer': 'Player in the bottom bar (phone)' });
 Object.assign(SP.I18N.en, { 'sj.exam': 'Exam', 'sj.examSub': 'Prep: progress, mistakes, mock exam' });
+Object.assign(SP.I18N.en, { 'tester.aiAskQ': 'Which option is correct and why?' });

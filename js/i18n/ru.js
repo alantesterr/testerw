@@ -1283,3 +1283,4 @@ Object.assign(SP.I18N.ru, { 'schedule.hasLinks': 'есть ссылки: {l}', '
 
 Object.assign(SP.I18N.ru, { 'nav.settingsShort': 'Настройки', 'settings.phonePlayer': 'Плеер в нижней панели (телефон)', 'settings.phonePlayerHint': 'По умолчанию на телефоне вкладки «Плеер» нет — на её месте Настройки. Включите, если пользуетесь плеером: вкладок станет 6.', 'settings.phonePlayerOn': 'Плеер добавлен в нижнюю панель', 'settings.phonePlayerOff': 'Плеер убран из нижней панели' });
 Object.assign(SP.I18N.ru, { 'sj.exam': 'Экзамен', 'sj.examSub': 'Подготовка: прогресс, ошибки, пробный экзамен' });
+Object.assign(SP.I18N.ru, { 'tester.aiAskQ': 'Какой вариант правильный и почему? Ответ на русском.' });

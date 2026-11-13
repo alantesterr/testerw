@@ -359,9 +359,10 @@
   /* Запрос к ИИ: язык ответа = язык сайта (RU/KZ/EN), указан явно в начале и в конце */
   var LANG_NAME = { ru: 'русском (Russian)', kk: 'қазақ тілінде (Kazakh)', en: 'English' };
   function aiPrompt(q) {
-    var lang = SP.lang(), head = SP.t('tester.aiLang', { lang: LANG_NAME[lang] || LANG_NAME.ru });
+    /* без «команд» в начале (Google принимал их за подозрительный запрос): вопрос, варианты и вопрос-просьба в конце */
+    var head = '';
     var body = SP.t('tester.aiQ') + ' ' + q.q + '\n' + SP.t('tester.aiOpts') + '\n' + (q.opts || []).map(function (o, i) { return (i + 1) + ') ' + o.t; }).join('\n');
-    var tail = SP.t('tester.aiAsk') + ' ' + head;
+    var tail = SP.t('tester.aiAskQ');
     return head + '\n' + body.slice(0, 1500 - head.length - tail.length - 4) + '\n' + tail;
   }
   var HL = { ru: 'ru', kk: 'kk', en: 'en' };

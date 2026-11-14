@@ -1247,3 +1247,5 @@ html, body { overflow-x: clip; }
 .t-src-group .label { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
 .t-src { cursor: pointer; gap: 10px; }
 .t-src.is-on { opacity: .6; cursor: default; }
+.t-src-tog { margin-top: 4px; } .t-src-tog .ic, .t-src-tog svg { transition: transform .15s; } .t-src-more { margin-top: 6px; }
+.t-src-more[hidden] { display: none; }

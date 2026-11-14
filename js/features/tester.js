@@ -198,21 +198,22 @@
   function fromFolders() {
     var st = SP.bank.state(), room = SP.bank.MAX - st.files.length;
     var has = function (name) { return st.files.some(function (f) { return f.name === name; }); };
-    var row = function (val, name, sub) {
+    var ST = SP.subjectTests;
+    var row = function (val, name, sub, cnt) {
       var on = has(name);
-      return '<label class="list-row t-src' + (on ? ' is-on' : '') + '"><input type="checkbox" class="check" value="' + esc(val) + '"' + (on ? ' disabled' : '') + '>' +
-        '<span class="meta grow"><b>' + esc(name) + '</b><small>' + esc(on ? SP.t('tester.srcLoaded') : sub) + '</small></span></label>';
+      return ST.row({ input: '<input type="checkbox" class="check" value="' + esc(val) + '"' + (on ? ' disabled' : '') + '>', name: name, off: on, sub: on ? SP.t('tester.srcLoaded') : sub, cnt: on ? '' : cnt });
     };
     /* у предмета виден один тест, остальные — под «Ещё N» */
-    var group = function (head, rows) {
-      return '<div class="t-src-group"><div class="label">' + head + '</div><div class="list">' + rows[0] + '</div>' +
-        (rows.length > 1 ? '<div class="list t-src-more" hidden>' + rows.slice(1).join('') + '</div><button type="button" class="btn btn-ghost btn-sm t-src-tog" data-n="' + (rows.length - 1) + '">' + SP.icon('chevron-down') + '<span>' + esc(SP.t('tester.srcMore', { n: rows.length - 1 })) + '</span></button>' : '') + '</div>';
-    };
-    var subs = SP.subjectTests ? SP.subjectTests.list() : [];
+    var subs = ST ? ST.list() : [];
     var body = '<p class="small muted">' + esc(SP.t('tester.srcRoom', { n: room })) + '</p>' +
-      subs.map(function (s) { return group(SP.icon('folder') + ' ' + esc(s.name), s.tests.map(function (x) { return row('sj|' + s.id + '|' + x.i, x.f.name, SP.t('tester.srcFile')); })); }).join('') +
+      subs.map(function (s, si) {
+        return ST.group({ id: s.id, head: s.name, color: ST.COLORS[si % ST.COLORS.length], rows: s.tests.map(function (x) {
+          var c = ST.cached(s.id, x.i);
+          return row('sj|' + s.id + '|' + x.i, x.f.name, c != null ? SP.t('tester.qCount', { n: c }) : SP.t('tester.srcCounting'), c != null ? '' : s.id + '|' + x.i);
+        }) });
+      }).join('') +
       (subs.length ? '' : '<p class="small subtle">' + esc(SP.t('tester.srcNoSj')) + '</p>') +
-      group(SP.icon('graduation-cap') + ' ' + esc(SP.t('sj.exam')), EXAM.map(function (x, i) { return row('ex|' + i, x.n, SP.t('tester.qCount', { n: x.c })); }));
+      ST.group({ id: 'exam', head: SP.t('sj.exam'), icon: 'graduation-cap', color: ST.COLORS[subs.length % ST.COLORS.length], rows: EXAM.map(function (x, i) { return row('ex|' + i, x.n, SP.t('tester.qCount', { n: x.c })); }) });
     var m = SP.modal({ title: SP.t('tester.fromFolders'), size: 'lg', body: body, actions: [
       { label: SP.t('common.cancel') },
       { label: SP.t('tester.srcLoad'), icon: 'upload', kind: 'primary', close: false, onClick: function (api, b) {
@@ -234,14 +235,10 @@
         return false;
       } }
     ] });
-    var togText = function (b) {
-      var box = b.previousElementSibling, open = !box.hidden, k = SP.$$('input:checked', box).length;
-      b.querySelector('span').textContent = open ? SP.t('tester.srcLess') : SP.t('tester.srcMore', { n: +b.getAttribute('data-n') }) + (k ? ' · ' + SP.t('tester.srcPicked', { n: k }) : '');
-      b.firstElementChild.style.transform = open ? 'rotate(180deg)' : '';
-    };
-    SP.$$('.t-src-tog', m.el).forEach(function (b) { b.onclick = function () { var box = b.previousElementSibling; box.hidden = !box.hidden; togText(b); }; });
-    var upd = function () { var n = SP.$$('input:checked', m.el).length, btn = m.foot.lastChild; btn.querySelector('span').textContent = SP.t('tester.srcLoad') + (n ? ' (' + n + ')' : ''); SP.$$('.t-src-tog', m.el).forEach(togText); };
+    ST.wire(m.el);
+    var upd = function () { var n = SP.$$('input:checked', m.el).length, btn = m.foot.lastChild; btn.querySelector('span').textContent = SP.t('tester.srcLoad') + (n ? ' (' + n + ')' : ''); ST.togs(m.el); };
     SP.$$('input[type=checkbox]', m.el).forEach(function (c) { c.onchange = upd; });
+    ST.fill(m.el);
   }
   function stop() { if (running) running.destroy(); running = null; render(); }
 

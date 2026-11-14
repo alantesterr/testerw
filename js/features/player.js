@@ -77,21 +77,26 @@
   function srcUI() {
     var el = $('srcBox'); if (!el) return;
     var list = folderTests(), groups = [], by = {};
-    list.forEach(function (x) { var g = by[x.s.id]; if (!g) { g = by[x.s.id] = { name: SP.hub.cleanName(x.s.name), items: [] }; groups.push(g); } g.items.push(x); });
+    list.forEach(function (x) { var g = by[x.s.id]; if (!g) { g = by[x.s.id] = { id: x.s.id, name: SP.hub.cleanName(x.s.name), items: [] }; groups.push(g); } g.items.push(x); });
     var cnt = function (k) { return extra[k] ? T('player.srcQ', { n: extra[k].length }) : extraErr[k] ? T('player.srcFail') : src.files.indexOf(k) >= 0 ? T('player.srcLoading') : ''; };
     var h = '<label class="check"><input type="checkbox" data-src-own' + (src.own ? ' checked' : '') + '><span>' + esc(T('player.srcOwn')) + ' <span class="subtle small">' + esc(T('player.srcQ', { n: SP.bank.all().length })) + '</span></span></label>';
     h += '<details class="src-folders"' + (src.files.length ? ' open' : '') + '><summary class="small">' + SP.icon('folder', 'ic-sm') + ' ' + esc(T('player.srcFolders')) + (src.files.length ? ' · ' + src.files.length : '') + '</summary>';
     if (!groups.length) h += '<p class="small subtle">' + esc(T('player.srcNone')) + '</p>';
-    groups.forEach(function (g) {
-      h += '<div class="src-group"><div class="xsmall subtle src-subj">' + esc(g.name) + '</div>' + g.items.map(function (x) {
-        var on = src.files.indexOf(x.key) >= 0;
-        return '<label class="check"><input type="checkbox" data-src-file="' + esc(x.key) + '"' + (on ? ' checked' : '') + '><span>' + esc(x.f.name) + (on ? ' <span class="subtle small">' + esc(cnt(x.key)) + '</span>' : '') + '</span></label>';
-      }).join('') + '</div>';
+    /* тот же вид, что в Тестере («Из папок предметов»): цвет предмета, иконка файла, число вопросов, «Ещё N» */
+    var ST = SP.subjectTests, colors = {};
+    ST.list().forEach(function (s, i) { colors[s.id] = ST.COLORS[i % ST.COLORS.length]; });
+    groups.forEach(function (g, gi) {
+      h += ST.group({ id: g.id, head: g.name, color: colors[g.id] || ST.COLORS[gi % ST.COLORS.length], open: srcGroups[g.id], rows: g.items.map(function (x) {
+        var on = src.files.indexOf(x.key) >= 0, i = (x.s.tests || []).indexOf(x.f), c = ST.cached(x.s.id, i);
+        var sub = extra[x.key] ? SP.t('tester.qCount', { n: extra[x.key].length }) : on && extraErr[x.key] ? T('player.srcFail') : c != null ? SP.t('tester.qCount', { n: c }) : on ? T('player.srcLoading') : SP.t('tester.srcCounting');
+        return ST.row({ input: '<input type="checkbox" class="check" data-src-file="' + esc(x.key) + '"' + (on ? ' checked' : '') + '>', name: x.f.name, sub: sub, cnt: extra[x.key] || c != null || on ? '' : x.s.id + '|' + i });
+      }) });
     });
     el.innerHTML = h + '</details>';
     var own = el.querySelector('[data-src-own]'); own.onchange = function () { src.own = own.checked; saveSrc(); bankUI(); renderFeed(); };
     var det = el.querySelector('details'); det.ontoggle = function () { srcOpen = det.open; };
     if (srcOpen !== null) det.open = srcOpen;
+    ST.wire(el, srcGroups); ST.fill(el);
     SP.$$('[data-src-file]', el).forEach(function (cb) {
       cb.onchange = function () {
         var k = cb.getAttribute('data-src-file');
@@ -101,7 +106,7 @@
       };
     });
   }
-  var srcOpen = null;
+  var srcOpen = null, srcGroups = {};
   function bankMap() { var m = {}; allQ().forEach(function (q) { m[E.qid(q)] = q; }); return m; }
   /* «Подпись» набора вопросов: если набор поменялся, прогресс начинается заново (история остаётся) */
   function bankSig() {

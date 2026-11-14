@@ -473,8 +473,67 @@
         var name = /\.studyplay$/i.test(f.name) ? f.name + '.json' : (f.name || 'test.txt');
         return new File([blob], name, { type: blob.type });
       });
+    },
+    /* Общий вид списка «тесты из папок» (Тестер и Плеер): цветная полоска предмета,
+       иконка файла (W — Word, T — текст), число вопросов под названием, один тест + «Ещё N» */
+    COLORS: ['#7F77DD', '#1D9E75', '#D85A30', '#D4537E', '#378ADD', '#BA7517', '#639922', '#888780'],
+    icon: function (name) {
+      var w = /\.docx?$/i.test(name || ''), c = w ? '#378ADD' : '#888780', c2 = w ? '#B5D4F4' : '#D3D1C7';
+      return '<svg class="srcg-ic" width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><path d="M2 1h9l5 5v14a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" fill="' + c + '"/><path d="M11 1v5h5z" fill="' + c2 + '"/>' +
+        '<text x="8.5" y="17" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" font-family="system-ui,sans-serif">' + (w ? 'W' : 'T') + '</text></svg>';
+    },
+    /* o: { input, name, sub, cnt: 'sid|i' (досчитать вопросы), off } */
+    row: function (o) {
+      return '<label class="srcg-row' + (o.off ? ' is-off' : '') + '">' + o.input + SP.subjectTests.icon(o.name) +
+        '<span class="srcg-meta"><b>' + esc(o.name) + '</b><small' + (o.cnt ? ' data-cnt="' + esc(o.cnt) + '"' : '') + '>' + esc(o.sub || '') + '</small></span></label>';
+    },
+    /* o: { id, head, icon, color, rows: [html], open } */
+    group: function (o) {
+      var rest = o.rows.length - 1;
+      return '<div class="srcg" data-g="' + esc(o.id) + '" style="--srcg:' + o.color + '"><div class="srcg-h">' + SP.icon(o.icon || 'folder', 'ic-sm') + '<span>' + esc(o.head) + '</span></div>' +
+        '<div class="srcg-list">' + o.rows[0] + '</div>' +
+        (rest > 0 ? '<div class="srcg-list srcg-more"' + (o.open ? '' : ' hidden') + '>' + o.rows.slice(1).join('') + '</div><button type="button" class="btn btn-ghost btn-sm srcg-tog" data-n="' + rest + '">' + SP.icon('chevron-down') + '<span></span></button>' : '') + '</div>';
+    },
+    /* кнопки «Ещё N / Свернуть»; open — объект { id группы: открыта } (чтобы помнить при перерисовке) */
+    wire: function (root, open) {
+      SP.$$('.srcg-tog', root).forEach(function (b) {
+        b.onclick = function () { var box = b.previousElementSibling; box.hidden = !box.hidden; if (open) open[b.closest('.srcg').getAttribute('data-g')] = !box.hidden; SP.subjectTests.togs(root); };
+      });
+      SP.subjectTests.togs(root);
+    },
+    togs: function (root) {
+      SP.$$('.srcg-tog', root).forEach(function (b) {
+        var box = b.previousElementSibling, k = SP.$$('input:checked', box).length;
+        b.querySelector('span').textContent = !box.hidden ? SP.t('tester.srcLess') : SP.t('tester.srcMore', { n: +b.getAttribute('data-n') }) + (k ? ' · ' + SP.t('tester.srcPicked', { n: k }) : '');
+        b.firstElementChild.style.transform = box.hidden ? '' : 'rotate(180deg)';
+      });
+    },
+    /* число вопросов: считаем один раз и запоминаем */
+    cached: function (sid, i) { var k = cntKey(sid, i); return k ? SP.store.get('sp-test-counts', {})[k] : undefined; },
+    count: function (sid, i) {
+      var k = cntKey(sid, i), c = SP.subjectTests.cached(sid, i);
+      if (c != null) return Promise.resolve(c);
+      return SP.subjectTests.file(sid, i).then(SP.testEngine.readFile).then(function (r) {
+        var all = SP.store.get('sp-test-counts', {}); all[k] = r.out.length; SP.store.set('sp-test-counts', all); return r.out.length;
+      });
+    },
+    /* досчитать все [data-cnt] без числа в контейнере (по одному файлу, чтобы не грузить всё сразу) */
+    fill: function (root) {
+      var els = SP.$$('[data-cnt]', root).filter(function (e) { return !e.getAttribute('data-done'); });
+      els.sort(function (a, b) { return !!a.closest('[hidden]') - !!b.closest('[hidden]'); });   /* сначала видимые */
+      els.reduce(function (p, e) {
+        return p.then(function () {
+          if (!e.isConnected) return;
+          var a = e.getAttribute('data-cnt').split('|');
+          return SP.subjectTests.count(a[0], +a[1]).then(function (n) { e.textContent = SP.t('tester.qCount', { n: n }); e.setAttribute('data-done', '1'); }, function () { e.textContent = ''; });
+        });
+      }, Promise.resolve());
     }
   };
+  function cntKey(sid, i) {
+    var s = SP.hub.getSubject(sid), f = s && (s.tests || [])[i]; if (!f) return '';
+    return sid + '|' + f.name + '|' + (f.path || (f.content ? f.content.length : f.size || f.id || ''));
+  }
 
   SP.views.register('subjects', {
     titleKey: 'nav.subjects',

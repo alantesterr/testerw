@@ -1249,3 +1249,21 @@ html, body { overflow-x: clip; }
 .t-src.is-on { opacity: .6; cursor: default; }
 .t-src-tog { margin-top: 4px; } .t-src-tog .ic, .t-src-tog svg { transition: transform .15s; } .t-src-more { margin-top: 6px; }
 .t-src-more[hidden] { display: none; }
+
+/* Список «тесты из папок» (Тестер и Плеер): цветная полоска предмета, иконка W/T, число вопросов */
+.srcg { border-left: 3px solid var(--srcg); padding-left: 10px; margin: 12px 0 0; border-radius: 0; }
+.srcg-h { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: .9rem; color: var(--srcg); margin-bottom: 6px; }
+.srcg-list { display: flex; flex-direction: column; gap: 4px; }
+.srcg-more { margin-top: 4px; }
+.srcg-more[hidden] { display: none; }
+.srcg-row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); cursor: pointer; }
+.srcg-row:hover { border-color: var(--border-strong); }
+.srcg-row:has(input:checked) { border-color: var(--srcg); }
+.srcg-row.is-off { opacity: .6; cursor: default; }
+.srcg-ic { flex: none; }
+.srcg-meta { display: flex; flex-direction: column; min-width: 0; }
+.srcg-meta b { font-weight: 500; overflow-wrap: anywhere; }
+.srcg-meta small { color: var(--text-2, var(--muted)); font-size: .78rem; }
+.srcg-tog { margin-top: 4px; }
+.srcg-tog svg { transition: transform .15s; }
+.src-folders .srcg-row { padding: 5px 8px; gap: 8px; }

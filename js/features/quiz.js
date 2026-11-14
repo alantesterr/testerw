@@ -21,11 +21,18 @@
 
   SP.Quiz = function (host, questions, opts) {
     opts = opts || {};
-    var fresh = function (arr) { return SP.shuffle(arr).map(function (x) { return Object.assign({}, x, { opts: SP.shuffle(x.opts || []) }); }); };
+    var fresh = function (arr) { return SP.shuffle(arr).map(function (x) { return Object.assign({}, x, { opts: SP.shuffle((x.opts || []).map(function (o, i) { return Object.assign({}, o, { _oi: o._oi == null ? i : o._oi }); })) }); }); };
     var full = questions.map(function (x) { return Object.assign({}, x, { opts: (x.opts || []).map(function (o) { return Object.assign({}, o); }) }); });
     var quiz = fresh(full), ans = quiz.map(function () { return null; }), cur = 0, sel = new Set(), round = 1, tr = {}, trOn = {}, finished = false;
+    /* opts.resume — продолжить сохранённый тест; opts.onSave(state) — сохранять после каждого шага; opts.onAnswer(q, ok, текст ответа) */
+    var completed = false, R = opts.resume;
+    if (R && R.quiz && R.quiz.length) { quiz = R.quiz; ans = quiz.map(function (_, i) { return (R.ans || [])[i] || null; }); cur = SP.clamp(R.cur || 0, 0, quiz.length - 1); round = R.round || 1; }
+    function save() {
+      if (!opts.onSave || completed) return;
+      opts.onSave({ items: quiz.map(function (q) { return { id: E.qid(q), o: (q.opts || []).map(function (o) { return o._oi; }), r: q._rep ? 1 : 0 }; }), ans: ans, cur: cur, round: round });
+    }
 
-    function reset(list) { quiz = list; reps = {}; ans = quiz.map(function () { return null; }); cur = 0; sel = new Set(); tr = {}; trOn = {}; finished = false; show(); }
+    function reset(list) { completed = false; quiz = list; reps = {}; ans = quiz.map(function () { return null; }); cur = 0; sel = new Set(); tr = {}; trOn = {}; finished = false; show(); }
 
     function navHtml() {
       var btn = function (i) { var a = ans[i]; return '<button type="button" class="qn' + (a ? (a.ok ? ' ok' : ' bad') : '') + (i === cur ? ' cur' : '') + '" data-i="' + i + '" aria-label="' + esc(SP.t('quiz.goTo', { n: i + 1 })) + '"' + (i === cur ? ' aria-current="step"' : '') + '>' + (i + 1) + '</button>'; };
@@ -74,7 +81,7 @@
         '<div class="quiz-nav">' + (SP.settings.get('hotkeys') !== false ? '<span class="kbd-hint" aria-hidden="true" title="' + esc(SP.t('quiz.keysTip')) + '"><kbd>&larr;</kbd><kbd>&rarr;</kbd><kbd>1-9</kbd><kbd>Enter</kbd></span>' : '') +
         '<button type="button" class="btn" id="qBack"' + (cur === 0 ? ' disabled' : '') + '>' + SP.icon('arrow-left') + '<span>' + esc(SP.t('common.back')) + '</span></button>' +
         primary + nextBtn + '</div></div></div>';
-      wire(q, a, kb, multi);
+      wire(q, a, kb, multi); save();
     }
 
     function wire(q, a, kb, multi) {
@@ -107,6 +114,7 @@
     var reps = {};
     function remember(q, ok) {
       var id = E.qid(q); SP.mem.record(id, ok);
+      if (opts.onAnswer) { var a = ans[cur]; opts.onAnswer(q, ok, a && a.typed != null ? a.typed : (a ? a.sel.map(function (i) { return q.opts[i] ? q.opts[i].t : ''; }).join('; ') : '')); }
       if (ok || finished) return;
       reps[id] = (reps[id] || 0) + 1; if (reps[id] > 3) return;
       for (var j = cur + 1; j < quiz.length; j++) if (!ans[j] && E.qid(quiz[j]) === id) return;
@@ -142,7 +150,7 @@
     }
 
     function finish() {
-      finished = true;
+      finished = true; completed = true;
       /* итог — по первым попыткам; тихие повторы ошибок (_rep) в счёт не идут */
       var base = quiz.map(function (_, i) { return i; }).filter(function (i) { return !quiz[i]._rep; });
       var okN = base.filter(function (i) { return ans[i] && ans[i].ok; }).length, bad = base.filter(function (i) { return ans[i] && !ans[i].ok; }).length, skip = base.length - okN - bad;

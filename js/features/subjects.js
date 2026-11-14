@@ -75,7 +75,7 @@
       var mats = (s.materials || []).length, tests = (s.tests || []).length, kn = SP.notes && SP.notes.has(s.name);
       var btn = '<button type="button" class="sj-item" data-sub="' + esc(s.id) + '"' + (active && s.id === active.id ? ' aria-current="true"' : '') + '>' +
         '<span class="fi-folder">' + SP.icon('folder') + '</span><span class="meta"><b>' + esc(SP.hub.cleanName(s.name)) + '</b>' +
-        '<small>' + esc(SP.t('sj.itemMeta', { m: mats, t: tests }) + (kn ? ' · ' + SP.t('sj.hasNotes') : '')) + '</small></span>' + SP.icon('chevron-right', 'sj-chev') + '</button>';
+        '<small>' + esc(SP.t('sj.itemMeta', { m: mats, t: tests })) + '</small></span>' + SP.icon('chevron-right', 'sj-chev') + '</button>';
       if (!selMode) return btn;
       return '<div class="sj-item-wrap"><label class="check"><input type="checkbox" data-selsub="' + esc(s.id) + '"' + (selSet[s.id] ? ' checked' : '') + ' aria-label="' + esc(SP.t('subjects.selectOne', { name: SP.hub.cleanName(s.name) })) + '"></label>' + btn + '</div>';
     }).join('') : '<p class="subtle small sj-none">' + esc(SP.t('subjects.notFound')) + '</p>') + '</nav>';
@@ -101,9 +101,10 @@
       '<button type="button" class="btn btn-ghost btn-icon" id="sjEdit" aria-label="' + esc(SP.t('subjects.edit')) + '" data-tip="' + esc(SP.t('subjects.edit')) + '">' + SP.icon('pencil') + '</button></div></div>' +
       /* Вкладки папки: Файлы и ссылки · Тесты · Конспект (если он есть у предмета) */
       '';
-    /* вкладка «Конспект» есть всегда: в ней можно добавить свой конспект (с ИИ или вручную) */
+    /* вкладка «Конспект» убрана (2026-11-14): никто не пользовался; код конспектов оставлен */
+    if (tab === 'konspekt') tab = 'materials';
     h += '<div class="tabs sj-tabs" role="tablist">' + tabBtn('materials', 'folder-open', SP.t('sj.files'), mats.length) + tabBtn('tests', 'list-checks', SP.t('subjects.tests'), tests.length) +
-      tabBtn('konspekt', 'book-open', SP.t('sj.konspekt'), null) + '</div><div class="sj-tab" role="tabpanel">';
+      '</div><div class="sj-tab" role="tabpanel">';
     if (tab === 'materials') {
       h += '<div class="row sj-tab-acts"><button type="button" class="btn btn-sm" id="sjUpMat">' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('sj.upload')) + '</span></button>' +
         '<button type="button" class="btn btn-sm" id="sjAddLink">' + SP.icon('link', 'ic-sm') + '<span>' + esc(SP.t('subjects.addLink')) + '</span></button></div>' +
@@ -455,6 +456,24 @@
     return '<svg class="fi ' + t[0] + '" viewBox="0 0 32 36" style="--fi-c:var(--ft-' + t[0] + ')" aria-hidden="true">' +
       '<path class="fi-page" d="M5 1.5h15l7.5 7.5v24a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-29.5a2 2 0 0 1 2-2z"/><path class="fi-fold" d="M20 1.5v7.5h7.5z"/>' +
       '<rect class="fi-band" x="1" y="18" width="' + (t[1].length > 3 ? 26 : 22) + '" height="10" rx="2"/><text x="' + (t[1].length > 3 ? 14 : 12) + '" y="25.5" text-anchor="middle">' + esc(t[1]) + '</text></svg>';
+  };
+
+  /* Для Тестера: тесты из папок предметов (список и файл для загрузки) */
+  SP.subjectTests = {
+    list: function () {
+      return (data().subjects || []).map(function (s) {
+        return { id: s.id, name: SP.hub.cleanName(s.name), tests: (s.tests || []).map(function (f, i) { return { i: i, f: f }; }).filter(function (x) { return x.f.kind !== 'link' && (x.f.content || x.f.base); }) };
+      }).filter(function (s) { return s.tests.length; });
+    },
+    file: function (sid, i) {
+      var s = SP.hub.getSubject(sid), f = s && (s.tests || [])[i];
+      if (!f) return Promise.reject(new Error(SP.t('subjects.noContent')));
+      return ensureContent(f).then(function (f) {
+        var blob = f.content && SP.dataURLtoBlob(f.content, f.type); if (!blob) throw new Error(SP.t('subjects.readFail'));
+        var name = /\.studyplay$/i.test(f.name) ? f.name + '.json' : (f.name || 'test.txt');
+        return new File([blob], name, { type: blob.type });
+      });
+    }
   };
 
   SP.views.register('subjects', {

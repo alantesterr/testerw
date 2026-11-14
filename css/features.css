@@ -1234,3 +1234,16 @@ html, body { overflow-x: clip; }
 .src-group .check span { overflow-wrap: anywhere; }
 .sj-exam { text-decoration: none; color: inherit; border: 1px solid var(--accent, #6d5efc); margin-bottom: var(--sp-2); }
 .sj-exam .fi-folder { color: var(--accent, #6d5efc); }
+
+/* Тестер: продолжить / начать новый, загрузка из папок, ошибки по файлам */
+.t-pick-row { justify-content: center; gap: 8px; flex-wrap: wrap; }
+.t-go { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.t-go-info { flex-basis: 100%; }
+.t-err-list { display: flex; flex-direction: column; gap: 8px; }
+.t-err-item { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2, transparent); }
+.t-err-q { font-weight: 600; margin-bottom: 4px; }
+.t-err .card-head { flex-wrap: wrap; gap: 8px; }
+.t-src-group { margin: 12px 0 0; }
+.t-src-group .label { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.t-src { cursor: pointer; gap: 10px; }
+.t-src.is-on { opacity: .6; cursor: default; }

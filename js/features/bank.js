@@ -39,12 +39,22 @@
     if (!silent) SP.emit('bank');
   }
   var syncLater = SP.debounce(function () { sync(); }, 500);
+  /* «Отпечаток» файла по его вопросам: тот же файл (даже переименованный) узнаётся снова — к нему привязаны ошибки и «Продолжить» */
+  function keyOf(qs) {
+    var s = qs.map(E.qid).sort().join(','), h = 2166136261;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return 'k' + (h >>> 0).toString(36) + qs.length.toString(36);
+  }
+  function fileKey(f) {
+    if (!f.key) { var qs = st.dz.filter(function (q) { return q._f === f.id; }); if (qs.length) f.key = keyOf(qs); }
+    return f.key || f.id;
+  }
 
   SP.bank = {
     MAX: MAX,
     state: function () { return st; },
     all: function () { return st.all; },
-    sync: sync, syncLater: syncLater,
+    sync: sync, syncLater: syncLater, fileKey: fileKey,
     /* Загрузить файлы с тестами; возвращает отчёт для уведомления */
     ingest: function (list) {
       list = Array.prototype.slice.call(list || []);
@@ -63,7 +73,7 @@
         res.forEach(function (x) {
           var id = SP.uid('f');
           x.r.out.forEach(function (q) { q._f = id; });
-          st.files.push({ id: id, name: x.f.name, count: x.r.out.length, bad: x.r.bad.length });
+          st.files.push({ id: id, name: x.f.name, count: x.r.out.length, bad: x.r.bad.length, key: keyOf(x.r.out) });
           st.dz.push.apply(st.dz, x.r.out);
           x.r.bad.forEach(function (b) { st.bad.push(Object.assign({}, b, { f: id, name: x.f.name })); });
           added += x.r.out.length; badN += x.r.bad.length;

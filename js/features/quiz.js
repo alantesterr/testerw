@@ -109,14 +109,14 @@
       if (q.n === 1) submitSel([i]);
       else { if (sel.has(i)) sel.delete(i); else sel.add(i); show(); }
     }
-    /* Память ошибок: записать ответ; при ошибке этот же вопрос тихо вернётся
-       через 3–7 вопросов (не больше 3 повторов за тест), пока не ответишь верно. */
+    /* Память ошибок: записать ответ; при ошибке этот же вопрос вернётся через 3–7 вопросов
+       ровно один раз за тест — как ни ответишь во второй раз, больше он не повторится. */
     var reps = {};
     function remember(q, ok) {
       var id = E.qid(q); SP.mem.record(id, ok);
       if (opts.onAnswer) { var a = ans[cur]; opts.onAnswer(q, ok, a && a.typed != null ? a.typed : (a ? a.sel.map(function (i) { return q.opts[i] ? q.opts[i].t : ''; }).join('; ') : '')); }
       if (ok || finished) return;
-      reps[id] = (reps[id] || 0) + 1; if (reps[id] > 3) return;
+      if (q._rep || reps[id]) return; reps[id] = 1;
       for (var j = cur + 1; j < quiz.length; j++) if (!ans[j] && E.qid(quiz[j]) === id) return;
       var pos = Math.min(quiz.length, cur + 3 + Math.floor(Math.random() * 5));
       var copy = Object.assign({}, q, { opts: SP.shuffle((q.opts || []).map(function (o) { return Object.assign({}, o); })), _rep: true });

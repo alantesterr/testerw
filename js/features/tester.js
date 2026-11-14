@@ -98,7 +98,7 @@
   function resumeDrop(k) { var all = resumes(); delete all[k]; SP.store.set('studyplay-resume', all); }
 
   /* ---------- ошибки: отдельно для каждого файла, хранятся пока не очистишь ---------- */
-  var LEARN = 2;
+  /* ошибки сами не исчезают — только ✕ у вопроса или «Очистить» */
   function errs() { return SP.store.get('studyplay-ferr', {}) || {}; }
   function saveErrs(e) { Object.keys(e).forEach(function (k) { if (!Object.keys(e[k]).length) delete e[k]; }); SP.store.set('studyplay-ferr', e); }
   function noteWrong(q, a) {
@@ -117,14 +117,14 @@
       var x = fileErrs(f); if (!x.list.length) return '';
       var lim = errOpen[x.k] ? x.list.length : 10;
       return '<section class="card t-err"><div class="card-head"><div><div class="card-title">' + SP.icon('triangle-alert') + esc(SP.t('tester.errTitle', { f: f.name.replace(/\.[^.]+$/, '') })) + ' <span class="badge badge-danger">' + x.list.length + '</span></div>' +
-        '<div class="card-sub">' + esc(SP.t('tester.errSub', { n: LEARN })) + '</div></div>' +
+        '<div class="card-sub">' + esc(SP.t('tester.errSub')) + '</div></div>' +
         '<div class="row"><button type="button" class="btn btn-primary btn-sm" data-errgo="' + esc(f.id) + '">' + SP.icon('play') + '<span>' + esc(SP.t('tester.errGo')) + '</span></button>' +
         '<button type="button" class="btn btn-ghost btn-sm" data-errclr="' + esc(f.id) + '">' + SP.icon('trash-2') + '<span>' + esc(SP.t('tester.errClear')) + '</span></button></div></div>' +
         '<div class="t-err-list">' + x.list.slice(0, lim).map(function (it) {
           return '<div class="t-err-item"><div class="grow"><div class="t-err-q">' + E.richHtml(it.q.q, true) + '</div>' +
             (it.r.a ? '<div class="small"><b class="text-danger">' + esc(SP.t('tester.errYour')) + ':</b> ' + esc(it.r.a) + '</div>' : '') +
             '<div class="small"><b class="text-success">' + esc(SP.t('quiz.correct')) + ':</b> ' + esc(rightText(it.q)) + '</div>' +
-            (it.r.s ? '<div class="small muted">' + esc(SP.t('tester.errStreak', { s: it.r.s, n: LEARN })) + '</div>' : '') + '</div>' +
+            (it.r.n > 1 ? '<div class="small muted">' + esc(SP.t('tester.errTimes', { n: it.r.n })) + '</div>' : '') + '</div>' +
             '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-errx="' + esc(x.k + '|' + it.id) + '" aria-label="' + esc(SP.t('tester.errRemove')) + '" data-tip="' + esc(SP.t('tester.errRemove')) + '">' + SP.icon('x') + '</button></div>';
         }).join('') + '</div>' +
         (x.list.length > lim ? '<button type="button" class="btn btn-ghost btn-sm" data-errmore="' + esc(x.k) + '">' + esc(SP.t('tester.errMore', { n: x.list.length })) + '</button>' : '') + '</section>';
@@ -146,7 +146,7 @@
       title: SP.t('tester.errTitle', { f: f.name.replace(/\.[^.]+$/, '') }), onExit: stop,
       onAnswer: function (q, ok, a) {
         var e = errs(), m = e[x.k] || {}, id = qid(q), r = m[id]; if (!r) { if (!ok) noteWrong(q, a); return; }
-        if (ok) { r.s = (r.s || 0) + 1; if (r.s >= LEARN) { delete m[id]; SP.toast(SP.t('tester.errLearned'), 'success'); } }
+        if (ok) return;
         else { r.n++; r.s = 0; r.a = String(a || '').slice(0, 300); r.at = Date.now(); }
         e[x.k] = m; saveErrs(e);
       }

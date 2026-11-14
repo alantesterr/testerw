@@ -95,7 +95,7 @@
   }
 
   /* ---------- Настройки: 4 вкладки ---------- */
-  var TABS = [['look', 'sun', ['appearance', 'language']], ['study', 'graduation-cap', ['sync', 'testerPlayer', 'tools']], ['data', 'database', ['account', 'data', 'author']], ['guide', 'book-open', ['about']]];
+  var TABS = [['look', 'sun', ['appearance', 'language']], ['study', 'graduation-cap', ['sync', 'testerPlayer', 'tools']], ['news', 'bell', []], ['data', 'database', ['account', 'data', 'author']], ['guide', 'book-open', ['about']]];
   var tab = 'look';
   try { tab = sessionStorage.getItem('sp-ui2-tab') || 'look'; } catch (e) { }
   function setTab(t) { tab = t; try { sessionStorage.setItem('sp-ui2-tab', t); } catch (e) { } }
@@ -110,20 +110,24 @@
     var guide = SP.el('<section class="card settings-sec" id="set-guide"><div class="card-head"><div><h2 class="card-title">' + SP.icon('book-open') + esc(SP.t('ui2.guide')) + '</h2><div class="card-sub">' + esc(SP.t('ui2.guideSub')) + '</div></div>' +
       '<button type="button" class="btn" id="ui2CopyAll">' + SP.icon('copy') + '<span>' + esc(SP.t('ui2.copyAll')) + '</span></button></div>' +
       '<div class="stack"><label class="ui2-gsearch">' + SP.icon('search') + '<input class="input" type="search" id="ui2GSearch" placeholder="' + esc(SP.t('ui2.gSearch')) + '" autocomplete="off"></label>' +
-      '<div class="ui2-new">' + SP.icon('sparkles') + '<div class="grow"><b>' + esc(SP.t('ui2.newsT')) + ' · ' + esc(n0.date) + '</b><div class="small">' + esc(n0.items.map(function (i) { return i[2]; }).join(' · ')) + '</div></div><button type="button" class="btn btn-sm" id="ui2News">' + esc(SP.t('common.open')) + '</button></div>' +
+      '<button type="button" class="btn btn-ghost" id="ui2News">' + SP.icon('bell') + '<span>' + esc(SP.t('ui2.newsAll')) + '</span></button>' +
       '<div class="ui2-guide" id="ui2Chs">' + G.chapters.map(function (c, i) {
         return '<button type="button" class="ui2-ch" data-ch="' + i + '" style="--cc:var(--c-' + c[0] + ');--cs:var(--c-' + c[0] + '-soft)"><span class="ph-ic">' + SP.icon(c[1]) + '</span><span><b>' + esc(c[2]) + '</b><small>' + esc(c[3]) + '</small></span></button>';
       }).join('') + '</div><div id="ui2GRes" hidden></div>' +
       '<button type="button" class="btn btn-ghost" id="ui2Tour">' + SP.icon('circle-play') + '<span>' + esc(SP.t('ui2.tourAgain')) + '</span></button></div></section>');
     nav.after(guide);
+    var newsSec = SP.el(newsHtml());
+    guide.after(newsSec);
     var paint = function () {
       var keep = TABS.filter(function (t) { return t[0] === tab; })[0][2];
-      SP.$$('.settings-sec', page).forEach(function (s) { var id = s.id.replace(/^set-/, ''); s.hidden = id === 'guide' ? tab !== 'guide' : keep.indexOf(id) < 0; });
+      SP.$$('.settings-sec', page).forEach(function (s) { var id = s.id.replace(/^set-/, ''); s.hidden = id === 'guide' || id === 'news' ? tab !== id : keep.indexOf(id) < 0; });
       SP.$$('.ui2-tab', nav).forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-tab') === tab)); });
+      if (tab === 'news') markRead();
     };
+    var more = SP.$('#ui2NewsMore', newsSec); if (more) more.onclick = function () { SP.$('#ui2NewsOld', newsSec).hidden = false; more.remove(); };
     SP.$$('.ui2-tab', nav).forEach(function (b) { b.onclick = function () { setTab(b.getAttribute('data-tab')); paint(); }; });
     SP.$$('[data-ch]', guide).forEach(function (b) { b.onclick = function () { chapter(+b.getAttribute('data-ch')); }; });
-    SP.$('#ui2News', guide).onclick = function () { news(true); };
+    SP.$('#ui2News', guide).onclick = function () { setTab('news'); paint(); };
     SP.$('#ui2Tour', guide).onclick = function () { SP.store.set(TOUR_KEY, {}); SP.navigate('schedule'); setTimeout(function () { maybeTour('schedule', true); }, 600); };
     SP.$('#ui2CopyAll', guide).onclick = function () { SP.copyText(G.text()).then(function () { SP.toast(SP.t('ui2.copiedAll'), 'success', { ms: 6000 }); }); };
     /* поиск по справочнику: показываем пункты, где встречаются все слова */
@@ -152,20 +156,31 @@
   }
 
   /* ---------- «Что нового»: один раз после обновления ---------- */
-  var newsChecked = false; // туры — только после «Что нового», чтобы два окна не открылись разом
+  /* «Новости» живут во вкладке Настроек; окна при входе нет — только красная точка у «Настроек», пока не прочитал */
+  var newsChecked = false;
+  function latest() { var n = SP.GUIDE && SP.GUIDE.news[0]; return n ? n.ver : ''; }
+  function dot() { var l = latest(), seen = SP.store.get(NEWS_KEY, ''); document.documentElement.classList.toggle('sp-news-dot', !!l && !!seen && seen < l); }
+  function markRead() { var l = latest(); if (l && SP.store.get(NEWS_KEY, '') !== l) { SP.store.set(NEWS_KEY, l); } dot(); }
+  function newsHtml() {
+    var seen = SP.store.get(NEWS_KEY, ''), list = SP.GUIDE.news, SHOW = 6;
+    var prev = '';
+    var day = function (n) {
+      var head = n.date !== prev ? '<div class="small muted">' + esc(n.date) + '</div>' : ''; prev = n.date;
+      var fresh = seen && n.ver > seen;
+      return '<div class="ui2-nday">' + head + '<ul>' + n.items.map(function (i) {
+        return '<li><span class="ph-ic" style="background:var(--c-' + i[0] + '-soft);color:var(--c-' + i[0] + ')">' + SP.icon(i[1]) + '</span><div><b>' + esc(i[2]) + (fresh ? ' <span class="badge badge-success">' + esc(SP.t('ui2.newBadge')) + '</span>' : '') + '</b><div class="small muted">' + esc(i[3]) + '</div></div></li>';
+      }).join('') + '</ul></div>';
+    };
+    return '<section class="card settings-sec" id="set-news" hidden><div class="card-head"><div><h2 class="card-title">' + SP.icon('bell') + esc(SP.t('ui2.tab.news')) + '</h2><div class="card-sub">' + esc(SP.t('ui2.newsSub')) + '</div></div></div>' +
+      '<div class="ui2-news">' + list.slice(0, SHOW).map(day).join('') +
+      (list.length > SHOW ? '<div id="ui2NewsOld" hidden>' + list.slice(SHOW).map(day).join('') + '</div><button type="button" class="btn btn-ghost" id="ui2NewsMore">' + SP.icon('chevron-down') + '<span>' + esc(SP.t('ui2.newsOld', { n: list.length - SHOW })) + '</span></button>' : '') + '</div></section>';
+  }
   function news(force) {
     newsChecked = true;
-    var G = SP.GUIDE, n = G && G.news[0]; if (!n) return;
-    var seen = SP.store.get(NEWS_KEY, '');
-    /* новичку (ещё не видел ни одной версии) окно не показываем — у него будет тур */
-    var veteran = !!(SP.auth && SP.auth.user && SP.auth.user());
-    if (!force && (seen === n.ver || (!seen && !veteran))) { if (!seen) SP.store.set(NEWS_KEY, n.ver); return; }
-    SP.store.set(NEWS_KEY, n.ver);
-    SP.modal({ title: SP.t('ui2.newsT'), body: '<div class="ui2-news"><p class="small muted">' + esc(n.date) + '</p><ul>' + n.items.map(function (i) {
-      return '<li><span class="ph-ic" style="background:var(--c-' + i[0] + '-soft);color:var(--c-' + i[0] + ')">' + SP.icon(i[1]) + '</span><div><b>' + esc(i[2]) + '</b><div class="small muted">' + esc(i[3]) + '</div></div></li>';
-    }).join('') + '</ul></div>', actions: [
-      { label: SP.t('ui2.toGuide'), icon: 'book-open', onClick: function () { setTab('guide'); SP.navigate('settings'); } },
-      { label: SP.t('ui2.ok'), kind: 'primary', icon: 'check', onClick: function () { setTimeout(function () { maybeTour(route()); }, 300); } }] });
+    if (force) { setTab('news'); SP.navigate('settings'); return; }
+    /* новичку (ещё ничего не видел) точку не показываем — у него будет тур */
+    if (!SP.store.get(NEWS_KEY, '') && latest()) SP.store.set(NEWS_KEY, latest());
+    dot();
   }
 
   /* ---------- Тур для новичков: подсветка, пульсирующая точка, подсказка ----------

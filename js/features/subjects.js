@@ -187,8 +187,11 @@
   function row(s, f, i, type, ord) {
     var link = f.kind === 'link', li = link ? linkInfo(f.url) : null, hid = isHidden(f);
     var meta = link ? li.label + (f.note ? ' · ' + f.note : '') : (f.size ? SP.formatSize(f.size) : '');
-    var badge = link ? '<span class="file-badge accent">' + SP.icon(li.icon) + '</span>' : SP.fileIcon(f.name);
-    var inner = badge + '<span class="meta"><b>' + (isPin(f) ? SP.icon('pin', 'ic-sm pin-ic') + ' ' : '') + esc(f.name) + '</b><small>' + esc(meta) + '</small></span>';
+    /* у тестов под названием — сколько вопросов (считается один раз) */
+    var qn = type === 'test' && !link ? SP.subjectTests.cached(s.id, i) : null, cntAttr = type === 'test' && !link && qn == null ? ' data-cnt="' + esc(s.id + '|' + i) + '"' : '';
+    if (type === 'test' && !link) meta = qn != null ? SP.t('tester.qCount', { n: qn }) : SP.t('tester.srcCounting');
+    var badge = SP.fileIcon(f.name, '', link);
+    var inner = badge + '<span class="meta"><b>' + (isPin(f) ? SP.icon('pin', 'ic-sm pin-ic') + ' ' : '') + esc(f.name) + '</b><small' + cntAttr + '>' + esc(meta) + '</small></span>';
     /* значок «от курса» в строке не показываем — лишний шум */
     var main = link ? '<a class="list-row-main" href="' + esc(f.url) + '" target="_blank" rel="noopener noreferrer">' + inner + SP.icon('external-link', 'ic-sm subtle') + '</a>'
       : '<button type="button" class="list-row-main" data-open="' + type + ':' + i + '">' + inner + '</button>';
@@ -227,6 +230,7 @@
     var bk = q('#sjBack'); if (bk) bk.onclick = function () { selected = null; SP.navigate('subjects'); };
     if (!s) return;
     if (tab === 'konspekt') fillLectures(s);
+    if (tab === 'tests') SP.subjectTests.fill(root);
     q('#sjEdit').onclick = function () { editor(s); };
     var tl = q('#sjToggleList'); if (tl) tl.onclick = function () { sui.collapsed = !sui.collapsed; saveSui(); render(); var n = SP.$('#sjToggleList', root); if (n) n.focus(); };
     var shh = q('#sjShowHidden'); if (shh) shh.onclick = function () { showHidden = !showHidden; render(); };
@@ -444,19 +448,29 @@
   }
 
   /* ---------------- Иконка файла по формату (SVG, свой цвет у каждого типа) ---------------- */
+  /* Одна иконка файла на весь сайт: цветной листок с буквой или знаком.
+     W — Word, X — Excel, P — презентация, PDF, T — текст, {} — JSON, картинка, видео, звук, архив, ссылка. */
   var FT = [
-    [/^(docx?|rtf|odt)$/, 'word', 'DOC'], [/^(xlsx?|csv|ods)$/, 'excel', 'XLS'], [/^(pptx?|odp|key)$/, 'ppt', 'PPT'],
-    [/^pdf$/, 'pdf', 'PDF'], [/^json$/, 'json', 'JSON'], [/^(png|jpe?g|webp|gif|svg|bmp|heic)$/, 'img', 'IMG'],
-    [/^(mp4|webm|mov|mkv|avi)$/, 'video', 'VID'], [/^(mp3|wav|ogg|m4a|aac|flac)$/, 'audio', 'AUD'],
-    [/^(zip|rar|7z|tar|gz)$/, 'zip', 'ZIP'], [/^(txt|md)$/, 'txt', 'TXT']
+    [/^(docx?|rtf|odt)$/, '#378ADD', '#B5D4F4', 'W'], [/^(xlsx?|csv|ods)$/, '#639922', '#C0DD97', 'X'], [/^(pptx?|odp|key)$/, '#D85A30', '#F5C4B3', 'P'],
+    [/^pdf$/, '#E24B4A', '#F7C1C1', 'PDF'], [/^(json|studyplay)$/, '#BA7517', '#FAC775', '{}'], [/^(png|jpe?g|webp|gif|svg|bmp|heic)$/, '#1D9E75', '#9FE1CB', 'img'],
+    [/^(mp4|webm|mov|mkv|avi)$/, '#D4537E', '#F4C0D1', 'vid'], [/^(mp3|wav|ogg|m4a|aac|flac)$/, '#7F77DD', '#CECBF6', 'aud'],
+    [/^(zip|rar|7z|tar|gz)$/, '#854F0B', '#FAC775', 'Z'], [/^(txt|md)$/, '#888780', '#D3D1C7', 'T']
   ];
-  SP.fileIcon = function (name) {
-    var ext = String(name || '').split('.').pop().toLowerCase(), t = ['other', ext ? ext.slice(0, 4).toUpperCase() : 'FILE'];
-    for (var i = 0; i < FT.length; i++) if (FT[i][0].test(ext)) { t = [FT[i][1], FT[i][2]]; break; }
-    return '<svg class="fi ' + t[0] + '" viewBox="0 0 32 36" style="--fi-c:var(--ft-' + t[0] + ')" aria-hidden="true">' +
-      '<path class="fi-page" d="M5 1.5h15l7.5 7.5v24a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-29.5a2 2 0 0 1 2-2z"/><path class="fi-fold" d="M20 1.5v7.5h7.5z"/>' +
-      '<rect class="fi-band" x="1" y="18" width="' + (t[1].length > 3 ? 26 : 22) + '" height="10" rx="2"/><text x="' + (t[1].length > 3 ? 14 : 12) + '" y="25.5" text-anchor="middle">' + esc(t[1]) + '</text></svg>';
+  var GLYPH = {
+    img: '<circle cx="6" cy="10" r="1.4" fill="#fff"/><path d="M3.5 17l3-3.5 2 2 2-2 3.5 3.5z" fill="#fff"/>',
+    vid: '<path d="M6.5 10.5v6l5-3z" fill="#fff"/>',
+    aud: '<path d="M7.5 16.5V10l5-1.2v6.2" stroke="#fff" stroke-width="1.2" fill="none"/><circle cx="6.5" cy="16.5" r="1.3" fill="#fff"/><circle cx="11.5" cy="15" r="1.3" fill="#fff"/>',
+    link: '<path d="M6 16l5.5-5.5M7.5 10.5h4v4" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round"/>'
   };
+  /* name — имя файла; link — ссылка; cls — доп. класс */
+  SP.fileIcon = function (name, cls, link) {
+    var ext = String(name || '').split('.').pop().toLowerCase(), t = ['#888780', '#D3D1C7', (ext && ext !== String(name).toLowerCase() ? ext.charAt(0).toUpperCase() : '?')];
+    if (link) t = ['#7F77DD', '#CECBF6', 'link'];
+    else for (var i = 0; i < FT.length; i++) if (FT[i][0].test(ext)) { t = [FT[i][1], FT[i][2], FT[i][3]]; break; }
+    var g = GLYPH[t[2]] || '<text x="8.5" y="17" text-anchor="middle" font-size="' + (t[2].length > 2 ? 5.5 : t[2].length > 1 ? 7 : 8) + '" font-weight="700" fill="#fff" font-family="system-ui,sans-serif">' + esc(t[2]) + '</text>';
+    return '<svg class="fi' + (cls ? ' ' + cls : '') + '" viewBox="0 0 18 22" aria-hidden="true"><path d="M2 1h9l5 5v14a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" fill="' + t[0] + '"/><path d="M11 1v5h5z" fill="' + t[1] + '"/>' + g + '</svg>';
+  };
+
 
   /* Для Тестера: тесты из папок предметов (список и файл для загрузки) */
   SP.subjectTests = {
@@ -477,11 +491,7 @@
     /* Общий вид списка «тесты из папок» (Тестер и Плеер): цветная полоска предмета,
        иконка файла (W — Word, T — текст), число вопросов под названием, один тест + «Ещё N» */
     COLORS: ['#7F77DD', '#1D9E75', '#D85A30', '#D4537E', '#378ADD', '#BA7517', '#639922', '#888780'],
-    icon: function (name) {
-      var w = /\.docx?$/i.test(name || ''), c = w ? '#378ADD' : '#888780', c2 = w ? '#B5D4F4' : '#D3D1C7';
-      return '<svg class="srcg-ic" width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><path d="M2 1h9l5 5v14a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" fill="' + c + '"/><path d="M11 1v5h5z" fill="' + c2 + '"/>' +
-        '<text x="8.5" y="17" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" font-family="system-ui,sans-serif">' + (w ? 'W' : 'T') + '</text></svg>';
-    },
+    icon: function (name) { return SP.fileIcon(name, 'srcg-ic'); },
     /* o: { input, name, sub, cnt: 'sid|i' (досчитать вопросы), off } */
     row: function (o) {
       return '<label class="srcg-row' + (o.off ? ' is-off' : '') + '">' + o.input + SP.subjectTests.icon(o.name) +

@@ -625,3 +625,4 @@ Object.assign(SP.I18N.kk, { 'schedule.hasLinks': 'сілтемелер: {l}', 's
 Object.assign(SP.I18N.kk, { 'nav.settingsShort': 'Баптаулар', 'settings.phonePlayer': 'Төменгі панельдегі ойнатқыш (телефон)' });
 Object.assign(SP.I18N.kk, { 'sj.exam': 'Емтихан', 'sj.examSub': 'Дайындық: прогресс, қателер, сынақ емтихан' });
 Object.assign(SP.I18N.kk, { 'tester.aiAskQ': 'Қай нұсқа дұрыс және неге? Жауап қазақ тілінде.' });
+Object.assign(SP.I18N.kk, { 'ui2.tab.news': 'Жаңалықтар', 'ui2.newsSub': 'Сайтқа келген жаңартулар — жаңасынан ескісіне', 'ui2.newBadge': 'жаңа', 'ui2.newsOld': 'Ескі жаңартуларды көрсету ({n})', 'ui2.newsAll': 'Жаңалықтар мен жаңартулар' });

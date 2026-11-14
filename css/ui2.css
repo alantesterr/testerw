@@ -134,6 +134,7 @@ html.ui2 .ui2-tab[data-tab="look"] { --tc: var(--c-player); --ts: var(--c-player
 html.ui2 .ui2-tab[data-tab="study"] { --tc: var(--c-grades); --ts: var(--c-grades-soft); --tt: var(--c-grades-text); }
 html.ui2 .ui2-tab[data-tab="data"] { --tc: var(--c-subjects); --ts: var(--c-subjects-soft); --tt: var(--c-subjects-text); }
 html.ui2 .ui2-tab[data-tab="guide"] { --tc: var(--c-tester); --ts: var(--c-tester-soft); --tt: var(--c-tester-text); }
+html.ui2 .ui2-tab[data-tab="news"] { --tc: var(--c-schedule); --ts: var(--c-schedule-soft); --tt: var(--c-schedule-text); }
 html.ui2 .view-settings .set-nav { display: none; }
 html.ui2 .view-settings .settings-sec[hidden] { display: none; }
 html.ui2 .ui2-danger { border: 1.5px solid color-mix(in srgb, var(--danger) 50%, transparent) !important; }
@@ -214,3 +215,10 @@ html.ui2 .ui2-hit span { font-size: var(--fs-sm); }
 .ui2-chap h3::before { content: ""; width: .55rem; height: .55rem; border-radius: 50%; background: var(--cc); box-shadow: 0 0 0 4px var(--cs); flex: none; }
 .ui2-chap ul { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: .35rem; }
 .ui2-chap li { line-height: 1.5; }html.ui2 .shk-head .shk-run ~ .ui2-shk-view { margin-left: 0; }
+
+/* Новости во вкладке Настроек и красная точка, пока не прочитаны */
+html.ui2 .ui2-nday { display: flex; flex-direction: column; gap: var(--sp-2); }
+html.ui2 #ui2NewsOld { display: flex; flex-direction: column; gap: var(--sp-3); }
+html.ui2 #ui2NewsOld[hidden] { display: none; }
+html.sp-news-dot [data-route="settings"], html.sp-news-dot .ui2-tab[data-tab="news"] { position: relative; }
+html.sp-news-dot [data-route="settings"]::after, html.sp-news-dot .ui2-tab[data-tab="news"]::after { content: ""; position: absolute; top: 6px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: #E24B4A; box-shadow: 0 0 0 2px var(--surface); }

@@ -27,7 +27,7 @@
       '<div class="row t-pick-row"><button type="button" class="btn btn-primary" id="tPick"' + (full ? ' disabled' : '') + '>' + SP.icon('upload') + '<span>' + esc(full ? SP.t('tester.limit', { max: SP.bank.MAX }) : st.files.length ? SP.t('tester.addMore') : SP.t('tester.pick')) + '</span></button>' +
       '<button type="button" class="btn" id="tFromSj"' + (full ? ' disabled' : '') + '>' + SP.icon('folder-open') + '<span>' + esc(SP.t('tester.fromFolders')) + '</span></button></div></div></div>' +
       (st.files.length ? '<div class="list">' + st.files.map(function (f) {
-        return '<div class="list-row"><span class="file-badge accent">' + SP.icon('file-text') + '</span><span class="meta grow"><b title="' + esc(f.name) + '">' + esc(f.name) + '</b><small>' + esc(SP.t('tester.qCount', { n: f.count })) + (f.bad ? ' · <span class="text-danger">' + esc(SP.t('tester.badCount', { n: f.bad })) + '</span>' : '') + '</small></span>' +
+        return '<div class="list-row">' + SP.fileIcon(f.name) + '<span class="meta grow"><b title="' + esc(f.name) + '">' + esc(f.name) + '</b><small>' + esc(SP.t('tester.qCount', { n: f.count })) + (f.bad ? ' · <span class="text-danger">' + esc(SP.t('tester.badCount', { n: f.bad })) + '</span>' : '') + '</small></span>' +
           '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-rm="' + esc(f.id) + '" aria-label="' + esc(SP.t('tester.removeFile')) + '" data-tip="' + esc(SP.t('tester.removeFile')) + '">' + SP.icon('x') + '</button></div>';
       }).join('') + '</div>' : '') + '</section>';
     /* Шаг 2 — запуск */

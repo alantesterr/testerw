@@ -200,11 +200,12 @@
 .view-grades .cv-g3 .label, .view-grades .cv-res span { white-space: normal; }
 
 /* ===================== ИКОНКИ ФАЙЛОВ ===================== */
-.fi { width: 2.25rem; height: 2.5rem; flex: none; display: block; }
+.fi { width: 1.9rem; height: 2.3rem; flex: none; display: block; }
+.fi.srcg-ic { width: 18px; height: 22px; }
 .fi .fi-page { fill: var(--surface); stroke: var(--fi-c, var(--ft-other)); stroke-width: 1.5; }
 .fi .fi-fold { fill: var(--fi-c, var(--ft-other)); opacity: 0.35; }
 .fi .fi-band { fill: var(--fi-c, var(--ft-other)); }
-.fi text { fill: #fff; font: 700 7px/1 var(--font); letter-spacing: 0.02em; }
+.fi text { font-family: var(--font); }
 .fi.json .fi-page { fill: var(--ft-json-bg); }
 .fi-folder { width: 2.25rem; height: 2.25rem; flex: none; color: var(--ft-folder); }
 .fi-folder .ic { width: 100%; height: 100%; fill: color-mix(in srgb, var(--ft-folder) 22%, transparent); }

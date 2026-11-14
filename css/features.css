@@ -1268,3 +1268,16 @@ html, body { overflow-x: clip; }
 .srcg-tog { margin-top: 4px; }
 .srcg-tog svg { transition: transform .15s; }
 .src-folders .srcg-row { padding: 5px 8px; gap: 8px; }
+
+/* Настройки → Учёба: карточка игры «Подземелье знаний» (спрайты из игры, пиксельные) */
+.game-card { display: flex; align-items: center; gap: 16px; padding: 14px 16px; border-radius: 16px; background: #1b1626; color: #f1ecff; text-decoration: none; border: 1px solid #3a2f52; transition: transform .15s, border-color .15s; flex-wrap: wrap; }
+.game-card:hover { transform: translateY(-2px); border-color: #7F77DD; }
+.game-art { position: relative; width: 136px; height: 76px; flex: none; border-radius: 12px; background: #2a2238; overflow: hidden; }
+.gs { position: absolute; display: block; background: url("https://alantesterr.github.io/dungeon/assets/dungeon.png") no-repeat; image-rendering: pixelated; }
+.gs-door { width: 56px; height: 35px; left: 18px; top: 6px; background-position: -16px -237px; transform: scale(1.8); transform-origin: top left; }
+.gs-hero { width: 16px; height: 16px; left: 6px; bottom: 4px; background-position: -128px -16px; transform: scale(2); transform-origin: bottom left; }
+.gs-mob { width: 23px; height: 22px; right: 12px; bottom: 4px; background-position: -21px -434px; transform: scale(-1.7, 1.7); transform-origin: bottom center; }
+.game-txt { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 180px; }
+.game-txt b { font-size: 1.05rem; }
+.game-txt small { color: #c9c0e6; line-height: 1.45; }
+.game-go { flex: none; }

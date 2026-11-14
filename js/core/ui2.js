@@ -95,7 +95,7 @@
   }
 
   /* ---------- Настройки: 4 вкладки ---------- */
-  var TABS = [['look', 'sun', ['appearance', 'language']], ['study', 'graduation-cap', ['sync', 'testerPlayer', 'tools']], ['news', 'bell', []], ['data', 'database', ['account', 'data', 'author']], ['guide', 'book-open', ['about']]];
+  var TABS = [['look', 'sun', ['appearance', 'language']], ['study', 'graduation-cap', ['game', 'sync', 'testerPlayer', 'tools']], ['news', 'bell', []], ['data', 'database', ['account', 'data', 'author']], ['guide', 'book-open', ['about']]];
   var tab = 'look';
   try { tab = sessionStorage.getItem('sp-ui2-tab') || 'look'; } catch (e) { }
   function setTab(t) { tab = t; try { sessionStorage.setItem('sp-ui2-tab', t); } catch (e) { } }

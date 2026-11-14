@@ -8,7 +8,7 @@
   var SP = window.SP, esc = SP.esc;
   var root = null;
   var VERSION = '3.0.0';
-  var SECTIONS = [['appearance', 'type'], ['language', 'languages'], ['sync', 'refresh-cw'], ['account', 'user'], ['testerPlayer', 'list-checks'], ['tools', 'timer'], ['data', 'database'], ['author', 'square-pen'], ['about', 'info']];
+  var SECTIONS = [['appearance', 'type'], ['language', 'languages'], ['game', 'circle-play'], ['sync', 'refresh-cw'], ['account', 'user'], ['testerPlayer', 'list-checks'], ['tools', 'timer'], ['data', 'database'], ['author', 'square-pen'], ['about', 'info']];
 
   function choice(group, val, cur, inner, label) {
     return '<button type="button" class="choice" role="radio" data-' + group + '="' + val + '" aria-checked="' + (cur === val) + '" aria-label="' + esc(label) + '">' + inner + '<span>' + esc(label) + '</span></button>';
@@ -49,6 +49,11 @@
 
     /* 3. Оценки и расписание: автообновление (мастер настройки, кнопки, как часто, вход в приложении) */
     var kind = SP.pl && SP.pl.kind ? SP.pl.kind() : '';
+    /* Игра «Подземелье знаний» — отдельный сайт; картинки — спрайты из самой игры */
+    html += section('game', 'circle-play', '<a class="game-card" href="https://alantesterr.github.io/dungeon/" target="_blank" rel="noopener">' +
+      '<span class="game-art" aria-hidden="true"><i class="gs gs-door"></i><i class="gs gs-hero"></i><i class="gs gs-mob"></i></span>' +
+      '<span class="game-txt"><b>' + esc(SP.t('settings.gameName')) + '</b><small>' + esc(SP.t('settings.gameText')) + '</small></span>' +
+      '<span class="btn btn-primary game-go">' + SP.icon('circle-play') + '<span>' + esc(SP.t('settings.gamePlay')) + '</span>' + SP.icon('external-link', 'ic-sm') + '</span></a>');
     html += section('sync', 'refresh-cw',
       /* тот же мастер, что после регистрации, — шаги для этого устройства */
       setRow(SP.t('settings.setupTitle'), esc(SP.t('settings.setupHint')), '<button type="button" class="btn" id="sSetup">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('settings.setupBtn')) + '</span></button>') +

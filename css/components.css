@@ -393,7 +393,7 @@ code.inline { background: var(--surface-3); padding: 0.1em 0.35em; border-radius
 .rich .tx { white-space: pre-wrap; word-break: break-word; }
 
 /* Окно: прокручивается само окно, фон под ним заблокирован (важно для тестов из папки на телефоне) */
-html.modal-open, html.modal-open body { overflow: hidden; }
+html.modal-open { overflow: hidden; }   /* только html: если обрезать и body, страница прыгает наверх */
 .modal-backdrop { overscroll-behavior: contain; }
 .modal-body { flex: 1 1 auto; min-height: 0; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 @media (max-width: 767px) {

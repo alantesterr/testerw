@@ -64,7 +64,8 @@
   function manifestText() { return JSON.stringify({ version: nextVersion(), files: st.files.map(clean) }, null, 2) + '\n'; }
 
   /* ---------- Загрузка исходного состояния ---------- */
-  function getJson(u) { return fetch(u, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
+  /* null — файла нет (404), undefined — нет связи */
+  function getJson(u) { return fetch(u, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return undefined; }); }
   function remoteFile(path) {
     if (!token()) return getJson(encodeURI(path) + '?t=' + Date.now());
     return gh('GET', '/contents/' + encodeURI(path) + '?ref=' + GH.branch).then(function (j) {
@@ -82,11 +83,11 @@
         st.stale = diff().n > 0 && JSON.stringify(f.orig) !== JSON.stringify(dr.orig);
         if (!diff().n) st = f;
       } else st = f;
-      if (r[0] == null) st.err = SP.t('dev.loadErr');
+      if (r[0] === undefined) st.err = SP.t('dev.loadErr'); else if (r[0] === null) st.none = true;
     });
   }
   function reload(force) {
-    var go = function () { SP.store.del(DRAFT); IDB.clear().catch(function () { }); st = null; render(); load(groupDir()).then(render); };
+    var dir = groupDir(), go = function () { SP.store.del(DRAFT); IDB.clear().catch(function () { }); st = null; render(); load(dir).then(render); };
     if (!force && st && diff().n) SP.confirm({ title: SP.t('dev.reload'), text: SP.t('dev.reloadText'), okLabel: SP.t('dev.reload'), danger: true }).then(function (ok) { if (ok) go(); });
     else go();
   }
@@ -128,6 +129,7 @@
     var d = diff(), subs = subjects(), has = !!token();
     html += '<div class="alert alert-info">' + SP.icon('info') + '<div class="alert-body"><span>' + SP.t('dev.how') + '</span></div></div>';
     if (st.err) html += '<div class="alert alert-danger">' + SP.icon('triangle-alert') + '<div class="alert-body">' + esc(st.err) + '</div></div>';
+    if (st.none) html += '<div class="alert alert-info">' + SP.icon('info') + '<div class="alert-body">' + esc(SP.t('dev.noManifest', { g: (groups.filter(function (x) { return x.folder === st.dir; })[0] || {}).name || st.dir })) + '</div></div>';
     if (st.stale) html += '<div class="alert alert-warning">' + SP.icon('triangle-alert') + '<div class="alert-body"><span>' + esc(SP.t('dev.stale')) + '</span><div class="alert-actions"><button type="button" class="btn btn-sm" id="dvFresh">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('dev.reload')) + '</span></button></div></div></div>';
 
     html += '<div class="row dev-bar">' +
@@ -146,7 +148,7 @@
         '<button type="button" class="btn btn-sm" data-add="test" data-s="' + k + '">' + SP.icon('plus', 'ic-sm') + '<span>' + esc(SP.t('dev.addTest')) + '</span></button>' +
         '<button type="button" class="btn btn-sm" data-add="material" data-s="' + k + '">' + SP.icon('plus', 'ic-sm') + '<span>' + esc(SP.t('dev.addMat')) + '</span></button>' +
         '<button type="button" class="btn btn-sm" data-add="link" data-s="' + k + '">' + SP.icon('link', 'ic-sm') + '<span>' + esc(SP.t('dev.addLink')) + '</span></button>' +
-        (n ? '<button type="button" class="btn btn-sm btn-ghost" data-dels="' + k + '" aria-label="' + esc(SP.t('dev.delSubject')) + '" data-tip="' + esc(SP.t('dev.delSubject')) + '">' + SP.icon('trash-2', 'ic-sm') + '</button>' : '') +
+        (n || st.subs.indexOf(name) >= 0 ? '<button type="button" class="btn btn-sm btn-ghost" data-dels="' + k + '" aria-label="' + esc(SP.t('dev.delSubject')) + '" data-tip="' + esc(SP.t('dev.delSubject')) + '">' + SP.icon('trash-2', 'ic-sm') + '</button>' : '') +
         '</div></div>' + (rows ? '<div class="list">' + rows + '</div>' : '<p class="small subtle">' + esc(SP.t('dev.empty')) + '</p>') + '</section>';
     }).join('');
 
@@ -185,10 +187,10 @@
     if (points.err) return '<p class="small subtle">' + esc(points.err) + '</p>';
     var btn = function (sha, label) { return '<button type="button" class="btn btn-sm btn-ghost" data-back="' + esc(sha) + '" data-lbl="' + esc(label) + '"' + (has ? '' : ' disabled') + '>' + SP.icon('rotate-ccw', 'ic-sm') + '<span>' + esc(SP.t('dev.back')) + '</span></button>'; };
     var tags = points.tags.map(function (t) {
-      return '<div class="list-row"><div class="list-row-main">' + SP.icon('save', 'subtle') + '<span class="meta"><b>' + esc(t.label) + '</b><small>' + esc(t.name + ' · ' + t.sha.slice(0, 7)) + '</small></span></div>' + btn(t.sha, t.label) + '</div>';
+      return '<div class="list-row dev-pt"><div class="list-row-main">' + SP.icon('save', 'subtle') + '<span class="meta"><b>' + esc(t.label) + '</b><small>' + esc(t.name + ' · ' + t.sha.slice(0, 7)) + '</small></span></div>' + btn(t.sha, t.label) + '</div>';
     }).join('');
     var com = points.commits.map(function (c) {
-      return '<div class="list-row"><div class="list-row-main">' + SP.icon('circle-dot', 'subtle') + '<span class="meta"><b>' + esc(c.msg) + '</b><small>' + esc(c.when + ' · ' + c.sha.slice(0, 7)) + '</small></span></div>' + btn(c.sha, c.when) + '</div>';
+      return '<div class="list-row dev-pt"><div class="list-row-main">' + SP.icon('circle-dot', 'subtle') + '<span class="meta"><b>' + esc(c.msg) + '</b><small>' + esc(c.when + ' · ' + c.sha.slice(0, 7)) + '</small></span></div>' + btn(c.sha, c.when) + '</div>';
     }).join('');
     return '<div class="section-title">' + esc(SP.t('dev.tags')) + '</div>' + (tags ? '<div class="list">' + tags + '</div>' : '<p class="small subtle">—</p>') +
       '<div class="section-title">' + esc(SP.t('dev.commits')) + '</div>' + (com ? '<div class="list">' + com + '</div>' : '<p class="small subtle">—</p>');

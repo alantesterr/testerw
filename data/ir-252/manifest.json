@@ -1,275 +1,265 @@
 {
-    "version":  "2026-11-13.1",
-    "files":  [
-                  {
-                      "subject":  "Философия",
-                      "kind":  "link",
-                      "name":  "Философия ТГ",
-                      "url":  "https://t.me/+fJjFpTkfN7Y1ODY6",
-                      "note":  ""
-                  },
-                  {
-                      "subject":  "Философия",
-                      "kind":  "material",
-                      "name":  "Filosofiya_RK1_lekcii_1-7.pdf",
-                      "path":  "data/ir-252/files/Философия/Filosofiya_RK1_lekcii_1-7.pdf",
-                      "size":  401348
-                  },
-                  {
-                      "subject":  "Философия",
-                      "kind":  "test",
-                      "name":  "Философия докс.docx",
-                      "path":  "data/ir-252/files/Философия/Философия докс.docx",
-                      "size":  72517
-                  },
-                  {
-                      "subject":  "Информационно-коммуникационные технологии",
-                      "kind":  "test",
-                      "name":  "ИКТ Экзамен (РК1 + РК2 + Экзамен).doc",
-                      "path":  "data/ir-252/files/Информационно-коммуникационные технологии/ИКТ Экзамен (РК1 + РК2 + Экзамен).doc",
-                      "size":  350720
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C++ Тест 1 (РК1, темы 1–6).docx",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тест 1 (РК1, темы 1–6).docx",
-                      "size":  47457
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C++ Тест 2 (ООП, темы 7–15).docx",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тест 2 (ООП, темы 7–15).docx",
-                      "size":  49808
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C++ Тема 07 — Принципы ООП.docx",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 07 — Принципы ООП.docx",
-                      "size":  2878
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C++ Тема 08 — Классы и объекты.docx",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 08 — Классы и объекты.docx",
-                      "size":  2594
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C++ Тема 09 — Среда C++ Builder.docx",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 09 — Среда C++ Builder.docx",
-                      "size":  2706
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C++ Тема 10 — Структура проекта и формы.docx",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 10 — Структура проекта и формы.docx",
-                      "size":  2504
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C++ Тема 11 — Свойства, методы и события формы.docx",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 11 — Свойства, методы и события формы.docx",
-                      "size":  3746
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C++ Тема 12 — Наследование и виртуальные функции.docx",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 12 — Наследование и виртуальные функции.docx",
-                      "size":  3187
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C++ Тема 13 — Конструкторы и деструкторы.docx",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 13 — Конструкторы и деструкторы.docx",
-                      "size":  3125
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C++ Тема 14 — Свойства классов.docx",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 14 — Свойства классов.docx",
-                      "size":  3116
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "C++ Тема 15 — Пользовательский компонент.docx",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 15 — Пользовательский компонент.docx",
-                      "size":  3195
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "material",
-                      "name":  "Cpp_OOP_lekcii_1-15.pdf",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/Cpp_OOP_lekcii_1-15.pdf",
-                      "type":  "application/pdf",
-                      "size":  11155050,
-                      "note":  "Конспект: лекции 1–15, задачи с решениями, все тесты и итог"
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "material",
-                      "name":  "RK1_Cpp_konspekt.pdf",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/RK1_Cpp_konspekt.pdf",
-                      "type":  "application/pdf",
-                      "size":  588079,
-                      "note":  "Лекция: конспект к РК1"
-                  },
-                  {
-                      "subject":  "Философия",
-                      "kind":  "material",
-                      "name":  "Filosofiya_RK1_ITOG.pdf",
-                      "path":  "data/ir-252/files/Философия/Filosofiya_RK1_ITOG.pdf",
-                      "type":  "application/pdf",
-                      "size":  875984,
-                      "note":  "Итоговый учебник к РК1 (новая версия)"
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "material",
-                      "name":  "Arhitektura_RK1_podrobno.pdf",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Arhitektura_RK1_podrobno.pdf",
-                      "type":  "application/pdf",
-                      "size":  1125117,
-                      "note":  "Подробный конспект к РК1"
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Все темы 1–15 (тесты).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Все темы 1–15 (тесты).docx",
-                      "size":  99217
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 1 (Целые числа в памяти).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 1 (Целые числа в памяти).docx",
-                      "size":  39121
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 2 (Вещественные числа IEEE 754).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 2 (Вещественные числа IEEE 754).docx",
-                      "size":  38899
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 3 (Логические основы).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 3 (Логические основы).docx",
-                      "size":  68339
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 4 (ДНФ, КНФ, Карно).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 4 (ДНФ, КНФ, Карно).docx",
-                      "size":  38009
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 5 (Сумматоры, шифраторы, мультиплексоры).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 5 (Сумматоры, шифраторы, мультиплексоры).docx",
-                      "size":  39093
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 6 (Триггеры).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 6 (Триггеры).docx",
-                      "size":  38152
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 7 (Счётчики).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 7 (Счётчики).docx",
-                      "size":  37876
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 8 (Процессор и архитектуры).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 8 (Процессор и архитектуры).docx",
-                      "size":  39613
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 9 (Иерархия памяти и регистры).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 9 (Иерархия памяти и регистры).docx",
-                      "size":  38298
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 10 (Кэш, ROM, BIOS, DOS и загрузка).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 10 (Кэш, ROM, BIOS, DOS и загрузка).docx",
-                      "size":  40250
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 11 (DRAM, SRAM, модули памяти).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 11 (DRAM, SRAM, модули памяти).docx",
-                      "size":  37883
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 12 (Режимы и адресация).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 12 (Режимы и адресация).docx",
-                      "size":  39301
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 13 (Хэмминг и адресное пространство).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 13 (Хэмминг и адресное пространство).docx",
-                      "size":  38247
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 14 (Шины, разрядность адресной шины).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 14 (Шины, разрядность адресной шины).docx",
-                      "size":  37605
-                  },
-                  {
-                      "subject":  "Архитектура компьютера",
-                      "kind":  "test",
-                      "name":  "Тема 15 (Прерывания).docx",
-                      "path":  "data/ir-252/files/Архитектура компьютера/Тема 15 (Прерывания).docx",
-                      "size":  38220
-                  },
-                  {
-                      "subject":  "Исследование операций",
-                      "kind":  "material",
-                      "name":  "IO_RK_uchebnik.pdf",
-                      "path":  "data/ir-252/files/Исследование операций/IO_RK_uchebnik.pdf",
-                      "type":  "application/pdf",
-                      "size":  2304554,
-                      "note":  "Учебник-тетрадь к РК: 15 тем, задачи с решениями"
-                  },
-                  {
-                      "subject":  "Object-Oriented Programming (Borland C ++ Builder)",
-                      "kind":  "test",
-                      "name":  "Доп тесты C++.txt",
-                      "path":  "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/Доп тесты C++.txt",
-                      "size":  33786,
-                      "note":  "164 дополнительных вопроса из конспекта (лекции 1–15)"
-                  }
-              ]
+  "version": "2026-11-15.1",
+  "files": [
+    {
+      "subject": "Философия",
+      "kind": "link",
+      "name": "Философия Телеграмм",
+      "url": "https://t.me/+fJjFpTkfN7Y1ODY6",
+      "note": ""
+    },
+    {
+      "subject": "Философия",
+      "kind": "material",
+      "name": "Filosofiya_RK1_lekcii_1-7.pdf",
+      "path": "data/ir-252/files/Философия/Filosofiya_RK1_lekcii_1-7.pdf",
+      "size": 401348
+    },
+    {
+      "subject": "Философия",
+      "kind": "test",
+      "name": "Философия докс.docx",
+      "path": "data/ir-252/files/Философия/Философия докс.docx",
+      "size": 72517
+    },
+    {
+      "subject": "Информационно-коммуникационные технологии",
+      "kind": "test",
+      "name": "ИКТ Экзамен (РК1 + РК2 + Экзамен).doc",
+      "path": "data/ir-252/files/Информационно-коммуникационные технологии/ИКТ Экзамен (РК1 + РК2 + Экзамен).doc",
+      "size": 350720
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "C++ Тест 1 (РК1, темы 1–6).docx",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тест 1 (РК1, темы 1–6).docx",
+      "size": 47457
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "C++ Тест 2 (ООП, темы 7–15).docx",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тест 2 (ООП, темы 7–15).docx",
+      "size": 49808
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "C++ Тема 07 — Принципы ООП.docx",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 07 — Принципы ООП.docx",
+      "size": 2878
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "C++ Тема 08 — Классы и объекты.docx",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 08 — Классы и объекты.docx",
+      "size": 2594
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "C++ Тема 09 — Среда C++ Builder.docx",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 09 — Среда C++ Builder.docx",
+      "size": 2706
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "C++ Тема 10 — Структура проекта и формы.docx",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 10 — Структура проекта и формы.docx",
+      "size": 2504
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "C++ Тема 11 — Свойства, методы и события формы.docx",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 11 — Свойства, методы и события формы.docx",
+      "size": 3746
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "C++ Тема 12 — Наследование и виртуальные функции.docx",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 12 — Наследование и виртуальные функции.docx",
+      "size": 3187
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "C++ Тема 13 — Конструкторы и деструкторы.docx",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 13 — Конструкторы и деструкторы.docx",
+      "size": 3125
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "C++ Тема 14 — Свойства классов.docx",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 14 — Свойства классов.docx",
+      "size": 3116
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "C++ Тема 15 — Пользовательский компонент.docx",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тема 15 — Пользовательский компонент.docx",
+      "size": 3195
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "material",
+      "name": "Cpp_OOP_lekcii_1-15.pdf",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/Cpp_OOP_lekcii_1-15.pdf",
+      "type": "application/pdf",
+      "size": 11155050,
+      "note": "Конспект: лекции 1–15, задачи с решениями, все тесты и итог"
+    },
+    {
+      "subject": "Философия",
+      "kind": "material",
+      "name": "Filosofiya_RK1_ITOG.pdf",
+      "path": "data/ir-252/files/Философия/Filosofiya_RK1_ITOG.pdf",
+      "type": "application/pdf",
+      "size": 875984,
+      "note": "Итоговый учебник к РК1 (новая версия)"
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "material",
+      "name": "Arhitektura_RK1_podrobno.pdf",
+      "path": "data/ir-252/files/Архитектура компьютера/Arhitektura_RK1_podrobno.pdf",
+      "type": "application/pdf",
+      "size": 1125117,
+      "note": "Подробный конспект к РК1"
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Все темы 1–15 (тесты).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Все темы 1–15 (тесты).docx",
+      "size": 99217
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 1 (Целые числа в памяти).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 1 (Целые числа в памяти).docx",
+      "size": 39121
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 2 (Вещественные числа IEEE 754).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 2 (Вещественные числа IEEE 754).docx",
+      "size": 38899
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 3 (Логические основы).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 3 (Логические основы).docx",
+      "size": 68339
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 4 (ДНФ, КНФ, Карно).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 4 (ДНФ, КНФ, Карно).docx",
+      "size": 38009
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 5 (Сумматоры, шифраторы, мультиплексоры).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 5 (Сумматоры, шифраторы, мультиплексоры).docx",
+      "size": 39093
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 6 (Триггеры).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 6 (Триггеры).docx",
+      "size": 38152
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 7 (Счётчики).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 7 (Счётчики).docx",
+      "size": 37876
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 8 (Процессор и архитектуры).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 8 (Процессор и архитектуры).docx",
+      "size": 39613
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 9 (Иерархия памяти и регистры).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 9 (Иерархия памяти и регистры).docx",
+      "size": 38298
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 10 (Кэш, ROM, BIOS, DOS и загрузка).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 10 (Кэш, ROM, BIOS, DOS и загрузка).docx",
+      "size": 40250
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 11 (DRAM, SRAM, модули памяти).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 11 (DRAM, SRAM, модули памяти).docx",
+      "size": 37883
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 12 (Режимы и адресация).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 12 (Режимы и адресация).docx",
+      "size": 39301
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 13 (Хэмминг и адресное пространство).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 13 (Хэмминг и адресное пространство).docx",
+      "size": 38247
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 14 (Шины, разрядность адресной шины).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 14 (Шины, разрядность адресной шины).docx",
+      "size": 37605
+    },
+    {
+      "subject": "Архитектура компьютера",
+      "kind": "test",
+      "name": "Тема 15 (Прерывания).docx",
+      "path": "data/ir-252/files/Архитектура компьютера/Тема 15 (Прерывания).docx",
+      "size": 38220
+    },
+    {
+      "subject": "Исследование операций",
+      "kind": "material",
+      "name": "IO_RK_uchebnik.pdf",
+      "path": "data/ir-252/files/Исследование операций/IO_RK_uchebnik.pdf",
+      "type": "application/pdf",
+      "size": 2304554,
+      "note": "Учебник-тетрадь к РК: 15 тем, задачи с решениями"
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "C_questions_на_Анг.txt",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C_questions_English.txt",
+      "size": 40420
+    }
+  ]
 }

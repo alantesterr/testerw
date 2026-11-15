@@ -42,6 +42,10 @@
       (n ? '' : '<p class="small subtle">' + esc(SP.t('tester.needFile')) + '</p>') + '</section>';
     /* Шаг 3 — ошибки по каждому загруженному файлу */
     if (st.files.length) html += errorsHtml();
+    /* Лента — быстрый тест «листай вверх» (#/feed) */
+    html += '<section class="card t-feed"><div class="t-feed-ph" aria-hidden="true"><i></i><i></i><i></i></div><div class="grow"><div class="card-title">' + SP.icon('smartphone') + esc(SP.t('feed.title')) + ' <span class="badge">' + esc(SP.t('feed.badge')) + '</span></div>' +
+      '<p class="small muted">' + esc(SP.t('feed.cardSub')) + '</p>' +
+      '<button type="button" class="btn btn-primary" id="tFeed"' + (n ? '' : ' disabled') + '>' + SP.icon('play') + '<span>' + esc(SP.t('feed.open')) + '</span></button></div></section>';
     root.innerHTML = '<div class="page">' + html + '</div>';
     wire();
   }
@@ -63,6 +67,7 @@
     $('#tGo').onclick = start;
     var tc = $('#tCont'); if (tc) tc.onclick = resume;
     $('#tFromSj').onclick = fromFolders;
+    $('#tFeed').onclick = function () { SP.feed.open(); };
     SP.$$('[data-errgo]', root).forEach(function (b) { b.onclick = function () { runErrors(b.getAttribute('data-errgo')); }; });
     SP.$$('[data-errclr]', root).forEach(function (b) { b.onclick = function () { clearErrors(b.getAttribute('data-errclr')); }; });
     SP.$$('[data-errx]', root).forEach(function (b) { b.onclick = function () { var p = b.getAttribute('data-errx').split('|'), e = errs(); if (e[p[0]]) { delete e[p[0]][p[1]]; saveErrs(e); } render(); }; });
@@ -243,6 +248,14 @@
   function stop() { if (running) running.destroy(); running = null; render(); }
 
   SP.tester = {
+    /* для Ленты: та же папка ошибок по файлам */
+    noteWrong: noteWrong,
+    isErr: function (q) { var k = keyOfQ(q), m = errs()[k]; return !!(m && m[qid(q)]); },
+    toggleErr: function (q, on) {
+      var k = keyOfQ(q); if (!k) return;
+      if (on) { var e0 = errs(); if (!(e0[k] && e0[k][qid(q)])) noteWrong(q, ''); return; }
+      var e = errs(); if (e[k]) { delete e[k][qid(q)]; saveErrs(e); }
+    },
     openIsolated: function (title, questions) {
       var m = SP.modal({ title: title, size: 'xl', body: '<div id="isoHost"></div>', onClose: function () { if (q) q.destroy(); } });
       var q = SP.Quiz(SP.$('#isoHost', m.el), questions, { title: title, focus: false, onExit: function () { m.close(); } });

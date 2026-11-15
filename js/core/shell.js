@@ -88,7 +88,7 @@
   function markCurrent() {
     var id = current;
     SP.$$('[data-route]').forEach(function (a) {
-      var on = a.getAttribute('data-route') === id || ((id === 'designer' || id === 'dev') && a.getAttribute('data-route') === 'settings') || (id === 'notes' && a.getAttribute('data-route') === 'subjects');
+      var on = a.getAttribute('data-route') === id || ((id === 'designer' || id === 'dev') && a.getAttribute('data-route') === 'settings') || (id === 'feed' && a.getAttribute('data-route') === 'tester') || (id === 'notes' && a.getAttribute('data-route') === 'subjects');
       if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
   }

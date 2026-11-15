@@ -25,7 +25,7 @@
   html.classList.add('ui2');
 
   /* ---------- цвет раздела по адресу ---------- */
-  var ICON = { schedule: 'calendar-days', subjects: 'folder', notes: 'book-open', tester: 'list-checks', designer: 'square-pen', grades: 'graduation-cap', player: 'circle-play', settings: 'settings' };
+  var ICON = { schedule: 'calendar-days', subjects: 'folder', notes: 'book-open', tester: 'list-checks', designer: 'square-pen', dev: 'code', grades: 'graduation-cap', player: 'circle-play', settings: 'settings' };
   function route() { return ((location.hash || '').replace(/^#\/?/, '').split('/')[0]) || 'schedule'; }
   function setRoute() { html.setAttribute('data-route', route()); }
   setRoute(); window.addEventListener('hashchange', setRoute);
@@ -95,7 +95,7 @@
   }
 
   /* ---------- Настройки: 4 вкладки ---------- */
-  var TABS = [['look', 'sun', ['appearance', 'language']], ['study', 'graduation-cap', ['game', 'sync', 'testerPlayer', 'tools']], ['news', 'bell', []], ['data', 'database', ['account', 'data', 'author']], ['guide', 'book-open', ['about']]];
+  var TABS = [['look', 'sun', ['appearance', 'language']], ['study', 'graduation-cap', ['game', 'sync', 'testerPlayer', 'tools']], ['news', 'bell', []], ['data', 'database', ['account', 'data', 'author', 'dev']], ['guide', 'book-open', ['about']]];
   var tab = 'look';
   try { tab = sessionStorage.getItem('sp-ui2-tab') || 'look'; } catch (e) { }
   function setTab(t) { tab = t; try { sessionStorage.setItem('sp-ui2-tab', t); } catch (e) { } }

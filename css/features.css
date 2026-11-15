@@ -1281,3 +1281,30 @@ html, body { overflow-x: clip; }
 .game-txt b { font-size: 1.05rem; }
 .game-txt small { color: #c9c0e6; line-height: 1.45; }
 .game-go { flex: none; }
+
+/* ---------- Разработчик (#/dev) ---------- */
+.dev-page .card { margin-bottom: var(--sp-3); }
+.dev-bar { align-items: center; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-3); }
+.dev-subj .card-head { flex-wrap: wrap; gap: var(--sp-2); }
+.dev-row .meta small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dev-acts { display: flex; gap: 2px; flex: none; padding-right: var(--sp-2); }
+.dev-row .badge { flex: none; margin-right: var(--sp-1); }
+.dev-new { background: var(--success-soft); }
+.dev-mod { background: var(--warning-soft); }
+.dev-del { opacity: 0.75; }
+.dev-del .meta b { text-decoration: line-through; }
+.dev-changes { box-shadow: var(--shadow-md); }
+.dev-changes.has { border-color: var(--accent); }
+.dev-clist { margin: 0 0 var(--sp-3); padding-left: 1.2rem; max-height: 9rem; overflow: auto; font-size: 0.85rem; }
+.dev-clist li { margin: 2px 0; word-break: break-word; }
+.dev-c-new { color: var(--success-text); } .dev-c-mod { color: var(--warning-text); } .dev-c-del { color: var(--danger-text); }
+.dev-ways { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: var(--sp-3); }
+.dev-way { display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md); }
+.dev-way small { color: var(--text-2); flex: 1; }
+.dev-way .btn { align-self: flex-start; margin-top: var(--sp-1); }
+.dev-steps { padding-left: 1.3rem; line-height: 1.55; }
+.dev-steps li { margin-bottom: var(--sp-2); }
+.dev-text { width: 100%; min-height: 55vh; font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem; white-space: pre; }
+.dev-det { margin: var(--sp-2) 0; }
+.dev-float { position: fixed; right: var(--sp-4, 1rem); bottom: calc(var(--sp-4, 1rem) + env(safe-area-inset-bottom)); z-index: 30; display: inline-flex; align-items: center; gap: var(--sp-1); padding: 0.45rem 0.85rem; border-radius: 999px; background: var(--accent); color: var(--text-inverse); font-weight: 600; font-size: 0.85rem; border: 0; cursor: pointer; box-shadow: var(--shadow-lg); }
+@media (max-width: 767px) { .dev-float { bottom: calc(5rem + env(safe-area-inset-bottom)); } }

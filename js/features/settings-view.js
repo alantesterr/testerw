@@ -8,7 +8,7 @@
   var SP = window.SP, esc = SP.esc;
   var root = null;
   var VERSION = '3.0.0';
-  var SECTIONS = [['appearance', 'type'], ['language', 'languages'], ['game', 'circle-play'], ['sync', 'refresh-cw'], ['account', 'user'], ['testerPlayer', 'list-checks'], ['tools', 'timer'], ['data', 'database'], ['author', 'square-pen'], ['about', 'info']];
+  var SECTIONS = [['appearance', 'type'], ['language', 'languages'], ['game', 'circle-play'], ['sync', 'refresh-cw'], ['account', 'user'], ['testerPlayer', 'list-checks'], ['tools', 'timer'], ['data', 'database'], ['author', 'square-pen'], ['dev', 'code'], ['about', 'info']];
 
   function choice(group, val, cur, inner, label) {
     return '<button type="button" class="choice" role="radio" data-' + group + '="' + val + '" aria-checked="' + (cur === val) + '" aria-label="' + esc(label) + '">' + inner + '<span>' + esc(label) + '</span></button>';
@@ -117,6 +117,10 @@
       setRow(SP.t('author.prompt'), esc(SP.t('author.promptHint')), '<div class="btn-group"><button type="button" class="btn" id="sPromptCopy">' + SP.icon('copy') + '<span>' + esc(SP.t('common.copy')) + '</span></button><button type="button" class="btn btn-ghost" id="sPromptDl">' + SP.icon('download') + '<span>DOCX</span></button></div>'),
       esc(SP.t('author.sub')));
 
+    /* Разработчик: правка папок предметов для всех (#/dev) */
+    html += section('dev', 'code',
+      setRow(SP.t('settings.devRow'), esc(SP.t('settings.devHint')), '<a class="btn btn-primary" href="#/dev">' + SP.icon('code') + '<span>' + esc(SP.t('common.open')) + '</span></a>'));
+
     /* 8. О сайте */
     html += section('about', 'info', '<p class="small muted">' + esc(SP.t('about.text', { v: VERSION })) + '</p><div class="btn-group"><button type="button" class="btn" id="sTesterHelp">' + SP.icon('circle-help') + '<span>' + esc(SP.t('tester.helpTitle')) + '</span></button></div>');
 
@@ -171,7 +175,7 @@
   }
 
   /* Резервная копия настроек и прогресса (без паролей и без больших файлов) */
-  var SKIP = /^(sp-vault|sp-auth|sp-cache-)/;
+  var SKIP = /^(sp-vault|sp-auth|sp-cache-|sp-dev-)/;
   function exportBackup() {
     var out = { format: 'StudyPlay-backup', version: 1, createdAt: new Date().toISOString(), data: {} };
     SP.store.keys().forEach(function (k) { if (/^(sp-|studyplay-)/.test(k) && !SKIP.test(k)) out.data[k] = SP.store.raw(k); });

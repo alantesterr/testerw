@@ -193,7 +193,6 @@
       (d.n ? '<button type="button" class="btn btn-ghost btn-sm" id="dvReset">' + SP.icon('rotate-ccw', 'ic-sm') + '<span>' + esc(SP.t('dev.reset')) + '</span></button>' : '') + '</div>' +
       (d.n ? '<ul class="dev-clist">' + chg + '</ul>' : '') +
       '<div class="dev-ways">' +
-      '<div class="dev-way"><b>' + esc(SP.t('dev.wayA')) + '</b><small>' + esc(SP.t('dev.wayAText')) + '</small><button type="button" class="btn" id="dvZip"' + (d.n ? '' : ' disabled') + '>' + SP.icon('download') + '<span>' + esc(SP.t('dev.zip')) + '</span></button></div>' +
       '<div class="dev-way"><b>' + esc(SP.t('dev.wayB')) + '</b><small>' + esc(SP.t(has ? 'dev.wayBText' : 'dev.wayBNoKey')) + '</small><button type="button" class="btn btn-primary" id="dvPub"' + (d.n && has ? '' : ' disabled') + '>' + SP.icon('upload') + '<span>' + esc(SP.t('dev.publish')) + '</span></button></div>' +
       '</div></section>' + '<section class="card" id="dvShared" hidden></section>' + folders;
     if (d.n) html += '<button type="button" class="dev-float" id="dvFloat">' + SP.icon('layers', 'ic-sm') + '<span>' + esc(SP.t('dev.sum', { a: d.add.length, d: d.del.length, m: d.mod.length })) + '</span>' + SP.icon('arrow-up', 'ic-sm') + '</button>';
@@ -275,7 +274,7 @@
     SP.$$('[data-edit]', root).forEach(function (b) { b.onclick = function () { var f = st.files[+b.getAttribute('data-edit')]; if (f.kind === 'link') editLink(f); else editFile(f); }; });
     SP.$$('[data-del]', root).forEach(function (b) { b.onclick = function () { var f = st.files[+b.getAttribute('data-del')]; st.files.splice(st.files.indexOf(f), 1); if (!f._o || f._edit) IDB.del('f:' + f.path).catch(function () { }); save(); render(); }; });
     SP.$$('[data-undel]', root).forEach(function (b) { b.onclick = function () { var o = diff().del[+b.getAttribute('data-undel')]; var c = clean(o); c._o = eid(o); st.files.push(c); save(); render(); }; });
-    on('#dvZip', exportZip); on('#dvPub', publish);
+    on('#dvPub', publish);
     on('#dvFloat', function () { var c = $('#dvChanges'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     on('#dvKey', keyDialog); on('#dvKeyOff', function () { SP.store.del(KEY); points = null; render(); SP.toast(SP.t('dev.keyRemoved'), 'success'); });
     on('#dvPoint', function () { savePoint(true); }); on('#dvUndo', undoLast);
@@ -384,41 +383,6 @@
     });
   }
 
-  /* ---------- Путь А: архив + инструкция ---------- */
-  function exportZip() {
-    if (!window.JSZip) { SP.lib('jszip').then(exportZip, function (e) { SP.toast(e.message, 'danger'); }); return; }
-    var d = diff(), up = uploads(), rm = removals(d), z = new window.JSZip(), btn = SP.$('#dvZip', root);
-    SP.busy(btn, true);
-    z.file('data/' + st.dir + '/manifest.json', manifestText());
-    Promise.all(up.map(function (f) { return blobOf(f).then(function (b) { z.file(f.path, b); }); })).then(function () {
-      z.file('ИНСТРУКЦИЯ.txt', instrText(up, rm));
-      return z.generateAsync({ type: 'blob' });
-    }).then(function (blob) {
-      SP.download(blob, 'studyplay-izmeneniya-' + stamp() + '.zip');
-      instrDialog(up, rm);
-    }).catch(function (e) { SP.toast(e.message, 'danger'); }).then(function () { SP.busy(btn, false); });
-  }
-  var delUrl = function (p) { return GH_WEB + '/delete/' + GH.branch + '/' + p.split('/').map(encodeURIComponent).join('/'); };
-  function instrText(up, rm) {
-    var L = [SP.t('dev.i.title'), '', '1. ' + SP.t('dev.i.1'), '2. ' + SP.t('dev.i.2') + ' ' + GH_WEB, '3. ' + SP.t('dev.i.3'), '4. ' + SP.t('dev.i.4'), '5. ' + SP.t('dev.i.5'), '6. ' + SP.t('dev.i.6'), ''];
-    L.push(SP.t('dev.i.files') + ':'); L.push('  data/' + st.dir + '/manifest.json'); up.forEach(function (f) { L.push('  ' + f.path); });
-    if (rm.length) { L.push('', SP.t('dev.i.del')); rm.forEach(function (p) { L.push('  ' + p + '\n    ' + delUrl(p)); }); }
-    L.push('', SP.t('dev.i.back'));
-    return L.join('\r\n');
-  }
-  function instrDialog(up, rm) {
-    var m = SP.modal({
-      title: SP.t('dev.i.title'), size: 'lg',
-      body: '<ol class="dev-steps">' +
-        '<li>' + esc(SP.t('dev.i.1')) + '</li>' +
-        '<li>' + esc(SP.t('dev.i.2')) + ' <a href="' + GH_WEB + '" target="_blank" rel="noopener">' + esc(GH.owner + '/' + GH.repo) + ' ' + SP.icon('external-link', 'ic-sm') + '</a></li>' +
-        '<li>' + esc(SP.t('dev.i.3')) + '</li><li>' + esc(SP.t('dev.i.4')) + '</li><li>' + esc(SP.t('dev.i.5')) + '</li><li>' + esc(SP.t('dev.i.6')) + '</li></ol>' +
-        '<details class="dev-det"><summary>' + esc(SP.t('dev.i.files')) + ' (' + (up.length + 1) + ')</summary><ul class="dev-clist"><li>data/' + esc(st.dir) + '/manifest.json</li>' + up.map(function (f) { return '<li>' + esc(f.path) + '</li>'; }).join('') + '</ul></details>' +
-        (rm.length ? '<div class="stack-sm"><p class="small"><b>' + esc(SP.t('dev.i.del')) + '</b></p><ul class="dev-clist">' + rm.map(function (p) { return '<li><a href="' + esc(delUrl(p)) + '" target="_blank" rel="noopener">' + SP.icon('trash-2', 'ic-sm') + ' ' + esc(p.split('/').pop()) + '</a></li>'; }).join('') + '</ul></div>' : '') +
-        '<p class="xsmall subtle">' + esc(SP.t('dev.i.back')) + '</p>',
-      actions: [{ label: SP.t('common.close') }, { label: SP.t('dev.i.done'), kind: 'primary', icon: 'check', onClick: function () { commitLocal(); } }]
-    });
-  }
   /* загружено на GitHub: новое состояние становится исходным */
   function commitLocal(ver) {
     st.ver = ver || nextVersion();

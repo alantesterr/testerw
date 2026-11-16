@@ -79,8 +79,7 @@
     h += '<section class="card dev-changes' + (dirty ? ' has' : '') + '"><div class="card-head"><div><h2 class="card-title">' + SP.icon('upload') + esc(SP.t('dev.s.save')) + '</h2><div class="card-sub">' +
       esc(dirty ? SP.t('dev.s.dirty', { n: S.schedule.length }) : SP.t('dev.noChanges')) + '</div></div>' +
       (dirty ? '<button type="button" class="btn btn-ghost btn-sm" id="dsReset">' + SP.icon('rotate-ccw', 'ic-sm') + '<span>' + esc(SP.t('dev.reset')) + '</span></button>' : '') + '</div>' +
-      '<div class="dev-ways"><div class="dev-way"><b>' + esc(SP.t('dev.wayB')) + '</b><small>' + esc(SP.t(has ? 'dev.s.pubText' : 'dev.wayBNoKey')) + '</small><button type="button" class="btn btn-primary" id="dsPub"' + (dirty && has ? '' : ' disabled') + '>' + SP.icon('upload') + '<span>' + esc(SP.t('dev.publish')) + '</span></button></div>' +
-      '<div class="dev-way"><b>' + esc(SP.t('dev.wayA')) + '</b><small>' + esc(SP.t('dev.s.dlText', { p: 'data/' + dir + '/schedule.json' })) + '</small><button type="button" class="btn" id="dsDl">' + SP.icon('download') + '<span>schedule.json</span></button></div></div></section>';
+      '<div class="dev-ways"><div class="dev-way"><b>' + esc(SP.t('dev.wayB')) + '</b><small>' + esc(SP.t(has ? 'dev.s.pubText' : 'dev.wayBNoKey')) + '</small><button type="button" class="btn btn-primary" id="dsPub"' + (dirty && has ? '' : ' disabled') + '>' + SP.icon('upload') + '<span>' + esc(SP.t('dev.publish')) + '</span></button></div></div></section>';
     return h;
   }
 
@@ -286,7 +285,6 @@
   function wire() {
     var on = function (s, fn) { var el = SP.$(s, box); if (el) el.onclick = fn; };
     on('#dsReset', function () { SP.confirm({ title: SP.t('dev.reset'), text: SP.t('dev.s.reloadText'), okLabel: SP.t('dev.reset'), danger: true }).then(function (ok) { if (ok) { SP.store.del(dkey()); load(dir, true); } }); });
-    on('#dsDl', function () { SP.downloadText(JSON.stringify(outJson(), null, 2) + '\n', 'schedule.json', 'application/json'); SP.toast(SP.t('dev.s.dlDone', { p: 'data/' + dir + '/schedule.json' }), 'success', { ms: 9000 }); });
     on('#dsPub', publish);
     on('#dsAddSlot', function () { var last = S.timeSlots[S.timeSlots.length - 1]; S.timeSlots.push({ id: uid('p'), start: last ? last.end : '08:30', end: '' }); changed(true); keepOpen(1); });
     on('#dsAddSubj', function () { S.subjects.push({ id: uid('s'), code: '', name: '', teacher: '' }); changed(true); keepOpen(0); var l = SP.$$('[data-subj][data-k="name"]', box); if (l.length) l[l.length - 1].focus(); });

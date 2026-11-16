@@ -48,14 +48,13 @@
       '<div class="card-sub">' + esc(dirty ? SP.t('dev.g.dirty') : SP.t('dev.noChanges')) + '</div></div></div>' +
       '<div class="dev-ways"><div class="dev-way"><b>' + esc(SP.t('dev.wayB')) + '</b><small>' + esc(SP.t(has ? 'dev.g.pubText' : 'dev.wayBNoKey')) + '</small>' +
       '<button type="button" class="btn btn-primary" id="dgPub"' + (dirty && has ? '' : ' disabled') + '>' + SP.icon('upload') + '<span>' + esc(SP.t('dev.publish')) + '</span></button></div>' +
-      '<div class="dev-way"><b>' + esc(SP.t('dev.wayA')) + '</b><small>' + esc(SP.t('dev.g.dlText')) + '</small><button type="button" class="btn" id="dgDl">' + SP.icon('download') + '<span>groups.json</span></button></div></div>' +
+      '</div>' +
       (dirty ? '<button type="button" class="btn btn-ghost btn-sm" id="dgReset">' + SP.icon('rotate-ccw', 'ic-sm') + '<span>' + esc(SP.t('dev.reset')) + '</span></button>' : '') + '</section>';
 
     var on = function (s, fn) { var el = SP.$(s, box); if (el) el.onclick = fn; };
     var redraw = function () { mount(box, core); };
     on('#dgAdd', function () { addDialog(core, redraw); });
     on('#dgPub', function () { publish(core, SP.$('#dgPub', box), redraw); });
-    on('#dgDl', function () { SP.downloadText(groupsText(), 'groups.json', 'application/json'); SP.toast(SP.t('author.groupsDone'), 'success', { ms: 8000 }); });
     on('#dgReset', function () { gl = null; dirty = false; newMan = {}; redraw(); });
     SP.$$('[data-gf]', box).forEach(function (b) { b.onclick = function () { core.showGroup(g[+b.getAttribute('data-gf')].folder); }; });
     SP.$$('[data-gs]', box).forEach(function (b) { b.onclick = function () { if (SP.devSchedule) SP.devSchedule.select(g[+b.getAttribute('data-gs')].folder); core.openTab('schedule'); }; });

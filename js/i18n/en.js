@@ -627,3 +627,4 @@ Object.assign(SP.I18N.en, { 'tester.continue': 'Continue test', 'tester.startNew
 Object.assign(SP.I18N.en, { 'ui2.tab.news': 'News', 'ui2.newsSub': 'Site updates, newest first', 'ui2.newBadge': 'new', 'ui2.newsOld': 'Show older updates ({n})', 'ui2.newsAll': 'News and updates' });
 Object.assign(SP.I18N.en, { 'settings.game': 'Game', 'settings.gameName': 'Dungeon of Knowledge', 'settings.gameText': 'Go through caves and defeat monsters by answering questions from your tests. Progress is saved.', 'settings.gamePlay': 'Play' });
 Object.assign(SP.I18N.en, { 'settings.dev': 'Developer', 'dev.title': 'Developer', 'feed.title': 'Feed', 'feed.open': 'Open feed', 'feed.badge': 'TikTok-style' });
+Object.assign(SP.I18N.en, { 'settings.account': 'Group', 'ui2.tab.look': 'Main', 'ui2.tab.study': 'Updates', 'ui2.tab.data': 'My data', 'ui2.tab.more': 'More' });

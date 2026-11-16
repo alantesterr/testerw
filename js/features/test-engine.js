@@ -281,8 +281,8 @@
   function readTextDocument(f) {
     var name = f.name.toLowerCase();
     if (/\.docx$/.test(name)) {
-      if (!window.mammoth) return Promise.reject(new Error(SP.t('tester.err.noDocxLib')));
-      return f.arrayBuffer().then(function (ab) {
+      return Promise.all([SP.lib('mammoth'), f.arrayBuffer()]).then(function (lr) {
+        var ab = lr[1];
         return window.mammoth.convertToHtml({ arrayBuffer: ab }).then(function (r) {
           var t = docxToText(r.value);
           if (/<question/i.test(t)) return t;
@@ -333,8 +333,8 @@
     var e = String(text).replace(/\\/g, '\\\\').replace(/[{}]/g, function (c) { return '\\' + c; }).replace(/\r?\n/g, '\\par\n').replace(/[^\x00-\x7f]/g, function (ch) { var c = ch.charCodeAt(0); return '\\u' + (c > 32767 ? c - 65536 : c) + '?'; });
     return '{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\f0\\fs24 ' + e + '}';
   }
-  function mkDocx(text) {
-    if (!window.JSZip) return Promise.reject(new Error(SP.t('tester.err.noDocxLib')));
+  function mkDocx(text) { return SP.lib('jszip').then(function () { return mkDocx0(text); }); }
+  function mkDocx0(text) {
     var Z = new window.JSZip(), x = function (t) { return t.replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }, H = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
     var paras = text.split('\n').map(function (l) { return l ? '<w:p><w:r><w:t xml:space="preserve">' + x(l) + '</w:t></w:r></w:p>' : '<w:p/>'; }).join('');
     Z.file('[Content_Types].xml', H + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');

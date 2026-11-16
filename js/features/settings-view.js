@@ -1,14 +1,18 @@
 /* =====================================================================
-   РАЗДЕЛ «НАСТРОЙКИ»: всё второстепенное собрано здесь по группам.
-   Внешний вид · Язык · Аккаунт · Тестер и плеер ·
-   Инструменты · Данные · Для автора · О сайте
+   РАЗДЕЛ «НАСТРОЙКИ». Вкладки собирает js/core/ui2.js (TABS):
+     Главное — Группа · Внешний вид · Язык
+     Обновление — Platonus и Timetable
+     Мои данные — своё расписание файлом, резервная копия
+     Справочник — гайд по сайту и новости
+     Ещё — Тестер и плеер · Инструменты · Игра · Файлы курса · Для автора · Разработчик
+   Имени студента больше нет: сайту нужна только группа.
    ===================================================================== */
 (function () {
   'use strict';
   var SP = window.SP, esc = SP.esc;
   var root = null;
   var VERSION = '3.0.0';
-  var SECTIONS = [['appearance', 'type'], ['language', 'languages'], ['game', 'circle-play'], ['sync', 'refresh-cw'], ['account', 'user'], ['testerPlayer', 'list-checks'], ['tools', 'timer'], ['data', 'database'], ['author', 'square-pen'], ['dev', 'code'], ['about', 'info']];
+  var SECTIONS = [['account', 'users'], ['appearance', 'type'], ['language', 'languages'], ['sync', 'refresh-cw'], ['data', 'database'], ['game', 'circle-play'], ['testerPlayer', 'list-checks'], ['tools', 'timer'], ['course', 'refresh-cw'], ['author', 'square-pen'], ['dev', 'code'], ['about', 'info']];
 
   function choice(group, val, cur, inner, label) {
     return '<button type="button" class="choice" role="radio" data-' + group + '="' + val + '" aria-checked="' + (cur === val) + '" aria-label="' + esc(label) + '">' + inner + '<span>' + esc(label) + '</span></button>';
@@ -34,14 +38,14 @@
       themes.map(function (t) { return choice('theme', t[0], s.theme, SP.icon(t[1]), SP.t('settings.theme.' + t[0])); }).join('') + '</div></div>' +
       '<div class="stack-sm"><div class="label">' + esc(SP.t('settings.fontSize')) + '</div><div class="choice-grid" role="radiogroup" aria-label="' + esc(SP.t('settings.fontSize')) + '">' +
       fonts.map(function (f) { return choice('font', f[0], s.font, '<span class="sample" style="font-size:' + (parseInt(f[1], 10) * 1.6) + 'px">' + esc(SP.t('settings.sample')) + '</span>', SP.t('settings.font.' + f[0])); }).join('') + '</div></div>' +
+      /* редко нужное — свёрнуто */
+      '<details class="set-more"><summary>' + SP.icon('chevron-right', 'ic-sm') + '<span>' + esc(SP.t('settings.lookMore')) + '</span></summary><div class="stack">' +
       [['schShk', 'Shokan'], ['schTt', 'Timetable']].map(function (g) {
         return '<div class="stack-sm"><div class="label">' + esc(SP.t('settings.schSize', { m: g[1] })) + '</div><div class="choice-grid choice-grid-3" role="radiogroup" aria-label="' + esc(SP.t('settings.schSize', { m: g[1] })) + '">' +
           [['std', 1], ['sm', 0.87], ['xs', 0.77]].map(function (v) { return '<button type="button" class="choice" role="radio" data-sch="' + g[0] + '" data-v="' + v[0] + '" aria-checked="' + (s[g[0]] === v[0]) + '"><span class="sample" style="font-size:' + (1.6 * v[1]) + 'rem">Аа</span><span>' + esc(SP.t('settings.sch.' + v[0])) + '</span></button>'; }).join('') + '</div></div>';
       }).join('') +
       '<p class="xsmall subtle">' + esc(SP.t('settings.schHint')) + '</p>' +
-      setRow(SP.t('settings.sidebar'), esc(SP.t('settings.sidebarHint')), '<div class="segmented" role="group" aria-label="' + esc(SP.t('settings.sidebar')) + '">' + ['expanded', 'collapsed', 'hidden'].map(function (v) { return '<button type="button" data-sidebar="' + v + '" aria-pressed="' + (s.sidebar === v) + '">' + esc(SP.t('settings.sb.' + v)) + '</button>'; }).join('') + '</div>') +
-      /* телефон: вкладка «Плеер» в нижней панели (по умолчанию её нет, на её месте — Настройки) */
-      setRow(SP.t('settings.phonePlayer'), esc(SP.t('settings.phonePlayerHint')), '<label class="switch"><input type="checkbox" id="sPhonePlayer"' + (s.phonePlayer ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.phonePlayer')) + '</span></label>'));
+      setRow(SP.t('settings.sidebar'), esc(SP.t('settings.sidebarHint')), '<div class="segmented" role="group" aria-label="' + esc(SP.t('settings.sidebar')) + '">' + ['expanded', 'collapsed', 'hidden'].map(function (v) { return '<button type="button" data-sidebar="' + v + '" aria-pressed="' + (s.sidebar === v) + '">' + esc(SP.t('settings.sb.' + v)) + '</button>'; }).join('') + '</div>') + '</div></details>');
 
     /* 2. Язык */
     html += section('language', 'languages', '<div class="choice-grid" role="radiogroup" aria-label="' + esc(SP.t('settings.language')) + '">' +
@@ -68,19 +72,18 @@
       (!SP.app ? setRow(SP.t('app.phoneRow'), esc(SP.t('app.phoneRowHint')), '<button type="button" class="btn btn-ghost" id="sPhone">' + SP.icon('smartphone') + '<span>' + esc(SP.t('common.open')) + '</span></button>') : ''));
 
     /* 4. Аккаунт (локальный профиль) */
-    var nm = u.name && u.nameSet ? u.name : SP.t('auth.guestName');
-    var acc = '<div class="profile-strip"><span class="avatar">' + SP.icon('user') + '</span><div class="grow"><b>' + esc(nm) + '</b><div class="small muted">' + esc(u.group || SP.t('auth.noGroup')) + '</div></div></div>';
+    var acc = '<div class="profile-strip"><span class="avatar">' + SP.icon('users') + '</span><div class="grow"><b>' + esc(u.group || SP.t('auth.noGroup')) + '</b><div class="small muted">' + esc(SP.t('settings.groupOnly')) + '</div></div></div>';
     acc += '<div class="alert alert-info">' + SP.icon('info') + '<div class="alert-body"><span>' + esc(SP.t('settings.localText')) + '</span><div class="alert-actions"><button type="button" class="btn btn-ghost btn-sm" id="sHow">' + SP.icon('shield-check') + '<span>' + esc(SP.t('auth.how')) + '</span></button></div></div></div>';
-    acc += '<div class="field"><label class="label" for="sName">' + esc(SP.t('auth.yourName')) + '</label><input class="input" id="sName" value="' + esc(u.name || '') + '" placeholder="' + esc(SP.t('auth.yourNamePh')) + '"></div>';
     acc += '<div class="field"><label class="label" for="sGroup">' + esc(SP.t('auth.group')) + '</label><div class="row row-nowrap"><div class="ac grow"><input class="input" id="sGroup" value="' + esc(u.group || '') + '" placeholder="' + esc(SP.t('auth.groupPh')) + '" autocomplete="off"></div><button type="button" class="btn" id="sProfileSave">' + esc(SP.t('common.save')) + '</button></div><span class="error-text" id="sGroupErr" role="alert"></span><span class="hint">' + esc(SP.t('settings.groupHint', { dir: window.SP_GROUP_DIR || '—' })) + '</span></div>';
     acc += setRow(SP.t('auth.device'), esc(SP.t('settings.deviceHint', { d: SP.t('auth.dev.' + SP.settings.detected).toLowerCase() })), '<div class="segmented" role="group" aria-label="' + esc(SP.t('auth.device')) + '">' + [['phone', 'smartphone'], ['pc', 'monitor']].map(function (x) { return '<button type="button" data-dev="' + x[0] + '" aria-pressed="' + (s.device === x[0]) + '">' + SP.icon(x[1], 'ic-sm') + '<span>' + esc(SP.t('auth.dev.' + x[0])) + '</span></button>'; }).join('') + '</div>');
     acc += '<div class="row"><button type="button" class="btn" id="sOut">' + SP.icon('log-out') + '<span>' + esc(SP.t('auth.out')) + '</span></button>' +
       '<button type="button" class="btn btn-danger-outline" id="sLogout">' + SP.icon('trash-2') + '<span>' + esc(SP.t('auth.reset')) + '</span></button></div>' +
       '<p class="xsmall subtle">' + esc(SP.t('auth.outHint')) + '</p>';
-    html += section('account', 'user', acc);
+    html += section('account', 'users', acc);
 
     /* 5. Тестер и плеер */
     html += section('testerPlayer', 'list-checks',
+      setRow(SP.t('settings.phonePlayer'), esc(SP.t('settings.phonePlayerHint')), '<label class="switch"><input type="checkbox" id="sPhonePlayer"' + (s.phonePlayer ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.phonePlayer')) + '</span></label>') +
       setRow(SP.t('settings.trLang'), esc(SP.t('settings.trLangHint')), '<div class="segmented" role="group" aria-label="' + esc(SP.t('settings.trLang')) + '">' + [['ru', 'Русский'], ['kk', 'Қазақша']].map(function (x) { return '<button type="button" data-trlang="' + x[0] + '" aria-pressed="' + (s.trLang === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>') +
       setRow(SP.t('settings.autoTr'), esc(SP.t('settings.autoTrHint')), '<label class="switch"><input type="checkbox" id="sAutoTr"' + (s.autoTr ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.autoTr')) + '</span></label>') +
       setRow(SP.t('settings.hotkeys'), esc(SP.t('settings.hotkeysHint')), '<label class="switch"><input type="checkbox" id="sHotkeys"' + (s.hotkeys !== false ? ' checked' : '') + '><span class="track"></span><span class="sr-only">' + esc(SP.t('settings.hotkeys')) + '</span></label>') +
@@ -96,18 +99,19 @@
     html += section('data', 'database',
       '<div class="set-group"><div class="section-title">' + esc(SP.t('nav.schedule')) + '</div>' +
       setRow(SP.t('settings.uploadSchedule'), esc(SP.t('settings.uploadScheduleHint')), '<button type="button" class="btn" id="sUp">' + SP.icon('upload') + '<span>' + esc(SP.t('common.upload')) + '</span></button>') +
-      setRow(SP.t('settings.downloadSchedule'), esc(SP.t('settings.downloadScheduleHint')), '<button type="button" class="btn" id="sDl">' + SP.icon('download') + '<span>' + esc(SP.t('common.download')) + '</span></button>') +
       setRow(SP.t('schedule.howTo'), esc(SP.t('settings.howToHint')), '<button type="button" class="btn btn-ghost" id="sHelp">' + SP.icon('circle-help') + '<span>' + esc(SP.t('common.open')) + '</span></button>') +
       setRow(SP.t('schedule.editTitle'), esc(SP.t('settings.editHint')), '<button type="button" class="btn btn-ghost" id="sEdit"' + (d.schedule.length ? '' : ' disabled') + '>' + SP.icon('pencil') + '<span>' + esc(SP.t('common.change')) + '</span></button>') +
       (d.own ? setRow(SP.t('settings.dropOwn'), esc(SP.t('settings.dropOwnHint')), '<button type="button" class="btn btn-danger-outline" id="sDropOwn">' + SP.icon('undo-2') + '<span>' + esc(SP.t('settings.dropOwnBtn')) + '</span></button>') : '') + '</div>' +
-      '<div class="set-group"><div class="section-title">' + esc(SP.t('settings.course')) + '</div>' +
-      setRow(SP.t('settings.courseRefresh'), esc(base && base.version ? SP.t('schedule.version', { v: base.version }) : SP.t('settings.courseNone')), '<button type="button" class="btn" id="sCourse">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('common.update')) + '</span></button>') +
-      setRow('schedule.json', esc(SP.t('settings.ghScheduleHint')), '<button type="button" class="btn" id="sGhS">' + SP.icon('file-json') + '<span>' + esc(SP.t('common.download')) + '</span></button>') +
-      setRow('manifest.json', esc(SP.t('settings.ghManifestHint')), '<button type="button" class="btn" id="sGhM">' + SP.icon('file-json') + '<span>' + esc(SP.t('common.download')) + '</span></button>') + '</div>' +
       '<div class="set-group"><div class="section-title">' + esc(SP.t('settings.backup')) + '</div>' +
       setRow(SP.t('settings.export'), esc(SP.t('settings.exportHint')), '<button type="button" class="btn" id="sExport">' + SP.icon('download') + '<span>' + esc(SP.t('settings.exportBtn')) + '</span></button>') +
       setRow(SP.t('settings.import'), esc(SP.t('settings.importHint')), '<button type="button" class="btn" id="sImport">' + SP.icon('upload') + '<span>' + esc(SP.t('settings.importBtn')) + '</span></button>') +
       setRow(SP.t('settings.wipe'), esc(SP.t('settings.wipeHint')), '<button type="button" class="btn btn-danger" id="sWipe">' + SP.icon('trash-2') + '<span>' + esc(SP.t('settings.wipeBtn')) + '</span></button>') + '</div>');
+    /* Файлы курса на GitHub — нужны в основном разработчику (вкладка «Ещё») */
+    html += section('course', 'refresh-cw',
+      setRow(SP.t('settings.courseRefresh'), esc(base && base.version ? SP.t('schedule.version', { v: base.version }) : SP.t('settings.courseNone')), '<button type="button" class="btn" id="sCourse">' + SP.icon('refresh-cw') + '<span>' + esc(SP.t('common.update')) + '</span></button>') +
+      setRow(SP.t('settings.downloadSchedule'), esc(SP.t('settings.downloadScheduleHint')), '<button type="button" class="btn" id="sDl">' + SP.icon('download') + '<span>' + esc(SP.t('common.download')) + '</span></button>') +
+      setRow('schedule.json', esc(SP.t('settings.ghScheduleHint')), '<button type="button" class="btn" id="sGhS">' + SP.icon('file-json') + '<span>' + esc(SP.t('common.download')) + '</span></button>') +
+      setRow('manifest.json', esc(SP.t('settings.ghManifestHint')), '<button type="button" class="btn" id="sGhM">' + SP.icon('file-json') + '<span>' + esc(SP.t('common.download')) + '</span></button>'));
 
     /* 7. Для автора */
     html += section('author', 'square-pen',
@@ -125,6 +129,8 @@
     html += section('about', 'info', '<p class="small muted">' + esc(SP.t('about.text', { v: VERSION })) + '</p><div class="btn-group"><button type="button" class="btn" id="sTesterHelp">' + SP.icon('circle-help') + '<span>' + esc(SP.t('tester.helpTitle')) + '</span></button></div>');
 
     root.innerHTML = '<div class="page">' + html + '</div>';
+    /* «Группа» — первой на вкладке «Главное» */
+    var acS = SP.$('#set-account', root), apS = SP.$('#set-appearance', root); if (acS && apS) apS.before(acS);
     wire();
     if (SP.ui2) SP.ui2.settings(root);
   }
@@ -160,7 +166,7 @@
     on('#sProfileSave', function () {
       var gv = SP.group.format($('#sGroup').value);
       if (gv && !SP.group.valid(gv)) { $('#sGroupErr').textContent = SP.t('group.invalid'); $('#sGroup').setAttribute('aria-invalid', 'true'); $('#sGroup').focus(); return; }
-      SP.auth.updateProfile({ name: $('#sName').value.trim(), group: gv });
+      SP.auth.updateProfile({ group: gv });
       SP.toast(SP.t('settings.saved'), 'success'); render();
     });
     on('#sUp', SP.schedule.upload); on('#sDl', SP.hub.exportAll); on('#sHelp', SP.schedule.help); on('#sEdit', SP.schedule.editJson);

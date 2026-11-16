@@ -3,7 +3,7 @@
 
    Сайт статический (GitHub Pages) и не входит на Platonus/Timetable за
    студента. Поэтому «вход» здесь — это простой профиль на устройстве:
-   имя (необязательно) и группа. Группа нужна, чтобы показать материалы
+   только группа (имени нет). Группа нужна, чтобы показать материалы
    и расписание именно вашей группы (папка data/<группа>/ на GitHub).
 
    Расписание и оценки студент загружает файлами, которые сам сохраняет
@@ -102,7 +102,6 @@
         '<div class="auth-top"><div class="sb-brand"><span class="logo">' + SP.icon('book-open') + '</span><span>StudyPlay</span></div>' + langSeg() + '</div>' +
         '<div class="auth-card card card-pad-lg"><form class="stack" id="setupForm" novalidate>' +
         '<div class="stack-sm"><h1 class="auth-title">' + SP.esc(SP.t('auth.welcomeTitle')) + '</h1><p class="muted small">' + SP.esc(SP.t('auth.welcomeSub')) + '</p></div>' +
-        '<div class="field"><label class="label" for="suName">' + SP.esc(SP.t('auth.yourName')) + '</label><input class="input" id="suName" autocomplete="name" value="' + SP.esc(u.name || '') + '" placeholder="' + SP.esc(SP.t('auth.yourNamePh')) + '"></div>' +
         '<div class="field"><label class="label" for="suGroup">' + SP.esc(SP.t('auth.group')) + '</label>' +
         '<div class="ac"><input class="input" id="suGroup" value="' + SP.esc(u.group || '') + '" placeholder="' + SP.esc(SP.t('auth.groupPh')) + '"></div>' +
         '<span class="error-text" id="suGroupErr" role="alert"></span>' +
@@ -119,15 +118,15 @@
       SP.group.attach(SP.$('#suGroup', root), SP.$('#suGroupErr', root));
       SP.$('#setupForm', root).onsubmit = function (e) {
         e.preventDefault();
-        var name = SP.$('#suName', root).value.trim(), gi = SP.$('#suGroup', root), group = SP.group.format(gi.value);
+        var gi = SP.$('#suGroup', root), group = SP.group.format(gi.value);
         if (group && !SP.group.valid(group)) { SP.$('#suGroupErr', root).textContent = SP.t('group.invalid'); gi.setAttribute('aria-invalid', 'true'); gi.focus(); return; }
-        state = { mode: 'local', user: { name: name, group: group, nameSet: !!name } };
+        state = { mode: 'local', user: { group: group } };
         SP.settings.applyDevice(dev);
         save(); applyGroup(); SP.hub.reloadBase();
         root.innerHTML = ''; document.body.classList.remove('auth-open');
         resolve(state);
       };
-      setTimeout(function () { var f = SP.$('#suName', root); if (f) f.focus(); }, 40);
+      setTimeout(function () { var f = SP.$('#suGroup', root); if (f) f.focus(); }, 40);
     }
     draw();
   }

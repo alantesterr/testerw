@@ -21,6 +21,13 @@
   var IDB = SP.idb('studyplay-dev');
   var st = null;          /* { dir, ver, orig: [...], files: [...], subs: [...], sched: [...], stale } */
   var groups = [], points = null, busy = false;
+  /* вкладки раздела; «Группы» — js/features/dev-groups.js, «Расписание» — js/features/dev-schedule.js */
+  var TABS = [['folders', 'folder'], ['groups', 'users'], ['schedule', 'calendar-days'], ['points', 'save'], ['help', 'circle-help']];
+  var tab = 'folders';
+  try { tab = sessionStorage.getItem('sp-dev-tab') || 'folders'; } catch (e) { }
+  if (!TABS.some(function (t) { return t[0] === tab; })) tab = 'folders';
+  /* точек сохранения (тегов backup-…) на GitHub храним не больше стольких — старые удаляются сами */
+  var MAX_POINTS = 4;
 
   var token = function () { return SP.store.get(KEY, '') || ''; };
   var eid = function (f) { return f.kind === 'link' || (!f.path && f.url) ? 'link:' + f.url : f.path; };
@@ -37,10 +44,11 @@
   function stamp() { var d = new Date(), p = SP.pad2; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()); }
 
   /* ---------- Черновик ---------- */
-  function save() { SP.store.set(DRAFT, { dir: st.dir, ver: st.ver, orig: st.orig, files: st.files, subs: st.subs }); }
+  function save() { SP.store.set(DRAFT, { dir: st.dir, ver: st.ver, orig: st.orig, files: st.files, subs: st.subs, inc: st.inc, origInc: st.origInc }); }
   function fresh(dir, man, sched) {
     var files = (man && Array.isArray(man.files) ? man.files : []).filter(function (f) { return f && f.name; });
-    return { dir: dir, ver: String((man && man.version) || ''), orig: files.map(clean), files: files.map(function (f) { var c = clean(f); c._o = eid(f); return c; }), subs: [], sched: sched };
+    var inc = man && Array.isArray(man.include) ? man.include : [];
+    return { dir: dir, ver: String((man && man.version) || ''), orig: files.map(clean), files: files.map(function (f) { var c = clean(f); c._o = eid(f); return c; }), subs: [], sched: sched, inc: JSON.parse(JSON.stringify(inc)), origInc: inc };
   }
   function diff() {
     var om = {}, seen = {}, add = [], mod = [], del = [];
@@ -52,7 +60,9 @@
       if (f._edit || !same(o, f)) mod.push(f);
     });
     st.orig.forEach(function (o) { if (!seen[eid(o)]) del.push(o); });
-    return { add: add, mod: mod, del: del, n: add.length + mod.length + del.length };
+    /* «Общие предметы из других групп» (include в manifest.json) — тоже изменение */
+    var inc = JSON.stringify(st.inc || []) !== JSON.stringify(st.origInc || []);
+    return { add: add, mod: mod, del: del, inc: inc, n: add.length + mod.length + del.length + (inc ? 1 : 0) };
   }
   /* файлы, которые надо положить в репозиторий (новые и с новым содержимым) */
   function uploads() { return st.files.filter(function (f) { return f.kind !== 'link' && f.path && (!f._o || f._edit); }); }
@@ -61,7 +71,8 @@
     var used = {}; st.files.forEach(function (f) { if (f.path) used[f.path] = 1; });
     return d.del.filter(function (o) { return o.path && !used[o.path] && o.path.indexOf('data/' + st.dir + '/') === 0; }).map(function (o) { return o.path; });
   }
-  function manifestText() { return JSON.stringify({ version: nextVersion(), files: st.files.map(clean) }, null, 2) + '\n'; }
+  function manifestObj(ver) { var o = { version: ver || nextVersion() }; if ((st.inc || []).length) o.include = st.inc; o.files = st.files.map(clean); return o; }
+  function manifestText(ver) { return JSON.stringify(manifestObj(ver), null, 2) + '\n'; }
 
   /* ---------- Загрузка исходного состояния ---------- */
   /* null — файла нет (404), undefined — нет связи */
@@ -77,7 +88,7 @@
       var f = fresh(dir, r[0], r[1] && Array.isArray(r[1].subjects) ? r[1].subjects.map(function (s) { return s.name; }) : []);
       var dr = SP.store.get(DRAFT, null);
       if (dr && dr.dir === dir && Array.isArray(dr.files)) {
-        var keep = { dir: dir, ver: dr.ver, orig: dr.orig || [], files: dr.files, subs: dr.subs || [], sched: f.sched };
+        var keep = { dir: dir, ver: dr.ver, orig: dr.orig || [], files: dr.files, subs: dr.subs || [], sched: f.sched, inc: dr.inc || f.inc, origInc: dr.origInc || f.origInc };
         st = keep;
         /* пока правил, на сайте поменялись файлы — предупредить */
         st.stale = diff().n > 0 && JSON.stringify(f.orig) !== JSON.stringify(dr.orig);
@@ -103,7 +114,7 @@
     return out;
   }
   function stateOf(f, d) { return d.add.indexOf(f) >= 0 ? 'new' : d.mod.indexOf(f) >= 0 ? 'mod' : ''; }
-  function kindLabel(f) { return SP.t('dev.kind.' + (f.kind === 'link' || (!f.path && f.url) ? 'link' : f.kind === 'test' ? 'test' : 'material')); }
+  function kindLabel(f) { return SP.t('dev.kind.' + (f.kind === 'link' || (!f.path && f.url) ? 'link' : f.kind === 'test' || f.kind === 'cards' ? f.kind : 'material')); }
 
   function rowHtml(f, i, d) {
     var s = stateOf(f, d), link = f.kind === 'link';
@@ -125,6 +136,20 @@
   function render() {
     if (!root) return;
     var html = SP.pageHead({ title: SP.t('dev.title'), sub: esc(SP.t('dev.sub')), actions: '<a class="btn btn-ghost" href="#/settings">' + SP.icon('arrow-left') + '<span>' + esc(SP.t('nav.settings')) + '</span></a>' });
+    /* вкладки: Папки · Группы · Расписание · Точки сохранения · Помощь */
+    html += '<div class="ui2-tabs dev-tabs" role="tablist">' + TABS.map(function (t) {
+      return '<button type="button" class="ui2-tab" role="tab" data-dtab="' + t[0] + '" aria-selected="' + (tab === t[0]) + '">' + SP.icon(t[1]) + '<span>' + esc(SP.t('dev.tab.' + t[0])) + '</span></button>';
+    }).join('') + '</div>';
+    if (tab !== 'folders') {
+      root.innerHTML = '<div class="page dev-page">' + html + '<div id="dvTab"></div></div>';
+      wireTabs();
+      var box = SP.$('#dvTab', root);
+      if (tab === 'points') { box.innerHTML = pointsTabHtml(); wire(); if (!points) loadPoints(); }
+      else if (tab === 'groups' && SP.devGroups) SP.devGroups.mount(box, core);
+      else if (tab === 'schedule' && SP.devSchedule) SP.devSchedule.mount(box, core);
+      else if (tab === 'help') { box.innerHTML = helpHtml(); wireHelp(box); }
+      return;
+    }
     if (!st) { root.innerHTML = '<div class="page">' + html + '<p class="muted">' + SP.icon('loader-circle', 'spin') + ' ' + esc(SP.t('dev.loading')) + '</p></div>'; return; }
     var d = diff(), subs = subjects(), has = !!token();
     html += '<div class="alert alert-info">' + SP.icon('info') + '<div class="alert-body"><span>' + SP.t('dev.how') + '</span></div></div>';
@@ -148,6 +173,7 @@
         '<button type="button" class="btn btn-sm" data-add="test" data-s="' + k + '">' + SP.icon('plus', 'ic-sm') + '<span>' + esc(SP.t('dev.addTest')) + '</span></button>' +
         '<button type="button" class="btn btn-sm" data-add="material" data-s="' + k + '">' + SP.icon('plus', 'ic-sm') + '<span>' + esc(SP.t('dev.addMat')) + '</span></button>' +
         '<button type="button" class="btn btn-sm" data-add="link" data-s="' + k + '">' + SP.icon('link', 'ic-sm') + '<span>' + esc(SP.t('dev.addLink')) + '</span></button>' +
+        '<button type="button" class="btn btn-sm" data-add="cards" data-s="' + k + '" data-tip="' + esc(SP.t('dev.addCardsTip')) + '">' + SP.icon('layers', 'ic-sm') + '<span>' + esc(SP.t('dev.addCards')) + '</span></button>' +
         (n || st.subs.indexOf(name) >= 0 ? '<button type="button" class="btn btn-sm btn-ghost" data-dels="' + k + '" aria-label="' + esc(SP.t('dev.delSubject')) + '" data-tip="' + esc(SP.t('dev.delSubject')) + '">' + SP.icon('trash-2', 'ic-sm') + '</button>' : '') +
         '</div></div>' + (rows ? '<div class="list">' + rows + '</div>' : '<p class="small subtle">' + esc(SP.t('dev.empty')) + '</p>') + '</section>';
     }).join('');
@@ -155,7 +181,8 @@
     /* изменения и две кнопки */
     var chg = d.add.map(function (f) { return '<li class="dev-c-new">+ ' + esc(f.subject + ' / ' + f.name) + '</li>'; }).join('') +
       d.mod.map(function (f) { return '<li class="dev-c-mod">✎ ' + esc(f.subject + ' / ' + f.name) + '</li>'; }).join('') +
-      d.del.map(function (f) { return '<li class="dev-c-del">− ' + esc(f.subject + ' / ' + f.name) + '</li>'; }).join('');
+      d.del.map(function (f) { return '<li class="dev-c-del">− ' + esc(f.subject + ' / ' + f.name) + '</li>'; }).join('') +
+      (d.inc ? '<li class="dev-c-mod">✎ ' + esc(SP.t('dev.sharedTitle')) + '</li>' : '');
     html += '<section class="card dev-changes' + (d.n ? ' has' : '') + '" id="dvChanges"><div class="card-head"><div><h2 class="card-title">' + SP.icon('layers') + esc(SP.t('dev.changes')) + '</h2>' +
       '<div class="card-sub">' + esc(d.n ? SP.t('dev.sum', { a: d.add.length, d: d.del.length, m: d.mod.length }) : SP.t('dev.noChanges')) + '</div></div>' +
       (d.n ? '<button type="button" class="btn btn-ghost btn-sm" id="dvReset">' + SP.icon('rotate-ccw', 'ic-sm') + '<span>' + esc(SP.t('dev.reset')) + '</span></button>' : '') + '</div>' +
@@ -163,9 +190,17 @@
       '<div class="dev-ways">' +
       '<div class="dev-way"><b>' + esc(SP.t('dev.wayA')) + '</b><small>' + esc(SP.t('dev.wayAText')) + '</small><button type="button" class="btn" id="dvZip"' + (d.n ? '' : ' disabled') + '>' + SP.icon('download') + '<span>' + esc(SP.t('dev.zip')) + '</span></button></div>' +
       '<div class="dev-way"><b>' + esc(SP.t('dev.wayB')) + '</b><small>' + esc(SP.t(has ? 'dev.wayBText' : 'dev.wayBNoKey')) + '</small><button type="button" class="btn btn-primary" id="dvPub"' + (d.n && has ? '' : ' disabled') + '>' + SP.icon('upload') + '<span>' + esc(SP.t('dev.publish')) + '</span></button></div>' +
-      '</div></section>' + folders;
+      '</div></section>' + '<section class="card" id="dvShared" hidden></section>' + folders;
     if (d.n) html += '<button type="button" class="dev-float" id="dvFloat">' + SP.icon('layers', 'ic-sm') + '<span>' + esc(SP.t('dev.sum', { a: d.add.length, d: d.del.length, m: d.mod.length })) + '</span>' + SP.icon('arrow-up', 'ic-sm') + '</button>';
 
+    root.innerHTML = '<div class="page dev-page">' + html + '</div>';
+    wireTabs(); wire();
+    if (SP.devGroups) SP.devGroups.shared(SP.$('#dvShared', root), core);
+  }
+
+  /* вкладка «Точки сохранения»: ключ GitHub + точки (не больше MAX_POINTS) + последние изменения */
+  function pointsTabHtml() {
+    var has = !!token(), html = '';
     /* ключ GitHub */
     html += '<section class="card"><div class="card-head"><div><h2 class="card-title">' + SP.icon('key-round') + esc(SP.t('dev.key')) + '</h2><div class="card-sub">' + esc(SP.t(has ? 'dev.keyOn' : 'dev.keyOff')) + '</div></div>' +
       (has ? '<button type="button" class="btn btn-ghost" id="dvKeyOff">' + SP.icon('log-out') + '<span>' + esc(SP.t('dev.keyRemove')) + '</span></button>' : '<button type="button" class="btn btn-primary" id="dvKey">' + SP.icon('key-round') + '<span>' + esc(SP.t('dev.keyAdd')) + '</span></button>') + '</div></section>';
@@ -177,10 +212,7 @@
       (last ? '<button type="button" class="btn btn-ghost" id="dvUndo"' + (has ? '' : ' disabled') + '>' + SP.icon('undo-2') + '<span>' + esc(SP.t('dev.undo')) + '</span></button>' : '') + '</div></div>' +
       (has ? '' : '<p class="small subtle">' + esc(SP.t('dev.pointsNoKey')) + '</p>') +
       '<div id="dvPList">' + pointsHtml(has) + '</div></section>';
-
-    root.innerHTML = '<div class="page dev-page">' + html + '</div>';
-    wire();
-    if (!points) loadPoints();
+    return html;
   }
   function pointsHtml(has) {
     if (!points) return '<p class="small muted">' + esc(SP.t('dev.loading')) + '</p>';
@@ -192,12 +224,12 @@
     var com = points.commits.map(function (c) {
       return '<div class="list-row dev-pt"><div class="list-row-main">' + SP.icon('circle-dot', 'subtle') + '<span class="meta"><b>' + esc(c.msg) + '</b><small>' + esc(c.when + ' · ' + c.sha.slice(0, 7)) + '</small></span></div>' + btn(c.sha, c.when) + '</div>';
     }).join('');
-    return '<div class="section-title">' + esc(SP.t('dev.tags')) + '</div>' + (tags ? '<div class="list">' + tags + '</div>' : '<p class="small subtle">—</p>') +
-      '<div class="section-title">' + esc(SP.t('dev.commits')) + '</div>' + (com ? '<div class="list">' + com + '</div>' : '<p class="small subtle">—</p>');
+    return '<div class="section-title">' + esc(SP.t('dev.tags', { n: MAX_POINTS })) + '</div>' + (tags ? '<div class="list">' + tags + '</div>' : '<p class="small subtle">—</p>') +
+      '<details class="dev-det"><summary>' + esc(SP.t('dev.commits')) + '</summary>' + (com ? '<div class="list">' + com + '</div>' : '<p class="small subtle">—</p>') + '</details>';
   }
   function tagLabel(n) {
-    var m = n.match(/^backup-(\d{4})-(\d{2})-(\d{2})(?:-(\d{2})(\d{2}))?/);
-    return m ? m[3] + '.' + m[2] + '.' + m[1] + (m[4] ? ' ' + m[4] + ':' + m[5] : '') : n;
+    var m = n.match(/^backup-(\d{4})-(\d{2})-(\d{2})(?:-(\d{2})(\d{2}))?(?:\d{2})?(?:-(.+))?$/);
+    return m ? m[3] + '.' + m[2] + '.' + m[1] + (m[4] ? ' ' + m[4] + ':' + m[5] : '') + (m[6] ? ' · ' + m[6].replace(/-/g, ' ') : '') : n;
   }
   function loadPoints() {
     var opt = token() ? { headers: { Authorization: 'Bearer ' + token(), Accept: 'application/vnd.github+json' } } : { headers: { Accept: 'application/vnd.github+json' } };
@@ -215,7 +247,7 @@
   /* ---------- Действия ---------- */
   function wire() {
     var $ = function (s) { return SP.$(s, root); }, on = function (id, fn) { var el = $(id); if (el) el.onclick = fn; };
-    var subs = subjects();
+    var subs = st ? subjects() : [];
     on('#dvReload', function () { reload(false); }); on('#dvFresh', function () { reload(true); });
     on('#dvReset', function () { SP.confirm({ title: SP.t('dev.reset'), text: SP.t('dev.resetText'), okLabel: SP.t('dev.reset'), danger: true }).then(function (ok) { if (ok) reload(true); }); });
     var g = $('#dvGroup'); if (g) g.onchange = function () { var v = g.value; var go = function () { SP.store.del(DRAFT); IDB.clear().catch(function () { }); st = null; render(); load(v).then(render); }; if (diff().n) SP.confirm({ title: SP.t('dev.group'), text: SP.t('dev.reloadText'), danger: true }).then(function (ok) { if (ok) go(); else g.value = st.dir; }); else go(); };
@@ -259,7 +291,7 @@
   }
   /* новые файлы: кладём в IndexedDB, в черновик — запись; файл с тем же путём заменяется */
   function addFiles(subject, kind) {
-    var inp = SP.el('<input type="file" multiple hidden' + (kind === 'test' ? ' accept=".txt,.doc,.docx,.json"' : '') + '>'); document.body.appendChild(inp);
+    var inp = SP.el('<input type="file" multiple hidden' + (kind === 'test' ? ' accept=".txt,.doc,.docx,.json"' : kind === 'cards' ? ' accept=".txt,.md,.docx"' : '') + '>'); document.body.appendChild(inp);
     inp.onchange = function () {
       var list = Array.prototype.slice.call(inp.files); inp.remove();
       Promise.all(list.map(function (file) {
@@ -279,7 +311,7 @@
       title: f.name,
       body: '<div class="stack">' +
         '<div class="field"><label class="label" for="dvfN">' + esc(SP.t('dev.fName')) + '</label><input class="input" id="dvfN" value="' + esc(f.name) + '"><span class="hint">' + esc(SP.t('dev.fNameHint')) + '</span></div>' +
-        '<div class="field"><label class="label" for="dvfK">' + esc(SP.t('dev.fKind')) + '</label><select class="input" id="dvfK"><option value="test"' + (f.kind === 'test' ? ' selected' : '') + '>' + esc(SP.t('dev.kind.test')) + '</option><option value="material"' + (f.kind !== 'test' ? ' selected' : '') + '>' + esc(SP.t('dev.kind.material')) + '</option></select></div>' +
+        '<div class="field"><label class="label" for="dvfK">' + esc(SP.t('dev.fKind')) + '</label><select class="input" id="dvfK"><option value="test"' + (f.kind === 'test' ? ' selected' : '') + '>' + esc(SP.t('dev.kind.test')) + '</option><option value="material"' + (f.kind !== 'test' && f.kind !== 'cards' ? ' selected' : '') + '>' + esc(SP.t('dev.kind.material')) + '</option><option value="cards"' + (f.kind === 'cards' ? ' selected' : '') + '>' + esc(SP.t('dev.kind.cards')) + '</option></select></div>' +
         '<div class="field"><label class="label" for="dvfS">' + esc(SP.t('dev.fSubject')) + '</label>' + subjectSelect(f.subject) + '</div>' +
         '<div class="btn-group">' + (isText(f) ? '<button type="button" class="btn" id="dvfT">' + SP.icon('file-text') + '<span>' + esc(SP.t('dev.editText')) + '</span></button>' : '') +
         '<button type="button" class="btn" id="dvfR">' + SP.icon('upload') + '<span>' + esc(SP.t('dev.replace')) + '</span></button></div>' +
@@ -336,7 +368,7 @@
 
   /* ---------- Путь А: архив + инструкция ---------- */
   function exportZip() {
-    if (!window.JSZip) { SP.toast(SP.t('tester.err.noDocxLib'), 'danger'); return; }
+    if (!window.JSZip) { SP.lib('jszip').then(exportZip, function (e) { SP.toast(e.message, 'danger'); }); return; }
     var d = diff(), up = uploads(), rm = removals(d), z = new window.JSZip(), btn = SP.$('#dvZip', root);
     SP.busy(btn, true);
     z.file('data/' + st.dir + '/manifest.json', manifestText());
@@ -373,7 +405,7 @@
   function commitLocal(ver) {
     st.ver = ver || nextVersion();
     st.orig = st.files.map(clean); st.files = st.orig.map(function (f) { var c = clean(f); c._o = eid(f); return c; });
-    st.subs = []; st.stale = false; SP.store.del(DRAFT); IDB.clear().catch(function () { }); render();
+    st.origInc = JSON.parse(JSON.stringify(st.inc || [])); st.subs = []; st.stale = false; SP.store.del(DRAFT); IDB.clear().catch(function () { }); render();
   }
 
   /* ---------- Путь Б: GitHub API ---------- */
@@ -389,7 +421,25 @@
   }
   function b64(blob) { return SP.readAsDataURL(blob).then(function (u) { return u.slice(u.indexOf(',') + 1); }); }
   var head = function () { return gh('GET', '/git/ref/heads/' + GH.branch).then(function (r) { return r.object.sha; }); };
-  function tagAt(sha, name) { return gh('POST', '/git/refs', { ref: 'refs/tags/' + (name || 'backup-' + stamp()), sha: sha }); }
+  /* новая точка сохранения; после неё лишние старые точки (больше MAX_POINTS) удаляются */
+  function tagAt(sha, name) {
+    return gh('POST', '/git/refs', { ref: 'refs/tags/' + (name || 'backup-' + stamp()), sha: sha }).then(function (r) {
+      return gh('GET', '/git/matching-refs/tags/backup-').then(function (list) {
+        var old = (list || []).map(function (x) { return x.ref.replace('refs/tags/', ''); }).sort().reverse().slice(MAX_POINTS);
+        return old.reduce(function (p, n) { return p.then(function () { return gh('DELETE', '/git/refs/tags/' + n).catch(function () { }); }); }, Promise.resolve());
+      }).catch(function () { }).then(function () { return r; });
+    });
+  }
+  /* записать на GitHub несколько текстовых файлов одним коммитом (перед этим — точка сохранения).
+     list: [{ path: 'data/ir-252/schedule.json', content: '…' }] */
+  function commitFiles(list, msg) {
+    var h;
+    return head().then(function (sha) { h = sha; return tagAt(h); })
+      .then(function () { return gh('GET', '/git/commits/' + h); })
+      .then(function (c) { return gh('POST', '/git/trees', { base_tree: c.tree.sha, tree: list.map(function (x) { return { path: x.path, mode: '100644', type: 'blob', content: x.content }; }) }); })
+      .then(function (t) { return moveTo(h, t.sha, msg); })
+      .then(function (sha) { SP.store.set(LAST, { sha: sha, parent: h, at: Date.now() }); points = null; return sha; });
+  }
   function moveTo(parent, tree, msg) {
     return gh('POST', '/git/commits', { message: msg, tree: tree, parents: [parent] }).then(function (c) {
       return gh('PATCH', '/git/refs/heads/' + GH.branch, { sha: c.sha }).then(function () { return c.sha; });
@@ -423,7 +473,7 @@
           });
         }, Promise.resolve()).then(function () {
           progress(btn, SP.t('dev.p.commit'));
-          tree.push({ path: 'data/' + st.dir + '/manifest.json', mode: '100644', type: 'blob', content: JSON.stringify({ version: ver, files: st.files.map(clean) }, null, 2) + '\n' });
+          tree.push({ path: 'data/' + st.dir + '/manifest.json', mode: '100644', type: 'blob', content: manifestText(ver) });
           var withDel = tree.concat(rm.map(function (p) { return { path: p, mode: '100644', type: 'blob', sha: null }; }));
           /* стираемого файла уже нет в репозитории — тогда без удаления */
           return gh('POST', '/git/trees', { base_tree: c.tree.sha, tree: withDel }).catch(function (e) { if (!rm.length) throw e; return gh('POST', '/git/trees', { base_tree: c.tree.sha, tree: tree }); });
@@ -484,6 +534,55 @@
       } }]
     });
   }
+
+  /* ---------- Вкладки ---------- */
+  function wireTabs() {
+    SP.$$('[data-dtab]', root).forEach(function (b) {
+      b.onclick = function () { tab = b.getAttribute('data-dtab'); try { sessionStorage.setItem('sp-dev-tab', tab); } catch (e) { } render(); };
+    });
+  }
+  function openTab(t) { tab = t; try { sessionStorage.setItem('sp-dev-tab', t); } catch (e) { } render(); window.scrollTo(0, 0); }
+
+  /* ---------- Вкладка «Помощь»: как всё устроено + промпты для ИИ ---------- */
+  var HELP = [['tests', 'list-checks'], ['cards', 'layers'], ['groups', 'users'], ['schedule', 'calendar-days'], ['publish', 'upload'], ['team', 'code']];
+  function helpHtml() {
+    var row = function (t, h, ctl) { return '<div class="set-row"><div class="set-text"><div class="strong small">' + esc(t) + '</div><div class="xsmall subtle">' + esc(h) + '</div></div><div class="set-ctl">' + ctl + '</div></div>'; };
+    var b = function (id, ic, label, kind) { return '<button type="button" class="btn' + (kind ? ' ' + kind : '') + '" id="' + id + '">' + SP.icon(ic) + '<span>' + esc(label) + '</span></button>'; };
+    return '<section class="card"><div class="card-head"><div><h2 class="card-title">' + SP.icon('book-open') + esc(SP.t('dev.h.title')) + '</h2><div class="card-sub">' + esc(SP.t('dev.h.sub')) + '</div></div></div>' +
+      '<div class="dev-help">' + HELP.map(function (x) {
+        return '<button type="button" class="ui2-ch" data-help="' + x[0] + '"><span class="ph-ic">' + SP.icon(x[1]) + '</span><span><b>' + esc(SP.t('dev.h.' + x[0])) + '</b><small>' + esc(SP.t('dev.h.' + x[0] + 'Sub')) + '</small></span></button>';
+      }).join('') + '</div></section>' +
+      '<section class="card"><div class="card-head"><div><h2 class="card-title">' + SP.icon('sparkles') + esc(SP.t('dev.h.ai')) + '</h2><div class="card-sub">' + esc(SP.t('dev.h.aiSub')) + '</div></div></div><div class="stack">' +
+      row(SP.t('dev.h.aiTests'), SP.t('dev.h.aiTestsHint'), '<div class="btn-group">' + b('dvhPT', 'copy', SP.t('common.copy'), 'btn-primary') + b('dvhPD', 'download', '.docx') + '</div>') +
+      row(SP.t('dev.h.aiCards'), SP.t('dev.h.aiCardsHint'), '<div class="btn-group">' + b('dvhPC', 'copy', SP.t('common.copy'), 'btn-primary') + b('dvhCE', 'download', SP.t('dev.h.example')) + '</div>') +
+      row(SP.t('designer.title'), SP.t('settings.designerHint'), '<a class="btn" href="#/designer">' + SP.icon('square-pen') + '<span>' + esc(SP.t('common.open')) + '</span></a>') +
+      '</div></section>';
+  }
+  function wireHelp(box) {
+    SP.$$('[data-help]', box).forEach(function (x) {
+      x.onclick = function () { var k = x.getAttribute('data-help'); SP.modal({ title: SP.t('dev.h.' + k), size: 'lg', body: '<div class="dev-guide">' + SP.t('dev.h.' + k + 'Html', { repo: GH_WEB }) + '</div>', actions: [{ label: SP.t('common.understood'), kind: 'primary' }] }); };
+    });
+    var copy = function (t) { SP.copyText(t || '').then(function () { SP.toast(SP.t('common.copied'), 'success'); }); };
+    var on = function (id, fn) { var el = SP.$(id, box); if (el) el.onclick = fn; };
+    on('#dvhPT', function () { copy(SP.PROMPT_TEXT); }); on('#dvhPD', SP.tester.downloadPrompt);
+    on('#dvhPC', function () { copy(SP.CARDS_PROMPT); });
+    on('#dvhCE', function () { SP.downloadText(SP.t('dev.h.cardsExample'), 'Пример — карточки.txt'); });
+  }
+
+  /* общее для вкладок «Группы» и «Расписание» (dev-groups.js, dev-schedule.js) */
+  var core = {
+    gh: gh, token: token, hasKey: function () { return !!token(); }, getJson: getJson, remoteFile: remoteFile, commitFiles: commitFiles,
+    groups: function () { return groups; }, setGroups: function (g) { groups = g; }, groupDir: function () { return groupDir(); },
+    stamp: stamp, render: function () { render(); }, openTab: openTab, repo: GH_WEB,
+    /* для «Общих предметов» в папках: текущий черновик группы */
+    draft: function () { return st; }, saveDraft: function () { save(); render(); },
+    nextVersion: function (v) { var t = new Date().toISOString().slice(0, 10), m = String(v || '').match(/^(\d{4}-\d{2}-\d{2})\.(\d+)$/); return m && m[1] === t ? t + '.' + (+m[2] + 1) : t + '.1'; },
+    /* открыть папки нужной группы (с вкладки «Группы») */
+    showGroup: function (dir) {
+      var go = function () { tab = 'folders'; try { sessionStorage.setItem('sp-dev-tab', tab); } catch (e) { } if (st && st.dir === dir) { render(); return; } SP.store.del(DRAFT); IDB.clear().catch(function () { }); st = null; render(); load(dir).then(render); };
+      if (st && st.dir !== dir && diff().n) SP.confirm({ title: SP.t('dev.group'), text: SP.t('dev.reloadText'), danger: true }).then(function (ok) { if (ok) go(); }); else go();
+    }
+  };
 
   function mount(el) {
     root = el; render();

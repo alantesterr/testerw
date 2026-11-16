@@ -104,7 +104,10 @@
       '';
     /* вкладка «Конспект» убрана (2026-11-14): никто не пользовался; код конспектов оставлен */
     if (tab === 'konspekt') tab = 'materials';
-    h += '<div class="tabs sj-tabs" role="tablist">' + tabBtn('materials', 'folder-open', SP.t('sj.files'), mats.length) + tabBtn('tests', 'list-checks', SP.t('subjects.tests'), tests.length) +
+    /* «Карточки» (устные вопросы) — только если разработчик добавил их в папку (js/features/cards.js) */
+    var cards = s.cards || [];
+    if (tab === 'cards' && !cards.length) tab = 'materials';
+    h += '<div class="tabs sj-tabs" role="tablist">' + tabBtn('materials', 'folder-open', SP.t('sj.files'), mats.length) + tabBtn('tests', 'list-checks', SP.t('subjects.tests'), tests.length) + (cards.length ? tabBtn('cards', 'layers', SP.t('cards.tab'), cards.length) : '') +
       '</div><div class="sj-tab" role="tabpanel">';
     if (tab === 'materials') {
       h += '<div class="row sj-tab-acts"><button type="button" class="btn btn-sm" id="sjUpMat">' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('sj.upload')) + '</span></button>' +
@@ -113,6 +116,8 @@
     } else if (tab === 'tests') {
       h += '<div class="row sj-tab-acts"><button type="button" class="btn btn-sm" id="sjUpTest">' + SP.icon('upload', 'ic-sm') + '<span>' + esc(SP.t('sj.upload')) + '</span></button></div>' +
         (tests.length ? listHtml(s, 'test') : '<p class="subtle small">' + esc(SP.t('subjects.noTests')) + '</p>');
+    } else if (tab === 'cards') {
+      h += '<div id="sjCards">' + (SP.cards ? SP.cards.folderHtml(s) : '') + '</div>';
     } else {
       h += '<div id="sjLecs">' + SP.skeleton(3, true) + '</div>';
     }
@@ -232,6 +237,7 @@
     if (!s) return;
     if (tab === 'konspekt') fillLectures(s);
     if (tab === 'tests') SP.subjectTests.fill(root);
+    if (tab === 'cards' && SP.cards) SP.cards.wireFolder(SP.$('#sjCards', root), s);
     q('#sjEdit').onclick = function () { editor(s); };
     var tl = q('#sjToggleList'); if (tl) tl.onclick = function () { sui.collapsed = !sui.collapsed; saveSui(); render(); var n = SP.$('#sjToggleList', root); if (n) n.focus(); };
     var shh = q('#sjShowHidden'); if (shh) shh.onclick = function () { showHidden = !showHidden; render(); };
@@ -412,10 +418,10 @@
       else if (ext === 'pdf') body.innerHTML = '<iframe class="pv-frame" title="' + esc(x.name) + '" src="' + url + '"></iframe>';
       else if (/^(png|jpe?g|webp|gif|svg)$/.test(ext)) body.innerHTML = '<img class="pv-img" src="' + url + '" alt="' + esc(x.name) + '">';
       else if (/^(txt|md|rtf|csv|json)$/.test(ext)) blob.text().then(function (t) { body.innerHTML = '<pre class="pv-text">' + esc(t) + '</pre>'; });
-      else if (ext === 'docx' && window.mammoth) {
+      else if (ext === 'docx') {
         body.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
-        blob.arrayBuffer().then(function (ab) { return window.mammoth.convertToHtml({ arrayBuffer: ab }); }).then(function (r) { body.innerHTML = '<article class="pv-doc">' + r.value + '</article>'; }).catch(function () { body.innerHTML = fallback(); });
-      } else if (ext === 'pptx' && window.JSZip) {
+        Promise.all([SP.lib('mammoth'), blob.arrayBuffer()]).then(function (lr) { return lr[0].convertToHtml({ arrayBuffer: lr[1] }); }).then(function (r) { body.innerHTML = '<article class="pv-doc">' + r.value + '</article>'; }).catch(function () { body.innerHTML = fallback(); });
+      } else if (ext === 'pptx') {
         body.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
         pptxText(blob).then(function (slides) {
           var si = 0;
@@ -431,7 +437,7 @@
     show(index);
   }
   function pptxText(blob) {
-    return window.JSZip.loadAsync(blob).then(function (zip) {
+    return SP.lib('jszip').then(function (JSZip) { return JSZip.loadAsync(blob); }).then(function (zip) {
       var names = Object.keys(zip.files).filter(function (n) { return /^ppt\/slides\/slide\d+\.xml$/i.test(n); }).sort(function (a, b) { return Number(a.match(/slide(\d+)/i)[1]) - Number(b.match(/slide(\d+)/i)[1]); });
       if (!names.length) throw new Error('no slides');
       return Promise.all(names.map(function (n) {

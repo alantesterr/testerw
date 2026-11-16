@@ -40,7 +40,7 @@
     return {
       version: 2, updatedAt: data.updatedAt, own: data.own, pins: data.pins, order: data.order, hidden: data.hidden, removed: data.removed, pref: data.pref, shared: [],
       subjects: data.subjects.filter(function (s) { return !s.base || hasOwn(s); }).map(function (s) {
-        var r = Object.assign({}, s); delete r.base;
+        var r = Object.assign({}, s); delete r.base; delete r.cards;
         r.materials = (s.materials || []).filter(function (f) { return !f.base; });
         r.tests = (s.tests || []).filter(function (f) { return !f.base; });
         return r;
@@ -150,7 +150,29 @@
     return Promise.all([get(gd + 'manifest.json'), get(gd + 'schedule.json')]).then(function (r) {
       if (!r[0] && !r[1] && window.SP_LEGACY && gd !== 'data/') return Promise.all([get('data/manifest.json'), get('data/schedule.json')]);
       return r;
-    }).then(function (r) { return (!r[0] && !r[1]) ? null : buildBase(r[0], r[1]); });
+    }).then(function (r) { return withInclude(r[0], get).then(function (man) { return (!man && !r[1]) ? null : buildBase(man, r[1]); }); });
+  }
+  /* Общие предметы: в manifest.json группы можно написать
+       "include": [{ "from": "ir-252", "subjects": ["Философия", "Экзамен"] }]
+     — тогда файлы этих предметов берутся из папки другой группы (копировать не нужно). */
+  function withInclude(man, get) {
+    var inc = man && Array.isArray(man.include) ? man.include.filter(function (x) { return x && x.from && Array.isArray(x.subjects) && x.subjects.length; }) : [];
+    if (!inc.length) return Promise.resolve(man);
+    return Promise.all(inc.map(function (x) { return get('data/' + x.from + '/manifest.json'); })).then(function (list) {
+      var out = Object.assign({}, man, { files: (man.files || []).slice() }), paths = {}, vers = [String(man.version || '')];
+      out.files.forEach(function (f) { if (f.path) paths[f.path] = 1; });
+      list.forEach(function (m, i) {
+        if (!m || !Array.isArray(m.files)) return;
+        vers.push(inc[i].from + ':' + (m.version || ''));
+        m.files.forEach(function (f) {
+          if (!f || inc[i].subjects.indexOf(f.subject) < 0 || (f.path && paths[f.path])) return;
+          if (f.path) paths[f.path] = 1;
+          out.files.push(Object.assign({}, f, { from: inc[i].from }));
+        });
+      });
+      out.version = vers.join(' + ');
+      return out;
+    });
   }
   var baseChanged = function (r) { return !base || base.version !== r.version || (!r.version && JSON.stringify([base.schedule, base.files]) !== JSON.stringify([r.schedule, r.files])); };
 
@@ -177,12 +199,14 @@
     var B = base || { subjects: [], schedule: [], files: [], timeSlots: null, version: '' };
     var idMap = new Map();
     (B.subjects || []).forEach(function (bs) { var m = ensureSubject(bs, 'course'); if (m) idMap.set(bs.id, m.id); });
-    var bm = new Map(), bt = new Map();
+    var bm = new Map(), bt = new Map(), bc = new Map();
     (B.files || []).forEach(function (bf) {
       var m = bf.subjectId && idMap.has(bf.subjectId) ? getSubject(idMap.get(bf.subjectId)) : (bf.subject ? findMine({ name: bf.subject, code: '' }) : null);
       if (!m && bf.subject) m = ensureSubject({ name: bf.subject }, 'course');
       if (!m) return;
       var isLink = bf.kind === 'link' || (bf.url && !bf.path), isTest = bf.kind === 'test';
+      /* карточки (устные вопросы) — отдельный список s.cards, вкладка «Карточки» в папке появляется только с ними */
+      if (bf.kind === 'cards' && bf.path) { if (!bc.has(m.id)) bc.set(m.id, []); bc.get(m.id).push({ id: 'base:' + bf.path, name: bf.name, path: bf.path, size: bf.size || 0, base: true }); return; }
       var own = isTest ? m.tests : m.materials;
       if (isLink) { var u = normUrl(bf.url); if (!u || own.some(function (x) { return x.kind === 'link' && normUrl(x.url) === u; })) return; }
       else if (own.some(function (x) { return x.name === bf.name; })) return;
@@ -193,6 +217,7 @@
     data.subjects.forEach(function (s) {
       if (bm.has(s.id)) s.materials = bm.get(s.id).concat(s.materials);
       if (bt.has(s.id)) s.tests = bt.get(s.id).concat(s.tests);
+      s.cards = bc.get(s.id) || [];
     });
 
     /* Слой Timetable */

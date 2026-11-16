@@ -262,9 +262,8 @@
       });
     },
     downloadPrompt: function () {
-      if (location.protocol === 'file:') { SP.downloadText(SP.PROMPT_TEXT || '', 'StudyPlay-AI-prompt.txt'); return; }
-      fetch('assets/ai-test-prompt.docx').then(function (r) { if (!r.ok) throw 0; return r.blob(); })
-        .then(function (b) { SP.download(b, 'StudyPlay-AI-prompt.docx'); })
+      /* .docx собирается из того же текста, что и «Скопировать» — всегда свежий (js/data/ai-prompt.js) */
+      SP.testEngine.mkDocx(SP.PROMPT_TEXT || '').then(function (b) { SP.download(b, 'StudyPlay-AI-prompt.docx'); })
         .catch(function () { SP.downloadText(SP.PROMPT_TEXT || '', 'StudyPlay-AI-prompt.txt'); });
     }
   };

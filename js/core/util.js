@@ -105,3 +105,22 @@
   /* Короткая запись создания элемента из HTML */
   SP.el = function (html) { var t = document.createElement('template'); t.innerHTML = String(html).trim(); return t.content.firstElementChild; };
 })();
+
+/* Библиотеки для Word (mammoth) и архивов (JSZip) грузятся только когда нужны:
+   SP.lib('mammoth').then(...) / SP.lib('jszip').then(...). Так сайт открывается быстрее. */
+(function () {
+  'use strict';
+  var SP = window.SP, CDN = 'https://cdnjs.cloudflare.com/ajax/libs/', wait = {};
+  var LIBS = { mammoth: ['mammoth/1.6.0/mammoth.browser.min.js', 'mammoth'], jszip: ['jszip/3.10.1/jszip.min.js', 'JSZip'] };
+  SP.lib = function (name) {
+    var l = LIBS[name];
+    if (window[l[1]]) return Promise.resolve(window[l[1]]);
+    if (!wait[name]) wait[name] = new Promise(function (ok, no) {
+      var s = document.createElement('script'); s.src = CDN + l[0]; s.async = true;
+      s.onload = function () { window[l[1]] ? ok(window[l[1]]) : no(new Error(SP.t('tester.err.noDocxLib'))); };
+      s.onerror = function () { delete wait[name]; s.remove(); no(new Error(SP.t('tester.err.noDocxLib'))); };
+      document.head.appendChild(s);
+    });
+    return wait[name];
+  };
+})();

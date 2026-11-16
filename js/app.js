@@ -27,5 +27,11 @@
     if (SP.toast && document.body) SP.toast(SP.t('err.SCRIPT'), 'danger');
   });
 
+  /* Офлайн-режим (sw.js): второй раз сайт открывается из памяти, без интернета видно расписание и тесты */
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !SP.isApp && !/[?&]app=android/.test(location.search)) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { }); });
+  }
+  window.addEventListener('offline', function () { if (SP.toast) SP.toast(SP.t('app.offline'), 'info', { ms: 6000 }); });
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

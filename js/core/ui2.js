@@ -95,14 +95,16 @@
   }
 
   /* ---------- Настройки: 4 вкладки ---------- */
-  var TABS = [['look', 'sun', ['appearance', 'language']], ['study', 'graduation-cap', ['game', 'sync', 'testerPlayer', 'tools']], ['news', 'bell', []], ['data', 'database', ['account', 'data', 'author', 'dev']], ['guide', 'book-open', ['about']]];
+  /* Главное (группа, вид, язык) · Обновление · Мои данные · Справочник · Ещё (редко нужное: тестер, инструменты, игра, файлы курса, для автора, разработчик).
+     «Новости» открываются из Справочника и по колокольчику, отдельной кнопки нет. */
+  var TABS = [['look', 'sun', ['account', 'appearance', 'language']], ['study', 'refresh-cw', ['sync']], ['data', 'database', ['data']], ['guide', 'book-open', ['about']], ['more', 'ellipsis', ['testerPlayer', 'tools', 'game', 'course', 'author', 'dev']], ['news', 'bell', []]];
   var tab = 'look';
   try { tab = sessionStorage.getItem('sp-ui2-tab') || 'look'; } catch (e) { }
   function setTab(t) { tab = t; try { sessionStorage.setItem('sp-ui2-tab', t); } catch (e) { } }
   function settings(root) {
     var page = SP.$('.page', root); if (!page) return;
     var head = SP.$('.page-head', page), G = SP.GUIDE;
-    var nav = SP.el('<div class="ui2-tabs" role="tablist" aria-label="' + esc(SP.t('settings.sections')) + '">' + TABS.map(function (t) {
+    var nav = SP.el('<div class="ui2-tabs" role="tablist" aria-label="' + esc(SP.t('settings.sections')) + '">' + TABS.filter(function (t) { return t[0] !== 'news'; }).map(function (t) {
       return '<button type="button" class="ui2-tab" role="tab" data-tab="' + t[0] + '" aria-selected="' + (tab === t[0]) + '">' + SP.icon(t[1]) + '<span>' + esc(SP.t('ui2.tab.' + t[0])) + '</span></button>';
     }).join('') + '</div>');
     head.after(nav);

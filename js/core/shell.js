@@ -44,7 +44,7 @@
       '    <a class="sb-brand" href="#/schedule"><span class="logo">' + SP.icon('book-open') + '</span><span class="sb-label">StudyPlay</span></a>' +
       '    <button type="button" class="btn btn-ghost btn-icon sb-btn" id="sbToggle" data-tip-right></button>' +
       '  </div>' +
-      '  <nav class="sb-nav" data-i18n-attr="aria-label:nav.main">' + MAIN.map(function (x) { return navItem(x); }).join('') + '</nav>' +
+      '  <nav class="sb-nav" data-i18n-attr="aria-label:nav.main">' + navMain() + '</nav>' +
       '  <div class="sb-foot">' +
       '    <div class="lang-sw" id="sbLang" role="group"></div>' +
       '    <div class="sb-user" id="sbUser"></div>' +
@@ -60,7 +60,7 @@
       '</main>' +
       '<nav class="bottom-nav" id="bottomNav" data-i18n-attr="aria-label:nav.main"></nav>';
     paintBottom();
-    SP.on('settings', function (e) { if (e.key === 'phonePlayer') { paintBottom(); markCurrent(); } });
+    SP.on('settings', function (e) { if (e.key === 'phonePlayer') { var sb = SP.$('.sb-nav'); if (sb) { sb.innerHTML = navMain(); SP.applyI18n(sb); } paintBottom(); markCurrent(); } });
 
     SP.$('#sbToggle').onclick = function () {
       SP.settings.set('sidebar', SP.settings.get('sidebar') === 'collapsed' ? 'expanded' : 'collapsed');
@@ -76,11 +76,14 @@
   }
 
   /* Нижняя панель (телефон): Расписание · Папки · Тестер · Оценки · Настройки;
-     «Плеер» — только если включён в Настройках → Вид (тогда 6 вкладок, Плеер перед Настройками) */
+     «Плеер» — только если включён в Настройках → Ещё (тогда 6 вкладок) */
   var SETTINGS_TAB = { id: 'settings', icon: 'settings', key: 'nav.settings' };
+  /* «Плеер» — в меню только если включён в Настройках → Ещё (его заменили Лента и расширение Chrome) */
+  function mainItems() { return MAIN.filter(function (x) { return x.id !== 'player' || SP.settings.get('phonePlayer'); }); }
+  function navMain() { return mainItems().map(function (x) { return navItem(x); }).join(''); }
   function paintBottom() {
     var nav = SP.$('#bottomNav'); if (!nav) return;
-    var items = MAIN.filter(function (x) { return x.id !== 'player' || SP.settings.get('phonePlayer'); }).concat([SETTINGS_TAB]);
+    var items = mainItems().concat([SETTINGS_TAB]);
     nav.style.setProperty('--bn-n', items.length);
     nav.innerHTML = items.map(function (x) { return navItem(x, true); }).join('');
     SP.applyI18n(nav);
@@ -118,9 +121,10 @@
     var u = SP.auth && SP.auth.user(), el = SP.$('#sbUser'); if (!el) return;
     if (!u) { el.innerHTML = ''; el.hidden = true; return; }
     el.hidden = false;
-    var initials = String(u.name || u.login || '?').split(/\s+/).map(function (x) { return x[0] || ''; }).join('').slice(0, 2).toUpperCase();
-    el.innerHTML = '<span class="avatar" aria-hidden="true">' + SP.esc(initials) + '</span><span class="meta"><b>' + SP.esc(u.name || u.login) + '</b><small>' + SP.esc(u.group || (u.guest ? SP.t('auth.guestShort') : '')) + '</small></span>';
-    el.setAttribute('data-tip', u.name || u.login); el.setAttribute('data-tip-collapsed', ''); el.setAttribute('data-tip-right', '');
+    /* имени больше нет — показываем группу */
+    var g = u.group || SP.t('auth.noGroup');
+    el.innerHTML = '<span class="avatar" aria-hidden="true">' + SP.icon('users', 'ic-sm') + '</span><span class="meta"><b>' + SP.esc(g) + '</b><small>' + SP.esc(SP.t('auth.group')) + '</small></span>';
+    el.setAttribute('data-tip', g); el.setAttribute('data-tip-collapsed', ''); el.setAttribute('data-tip-right', '');
   }
 
   function setTitle() {

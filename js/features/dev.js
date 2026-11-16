@@ -451,11 +451,18 @@
   /* записать на GitHub несколько текстовых файлов одним коммитом (перед этим — точка сохранения).
      list: [{ path: 'data/ir-252/schedule.json', content: '…' }] */
   /* o.noTag — без точки сохранения (мелочь вроде домашки, чтобы не вытеснять настоящие точки) */
+  /* list: { path, content } — текст; { path, blob } — файл (например фото к домашке); { path, del: true } — удалить файл */
   function commitFiles(list, msg, o) {
     var h;
     return head().then(function (sha) { h = sha; return o && o.noTag ? null : tagAt(h); })
       .then(function () { return gh('GET', '/git/commits/' + h); })
-      .then(function (c) { return gh('POST', '/git/trees', { base_tree: c.tree.sha, tree: list.map(function (x) { return { path: x.path, mode: '100644', type: 'blob', content: x.content }; }) }); })
+      .then(function (c) {
+        return Promise.all(list.map(function (x) {
+          if (x.blob) return b64(x.blob).then(function (c64) { return gh('POST', '/git/blobs', { content: c64, encoding: 'base64' }); }).then(function (b) { return { path: x.path, mode: '100644', type: 'blob', sha: b.sha }; });
+          if (x.del) return { path: x.path, mode: '100644', type: 'blob', sha: null };
+          return { path: x.path, mode: '100644', type: 'blob', content: x.content };
+        })).then(function (tree) { return gh('POST', '/git/trees', { base_tree: c.tree.sha, tree: tree }); });
+      })
       .then(function (t) { return moveTo(h, t.sha, msg); })
       .then(function (sha) { SP.store.set(LAST, { sha: sha, parent: h, at: Date.now() }); points = null; return sha; });
   }

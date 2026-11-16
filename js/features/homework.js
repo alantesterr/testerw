@@ -93,19 +93,30 @@
       (list.length > n ? '<button type="button" class="hw-ph hw-ph-more" data-phv="' + esc(owner) + '|' + n + '">+' + (list.length - n) + '</button>' : '') + '</span>';
   }
   /* подставить картинки в <img data-ph> (из IndexedDB, один раз на фото) */
+  /* фото бывает двух видов: «ph-…» — на этом телефоне (IndexedDB), «data/…» — на сайте (фото задания группы) */
+  function isRemote(p) { return /^data\//.test(p); }
+  function allPhotos(x) { return (x.photos || []).concat(photosOf(x.id)); }
+  /* удалить одно фото задания: своё — с телефона, фото группы — у всех (только разработчик) */
+  function canDelPhoto(p) { return !isRemote(p) || isDev(); }
+  function delPhoto(x, p) {
+    if (isRemote(p)) { if (isDev()) publishGroup('delPhoto', { id: x.id, photo: p }); return; }
+    setPhotos(x.id, photosOf(x.id).filter(function (q) { return q !== p; })); dropPhotos([p]); render();
+  }
   function fillThumbs(scope) {
     SP.$$('img[data-ph]', scope).forEach(function (img) {
       var id = img.getAttribute('data-ph');
       if (phUrl[id]) { img.src = phUrl[id]; return; }
+      if (isRemote(id)) { img.src = id; return; }
       db.get(id).then(function (b) {
         if (!b) { var t = img.closest('.hw-ph'); if (t) t.classList.add('gone'); return; }
         phUrl[id] = phUrl[id] || URL.createObjectURL(b); img.src = phUrl[id];
       }).catch(function () { });
     });
   }
-  function urlOf(id) { return phUrl[id] ? Promise.resolve(phUrl[id]) : db.get(id).then(function (b) { if (!b) return ''; phUrl[id] = URL.createObjectURL(b); return phUrl[id]; }); }
+  function urlOf(id) { return phUrl[id] ? Promise.resolve(phUrl[id]) : isRemote(id) ? Promise.resolve(id) : db.get(id).then(function (b) { if (!b) return ''; phUrl[id] = URL.createObjectURL(b); return phUrl[id]; }); }
   /* просмотр фото на весь экран: листать, открыть отдельно (можно увеличить), удалить */
-  function viewPhotos(list, start, onDelete) {
+  /* canDel(p) — можно ли удалить это фото (фото группы удаляет только разработчик) */
+  function viewPhotos(list, start, onDelete, canDel) {
     var i = start || 0;
     var m = SP.modal({ title: SP.t('hw.photo'), size: 'lg', bodyClass: 'hw-view', body: '<img id="hvImg" alt=""><div class="hw-view-bar"><button type="button" class="btn btn-icon" id="hvPrev" aria-label="←">' + SP.icon('chevron-left') + '</button><span id="hvN"></span><button type="button" class="btn btn-icon" id="hvNext" aria-label="→">' + SP.icon('chevron-right') + '</button></div>',
       actions: (onDelete ? [{ label: SP.t('hw.photoDel'), icon: 'trash-2', kind: 'danger-outline', close: false, onClick: function () {
@@ -116,6 +127,7 @@
       SP.$('#hvN', m.el).textContent = (i + 1) + ' / ' + list.length;
       SP.$('#hvPrev', m.el).disabled = i === 0; SP.$('#hvNext', m.el).disabled = i >= list.length - 1;
       SP.$('.hw-view-bar', m.el).hidden = list.length < 2;
+      var delB = onDelete && SP.$('.modal-foot .btn-danger-outline', m.el); if (delB) delB.hidden = !!canDel && !canDel(list[i]);
     }
     SP.$('#hvPrev', m.el).onclick = function () { if (i > 0) { i--; show(); } };
     SP.$('#hvNext', m.el).onclick = function () { if (i < list.length - 1) { i++; show(); } };
@@ -197,7 +209,7 @@
     return '<li class="hw-item' + (isDone(x) ? ' done' : '') + (late ? ' late' : '') + '" data-hw="' + esc(x.id) + '">' +
       '<button type="button" class="hw-check" role="checkbox" aria-checked="' + !!x.done + '" data-hwtog="' + esc(x.id) + '" aria-label="' + esc(SP.t(x.done ? 'hw.undone' : 'hw.markDone')) + '">' + SP.icon('check') + '</button>' +
       '<div class="hw-main"><button type="button" class="hw-body" data-hwopen="' + esc(x.id) + '"><span class="hw-text">' + linkify(x.text) + '</span>' + (meta.length ? '<span class="hw-meta">' + meta.join('') + '</span>' : '') + '</button>' +
-      thumbsHtml(x.id, photosOf(x.id)) + '</div></li>';
+      thumbsHtml(x.id, allPhotos(x)) + '</div></li>';
   }
   function sections(list) {
     var by = { late: [], today: [], tomorrow: [], week: [], later: [], none: [], done: [] };
@@ -247,7 +259,7 @@
     }).join('');
     if (!left) body = '<div class="hw-empty">' + SP.icon('circle-check', 'ic-xl') + '<p>' + esc(SP.t(list.length ? 'hw.emptyDone' : filter ? 'hw.emptyFilter' : 'hw.empty')) + '</p></div>' + body;
     if (by.done.length) body += '<details class="hw-sec hw-donebox"' + (SP.store.get('sp-hw-doneopen', false) ? ' open' : '') + '><summary class="section-title">' + SP.icon('circle-check', 'ic-sm') + esc(SP.t('hw.sec.done')) + ' <span class="count">' + by.done.length + '</span>' + SP.icon('chevron-down', 'ds-chev') + '</summary>' +
-      '<ul class="hw-list">' + by.done.slice(0, 30).map(rowHtml).join('') + '</ul><button type="button" class="btn btn-ghost btn-sm" id="hwClear">' + SP.icon('trash-2', 'ic-sm') + '<span>' + esc(SP.t('hw.clearDone')) + '</span></button></details>';
+      '<ul class="hw-list">' + by.done.slice(0, 30).map(rowHtml).join('') + '</ul>' + (isDev() && by.done.some(function (x) { return x.grp; }) ? '<p class="small muted hw-devnote">' + SP.icon('megaphone', 'ic-sm') + ' ' + esc(SP.t('hw.devKeep')) + '</p>' : '') + '<button type="button" class="btn btn-ghost btn-sm" id="hwClear">' + SP.icon('trash-2', 'ic-sm') + '<span>' + esc(SP.t('hw.clearDone')) + '</span></button></details>';
     root.innerHTML = '<div class="page hw-page">' + html + body + '</div>';
     wire(); grow(); fillThumbs(root);
   }
@@ -277,9 +289,8 @@
     /* только фото, без текста — тоже задание («Задание на фото») */
     var it = { text: text || SP.t('hw.photoTask'), subject: curSubject(), due: curDue(), at: new Date().toISOString() };
     var id = form.group && isDev() ? 'g-' + SP.uid('') : SP.uid('hw-');
-    if (pend.length) { setPhotos(id, pend.slice()); pend = []; }
-    if (form.group && isDev()) { publishGroup('add', Object.assign({ id: id }, it)); }
-    else { var m = mine(); m.items.push(Object.assign({ id: id, done: 0 }, it)); saveMine(m); SP.toast(SP.t('hw.added'), 'success'); }
+    if (form.group && isDev()) { var ph = pend; pend = []; publishGroup('add', Object.assign({ id: id }, it), null, ph); }
+    else { if (pend.length) { setPhotos(id, pend.slice()); pend = []; } var m = mine(); m.items.push(Object.assign({ id: id, done: 0 }, it)); saveMine(m); SP.toast(SP.t('hw.added'), 'success'); }
     /* предмет оставляем (часто задают несколько заданий по одному предмету), срок — снова «как подскажет сайт» */
     form.text = ''; form.due = null; render();
     var n = SP.$('#hwText', root); if (n) n.focus();
@@ -326,8 +337,8 @@
     if (sj) acts.push({ label: SP.t('hw.openFolder'), icon: 'folder-open', onClick: function () { SP.navigate('subjects', [sj.id]); } });
     if (x.own && isDev()) acts.push({ label: SP.t('hw.shareGroup'), icon: 'megaphone', onClick: function () {
       publishGroup('add', { id: 'g-' + SP.uid(''), text: x.text, subject: x.subject || '', due: x.due || '', at: new Date().toISOString() }, function () {
-        var mm = mine(); mm.items = mm.items.filter(function (it) { return it.id !== x.id; }); saveMine(mm);
-      });
+        var mm = mine(); mm.items = mm.items.filter(function (it) { return it.id !== x.id; }); saveMine(mm); setPhotos(x.id, []);
+      }, photosOf(x.id));
     } });
     if (canEdit) acts.push({ label: SP.t('common.save'), kind: 'primary', icon: 'check', onClick: function (api) {
       var text = SP.$('#heT', api.el).value.trim(); if (!text) return false;
@@ -344,11 +355,17 @@
     wireChips();
     var paintP = function () {
       var box = SP.$('#heP', m.el); if (!box) return;
-      var list = photosOf(x.id);
-      box.innerHTML = thumbsHtml(x.id, list, 8) + '<button type="button" class="hw-chip" id="heAddP">' + SP.icon('camera', 'ic-sm') + '<span>' + esc(SP.t('hw.photoAdd')) + '</span></button>';
+      var cur = find(x.id) || x, list = allPhotos(cur);
+      box.innerHTML = thumbsHtml(x.id, list, 8) + '<button type="button" class="hw-chip" id="heAddP">' + SP.icon('camera', 'ic-sm') + '<span>' + esc(SP.t('hw.photoAdd')) + '</span></button>' +
+        (x.grp && isDev() ? '<p class="small muted hw-phnote">' + esc(SP.t('hw.photoGrpNote')) + '</p>' : '');
       fillThumbs(box);
-      SP.$('#heAddP', box).onclick = function () { pickPhotos().then(function (ids) { if (ids.length) { setPhotos(x.id, photosOf(x.id).concat(ids)); paintP(); render(); } }); };
-      SP.$$('[data-phv]', box).forEach(function (b) { b.onclick = function () { viewPhotos(photosOf(x.id).slice(), +b.getAttribute('data-phv').split('|')[1], function (p) { setPhotos(x.id, photosOf(x.id).filter(function (q) { return q !== p; })); dropPhotos([p]); paintP(); render(); }); }; });
+      /* у задания группы разработчик загружает фото для всех; остальные — фото только себе */
+      SP.$('#heAddP', box).onclick = function () { pickPhotos().then(function (ids) {
+        if (!ids.length) return;
+        if (x.grp && isDev()) { m.close(); publishGroup('addPhotos', { id: x.id }, null, ids); return; }
+        setPhotos(x.id, photosOf(x.id).concat(ids)); paintP(); render();
+      }); };
+      SP.$$('[data-phv]', box).forEach(function (b) { b.onclick = function () { viewPhotos(allPhotos(find(x.id) || x), +b.getAttribute('data-phv').split('|')[1], function (p) { if (isRemote(p)) m.close(); delPhoto(find(x.id) || x, p); paintP(); }, canDelPhoto); }; });
     };
     paintP();
   }
@@ -365,26 +382,44 @@
     var it = m.items.splice(i, 1)[0]; saveMine(m); render();
     SP.undo(SP.t('hw.deleted'), function () { var mm = mine(); mm.items.splice(Math.min(i, mm.items.length), 0, it); saveMine(mm); render(); }, function () { dropPhotos(photosOf(it.id)); setPhotos(it.id, []); });
   }
-  /* разработчик: записать задание в data/<группа>/homework.json (свежий файл с GitHub + правка + коммит, без точки сохранения) */
-  function publishGroup(op, it, then) {
+  /* разработчик: записать задание в data/<группа>/homework.json (свежий файл с GitHub + правка + коммит, без точки сохранения).
+     files — id фото на этом телефоне: они загружаются в data/<группа>/homework/<id>.jpg тем же коммитом,
+     в задании — photos: [пути]. Удалил задание или фото — файлы стираются из репозитория. */
+  function publishGroup(op, it, then, files) {
     if (!isDev() || gBusy) return;
-    var core = SP.devCore, d = gdir(), path = 'data/' + d + '/homework.json';
-    gBusy = true; SP.toast(SP.t('hw.publishing'), 'info');
-    core.remoteFile(path).then(function (j) {
-      var list = j && Array.isArray(j.items) ? j.items : [];
-      if (op === 'add') list.push(it);
-      else if (op === 'edit') list.forEach(function (x) { if (x.id === it.id) { x.text = it.text; x.subject = it.subject; x.due = it.due; } });
-      else list = list.filter(function (x) { return x.id !== it.id; });
-      /* задания со сроком больше месяца назад убираем из файла сами */
-      list = list.filter(function (x) { var n = daysTo(x.due); return n === null || n > -31; });
-      var out = { version: core.nextVersion(j && j.version), updatedAt: new Date().toISOString(), items: list };
-      return core.commitFiles([{ path: path, content: JSON.stringify(out, null, 2) + '\n' }], SP.t('hw.commit', { g: d }), { noTag: true }).then(function () {
-        SP.store.set(GKEY + ':' + d, { version: out.version, items: list, pending: Date.now() });
-        if (then) then();
-        SP.toast(SP.t('hw.published'), 'success', { ms: 7000 });
+    var core = SP.devCore, d = gdir(), path = 'data/' + d + '/homework.json', dirP = 'data/' + d + '/homework/';
+    gBusy = true; SP.toast(SP.t(files && files.length ? 'hw.publishingPh' : 'hw.publishing'), 'info');
+    Promise.all((files || []).map(function (p) { return db.get(p).then(function (b) { return b ? { path: dirP + p + '.jpg', blob: b } : null; }); })).then(function (ups) {
+      ups = ups.filter(Boolean);
+      var paths = ups.map(function (u) { return u.path; });
+      return core.remoteFile(path).then(function (j) {
+        var list = j && Array.isArray(j.items) ? j.items : [], del = [];
+        if (op === 'add') { if (paths.length) it.photos = paths; list.push(it); }
+        else if (op === 'edit') list.forEach(function (x) { if (x.id === it.id) { x.text = it.text; x.subject = it.subject; x.due = it.due; } });
+        else if (op === 'addPhotos') list.forEach(function (x) { if (x.id === it.id) x.photos = (x.photos || []).concat(paths); });
+        else if (op === 'delPhoto') list.forEach(function (x) { if (x.id === it.id) { x.photos = (x.photos || []).filter(function (q) { return q !== it.photo; }); if (!x.photos.length) delete x.photos; del.push(it.photo); } });
+        else list = list.filter(function (x) { if (x.id === it.id) del = del.concat(x.photos || []); return x.id !== it.id; });
+        /* задания со сроком больше месяца назад убираем из файла сами (и их фото) */
+        list = list.filter(function (x) { var n = daysTo(x.due), keep = n === null || n > -31; if (!keep) del = del.concat(x.photos || []); return keep; });
+        var out = { version: core.nextVersion(j && j.version), updatedAt: new Date().toISOString(), items: list };
+        var base = [{ path: path, content: JSON.stringify(out, null, 2) + '\n' }].concat(ups.map(function (u) { return { path: u.path, blob: u.blob }; }));
+        var rm = del.filter(function (p) { return p.indexOf(dirP) === 0; }).map(function (p) { return { path: p, del: true }; });
+        var msg = SP.t('hw.commit', { g: d });
+        /* файла фото уже нет в репозитории — тогда без удаления */
+        return core.commitFiles(base.concat(rm), msg, { noTag: true }).catch(function (e) { if (!rm.length) throw e; return core.commitFiles(base, msg, { noTag: true }); }).then(function () {
+          /* загруженные фото сразу видны разработчику (GitHub Pages обновится через 1–2 минуты); копии на телефоне больше не нужны */
+          ups.forEach(function (u) { phUrl[u.path] = URL.createObjectURL(u.blob); });
+          if (files && files.length) dropPhotos(files);
+          SP.store.set(GKEY + ':' + d, { version: out.version, items: list, pending: Date.now() });
+          if (then) then();
+          SP.toast(SP.t('hw.published'), 'success', { ms: 7000 });
+        });
       });
-    }).catch(function (e) { SP.toast(e.message || String(e), 'danger', { ms: 9000 }); })
-      .then(function () { gBusy = false; badge(); render(); });
+    }).catch(function (e) {
+      /* не получилось (нет интернета) — новое задание возвращаем в строку, чтобы не потерять */
+      if (op === 'add' && !then) { form.text = form.text || it.text; pend = (files || []).concat(pend); }
+      SP.toast(e.message || String(e), 'danger', { ms: 9000 });
+    }).then(function () { gBusy = false; badge(); render(); });
   }
   /* поле растёт по тексту (до 6 строк) */
   function grow() { var t = root && SP.$('#hwText', root); if (!t) return; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 2, 160) + 'px'; }
@@ -403,7 +438,7 @@
     SP.$$('[data-unpend]', root).forEach(function (b) { b.onclick = function () { var p = pend.splice(+b.getAttribute('data-unpend'), 1); dropPhotos(p); repaintForm(); }; });
     SP.$$('.hw-list [data-phv]', root).forEach(function (b) { b.onclick = function () {
       var v = b.getAttribute('data-phv').split('|'), id = v[0];
-      viewPhotos(photosOf(id).slice(), +v[1], function (p) { setPhotos(id, photosOf(id).filter(function (q2) { return q2 !== p; })); dropPhotos([p]); render(); });
+      var x = find(id); if (x) viewPhotos(allPhotos(x), +v[1], function (p) { delPhoto(x, p); }, canDelPhoto);
     }; });
     SP.$$('[data-hwf]', root).forEach(function (b) { b.onclick = function () { filter = b.getAttribute('data-hwf'); form.subject = null; form.due = null; history.replaceState(null, '', '#/homework' + (filter ? '/' + encodeURIComponent(filter) : '')); render(); }; });
     SP.$$('[data-hwtog]', root).forEach(function (b) { b.onclick = function () { toggle(b.getAttribute('data-hwtog')); }; });
@@ -411,7 +446,8 @@
     var cl = q('#hwClear'); if (cl) cl.onclick = function () {
       var m = mine(), was = m.items.slice(), hm = hideMap(), wasH = Object.assign({}, hm);
       m.items = m.items.filter(function (x) { return !x.done; });
-      all().forEach(function (x) { if (x.grp && isDone(x)) hm[x.id] = 1; });
+      /* разработчик задания группы не прячет: они остаются в «Сделано», чтобы потом удалить их у всех */
+      if (!isDev()) all().forEach(function (x) { if (x.grp && isDone(x)) hm[x.id] = 1; });
       var gone = was.length - m.items.length + Object.keys(hm).length - Object.keys(wasH).length;
       saveMine(m); SP.store.set(HIDE, hm); render();
       /* через 10 секунд (не нажали «Отменить») — стираем и фото этих заданий */

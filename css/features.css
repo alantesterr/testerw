@@ -1646,3 +1646,5 @@ html.hw-badge [data-route="homework"]::after { content: var(--hw-n); position: a
 .hw-view { display: grid; gap: var(--sp-2); justify-items: center; }
 .hw-view img { max-width: 100%; max-height: 58vh; object-fit: contain; border-radius: var(--r-md); background: var(--surface-2); touch-action: pan-y pinch-zoom; }
 .hw-view-bar { display: flex; align-items: center; gap: var(--sp-3); font-variant-numeric: tabular-nums; color: var(--text-2); }
+.hw-devnote, .hw-phnote { display: flex; gap: .35rem; align-items: flex-start; margin: var(--sp-2) 0 0; }
+.hw-phnote { flex-basis: 100%; }

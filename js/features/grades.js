@@ -247,6 +247,8 @@
   function render() {
     if (!root) return;
     var html = SP.pageHead({ title: SP.t('nav.grades') });
+    /* переключатель «Домашка · Оценки» (Оценок нет в меню) — js/features/homework.js */
+    if (SP.homework) html += SP.homework.switchHtml('grades');
     html += journalHtml();
     root.innerHTML = '<div class="page">' + html + '</div>';
     wire();

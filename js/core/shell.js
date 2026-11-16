@@ -17,7 +17,7 @@
     { id: 'subjects', icon: 'folder', key: 'nav.subjects' },
     { id: 'homework', icon: 'notebook-pen', key: 'nav.homework' },
     { id: 'tester', icon: 'list-checks', key: 'nav.tester' },
-    { id: 'grades', icon: 'graduation-cap', key: 'nav.grades' },
+    /* «Оценки» — не в меню, а переключателем «Домашка · Оценки» вверху обоих разделов (меню влезает на телефон) */
     { id: 'player', icon: 'circle-play', key: 'nav.player' }
   ];
   var views = {}, mounted = {}, current = null;
@@ -92,7 +92,7 @@
   function markCurrent() {
     var id = current;
     SP.$$('[data-route]').forEach(function (a) {
-      var on = a.getAttribute('data-route') === id || ((id === 'designer' || id === 'dev') && a.getAttribute('data-route') === 'settings') || (id === 'feed' && a.getAttribute('data-route') === 'tester') || (id === 'notes' && a.getAttribute('data-route') === 'subjects');
+      var on = a.getAttribute('data-route') === id || ((id === 'designer' || id === 'dev') && a.getAttribute('data-route') === 'settings') || (id === 'feed' && a.getAttribute('data-route') === 'tester') || (id === 'notes' && a.getAttribute('data-route') === 'subjects') || (id === 'grades' && a.getAttribute('data-route') === 'homework');
       if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
   }

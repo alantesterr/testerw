@@ -626,4 +626,4 @@ Object.assign(SP.I18N.kk, { 'nav.settingsShort': 'Баптаулар', 'settings
 Object.assign(SP.I18N.kk, { 'tester.aiAskQ': 'Қай нұсқа дұрыс және неге? Жауап қазақ тілінде.' });
 Object.assign(SP.I18N.kk, { 'ui2.tab.news': 'Жаңалықтар', 'ui2.newsSub': 'Сайтқа келген жаңартулар — жаңасынан ескісіне', 'ui2.newBadge': 'жаңа', 'ui2.newsOld': 'Ескі жаңартуларды көрсету ({n})', 'ui2.newsAll': 'Жаңалықтар мен жаңартулар' });
 Object.assign(SP.I18N.kk, { 'settings.game': 'Ойын', 'settings.gameName': 'Білім зынданы', 'settings.gameText': 'Өз тесттеріңдегі сұрақтарға жауап беріп, үңгірлерден өт, құбыжықтарды жең. Прогресс сақталады.', 'settings.gamePlay': 'Ойнау' });
-Object.assign(SP.I18N.kk, { 'settings.account': 'Топ', 'ui2.tab.look': 'Басты', 'ui2.tab.study': 'Жаңарту', 'ui2.tab.data': 'Менің деректерім', 'ui2.tab.more': 'Тағы' });
+Object.assign(SP.I18N.kk, { 'settings.account': 'Топ', 'ui2.tab.look': 'Басты', 'ui2.tab.study': 'Жаңарту', 'ui2.tab.data': 'Менің деректерім', 'ui2.tab.more': 'Тағы', 'ui2.tab.dev': 'Әзірлеуші' });

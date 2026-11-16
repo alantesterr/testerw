@@ -1563,43 +1563,71 @@ html.tk-open, html.tk-open body { overflow: hidden; overscroll-behavior: none; }
 
 /* ---------- Домашка (js/features/homework.js) ---------- */
 .hw-page { max-width: 46rem; }
-.hw-form { display: grid; gap: var(--sp-3); }
-.hw-form .textarea { resize: vertical; min-height: 3.2rem; font-size: var(--fs-md, 1rem); }
-.hw-opts { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
-.hw-opts > select { width: auto; max-width: 100%; flex: 0 1 15rem; }
-.hw-quick { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
-.hw-quick .ds-chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
-.hw-date { width: auto; min-height: 2.1rem; padding-block: .2rem; }
-.hw-foot { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; justify-content: space-between; }
-.switch-row { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); cursor: pointer; }
-.switch-row > span { display: inline-flex; align-items: center; gap: .3rem; }
-.hw-sec { margin-top: var(--sp-5, 1.5rem); }
-.hw-sec > .section-title { display: flex; align-items: center; gap: .4rem; }
+/* переключатель «Домашка · Оценки» — вверху обоих разделов */
+.hw-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 3px; margin-bottom: var(--sp-3); border-radius: var(--r-md); background: var(--surface-3); border: 1px solid var(--border); max-width: 26rem; }
+.hw-switch a { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 2.4rem; border-radius: var(--r-sm); color: var(--text-2); text-decoration: none; font-weight: var(--fw-medium); font-size: var(--fs-sm); }
+.hw-switch a:hover { color: var(--text); background: var(--hover); }
+.hw-switch a[aria-current] { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+.hw-n { min-width: 1.25rem; height: 1.25rem; padding: 0 .3rem; border-radius: 99px; background: var(--accent); color: #fff; font-size: 11px; line-height: 1.25rem; text-align: center; }
+/* строка добавления */
+.hw-add { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); padding: var(--sp-3); }
+.hw-add-row { display: flex; gap: var(--sp-2); align-items: flex-end; min-width: 0; }
+.hw-add-row .textarea { flex: 1; min-width: 0; min-height: 2.75rem; height: 2.75rem; resize: none; overflow-y: auto; padding-block: .6rem; line-height: 1.35; }
+.hw-plus { flex: none; width: 2.75rem; height: 2.75rem; border-radius: 50%; }
+.hw-chips, .hw-filter { display: flex; flex-wrap: wrap; gap: .4rem; min-width: 0; }
+.hw-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: var(--sp-3) 0 0; padding-bottom: 2px; }
+.hw-filter::-webkit-scrollbar { display: none; }
+.hw-chip { display: inline-flex; align-items: center; gap: .3rem; max-width: 100%; min-height: 2rem; padding: .25rem .7rem; border: 1px solid var(--border); border-radius: var(--r-full); background: var(--surface); color: var(--text-2); font: inherit; font-size: var(--fs-xs); cursor: pointer; white-space: nowrap; flex: none; }
+.hw-chips .hw-chip { flex: 0 1 auto; }
+.hw-chip > span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.hw-chip .ic-sm { width: 13px; height: 13px; flex: none; }
+.hw-chip:hover { border-color: var(--text-3); color: var(--text); }
+.hw-chip.on { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); background: var(--accent-soft); color: var(--accent-text); }
+.hw-chip b { font-weight: 700; }
+.menu-pop.hw-menu { max-height: min(60vh, 26rem); overflow-y: auto; max-width: calc(100vw - 16px); }
+/* список */
+.hw-sec { margin-top: var(--sp-4); }
+.hw-sec > .section-title { display: flex; align-items: center; gap: .4rem; margin: 0; }
 .hw-late > .section-title { color: var(--danger-text); }
-.hw-list { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: grid; gap: var(--sp-2); }
-.hw-item { display: flex; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); transition: opacity .3s, transform .3s; }
+.hw-list { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: grid; gap: 6px; }
+.hw-item { display: flex; align-items: flex-start; gap: .6rem; padding: .55rem .7rem; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); transition: opacity .3s, transform .3s; min-width: 0; }
 .hw-item.late { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
-.hw-check { flex: none; width: 1.6rem; height: 1.6rem; margin-top: 1px; border-radius: 50%; border: 2px solid var(--text-3); background: transparent; color: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: background .15s, border-color .15s; }
-.hw-check svg { width: 15px; height: 15px; stroke-width: 3; }
+.hw-check { flex: none; width: 1.5rem; height: 1.5rem; margin-top: .1rem; border-radius: 50%; border: 2px solid var(--text-3); background: transparent; color: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: background .15s, border-color .15s; }
+.hw-check svg { width: 14px; height: 14px; stroke-width: 3; }
 .hw-check:hover { border-color: var(--success); }
 .hw-item.done .hw-check { background: var(--success); border-color: var(--success); color: #fff; }
-.hw-body { flex: 1; min-width: 0; display: grid; gap: .35rem; }
-.hw-text { overflow-wrap: anywhere; line-height: 1.4; }
+.hw-body { flex: 1; min-width: 0; display: grid; gap: .2rem; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.hw-text { overflow-wrap: anywhere; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.hw-url { color: var(--accent-text); }
 .hw-item.done .hw-text { text-decoration: line-through; color: var(--text-3); }
 .hw-item.hw-bye { opacity: .55; transform: translateX(6px); }
-.hw-meta { display: flex; flex-wrap: wrap; gap: .35rem .6rem; font-size: var(--fs-xs); color: var(--text-2); }
-.hw-meta > * { display: inline-flex; align-items: center; gap: .25rem; }
-.hw-meta .ic-sm { width: 13px; height: 13px; }
-.hw-subj { border: 0; background: none; padding: 0; font: inherit; color: var(--accent-text); cursor: pointer; }
-.hw-subj:hover { text-decoration: underline; }
+.hw-meta { display: flex; flex-wrap: wrap; gap: .2rem .6rem; font-size: var(--fs-xs); color: var(--text-2); min-width: 0; }
+.hw-meta > * { display: inline-flex; align-items: center; gap: .25rem; min-width: 0; }
+.hw-meta .ic-sm { width: 12px; height: 12px; flex: none; }
+.hw-subj { color: var(--accent-text); }
 .hw-due.now { color: var(--warning-text); font-weight: 600; }
 .hw-due.late { color: var(--danger-text); font-weight: 600; }
 .hw-grp { color: var(--accent-text); }
 .hw-donebox > summary { list-style: none; cursor: pointer; }
 .hw-donebox > summary::-webkit-details-marker { display: none; }
+.hw-donebox > summary .ds-chev { transition: transform .2s; margin-left: auto; }
 .hw-donebox[open] > summary .ds-chev { transform: rotate(180deg); }
 .hw-donebox > .btn { margin-top: var(--sp-2); }
-.hw-empty { padding: var(--sp-5, 1.5rem) var(--sp-3); }
+.hw-empty { display: grid; justify-items: center; gap: var(--sp-2); padding: var(--sp-5, 1.5rem) var(--sp-3); color: var(--text-2); text-align: center; }
+.hw-empty .ic-xl { color: var(--success); }
+.hw-full { overflow-wrap: anywhere; line-height: 1.45; white-space: normal; }
+.hw-modal .hw-meta { gap: .3rem .8rem; }
+.hw-links { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+.hw-links:empty { display: none; }
+/* полоска в папке предмета */
 .hw-strip { display: flex; align-items: center; gap: var(--sp-2); margin: 0 0 var(--sp-3); padding: .55rem .8rem; border-radius: var(--r-md); background: var(--accent-soft); color: var(--text); text-decoration: none; font-size: var(--fs-sm); }
 .hw-strip > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hw-strip:hover { filter: brightness(.97); }
+/* кружок с числом у «Домашки» в меню: просрочено + сегодня + завтра */
+html.hw-badge [data-route="homework"] { position: relative; }
+html.hw-badge [data-route="homework"]::after { content: var(--hw-n); position: absolute; top: 4px; right: 8px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 99px; background: #E24B4A; color: #fff; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; box-shadow: 0 0 0 2px var(--surface); }
+.bn-item[data-route="homework"]::after { right: calc(50% - 1.6rem) !important; }
+@media (max-width: 767px) {
+  .hw-switch { max-width: none; }
+  .hw-sec { margin-top: var(--sp-3); }
+}

@@ -1631,3 +1631,18 @@ html.hw-badge [data-route="homework"]::after { content: var(--hw-n); position: a
   .hw-switch { max-width: none; }
   .hw-sec { margin-top: var(--sp-3); }
 }
+/* фото к домашке */
+.hw-main { flex: 1; min-width: 0; display: grid; gap: .4rem; }
+.hw-phs, .hw-pend, .hw-phrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.hw-ph { position: relative; flex: none; width: 3.5rem; height: 3.5rem; padding: 0; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface-2); overflow: hidden; cursor: pointer; }
+.hw-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hw-ph.gone { display: none; }
+.hw-ph-more { display: inline-flex; align-items: center; justify-content: center; font-weight: 700; color: var(--text-2); font-size: var(--fs-sm); }
+.hw-item.done .hw-ph { opacity: .55; }
+.hw-pend .hw-ph { cursor: default; }
+.hw-unpend { position: absolute; top: 2px; right: 2px; width: 1.25rem; height: 1.25rem; padding: 0; border: 0; border-radius: 50%; background: rgb(0 0 0 / .65); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.hw-unpend svg { width: 12px; height: 12px; }
+.hw-phrow { margin-top: var(--sp-3); }
+.hw-view { display: grid; gap: var(--sp-2); justify-items: center; }
+.hw-view img { max-width: 100%; max-height: 58vh; object-fit: contain; border-radius: var(--r-md); background: var(--surface-2); touch-action: pan-y pinch-zoom; }
+.hw-view-bar { display: flex; align-items: center; gap: var(--sp-3); font-variant-numeric: tabular-nums; color: var(--text-2); }

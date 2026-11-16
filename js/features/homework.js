@@ -19,6 +19,9 @@
   var SP = window.SP, esc = SP.esc;
   var KEY = 'sp-hw', DONE = 'sp-hw-done', HIDE = 'sp-hw-hide', GKEY = 'sp-hw-group';
   var root = null, gBusy = false, filter = '';
+  /* фото к заданиям: сами снимки — в IndexedDB sp-hw-photos (только на этом устройстве),
+     какие фото у какого задания — sp-hw-ph { id задания: [id фото] } (и для своих, и для заданий группы) */
+  var PH = 'sp-hw-ph', db = SP.idb('sp-hw-photos'), phUrl = {}, pend = [];
   /* subject / due: null — «как сайт подскажет», '' — «без предмета / без срока» */
   var form = { text: '', subject: null, due: null, group: false };
 
@@ -49,6 +52,85 @@
     var g = group().items.filter(function (x) { return !hm[x.id]; }).map(function (x) { return Object.assign({ grp: true, done: dm[x.id] || 0 }, x); });
     return g.concat(a);
   }
+  /* ---------- Фото ---------- */
+  function phMap() { return SP.store.get(PH, {}) || {}; }
+  function photosOf(id) { return phMap()[id] || []; }
+  function setPhotos(id, list) { var m = phMap(); if (list.length) m[id] = list; else delete m[id]; SP.store.set(PH, m); }
+  function dropPhotos(list) { (list || []).forEach(function (p) { db.del(p).catch(function () { }); if (phUrl[p]) { URL.revokeObjectURL(phUrl[p]); delete phUrl[p]; } }); }
+  /* фото уменьшаем до 1600 px по длинной стороне (JPEG) — ~200–400 КБ вместо 3–5 МБ, текст на доске читается */
+  function shrink(file) {
+    return new Promise(function (ok, no) {
+      var u = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+        c.toBlob(function (b) { if (b) ok(b); else no(new Error(SP.t('hw.photoBad'))); }, 'image/jpeg', 0.82);
+      };
+      img.onerror = function () { URL.revokeObjectURL(u); no(new Error(SP.t('hw.photoBad'))); };
+      img.src = u;
+    });
+  }
+  /* выбрать фото: на телефоне — «Снять фото» или «Галерея» (решает телефон); не больше 6 за раз */
+  function pickPhotos() {
+    return new Promise(function (ok) {
+      var inp = SP.el('<input type="file" accept="image/*" multiple hidden>'); document.body.appendChild(inp);
+      inp.onchange = function () {
+        var files = Array.prototype.slice.call(inp.files || [], 0, 6); inp.remove();
+        if (!files.length) return ok([]);
+        SP.toast(SP.t('hw.photoSaving'), 'info', { ms: 2000 });
+        Promise.all(files.map(function (f) { return shrink(f).then(function (b) { var id = SP.uid('ph-'); return db.put(id, b).then(function () { return id; }); }); }))
+          .then(function (ids) { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () { }); ok(ids); })
+          .catch(function (e) { SP.toast(e.message || SP.t('hw.photoBad'), 'danger', { ms: 7000 }); ok([]); });
+      };
+      inp.click();
+    });
+  }
+  function thumbsHtml(owner, list, max) {
+    if (!list.length) return '';
+    var n = max || 3;
+    return '<span class="hw-phs">' + list.slice(0, n).map(function (p, i) { return '<button type="button" class="hw-ph" data-phv="' + esc(owner) + '|' + i + '" aria-label="' + esc(SP.t('hw.photo')) + '"><img data-ph="' + esc(p) + '" alt=""></button>'; }).join('') +
+      (list.length > n ? '<button type="button" class="hw-ph hw-ph-more" data-phv="' + esc(owner) + '|' + n + '">+' + (list.length - n) + '</button>' : '') + '</span>';
+  }
+  /* подставить картинки в <img data-ph> (из IndexedDB, один раз на фото) */
+  function fillThumbs(scope) {
+    SP.$$('img[data-ph]', scope).forEach(function (img) {
+      var id = img.getAttribute('data-ph');
+      if (phUrl[id]) { img.src = phUrl[id]; return; }
+      db.get(id).then(function (b) {
+        if (!b) { var t = img.closest('.hw-ph'); if (t) t.classList.add('gone'); return; }
+        phUrl[id] = phUrl[id] || URL.createObjectURL(b); img.src = phUrl[id];
+      }).catch(function () { });
+    });
+  }
+  function urlOf(id) { return phUrl[id] ? Promise.resolve(phUrl[id]) : db.get(id).then(function (b) { if (!b) return ''; phUrl[id] = URL.createObjectURL(b); return phUrl[id]; }); }
+  /* просмотр фото на весь экран: листать, открыть отдельно (можно увеличить), удалить */
+  function viewPhotos(list, start, onDelete) {
+    var i = start || 0;
+    var m = SP.modal({ title: SP.t('hw.photo'), size: 'lg', bodyClass: 'hw-view', body: '<img id="hvImg" alt=""><div class="hw-view-bar"><button type="button" class="btn btn-icon" id="hvPrev" aria-label="←">' + SP.icon('chevron-left') + '</button><span id="hvN"></span><button type="button" class="btn btn-icon" id="hvNext" aria-label="→">' + SP.icon('chevron-right') + '</button></div>',
+      actions: (onDelete ? [{ label: SP.t('hw.photoDel'), icon: 'trash-2', kind: 'danger-outline', close: false, onClick: function () {
+        var p = list[i]; list.splice(i, 1); onDelete(p); if (!list.length) { m.close(); return false; } i = Math.min(i, list.length - 1); show(); return false;
+      } }] : []).concat([{ label: SP.t('hw.photoOpen'), icon: 'external-link', close: false, onClick: function () { urlOf(list[i]).then(function (u) { if (u) window.open(u, '_blank'); }); return false; } }]) });
+    function show() {
+      urlOf(list[i]).then(function (u) { var im = SP.$('#hvImg', m.el); if (im) im.src = u; });
+      SP.$('#hvN', m.el).textContent = (i + 1) + ' / ' + list.length;
+      SP.$('#hvPrev', m.el).disabled = i === 0; SP.$('#hvNext', m.el).disabled = i >= list.length - 1;
+      SP.$('.hw-view-bar', m.el).hidden = list.length < 2;
+    }
+    SP.$('#hvPrev', m.el).onclick = function () { if (i > 0) { i--; show(); } };
+    SP.$('#hvNext', m.el).onclick = function () { if (i < list.length - 1) { i++; show(); } };
+    /* смахнуть влево/вправо — следующее/предыдущее фото */
+    var sx = null, im = SP.$('#hvImg', m.el);
+    im.addEventListener('touchstart', function (e) { sx = e.touches.length === 1 ? e.touches[0].clientX : null; }, { passive: true });
+    im.addEventListener('touchend', function (e) { if (sx === null) return; var dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 50) SP.$(dx < 0 ? '#hvNext' : '#hvPrev', m.el).click(); });
+    show();
+  }
+  /* фото, которые больше ни к чему не привязаны (закрыл сайт, не добавив задание), — убираем */
+  function cleanup() {
+    var used = {}; Object.keys(phMap()).forEach(function (k) { phMap()[k].forEach(function (p) { used[p] = 1; }); }); pend.forEach(function (p) { used[p] = 1; });
+    db.keys().then(function (ks) { (ks || []).forEach(function (k) { if (!used[k]) db.del(k).catch(function () { }); }); }).catch(function () { });
+  }
+
   /* задание группы, срок которого прошёл больше недели назад, уже не висит в «Просрочено» */
   function isDone(x) { var n = daysTo(x.due); return !!x.done || (x.grp && n !== null && n < -7); }
 
@@ -114,7 +196,8 @@
     if (x.grp) meta.push('<span class="hw-grp">' + SP.icon('megaphone', 'ic-sm') + esc(SP.t('hw.forGroup')) + '</span>');
     return '<li class="hw-item' + (isDone(x) ? ' done' : '') + (late ? ' late' : '') + '" data-hw="' + esc(x.id) + '">' +
       '<button type="button" class="hw-check" role="checkbox" aria-checked="' + !!x.done + '" data-hwtog="' + esc(x.id) + '" aria-label="' + esc(SP.t(x.done ? 'hw.undone' : 'hw.markDone')) + '">' + SP.icon('check') + '</button>' +
-      '<button type="button" class="hw-body" data-hwopen="' + esc(x.id) + '"><span class="hw-text">' + linkify(x.text) + '</span>' + (meta.length ? '<span class="hw-meta">' + meta.join('') + '</span>' : '') + '</button></li>';
+      '<div class="hw-main"><button type="button" class="hw-body" data-hwopen="' + esc(x.id) + '"><span class="hw-text">' + linkify(x.text) + '</span>' + (meta.length ? '<span class="hw-meta">' + meta.join('') + '</span>' : '') + '</button>' +
+      thumbsHtml(x.id, photosOf(x.id)) + '</div></li>';
   }
   function sections(list) {
     var by = { late: [], today: [], tomorrow: [], week: [], later: [], none: [], done: [] };
@@ -138,8 +221,9 @@
       '<div class="hw-chips">' +
       '<button type="button" class="hw-chip' + (s ? ' on' : '') + '" id="hwSubjBtn">' + SP.icon('folder', 'ic-sm') + '<span>' + esc(s || SP.t('hw.subject')) + '</span>' + SP.icon('chevron-down', 'ic-sm') + '</button>' +
       '<button type="button" class="hw-chip' + (d ? ' on' : '') + '" id="hwDueBtn">' + SP.icon('clock', 'ic-sm') + '<span>' + esc(d ? dueLabel(d) : SP.t('hw.date')) + '</span>' + SP.icon('chevron-down', 'ic-sm') + '</button>' +
+      '<button type="button" class="hw-chip' + (pend.length ? ' on' : '') + '" id="hwPhoto">' + SP.icon('camera', 'ic-sm') + '<span>' + esc(pend.length ? SP.t('hw.photoN', { n: pend.length }) : SP.t('hw.photo')) + '</span></button>' +
       (isDev() ? '<button type="button" class="hw-chip' + (form.group ? ' on' : '') + '" id="hwGroup" aria-pressed="' + form.group + '" data-tip="' + esc(SP.t('hw.toGroupTip')) + '">' + SP.icon('megaphone', 'ic-sm') + '<span>' + esc(SP.t('hw.toGroup')) + '</span></button>' : '') +
-      '</div></section>';
+      '</div>' + (pend.length ? '<div class="hw-pend">' + pend.map(function (p, i) { return '<span class="hw-ph"><img data-ph="' + esc(p) + '" alt=""><button type="button" class="hw-unpend" data-unpend="' + i + '" aria-label="' + esc(SP.t('hw.photoDel')) + '">' + SP.icon('x') + '</button></span>'; }).join('') + '</div>' : '') + '</section>';
   }
   function filterHtml(list) {
     var cnt = {}, order = [];
@@ -165,7 +249,7 @@
     if (by.done.length) body += '<details class="hw-sec hw-donebox"' + (SP.store.get('sp-hw-doneopen', false) ? ' open' : '') + '><summary class="section-title">' + SP.icon('circle-check', 'ic-sm') + esc(SP.t('hw.sec.done')) + ' <span class="count">' + by.done.length + '</span>' + SP.icon('chevron-down', 'ds-chev') + '</summary>' +
       '<ul class="hw-list">' + by.done.slice(0, 30).map(rowHtml).join('') + '</ul><button type="button" class="btn btn-ghost btn-sm" id="hwClear">' + SP.icon('trash-2', 'ic-sm') + '<span>' + esc(SP.t('hw.clearDone')) + '</span></button></details>';
     root.innerHTML = '<div class="page hw-page">' + html + body + '</div>';
-    wire(); grow();
+    wire(); grow(); fillThumbs(root);
   }
 
   /* ---------- Действия ---------- */
@@ -189,10 +273,13 @@
   }
   function add() {
     var t = SP.$('#hwText', root), text = t.value.trim();
-    if (!text) { t.focus(); return; }
-    var it = { text: text, subject: curSubject(), due: curDue(), at: new Date().toISOString() };
-    if (form.group && isDev()) { publishGroup('add', Object.assign({ id: 'g-' + SP.uid('') }, it)); }
-    else { var m = mine(); m.items.push(Object.assign({ id: SP.uid('hw-'), done: 0 }, it)); saveMine(m); SP.toast(SP.t('hw.added'), 'success'); }
+    if (!text && !pend.length) { t.focus(); return; }
+    /* только фото, без текста — тоже задание («Задание на фото») */
+    var it = { text: text || SP.t('hw.photoTask'), subject: curSubject(), due: curDue(), at: new Date().toISOString() };
+    var id = form.group && isDev() ? 'g-' + SP.uid('') : SP.uid('hw-');
+    if (pend.length) { setPhotos(id, pend.slice()); pend = []; }
+    if (form.group && isDev()) { publishGroup('add', Object.assign({ id: id }, it)); }
+    else { var m = mine(); m.items.push(Object.assign({ id: id, done: 0 }, it)); saveMine(m); SP.toast(SP.t('hw.added'), 'success'); }
     /* предмет оставляем (часто задают несколько заданий по одному предмету), срок — снова «как подскажет сайт» */
     form.text = ''; form.due = null; render();
     var n = SP.$('#hwText', root); if (n) n.focus();
@@ -232,6 +319,8 @@
         (x.grp ? '<p class="small muted">' + SP.icon('megaphone', 'ic-sm') + ' ' + esc(SP.t('hw.grpEditNote')) + '</p>' : '') + '</div>'
       : '<div class="stack"><div class="hw-full">' + linkifyA(x.text) + '</div><div class="hw-meta">' + (x.subject ? '<span>' + SP.icon('folder', 'ic-sm') + esc(x.subject) + '</span>' : '') + (x.due ? '<span>' + SP.icon('clock', 'ic-sm') + esc(dueLabel(x.due)) + '</span>' : '') + '<span class="hw-grp">' + SP.icon('megaphone', 'ic-sm') + esc(SP.t('hw.forGroup')) + '</span></div></div>';
     if (canEdit) body += '<div class="hw-links">' + linksOf(x.text) + '</div>';
+    /* фото — у любого задания (и у задания группы: снимок остаётся только у тебя) */
+    body += '<div class="hw-phrow" id="heP"></div>';
     var acts = [];
     if (canEdit) acts.push({ label: SP.t(x.grp ? 'hw.delGroup' : 'common.delete'), icon: 'trash-2', kind: 'danger-outline', onClick: function () { remove(x); } });
     if (sj) acts.push({ label: SP.t('hw.openFolder'), icon: 'folder-open', onClick: function () { SP.navigate('subjects', [sj.id]); } });
@@ -253,19 +342,28 @@
       if (d) d.onclick = function () { pickDue(d, st.subject, st.due, function (v) { st.due = v; SP.$('#heC', m.el).innerHTML = chips(); wireChips(); }); };
     };
     wireChips();
+    var paintP = function () {
+      var box = SP.$('#heP', m.el); if (!box) return;
+      var list = photosOf(x.id);
+      box.innerHTML = thumbsHtml(x.id, list, 8) + '<button type="button" class="hw-chip" id="heAddP">' + SP.icon('camera', 'ic-sm') + '<span>' + esc(SP.t('hw.photoAdd')) + '</span></button>';
+      fillThumbs(box);
+      SP.$('#heAddP', box).onclick = function () { pickPhotos().then(function (ids) { if (ids.length) { setPhotos(x.id, photosOf(x.id).concat(ids)); paintP(); render(); } }); };
+      SP.$$('[data-phv]', box).forEach(function (b) { b.onclick = function () { viewPhotos(photosOf(x.id).slice(), +b.getAttribute('data-phv').split('|')[1], function (p) { setPhotos(x.id, photosOf(x.id).filter(function (q) { return q !== p; })); dropPhotos([p]); paintP(); render(); }); }; });
+    };
+    paintP();
   }
   function urls(t) { return (String(t).match(/https?:\/\/[^\s<]+/g) || []).map(function (u) { return u.replace(/[).,;]+$/, ''); }); }
   function linkifyA(t) { return esc(t).replace(/https?:\/\/[^\s<]+/g, function (u) { return '<a href="' + u + '" target="_blank" rel="noopener noreferrer">' + u + '</a>'; }).replace(/\n/g, '<br>'); }
   function linksOf(t) { return urls(t).map(function (u) { return '<a class="btn btn-sm" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + SP.icon('external-link', 'ic-sm') + '<span>' + esc(u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40)) + '</span></a>'; }).join(''); }
   function remove(x) {
     if (x.grp) {
-      SP.confirm({ title: SP.t('hw.delGroup'), text: SP.t('hw.delGroupText'), danger: true, okLabel: SP.t('common.delete') }).then(function (ok) { if (ok) publishGroup('del', { id: x.id }); });
+      SP.confirm({ title: SP.t('hw.delGroup'), text: SP.t('hw.delGroupText'), danger: true, okLabel: SP.t('common.delete') }).then(function (ok) { if (ok) { publishGroup('del', { id: x.id }); dropPhotos(photosOf(x.id)); setPhotos(x.id, []); } });
       return;
     }
     var m = mine(), i = -1; m.items.forEach(function (it, k) { if (it.id === x.id) i = k; });
     if (i < 0) return;
     var it = m.items.splice(i, 1)[0]; saveMine(m); render();
-    SP.undo(SP.t('hw.deleted'), function () { var mm = mine(); mm.items.splice(Math.min(i, mm.items.length), 0, it); saveMine(mm); render(); });
+    SP.undo(SP.t('hw.deleted'), function () { var mm = mine(); mm.items.splice(Math.min(i, mm.items.length), 0, it); saveMine(mm); render(); }, function () { dropPhotos(photosOf(it.id)); setPhotos(it.id, []); });
   }
   /* разработчик: записать задание в data/<группа>/homework.json (свежий файл с GitHub + правка + коммит, без точки сохранения) */
   function publishGroup(op, it, then) {
@@ -301,6 +399,12 @@
     var sb = q('#hwSubjBtn'); if (sb) sb.onclick = function () { pickSubject(sb, curSubject(), function (v) { form.subject = v; form.due = null; repaintForm(); }); };
     var db = q('#hwDueBtn'); if (db) db.onclick = function () { pickDue(db, curSubject(), curDue(), function (v) { form.due = v; repaintForm(); }); };
     var g = q('#hwGroup'); if (g) g.onclick = function () { form.group = !form.group; repaintForm(); };
+    var ph = q('#hwPhoto'); if (ph) ph.onclick = function () { pickPhotos().then(function (ids) { if (ids.length) { pend = pend.concat(ids); repaintForm(); } }); };
+    SP.$$('[data-unpend]', root).forEach(function (b) { b.onclick = function () { var p = pend.splice(+b.getAttribute('data-unpend'), 1); dropPhotos(p); repaintForm(); }; });
+    SP.$$('.hw-list [data-phv]', root).forEach(function (b) { b.onclick = function () {
+      var v = b.getAttribute('data-phv').split('|'), id = v[0];
+      viewPhotos(photosOf(id).slice(), +v[1], function (p) { setPhotos(id, photosOf(id).filter(function (q2) { return q2 !== p; })); dropPhotos([p]); render(); });
+    }; });
     SP.$$('[data-hwf]', root).forEach(function (b) { b.onclick = function () { filter = b.getAttribute('data-hwf'); form.subject = null; form.due = null; history.replaceState(null, '', '#/homework' + (filter ? '/' + encodeURIComponent(filter) : '')); render(); }; });
     SP.$$('[data-hwtog]', root).forEach(function (b) { b.onclick = function () { toggle(b.getAttribute('data-hwtog')); }; });
     SP.$$('[data-hwopen]', root).forEach(function (b) { b.onclick = function () { var x = find(b.getAttribute('data-hwopen')); if (x) open(x); }; });
@@ -310,7 +414,10 @@
       all().forEach(function (x) { if (x.grp && isDone(x)) hm[x.id] = 1; });
       var gone = was.length - m.items.length + Object.keys(hm).length - Object.keys(wasH).length;
       saveMine(m); SP.store.set(HIDE, hm); render();
-      SP.undo(SP.t('hw.cleared', { n: gone }), function () { var mm = mine(); mm.items = was; saveMine(mm); SP.store.set(HIDE, wasH); render(); });
+      /* через 10 секунд (не нажали «Отменить») — стираем и фото этих заданий */
+      SP.undo(SP.t('hw.cleared', { n: gone }), function () { var mm = mine(); mm.items = was; saveMine(mm); SP.store.set(HIDE, wasH); render(); }, function () {
+        was.concat(group().items).forEach(function (x) { if ((x.done && was.indexOf(x) >= 0) || (hm[x.id] && !wasH[x.id])) { dropPhotos(photosOf(x.id)); setPhotos(x.id, []); } });
+      });
     };
     var dbx = q('.hw-donebox'); if (dbx) dbx.addEventListener('toggle', function () { SP.store.set('sp-hw-doneopen', dbx.open); });
   }
@@ -318,7 +425,7 @@
   function repaintForm() {
     var f = SP.$('#hwForm', root); if (!f) return;
     var ae = document.activeElement && document.activeElement.id;
-    f.outerHTML = formHtml(); wire(); grow();
+    f.outerHTML = formHtml(); wire(); grow(); fillThumbs(root);
     var n = ae && SP.$('#' + ae, root); if (n) n.focus();
   }
 
@@ -345,6 +452,6 @@
   });
   SP.on('hub', function () { badge(); if (root && SP.views.current() === 'homework') render(); });
   /* кружок в меню — сразу при запуске и раз в 10 минут (наступает новый день) */
-  setTimeout(function () { badge(); loadGroup(); }, 1500);
+  setTimeout(function () { badge(); loadGroup(); cleanup(); }, 1500);
   setInterval(badge, 10 * 60000);
 })();

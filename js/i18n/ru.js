@@ -1474,3 +1474,8 @@ Object.assign(SP.I18N.ru, {
   'hw.grpEditNote': 'Это задание всей группы: изменения увидят все.', 'hw.openFolder': 'Папка предмета',
   'hw.editTitle': 'Задание', 'hw.viewTitle': 'Задание для группы'
 });
+/* 17.11 (c): фото к домашке */
+Object.assign(SP.I18N.ru, {
+  'hw.photo': 'Фото', 'hw.photoN': 'Фото · {n}', 'hw.photoAdd': 'Добавить фото', 'hw.photoDel': 'Удалить фото', 'hw.photoOpen': 'Открыть отдельно',
+  'hw.photoBad': 'Не получилось прочитать фото', 'hw.photoSaving': 'Сохраняю фото…', 'hw.photoTask': 'Задание на фото'
+});

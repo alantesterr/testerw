@@ -1,8 +1,22 @@
 /* Окошко настроек расширения */
-var DEF = { on: true, every: 15, warn: 30, count: 3, subjects: ['phil', 'arch', 'cpp', 'ict'], mode: 'mix', skip: false, off: [], pausedUntil: 0 };
-var NAMES = { phil: 'Философия', arch: 'Архитектура компьютера', cpp: 'C++', ict: 'ИКТ' };
-var EXAM_URL = 'https://alantesterr.github.io/testerw/exam/index.html';
+var DEF = { on: true, every: 15, warn: 30, count: 3, offSubs: [], mode: 'mix', skip: false, off: [], pausedUntil: 0 };
+var SITE_URL = 'https://alantesterr.github.io/testerw/#/tester';
 var cfg, $ = function (id) { return document.getElementById(id); };
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+/* файлы из Тестера сайта — все включены, пока не снимешь галочку (cfg.offSubs) */
+function paintSubs() {
+  chrome.storage.local.get(['bank', 'errs'], function (d) {
+    var b = d.bank || {}, keys = Object.keys(b);
+    $('subs').innerHTML = keys.length ? keys.map(function (k) {
+      var e = ((d.errs || {})[k] || []).length;
+      return '<label class="ck"><input type="checkbox" data-s="' + esc(k) + '"' + ((cfg.offSubs || []).indexOf(k) < 0 ? ' checked' : '') + '> ' + esc(b[k].name) + ' <span class="muted">(' + b[k].qs.length + (e ? ', ошибок ' + e : '') + ')</span></label>';
+    }).join('') : '<div class="muted">Пусто. Загрузи тесты в Тестер на сайте и открой его — файлы появятся здесь.</div>';
+    document.querySelectorAll('[data-s]').forEach(function (c) {
+      c.onchange = function () { cfg.offSubs = Array.prototype.slice.call(document.querySelectorAll('[data-s]:not(:checked)')).map(function (x) { return x.getAttribute('data-s'); }); save(); };
+    });
+  });
+}
 
 function save() { chrome.storage.local.set({ cfg: cfg }); paint(); }
 function host(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
@@ -18,7 +32,7 @@ function paint() {
     Object.keys(b).forEach(function (k) { n += b[k].qs.length; e += ((d.errs || {})[k] || []).length; });
     var st = d.stats || { r: 0, w: 0 };
     $('bankInfo').textContent = n ? 'Вопросов в расширении: ' + n + ' · в ошибках: ' + e + ' · ответов во время видео: ✓ ' + st.r + ' ✗ ' + st.w + ((d.pending || []).length ? ' · ждут отправки на сайт: ' + d.pending.length : '') + (d.bankAt ? ' · обновлено ' + new Date(d.bankAt).toLocaleDateString() : '')
-      : 'Вопросы ещё не загружены — нажми «Открыть Экзамен».';
+      : 'Вопросов из Тестера пока нет — загрузи тесты в Тестер и нажми «Открыть Тестер StudyPlay».';
   });
 }
 
@@ -26,10 +40,7 @@ chrome.storage.local.get('cfg', function (d) {
   cfg = Object.assign({}, DEF, d.cfg || {});
   $('on').checked = cfg.on; $('every').value = cfg.every; $('warn').value = cfg.warn; $('count').value = cfg.count; $('mode').value = cfg.mode; $('skip').checked = cfg.skip;
   $('off').value = (cfg.off || []).join('\n');
-  $('subs').innerHTML = Object.keys(NAMES).map(function (k) { return '<label class="ck"><input type="checkbox" data-s="' + k + '"' + (cfg.subjects.indexOf(k) >= 0 ? ' checked' : '') + '> ' + NAMES[k] + '</label>'; }).join('');
-  document.querySelectorAll('[data-s]').forEach(function (c) {
-    c.onchange = function () { cfg.subjects = Array.prototype.slice.call(document.querySelectorAll('[data-s]:checked')).map(function (x) { return x.getAttribute('data-s'); }); save(); };
-  });
+  paintSubs();
   paint();
 });
 
@@ -52,7 +63,7 @@ $('now').onclick = function () {
     window.close();
   });
 };
-$('openExam').onclick = function () { chrome.tabs.create({ url: EXAM_URL }); };
+$('openExam').onclick = function () { chrome.tabs.create({ url: SITE_URL }); };
 setInterval(paint, 2000);
 
 /* «Мои тесты» и проверка: видит ли расширение видео сейчас */

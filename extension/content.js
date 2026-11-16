@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   if (window.__spVideoQuiz) return; window.__spVideoQuiz = 1;
-  var DEF = { on: true, every: 15, warn: 30, count: 3, subjects: ['phil', 'arch', 'cpp', 'ict'], mode: 'mix', skip: false, off: [], pausedUntil: 0 };
+  var DEF = { on: true, every: 15, warn: 30, count: 3, offSubs: [], mode: 'mix', skip: false, off: [], pausedUntil: 0 };
   var cfg = Object.assign({}, DEF), open = false, warned = false, acc = 0;
 
   function topHost() {
@@ -112,7 +112,7 @@
 
   /* ---------- Подбор вопросов ---------- */
   function pick(d, n) {
-    var bank = Object.assign({}, d.bank || {}), errs = Object.assign({}, d.errs || {}, d.myErrs || {}), pool = [], errPool = [], subs = (cfg.subjects || []).slice();
+    var bank = Object.assign({}, d.bank || {}), errs = Object.assign({}, d.errs || {}, d.myErrs || {}), pool = [], errPool = [], subs = Object.keys(bank).filter(function (k) { return (cfg.offSubs || []).indexOf(k) < 0; });
     /* свои тесты, загруженные в расширение (включённые галочкой) */
     (d.my || []).forEach(function (t) { if (t.on) { bank['my:' + t.id] = { name: t.name, qs: t.qs }; subs.push('my:' + t.id); } });
     subs.forEach(function (id) {
@@ -141,13 +141,13 @@
         paused.forEach(function (v) { try { v.play(); } catch (e) {} });
       }
       if (!list.length) {
-        bg.innerHTML = '<div class="box c"><p class="q">📚 StudyPlay</p><p>Вопросов пока нет. Открой сайт «Экзамен» (StudyPlay → Папки → Экзамен) — вопросы загрузятся в расширение сами.</p><div class="nav" style="justify-content:center"><button class="btn p">Продолжить просмотр</button></div></div>';
+        bg.innerHTML = '<div class="box c"><p class="q">📚 StudyPlay</p><p>Вопросов пока нет. Загрузи тесты в Тестер StudyPlay и открой сайт — вопросы попадут в расширение сами. Или добавь свои: значок расширения → «Мои тесты».</p><div class="nav" style="justify-content:center"><button class="btn p">Продолжить просмотр</button></div></div>';
         bg.querySelector('.btn').onclick = close; return;
       }
       var i = 0, right = 0;
       function step() {
         if (i >= list.length) {
-          bg.innerHTML = '<div class="box c"><div class="h"><span>📚 StudyPlay</span></div><div class="big">' + right + ' / ' + list.length + '</div><p>' + (right === list.length ? 'Отлично! Все ответы верные.' : 'Ошибки сохранены — разберёшь их в «Экзамене».') + '</p><div class="nav" style="justify-content:center"><button class="btn p">▶ Продолжить просмотр</button></div></div>';
+          bg.innerHTML = '<div class="box c"><div class="h"><span>📚 StudyPlay</span></div><div class="big">' + right + ' / ' + list.length + '</div><p>' + (right === list.length ? 'Отлично! Все ответы верные.' : 'Ошибки сохранены — они появятся в «Ошибках» Тестера, когда откроешь StudyPlay.') + '</p><div class="nav" style="justify-content:center"><button class="btn p">▶ Продолжить просмотр</button></div></div>';
           var b = bg.querySelector('.btn'); b.onclick = close; b.focus(); return;
         }
         var x = list[i], q = x.q, kb = q.type === 'keyboard', multi = !kb && q.opts.filter(function (o) { return o.right; }).length > 1, done = false, sel = [];

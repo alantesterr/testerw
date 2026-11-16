@@ -62,6 +62,9 @@
   function listPane(active) {
     var d = data(), q = SP.lc(query);
     var items = d.subjects.filter(function (s) { return !q || SP.lc(s.name + ' ' + (s.teacher || '')).indexOf(q) >= 0; });
+    /* папка «Экзамен» — всегда первой */
+    var isEx = function (s) { return SP.lc(s.name) === 'экзамен'; };
+    items = items.filter(isEx).concat(items.filter(function (s) { return !isEx(s); }));
     var h = '<aside class="sj-list card card-flat"><div class="input-icon">' + SP.icon('search') + '<input class="input" type="search" id="sjSearch" placeholder="' + esc(SP.t('subjects.search')) + '" value="' + esc(query) + '" aria-label="' + esc(SP.t('subjects.search')) + '"></div>';
     if (selMode) {
       var nSel = Object.keys(selSet).length, allOn = items.length > 0 && items.every(function (s) { return selSet[s.id]; });
@@ -69,9 +72,7 @@
         '<span class="count" aria-live="polite">' + esc(SP.t('subjects.selected', { n: nSel })) + '</span>' +
         '<button type="button" class="btn btn-danger btn-sm" id="sjDelSel"' + (nSel ? '' : ' disabled') + '>' + SP.icon('trash-2') + '<span>' + esc(SP.t('common.delete')) + '</span></button></div>';
     }
-    /* папка «Экзамен» — ведёт на отдельный сайт подготовки (exam/) */
-    var examLink = selMode ? '' : '<a class="sj-item sj-exam" href="exam/index.html"><span class="fi-folder">' + SP.icon('folder') + '</span><span class="meta"><b>' + esc(SP.t('sj.exam')) + '</b><small>' + esc(SP.t('sj.examSub')) + '</small></span>' + SP.icon('chevron-right', 'sj-chev') + '</a>';
-    h += '<nav class="sj-items" aria-label="' + esc(SP.t('nav.subjects')) + '">' + examLink + (items.length ? items.map(function (s) {
+    h += '<nav class="sj-items" aria-label="' + esc(SP.t('nav.subjects')) + '">' + (items.length ? items.map(function (s) {
       var mats = (s.materials || []).length, tests = (s.tests || []).length, kn = SP.notes && SP.notes.has(s.name);
       var btn = '<button type="button" class="sj-item" data-sub="' + esc(s.id) + '"' + (active && s.id === active.id ? ' aria-current="true"' : '') + '>' +
         '<span class="fi-folder">' + SP.icon('folder') + '</span><span class="meta"><b>' + esc(SP.hub.cleanName(s.name)) + '</b>' +

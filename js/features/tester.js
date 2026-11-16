@@ -192,14 +192,7 @@
     launch(quiz.filter(function (q) { return !q._rep; }), { resume: { quiz: quiz, ans: ans, cur: cur, round: r.round } });
   }
 
-  /* ---------- загрузить тесты из папок предметов и из «Экзамена» ---------- */
-  var EXAM = [
-    { p: 'exam/data/philosophy.docx', n: 'Философия (Экзамен).docx', c: 500 },
-    { p: 'exam/data/arch-platonus.docx', n: 'Архитектура Platonus (Экзамен).docx', c: 142 },
-    { p: 'exam/data/arch-umkd.docx', n: 'Архитектура УМКД (Экзамен).docx', c: 8 },
-    { p: 'exam/data/cpp.txt', n: 'C++ на русском (Экзамен).txt', c: 190 },
-    { p: 'exam/data/ict.doc', n: 'ИКТ (Экзамен).doc', c: 364 }
-  ];
+  /* ---------- загрузить тесты из папок предметов ---------- */
   function fromFolders() {
     var st = SP.bank.state(), room = SP.bank.MAX - st.files.length;
     var has = function (name) { return st.files.some(function (f) { return f.name === name; }); };
@@ -217,8 +210,7 @@
           return row('sj|' + s.id + '|' + x.i, x.f.name, c != null ? SP.t('tester.qCount', { n: c }) : SP.t('tester.srcCounting'), c != null ? '' : s.id + '|' + x.i);
         }) });
       }).join('') +
-      (subs.length ? '' : '<p class="small subtle">' + esc(SP.t('tester.srcNoSj')) + '</p>') +
-      ST.group({ id: 'exam', head: SP.t('sj.exam'), icon: 'graduation-cap', color: ST.COLORS[subs.length % ST.COLORS.length], rows: EXAM.map(function (x, i) { return row('ex|' + i, x.n, SP.t('tester.qCount', { n: x.c })); }) });
+      (subs.length ? '' : '<p class="small subtle">' + esc(SP.t('tester.srcNoSj')) + '</p>');
     var m = SP.modal({ title: SP.t('tester.fromFolders'), size: 'lg', body: body, actions: [
       { label: SP.t('common.cancel') },
       { label: SP.t('tester.srcLoad'), icon: 'upload', kind: 'primary', close: false, onClick: function (api, b) {
@@ -228,9 +220,7 @@
         SP.busy(b, true);
         Promise.all(vals.map(function (v) {
           var p = v.split('|');
-          if (p[0] === 'sj') return SP.subjectTests.file(p[1], +p[2]).catch(function () { return null; });
-          var x = EXAM[+p[1]];
-          return fetch(x.p).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (bl) { return new File([bl], x.n, { type: bl.type }); }).catch(function () { return null; });
+          return SP.subjectTests.file(p[1], +p[2]).catch(function () { return null; });
         })).then(function (files) {
           var ok = files.filter(Boolean);
           if (ok.length < files.length) SP.toast(SP.t('subjects.openFail'), 'danger');

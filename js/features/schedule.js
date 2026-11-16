@@ -422,6 +422,8 @@
 
   /* ---------- Загрузка / помощь / ручная правка (используются и из Настроек) ---------- */
   SP.schedule = {
+    /* вид пары точно как в Расписании — для наглядного редактора в «Разработчике» (dev-schedule.js) */
+    look: function (l) { var x = info(l); return { name: x.name, ab: x.ab, cls: kindCls(x.ab), kind: kindLong(x.ab) || x.ab, room: ttRoom(x.room), building: x.building ? ttBld(x.building) : '', teacher: x.teacher }; },
     /* Занятия предмета (для папки): день, время, тип, кабинет, преподаватель */
     lessonsOf: function (sid) {
       var slots = {}; allSlots().forEach(function (s) { slots[s.id] = s; });

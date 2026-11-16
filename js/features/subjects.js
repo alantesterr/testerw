@@ -3,7 +3,8 @@
    Слева — список папок, справа — папка предмета одной страницей:
    Файлы (и ссылки) → Тесты → Лекции (конспект, см. notes.js) → Мои заметки. На ПК список можно спрятать кнопкой, чтобы рабочая
    область стала шире. На телефоне — сначала список, затем папка.
-   Файлы можно двигать вверх/вниз (порядок сохраняется) и скрывать.
+   Файлы, тесты, ссылки и сами папки можно перетаскивать (js/core/drag.js, порядок сохраняется),
+   свой файл — бросить на другую папку слева. Файлы можно скрывать.
    Папки можно удалять по одной или несколько сразу (режим «Выбрать»).
    ===================================================================== */
 (function () {
@@ -62,9 +63,15 @@
   function listPane(active) {
     var d = data(), q = SP.lc(query);
     var items = d.subjects.filter(function (s) { return !q || SP.lc(s.name + ' ' + (s.teacher || '')).indexOf(q) >= 0; });
-    /* папка «Экзамен» — всегда первой */
-    var isEx = function (s) { return SP.lc(s.name) === 'экзамен'; };
-    items = items.filter(isEx).concat(items.filter(function (s) { return !isEx(s); }));
+    /* свой порядок папок (перетаскивание) — order.__folders; без него папка «Экзамен» первой */
+    var fo = d.order && d.order.__folders;
+    if (fo && fo.length) {
+      var fp = function (s) { var k = fo.indexOf(fkey(s)); return k < 0 ? 1e6 : k; };
+      items = items.map(function (s, i) { return { s: s, i: i }; }).sort(function (a, b) { return fp(a.s) - fp(b.s) || a.i - b.i; }).map(function (x) { return x.s; });
+    } else {
+      var isEx = function (s) { return SP.lc(s.name) === 'экзамен'; };
+      items = items.filter(isEx).concat(items.filter(function (s) { return !isEx(s); }));
+    }
     var h = '<aside class="sj-list card card-flat"><div class="input-icon">' + SP.icon('search') + '<input class="input" type="search" id="sjSearch" placeholder="' + esc(SP.t('subjects.search')) + '" value="' + esc(query) + '" aria-label="' + esc(SP.t('subjects.search')) + '"></div>';
     if (selMode) {
       var nSel = Object.keys(selSet).length, allOn = items.length > 0 && items.every(function (s) { return selSet[s.id]; });
@@ -74,17 +81,16 @@
     }
     h += '<nav class="sj-items" aria-label="' + esc(SP.t('nav.subjects')) + '">' + (items.length ? items.map(function (s) {
       var mats = (s.materials || []).length, tests = (s.tests || []).length, kn = SP.notes && SP.notes.has(s.name);
-      var btn = '<button type="button" class="sj-item" data-sub="' + esc(s.id) + '"' + (active && s.id === active.id ? ' aria-current="true"' : '') + '>' +
+      var btn = '<button type="button" class="sj-item" data-sub="' + esc(s.id) + '" data-fk="' + esc(fkey(s)) + '"' +(active && s.id === active.id ? ' aria-current="true"' : '') + '>' +
         '<span class="fi-folder">' + SP.icon('folder') + '</span><span class="meta"><b>' + esc(SP.hub.cleanName(s.name)) + '</b>' +
         '<small>' + esc(SP.t('sj.itemMeta', { m: mats, t: tests })) + '</small></span>' + SP.icon('chevron-right', 'sj-chev') + '</button>';
       if (!selMode) return btn;
       return '<div class="sj-item-wrap"><label class="check"><input type="checkbox" data-selsub="' + esc(s.id) + '"' + (selSet[s.id] ? ' checked' : '') + ' aria-label="' + esc(SP.t('subjects.selectOne', { name: SP.hub.cleanName(s.name) })) + '"></label>' + btn + '</div>';
     }).join('') : '<p class="subtle small sj-none">' + esc(SP.t('subjects.notFound')) + '</p>') + '</nav>';
     /* «Выбрать» и «Добавить предмет» — под списком, прилипают к низу колонки */
-    var d2 = data();
+    /* «Вернуть удалённые папки курса» — не здесь, а в Настройки → Мои данные (редко нужно) */
     h += '<div class="sj-list-foot"><button type="button" class="btn" id="sjSelect" aria-pressed="' + selMode + '">' + SP.icon(selMode ? 'x' : 'square-check-big') + '<span>' + esc(SP.t(selMode ? 'subjects.selDone' : 'subjects.select')) + '</span></button>' +
-      '<button type="button" class="btn btn-primary" id="sjAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('subjects.add')) + '</span></button>' +
-      (Object.keys(d2.removed || {}).length ? '<button type="button" class="btn btn-ghost btn-sm sj-restore" id="sjRestore">' + SP.icon('undo-2') + '<span>' + esc(SP.t('subjects.restoreRemoved')) + '</span></button>' : '') + '</div>';
+      '<button type="button" class="btn btn-primary" id="sjAdd">' + SP.icon('plus') + '<span>' + esc(SP.t('subjects.add')) + '</span></button></div>';
     return h + '</aside>';
   }
 
@@ -102,6 +108,8 @@
       '<button type="button" class="btn btn-ghost btn-icon" id="sjEdit" aria-label="' + esc(SP.t('subjects.edit')) + '" data-tip="' + esc(SP.t('subjects.edit')) + '">' + SP.icon('pencil') + '</button></div></div>' +
       /* Вкладки папки: Файлы и ссылки · Тесты · Конспект (если он есть у предмета) */
       '';
+    /* несделанная домашка по предмету — полоска сверху (js/features/homework.js) */
+    if (SP.homework) h += SP.homework.folderHtml(s);
     /* вкладка «Конспект» убрана (2026-11-14): никто не пользовался; код конспектов оставлен */
     if (tab === 'konspekt') tab = 'materials';
     /* «Карточки» (устные вопросы) — только если разработчик добавил их в папку (js/features/cards.js) */
@@ -201,12 +209,11 @@
     /* значок «от курса» в строке не показываем — лишний шум */
     var main = link ? '<a class="list-row-main" href="' + esc(f.url) + '" target="_blank" rel="noopener noreferrer">' + inner + SP.icon('external-link', 'ic-sm subtle') + '</a>'
       : '<button type="button" class="list-row-main" data-open="' + type + ':' + i + '">' + inner + '</button>';
-    var pos = ord.indexOf(i), same = function (j) { return j !== undefined && isPin(listOf(s, type)[j]) === isPin(f); };
-    return '<div class="list-row' + (isPin(f) ? ' pinned' : '') + (hid ? ' is-hidden' : '') + '">' + main +
+    /* строку можно перетащить (data-dk — id, data-pin — закреплённые двигаются только среди закреплённых) */
+    return '<div class="list-row dg-item' + (isPin(f) ? ' pinned' : '') + (hid ? ' is-hidden' : '') + '" data-dk="' + esc(f.id) + '" data-pin="' + (isPin(f) ? 1 : 0) + '" data-ix="' + i + '" data-ty="' + type + '">' +
+      '<span class="dg-grip" aria-hidden="true">' + SP.icon('grip-vertical') + '</span>' + main +
       (hid ? '<span class="badge">' + SP.icon('eye-off') + esc(SP.t('subjects.hiddenBadge')) + '</span>' : '') +
       (type === 'test' ? '<button type="button" class="btn btn-soft btn-sm" data-run="' + i + '">' + SP.icon('play') + '<span>' + esc(SP.t('subjects.runTest')) + '</span></button>' : '') +
-      '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-mv="' + type + ':' + i + ':-1"' + (same(ord[pos - 1]) ? '' : ' disabled') + ' aria-label="' + esc(SP.t('subjects.moveUp')) + '" data-tip="' + esc(SP.t('subjects.moveUp')) + '">' + SP.icon('arrow-up') + '</button>' +
-      '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-mv="' + type + ':' + i + ':1"' + (same(ord[pos + 1]) ? '' : ' disabled') + ' aria-label="' + esc(SP.t('subjects.moveDown')) + '" data-tip="' + esc(SP.t('subjects.moveDown')) + '">' + SP.icon('arrow-down') + '</button>' +
       '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-more="' + type + ':' + i + '" aria-label="' + esc(SP.t('common.actions')) + '" data-tip="' + esc(SP.t('common.actions')) + '">' + SP.icon('ellipsis') + '</button></div>';
   }
 
@@ -215,7 +222,11 @@
     var q = function (x) { return SP.$(x, root); };
     [q('#sjAdd'), q('#sjAdd2')].forEach(function (b) { if (b) b.onclick = function () { editor(null); }; });
     var sl = q('#sjSelect'); if (sl) sl.onclick = function () { selMode = !selMode; selSet = {}; render(); var n = SP.$('#sjSelect', root); if (n) n.focus(); };
-    var rs = q('#sjRestore'); if (rs) rs.onclick = function () { SP.hub.restoreRemoved(); SP.toast(SP.t('subjects.restored'), 'success'); };
+    /* папки слева: перетащить — свой порядок (не в режиме «Выбрать» и не при поиске) */
+    SP.dragSort(q('.sj-items'), { item: '.sj-item[data-fk]', key: 'data-fk', off: selMode || !!query, onSort: function (ids) {
+      var o = data().order = data().order || {}, old = o.__folders || [];
+      o.__folders = ids.concat(old.filter(function (k) { return ids.indexOf(k) < 0; })); SP.hub.save(); render();
+    } });
     SP.$$('[data-selsub]', root).forEach(function (cb) {
       cb.onchange = function () { var id = cb.getAttribute('data-selsub'); if (cb.checked) selSet[id] = 1; else delete selSet[id]; render(); var n = SP.$('[data-selsub="' + id + '"]', root); if (n) n.focus(); };
     });
@@ -253,7 +264,12 @@
     }
     SP.$$('[data-open]', root).forEach(function (b) { b.onclick = function () { var p = b.getAttribute('data-open').split(':'); openItem(s, p[0], +p[1]); }; });
     SP.$$('[data-run]', root).forEach(function (b) { b.onclick = function () { openItem(s, 'test', +b.getAttribute('data-run')); }; });
-    SP.$$('[data-mv]', root).forEach(function (b) { b.onclick = function () { var p = b.getAttribute('data-mv').split(':'); move(s, p[0], +p[1], +p[2]); var n = SP.$('[data-mv="' + p[0] + ':' + p[1] + ':' + p[2] + '"]', root); if (n && !n.disabled) n.focus(); }; });
+    /* файлы и тесты: перетащить внутри списка — порядок; бросить на папку слева — перенести туда */
+    SP.dragSort(q('.sj-detail'), { item: '.list-row.dg-item', skip: '.btn', target: '.sj-item[data-sub]',
+      same: function (a, b) { return a.getAttribute('data-pin') === b.getAttribute('data-pin'); },
+      onSort: function (ids, list) { var r = SP.$('.dg-item', list); if (r) setOrder(s, r.getAttribute('data-ty'), ids); },
+      onDrop: function (tg, el) { moveToFolder(s, el.getAttribute('data-ty'), +el.getAttribute('data-ix'), tg.getAttribute('data-sub')); }
+    });
     SP.$$('[data-more]', root).forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); var p = b.getAttribute('data-more').split(':'); moreMenu(b, s, p[0], +p[1]); }; });
   }
 
@@ -263,6 +279,33 @@
     var ids = ord.map(function (k) { return arr[k].id; }), t = ids[pos]; ids[pos] = ids[j]; ids[j] = t;
     var o = data().order = data().order || {}; o[ordKey(s, type)] = ids; SP.hub.save(); render();
   }
+  /* новый порядок после перетаскивания: ids — видимые строки; скрытые остаются на своих местах */
+  function setOrder(s, type, ids) {
+    var arr = listOf(s, type), ord = viewOrder(arr, s, type).map(function (k) { return arr[k].id; }), q = ids.slice(), set = {};
+    ids.forEach(function (id) { set[id] = 1; });
+    var o = data().order = data().order || {};
+    o[ordKey(s, type)] = ord.map(function (id) { return set[id] ? q.shift() : id; });
+    SP.hub.save(); render();
+  }
+  /* перенести свой файл в другую папку (файлы курса меняет только разработчик) */
+  function moveToFolder(s, type, i, sid) {
+    var arr = listOf(s, type), f = arr[i], t = SP.hub.getSubject(sid);
+    if (!f || !t || t.id === s.id) return;
+    if (f.base) { SP.toast(SP.t('subjects.cantMoveBase'), 'info', { ms: 6000 }); return; }
+    var key = type === 'test' ? 'tests' : 'materials';
+    arr.splice(i, 1); (t[key] = t[key] || []).push(f); SP.hub.save(); render();
+    SP.undo(SP.t('subjects.movedTo', { name: f.name, to: SP.hub.cleanName(t.name) }), function () {
+      var k = t[key].indexOf(f); if (k >= 0) t[key].splice(k, 1); arr.splice(Math.min(i, arr.length), 0, f); SP.hub.save(); render();
+    });
+  }
+  function pickFolder(s, type, i) {
+    var others = data().subjects.filter(function (x) { return x.id !== s.id; });
+    var m = SP.modal({ title: SP.t('subjects.moveToTitle'), body: '<div class="stack-sm">' + others.map(function (x) {
+      return '<button type="button" class="btn btn-block wrap" data-to="' + esc(x.id) + '">' + SP.icon('folder') + '<span>' + esc(SP.hub.cleanName(x.name)) + '</span></button>';
+    }).join('') + '</div>', actions: [{ label: SP.t('common.cancel') }] });
+    SP.$$('[data-to]', m.el).forEach(function (b) { b.onclick = function () { m.close(); moveToFolder(s, type, i, b.getAttribute('data-to')); }; });
+  }
+  function fkey(s) { return SP.lc(SP.hub.cleanName(s.name)); }
   function toggleHide(f) {
     var h = data().hidden = data().hidden || {};
     if (h[f.id]) delete h[f.id]; else { h[f.id] = 1; SP.toast(SP.t('subjects.hiddenToast'), 'info'); }
@@ -277,11 +320,10 @@
       if (f.base) { var p = data().pins = data().pins || {}; if (p[f.id]) delete p[f.id]; else p[f.id] = 1; } else f.pinned = !f.pinned;
       SP.hub.save(); render();
     } });
-    /* на телефоне стрелок в строке нет — двигать можно из этого меню */
-    if (window.innerWidth < 768) {
-      items.push({ label: SP.t('subjects.moveUp'), icon: 'arrow-up', onClick: function () { move(s, type, i, -1); } });
-      items.push({ label: SP.t('subjects.moveDown'), icon: 'arrow-down', onClick: function () { move(s, type, i, 1); } });
-    }
+    /* двигать удобнее перетаскиванием; в меню — то же для клавиатуры */
+    items.push({ label: SP.t('subjects.moveUp'), icon: 'arrow-up', onClick: function () { move(s, type, i, -1); } });
+    items.push({ label: SP.t('subjects.moveDown'), icon: 'arrow-down', onClick: function () { move(s, type, i, 1); } });
+    if (!f.base && data().subjects.length > 1) items.push({ label: SP.t('subjects.moveTo'), icon: 'folder-input', onClick: function () { pickFolder(s, type, i); } });
     items.push({ label: SP.t(isHidden(f) ? 'subjects.unhide' : 'subjects.hide'), icon: isHidden(f) ? 'eye' : 'eye-off', onClick: function () { toggleHide(f); } });
     items.push('-');
     items.push({ label: SP.t(f.base ? 'subjects.cantDelete' : 'common.delete'), icon: 'trash-2', danger: true, disabled: !!f.base, onClick: function () {

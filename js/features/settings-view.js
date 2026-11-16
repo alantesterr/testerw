@@ -101,7 +101,9 @@
       setRow(SP.t('settings.uploadSchedule'), esc(SP.t('settings.uploadScheduleHint')), '<button type="button" class="btn" id="sUp">' + SP.icon('upload') + '<span>' + esc(SP.t('common.upload')) + '</span></button>') +
       setRow(SP.t('schedule.howTo'), esc(SP.t('settings.howToHint')), '<button type="button" class="btn btn-ghost" id="sHelp">' + SP.icon('circle-help') + '<span>' + esc(SP.t('common.open')) + '</span></button>') +
       setRow(SP.t('schedule.editTitle'), esc(SP.t('settings.editHint')), '<button type="button" class="btn btn-ghost" id="sEdit"' + (d.schedule.length ? '' : ' disabled') + '>' + SP.icon('pencil') + '<span>' + esc(SP.t('common.change')) + '</span></button>') +
-      (d.own ? setRow(SP.t('settings.dropOwn'), esc(SP.t('settings.dropOwnHint')), '<button type="button" class="btn btn-danger-outline" id="sDropOwn">' + SP.icon('undo-2') + '<span>' + esc(SP.t('settings.dropOwnBtn')) + '</span></button>') : '') + '</div>' +
+      (d.own ? setRow(SP.t('settings.dropOwn'), esc(SP.t('settings.dropOwnHint')), '<button type="button" class="btn btn-danger-outline" id="sDropOwn">' + SP.icon('undo-2') + '<span>' + esc(SP.t('settings.dropOwnBtn')) + '</span></button>') : '') +
+      /* папки курса, которые студент убрал у себя: телефон помнит только их названия, чтобы они не вернулись при обновлении */
+      (Object.keys(d.removed || {}).length ? setRow(SP.t('settings.removedFolders', { n: Object.keys(d.removed).length }), esc(SP.t('settings.removedFoldersHint')), '<button type="button" class="btn" id="sRestoreRm">' + SP.icon('undo-2') + '<span>' + esc(SP.t('subjects.restoreRemoved')) + '</span></button>') : '') + '</div>' +
       '<div class="set-group"><div class="section-title">' + esc(SP.t('settings.backup')) + '</div>' +
       setRow(SP.t('settings.export'), esc(SP.t('settings.exportHint')), '<button type="button" class="btn" id="sExport">' + SP.icon('download') + '<span>' + esc(SP.t('settings.exportBtn')) + '</span></button>') +
       setRow(SP.t('settings.import'), esc(SP.t('settings.importHint')), '<button type="button" class="btn" id="sImport">' + SP.icon('upload') + '<span>' + esc(SP.t('settings.importBtn')) + '</span></button>') +
@@ -171,6 +173,7 @@
     });
     on('#sUp', SP.schedule.upload); on('#sDl', SP.hub.exportAll); on('#sHelp', SP.schedule.help); on('#sEdit', SP.schedule.editJson);
     on('#sDropOwn', function () { SP.confirm({ title: SP.t('settings.dropOwn'), text: SP.t('settings.dropOwnText'), okLabel: SP.t('settings.dropOwnBtn'), danger: true }).then(function (ok) { if (ok) { SP.hub.clearOwn(); render(); SP.toast(SP.t('settings.saved'), 'success'); } }); });
+    on('#sRestoreRm', function () { SP.hub.restoreRemoved(); render(); SP.toast(SP.t('subjects.restored'), 'success'); });
     on('#sCourse', function () { SP.hub.refreshBase(true).then(render); });
     on('#sGhS', function () { SP.hub.exportGithub('schedule'); }); on('#sGhM', function () { SP.hub.exportGithub('manifest'); });
     on('#sExport', exportBackup); on('#sImport', importBackup); on('#sWipe', wipe);

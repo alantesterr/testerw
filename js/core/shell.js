@@ -15,6 +15,7 @@
   var MAIN = [
     { id: 'schedule', icon: 'calendar-days', key: 'nav.schedule' },
     { id: 'subjects', icon: 'folder', key: 'nav.subjects' },
+    { id: 'homework', icon: 'notebook-pen', key: 'nav.homework' },
     { id: 'tester', icon: 'list-checks', key: 'nav.tester' },
     { id: 'grades', icon: 'graduation-cap', key: 'nav.grades' },
     { id: 'player', icon: 'circle-play', key: 'nav.player' }

@@ -12,7 +12,7 @@ SP.I18N.kk = {
 
   'nav.label': 'Бүйір панелі', 'nav.main': 'Негізгі бөлімдер',
   'nav.schedule': 'Сабақ кестесі', 'nav.scheduleShort': 'Кесте',
-  'nav.subjects': 'Пән папкалары', 'nav.subjectsShort': 'Папкалар',
+  'nav.subjects': 'Пән папкалары', 'nav.subjectsShort': 'Папкалар', 'nav.homework': 'Үй жұмысы', 'nav.homeworkShort': 'Үй жұмысы',
   'nav.tester': 'Тестер', 'nav.testerShort': 'Тестер',
   'nav.grades': 'Бағалар', 'nav.gradesShort': 'Бағалар',
   'nav.player': 'Ойнатқыш', 'nav.playerShort': 'Ойнатқыш',

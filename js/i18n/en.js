@@ -12,7 +12,7 @@ SP.I18N.en = {
 
   'nav.label': 'Sidebar', 'nav.main': 'Main sections',
   'nav.schedule': 'Schedule', 'nav.scheduleShort': 'Schedule',
-  'nav.subjects': 'Subject folders', 'nav.subjectsShort': 'Folders',
+  'nav.subjects': 'Subject folders', 'nav.subjectsShort': 'Folders', 'nav.homework': 'Homework', 'nav.homeworkShort': 'Homework',
   'nav.tester': 'Tester', 'nav.testerShort': 'Tester',
   'nav.grades': 'Grades', 'nav.gradesShort': 'Grades',
   'nav.player': 'Player', 'nav.playerShort': 'Player',

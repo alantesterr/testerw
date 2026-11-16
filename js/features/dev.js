@@ -62,7 +62,11 @@
     st.orig.forEach(function (o) { if (!seen[eid(o)]) del.push(o); });
     /* «Общие предметы из других групп» (include в manifest.json) — тоже изменение */
     var inc = JSON.stringify(st.inc || []) !== JSON.stringify(st.origInc || []);
-    return { add: add, mod: mod, del: del, inc: inc, n: add.length + mod.length + del.length + (inc ? 1 : 0) };
+    /* порядок файлов поменяли перетаскиванием — тоже изменение (порядок в manifest.json = порядок у студентов) */
+    var now = st.files.filter(function (f) { return f._o && om[f._o]; }).map(function (f) { return f._o; });
+    var was = st.orig.map(eid).filter(function (id) { return now.indexOf(id) >= 0; });
+    var ord = now.join('|') !== was.join('|');
+    return { add: add, mod: mod, del: del, inc: inc, ord: ord, n: add.length + mod.length + del.length + (inc ? 1 : 0) + (ord ? 1 : 0) };
   }
   /* файлы, которые надо положить в репозиторий (новые и с новым содержимым) */
   function uploads() { return st.files.filter(function (f) { return f.kind !== 'link' && f.path && (!f._o || f._edit); }); }
@@ -119,7 +123,7 @@
   function rowHtml(f, i, d) {
     var s = stateOf(f, d), link = f.kind === 'link';
     var meta = kindLabel(f) + (link ? ' · ' + f.url : f.size ? ' · ' + SP.formatSize(f.size) : '');
-    return '<div class="list-row dev-row' + (s ? ' dev-' + s : '') + '"><div class="list-row-main">' + SP.fileIcon(f.name, '', link) +
+    return '<div class="list-row dev-row dg-item' + (s ? ' dev-' + s : '') + '" data-dk="' + i + '"><span class="dg-grip" aria-hidden="true">' + SP.icon('grip-vertical') + '</span><div class="list-row-main">' + SP.fileIcon(f.name, '', link) +
       '<span class="meta"><b>' + esc(f.name) + '</b><small>' + esc(meta) + '</small></span></div>' +
       (s ? '<span class="badge ' + (s === 'new' ? 'badge-success' : 'badge-warning') + '">' + esc(SP.t('dev.st.' + s)) + '</span>' : '') +
       '<div class="dev-acts"><button type="button" class="btn btn-ghost btn-icon btn-sm" data-edit="' + i + '" aria-label="' + esc(SP.t('common.change')) + '" data-tip="' + esc(SP.t('common.change')) + '">' + SP.icon('pencil') + '</button>' +
@@ -168,7 +172,7 @@
       var rows = st.files.map(function (f, i) { return f.subject === name ? rowHtml(f, i, d) : ''; }).join('') +
         d.del.map(function (o, j) { return o.subject === name ? delRowHtml(o, j) : ''; }).join('');
       var n = st.files.filter(function (f) { return f.subject === name; }).length;
-      return '<section class="card dev-subj"><div class="card-head"><div><h2 class="card-title">' + SP.icon('folder') + esc(name) + '</h2><div class="card-sub">' + esc(SP.t('dev.count', { n: n })) + '</div></div>' +
+      return '<section class="card dev-subj" data-sk="' + k + '"><div class="card-head"><div><h2 class="card-title">' + SP.icon('folder') + esc(name) + '</h2><div class="card-sub">' + esc(SP.t('dev.count', { n: n })) + '</div></div>' +
         '<div class="btn-group">' +
         '<button type="button" class="btn btn-sm" data-add="test" data-s="' + k + '">' + SP.icon('plus', 'ic-sm') + '<span>' + esc(SP.t('dev.addTest')) + '</span></button>' +
         '<button type="button" class="btn btn-sm" data-add="material" data-s="' + k + '">' + SP.icon('plus', 'ic-sm') + '<span>' + esc(SP.t('dev.addMat')) + '</span></button>' +
@@ -182,7 +186,8 @@
     var chg = d.add.map(function (f) { return '<li class="dev-c-new">+ ' + esc(f.subject + ' / ' + f.name) + '</li>'; }).join('') +
       d.mod.map(function (f) { return '<li class="dev-c-mod">✎ ' + esc(f.subject + ' / ' + f.name) + '</li>'; }).join('') +
       d.del.map(function (f) { return '<li class="dev-c-del">− ' + esc(f.subject + ' / ' + f.name) + '</li>'; }).join('') +
-      (d.inc ? '<li class="dev-c-mod">✎ ' + esc(SP.t('dev.sharedTitle')) + '</li>' : '');
+      (d.inc ? '<li class="dev-c-mod">✎ ' + esc(SP.t('dev.sharedTitle')) + '</li>' : '') +
+      (d.ord ? '<li class="dev-c-mod">✎ ' + esc(SP.t('dev.orderChanged')) + '</li>' : '');
     html += '<section class="card dev-changes' + (d.n ? ' has' : '') + '" id="dvChanges"><div class="card-head"><div><h2 class="card-title">' + SP.icon('layers') + esc(SP.t('dev.changes')) + '</h2>' +
       '<div class="card-sub">' + esc(d.n ? SP.t('dev.sum', { a: d.add.length, d: d.del.length, m: d.mod.length }) : SP.t('dev.noChanges')) + '</div></div>' +
       (d.n ? '<button type="button" class="btn btn-ghost btn-sm" id="dvReset">' + SP.icon('rotate-ccw', 'ic-sm') + '<span>' + esc(SP.t('dev.reset')) + '</span></button>' : '') + '</div>' +
@@ -252,6 +257,19 @@
     on('#dvReset', function () { SP.confirm({ title: SP.t('dev.reset'), text: SP.t('dev.resetText'), okLabel: SP.t('dev.reset'), danger: true }).then(function (ok) { if (ok) reload(true); }); });
     var g = $('#dvGroup'); if (g) g.onchange = function () { var v = g.value; var go = function () { SP.store.del(DRAFT); IDB.clear().catch(function () { }); st = null; render(); load(v).then(render); }; if (diff().n) SP.confirm({ title: SP.t('dev.group'), text: SP.t('dev.reloadText'), danger: true }).then(function (ok) { if (ok) go(); else g.value = st.dir; }); else go(); };
     on('#dvSubj', addSubject);
+    /* файлы: перетащить внутри папки — порядок для всех; бросить на другую папку — перенести туда */
+    if (st && tab === 'folders') SP.dragSort(SP.$('.dev-page', root), { item: '.list-row.dg-item', skip: '.btn', target: '.dev-subj[data-sk]',
+      onSort: function (ids) {
+        var moved = ids.map(function (i) { return st.files[+i]; }), slots = [];
+        st.files.forEach(function (f, i) { if (moved.indexOf(f) >= 0) slots.push(i); });
+        slots.forEach(function (p, k) { st.files[p] = moved[k]; });
+        save(); render();
+      },
+      onDrop: function (tg, el) {
+        var f = st.files[+el.getAttribute('data-dk')], to = subs[+tg.getAttribute('data-sk')];
+        if (!f || !to || f.subject === to) return;
+        f.subject = to; save(); render(); SP.toast(SP.t('subjects.movedTo', { name: f.name, to: to }), 'success');
+      } });
     SP.$$('[data-add]', root).forEach(function (b) { b.onclick = function () { var s = subs[+b.getAttribute('data-s')], k = b.getAttribute('data-add'); if (k === 'link') editLink(null, s); else addFiles(s, k); }; });
     SP.$$('[data-dels]', root).forEach(function (b) { b.onclick = function () { delSubject(subs[+b.getAttribute('data-dels')]); }; });
     SP.$$('[data-edit]', root).forEach(function (b) { b.onclick = function () { var f = st.files[+b.getAttribute('data-edit')]; if (f.kind === 'link') editLink(f); else editFile(f); }; });
@@ -432,9 +450,10 @@
   }
   /* записать на GitHub несколько текстовых файлов одним коммитом (перед этим — точка сохранения).
      list: [{ path: 'data/ir-252/schedule.json', content: '…' }] */
-  function commitFiles(list, msg) {
+  /* o.noTag — без точки сохранения (мелочь вроде домашки, чтобы не вытеснять настоящие точки) */
+  function commitFiles(list, msg, o) {
     var h;
-    return head().then(function (sha) { h = sha; return tagAt(h); })
+    return head().then(function (sha) { h = sha; return o && o.noTag ? null : tagAt(h); })
       .then(function () { return gh('GET', '/git/commits/' + h); })
       .then(function (c) { return gh('POST', '/git/trees', { base_tree: c.tree.sha, tree: list.map(function (x) { return { path: x.path, mode: '100644', type: 'blob', content: x.content }; }) }); })
       .then(function (t) { return moveTo(h, t.sha, msg); })
@@ -583,6 +602,9 @@
       if (st && st.dir !== dir && diff().n) SP.confirm({ title: SP.t('dev.group'), text: SP.t('dev.reloadText'), danger: true }).then(function (ok) { if (ok) go(); }); else go();
     }
   };
+
+  /* «Домашка» (homework.js) публикует задание для группы через этот же ключ GitHub */
+  SP.devCore = core;
 
   function mount(el) {
     root = el; render();

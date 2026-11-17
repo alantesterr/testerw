@@ -61,12 +61,14 @@
         var cls = /^💡/.test(t) ? 'tip' : /^⚠/.test(t) ? 'trap' : /^👤/.test(t) ? 'who' : 'note';
         html = '<div class="ph-call ph-' + cls + '">' + inline(t.replace(/^(💡|⚠️|⚠|👤)\s*/, '')) + '</div>';
       } else html = '<p>' + inline(buf.join(' ')) + '</p>';
-      parts.push(html); plain.push(buf.join(' ')); buf = []; kind = '';
+      parts.push({ html: html, trap: kind === 'quote' && /ph-trap/.test(html) }); plain.push(buf.join(' ')); buf = []; kind = '';
     }
     function flush() {
       part(); if (!parts.length) { pid = ''; return; }
       var id = pid || ('auto-' + Object.keys(blocks).length);
-      blocks[id] = { id: id, html: parts.join(''), topic: T ? T.id : '', sec: sec ? sec.title : (T ? T.title : ''), text: plain.join(' ').replace(/[*`>|]/g, ' ') };
+      /* html — всё (для разбора под тестом); book — без «Ловушек»: они только в тестах */
+      var book = parts.filter(function (p) { return !p.trap; }).map(function (p) { return p.html; }).join('');
+      blocks[id] = { id: id, html: parts.map(function (p) { return p.html; }).join(''), book: book, topic: T ? T.id : '', sec: sec ? sec.title : (T ? T.title : ''), text: plain.filter(function (_, i) { return !parts[i].trap; }).join(' ').replace(/[*`>|]/g, ' ') };
       if (T) T.blocks.push(id);
       parts = []; plain = []; pid = '';
     }
@@ -87,7 +89,8 @@
   function topicHtml(t) {
     return '<h2 class="ph-th" id="ph-' + esc(t.id) + '">' + esc(t.title) + '</h2>' + t.blocks.map(function (b) {
       if (typeof b !== 'string') return '<h3 class="ph-sh" id="ph-' + esc(b.head.id) + '">' + esc(b.head.title) + '</h3>';
-      var x = D.book.blocks[b]; return '<div class="ph-b" id="ph-' + esc(b) + '">' + x.html + '</div>';
+      var x = D.book.blocks[b]; if (!x.book) return '';
+      return '<div class="ph-b" id="ph-' + esc(b) + '">' + x.book + '</div>';
     }).join('');
   }
 
@@ -225,9 +228,9 @@
   }
   function searchHtml(q) {
     var words = SP.lc(q).split(/\s+/).filter(Boolean), hits = [];
-    Object.keys(D.book.blocks).forEach(function (id) { var b = D.book.blocks[id], t = SP.lc(b.text); if (words.every(function (w) { return t.indexOf(w) >= 0; })) hits.push(b); });
+    Object.keys(D.book.blocks).forEach(function (id) { var b = D.book.blocks[id], t = SP.lc(b.text); if (b.book && words.every(function (w) { return t.indexOf(w) >= 0; })) hits.push(b); });
     return '<h2 class="ph-th">' + esc(SP.t('ph.found', { n: hits.length })) + '</h2>' + hits.slice(0, 60).map(function (b) {
-      var t = topicOf(b.topic); return '<a class="ph-hit-row" href="#/philo/book/' + esc(b.id) + '"><small>' + esc((t ? t.id.replace('t', 'Тема ') + ' · ' : '') + b.sec) + '</small>' + b.html + '</a>';
+      var t = topicOf(b.topic); return '<a class="ph-hit-row" href="#/philo/book/' + esc(b.id) + '"><small>' + esc((t ? t.id.replace('t', 'Тема ') + ' · ' : '') + b.sec) + '</small>' + b.book + '</a>';
     }).join('');
   }
   /* открыть учебник на абзаце: показать его тему, прокрутить, подсветить */
@@ -239,6 +242,12 @@
   function openBook(id) {
     var b = D.book.blocks[id], t = b ? b.topic : (topicOf(id) ? id : (D.book.topics.filter(function (x) { return x.secs.some(function (s) { return s.id === id; }); })[0] || {}).id);
     topicView = t || topicView; anchor = id;
+    /* абзац — «Ловушка» (в учебнике её нет): ведём на ближайший абзац выше в той же теме */
+    if (b && !b.book) {
+      var T = topicOf(b.topic), list = T ? T.blocks.filter(function (x) { return typeof x === 'string'; }) : [], k = list.indexOf(id);
+      while (k > 0 && !D.book.blocks[list[k]].book) k--;
+      anchor = list[k] && D.book.blocks[list[k]].book ? list[k] : (T ? T.id : id);
+    }
   }
 
   /* ---------- События ---------- */
@@ -253,7 +262,8 @@
     on('#phNext', function () { step(1); });
     SP.$$('[data-next]', root).forEach(function (b) { b.onclick = function () { step(1); }; });
     on('#phPrev', function () { step(-1); });
-    on('#phMore', function () { var s = st(), x = D.all[s.run.ids[s.run.i]]; fromRun = true; SP.navigate('philo', ['book', x.l[0]]); });
+    /* «Подробнее» — на первый абзац разбора, который есть в учебнике (не «Ловушку») */
+    on('#phMore', function () { var s = st(), x = D.all[s.run.ids[s.run.i]], id = x.l.filter(function (k) { var b = D.book.blocks[k]; return b && b.book; })[0] || x.l[0]; fromRun = true; SP.navigate('philo', ['book', id]); });
     on('#phBack', function () { fromRun = false; SP.navigate('philo'); });
     on('#phRetry', function () { var s = st(), r = s.run, bad = r.ids.filter(function (id) { var v = r.res[id]; return v != null && v !== 0; }); s.run = { src: r.src, topic: r.topic, ids: bad, i: 0, seed: String(Date.now()), res: {} }; save(s); render(); });
     on('#phNew', function () { var s = st(); s.run = null; save(s); render(); });

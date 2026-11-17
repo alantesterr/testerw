@@ -1528,3 +1528,4 @@ Object.assign(SP.I18N.ru, {
   'schedule.break': 'Каникулы', 'schedule.breakN': 'Каникулы: {name}', 'schedule.offPeriod': 'Учёбы нет — вне учебного периода',
   'schedule.offBefore': 'учёба ещё не началась'
 });
+Object.assign(SP.I18N.ru, { 'schedule.session': 'Сессия — учебные недели закончились, здесь экзамены и консультации из Timetable' });

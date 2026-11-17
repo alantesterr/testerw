@@ -137,7 +137,8 @@
     (Array.isArray(man.files) ? man.files : []).forEach(function (f) { if (f && f.name) files.push(f); });
     (Array.isArray(man.links) ? man.links : []).forEach(function (l) { if (l && l.url) files.push(Object.assign({}, l, { kind: 'link', name: l.name || l.url })); });
     return {
-      version: String(man.version || sch.version || ''), fetchedAt: Date.now(),
+      /* версия = папки + расписание: правка только расписания (в «Разработчике») тоже должна дойти до студентов */
+      version: [man.version, sch.version].filter(Boolean).map(String).join(' · '), fetchedAt: Date.now(),
       timeSlots: Array.isArray(sch.timeSlots) && sch.timeSlots.length ? sch.timeSlots : null,
       subjects: Array.isArray(sch.subjects) ? sch.subjects : (Array.isArray(man.subjects) ? man.subjects : []),
       schedule: Array.isArray(sch.schedule) ? sch.schedule : [], files: files,
@@ -442,11 +443,12 @@
     SP.store.set(CAL_KEY, c); weekCache = {}; return true;
   }
   function getCalendar() { return SP.store.get(CAL_KEY, null); }
-  /* Какой учебный период действует: свой (Настройки → Мои данные) → календарь Platonus → период группы из schedule.json */
+  /* Какой учебный период действует: свой (Настройки → Мои данные) → период группы из schedule.json.
+     Календарь Platonus — только если периода нет: расписание группы сделано на один семестр,
+     и в следующем семестре (он тоже есть в календаре) его повторять нельзя. */
   function activePeriod() {
     var P = SP.period; if (!P) return null;
     var own = P.own(); if (own) return { p: own, src: 'own' };
-    if (getCalendar()) return null;
     var c = base && P.clean(base.period); return c ? { p: c, src: 'course' } : null;
   }
   /* Неделя (пн–сб) учебная? null — ни периода, ни календаря */
@@ -483,6 +485,8 @@
         return weekCache[iso];
       }
     }
+    /* настоящие недели из Timetable (вместе с сессией и экзаменами) — как есть; иначе неделя-образец,
+       но только внутри учебного периода (вне его, в каникулы и в следующем семестре — пусто) */
     if (studyWeek(mon) === false) return [];
     return data.schedule;
   }

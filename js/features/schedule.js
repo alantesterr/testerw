@@ -38,6 +38,8 @@
      неделя без учёбы — «Каникулы» или «Учёбы нет — вне учебного периода» (пар на ней нет) */
   function calLine() {
     var w = SP.hub.weekInfo(monday(weekOff)); if (!w) return '';
+    /* неделя вне периода, но Timetable прислал на неё пары — это сессия (экзамены, консультации) */
+    if (w.off && w.off !== 'break' && weekLessons().length) return '<div class="sch-cal small subtle">' + SP.icon('graduation-cap', 'ic-sm') + '<span><b>' + esc(SP.t('schedule.session')) + '</b></span></div>';
     if (w.off) return '<div class="sch-cal sch-off small">' + SP.icon(w.off === 'break' ? 'sun' : 'moon', 'ic-sm') + '<span><b>' + esc(w.off === 'break' ? (w.name ? SP.t('schedule.breakN', { name: w.name }) : SP.t('schedule.break')) : SP.t('schedule.offPeriod')) + '</b>' +
       (w.off === 'before' ? ' · ' + esc(SP.t('schedule.offBefore')) : '') + '</span></div>';
     if (!w.n && !w.rk.length) return '';

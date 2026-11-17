@@ -1764,3 +1764,16 @@ html.hw-badge [data-route="homework"]::after { content: var(--hw-n); position: a
 .ph-b.ph-target { box-shadow: inset 3px 0 0 var(--warning); }
 .ph-back { position: sticky; top: .75rem; z-index: 6; box-shadow: var(--shadow-md, 0 4px 14px rgb(0 0 0 / .25)); }
 @media (max-width: 767px) { .ph-back { top: calc(3.75rem + env(safe-area-inset-top, 0px)); } }
+.sch-cal.sch-off { color: var(--text-2); padding: .45rem .7rem; border-radius: var(--r-md); background: var(--surface-2); border: 1px dashed var(--border-strong); }
+.ds-brs { display: flex; flex-wrap: wrap; gap: .4rem; } .ds-period.none { border-style: dashed; }
+/* окно «Учебный период» (js/features/period.js) */
+.per-two { display: grid; grid-template-columns: 1fr 9rem; gap: var(--sp-2); }
+.per-br { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1.2fr) auto; gap: .4rem; align-items: center; }
+.per-sum { display: flex; gap: .45rem; align-items: flex-start; padding: .6rem .75rem; border-radius: var(--r-md); background: var(--accent-soft); font-size: var(--fs-sm); line-height: 1.45; }
+.per-sum .ic-sm { flex: none; margin-top: 3px; }
+@media (max-width: 599px) {
+  .per-br { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; }
+  .per-br > [data-k="name"] { grid-column: 1 / -2; grid-row: 2; }
+  .per-br > [data-del] { grid-column: -2; grid-row: 2; }
+  .per-br { padding-bottom: .4rem; border-bottom: 1px solid var(--border); }
+}

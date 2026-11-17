@@ -140,7 +140,9 @@
       version: String(man.version || sch.version || ''), fetchedAt: Date.now(),
       timeSlots: Array.isArray(sch.timeSlots) && sch.timeSlots.length ? sch.timeSlots : null,
       subjects: Array.isArray(sch.subjects) ? sch.subjects : (Array.isArray(man.subjects) ? man.subjects : []),
-      schedule: Array.isArray(sch.schedule) ? sch.schedule : [], files: files
+      schedule: Array.isArray(sch.schedule) ? sch.schedule : [], files: files,
+      /* учебный период группы (js/features/period.js): вне его и в каникулы расписание пустое */
+      period: sch.period || null
     };
   }
   function fetchBase() {
@@ -440,21 +442,34 @@
     SP.store.set(CAL_KEY, c); weekCache = {}; return true;
   }
   function getCalendar() { return SP.store.get(CAL_KEY, null); }
-  /* Неделя (пн–сб) попадает в семестр? null — календаря нет */
+  /* Какой учебный период действует: свой (Настройки → Мои данные) → календарь Platonus → период группы из schedule.json */
+  function activePeriod() {
+    var P = SP.period; if (!P) return null;
+    var own = P.own(); if (own) return { p: own, src: 'own' };
+    if (getCalendar()) return null;
+    var c = base && P.clean(base.period); return c ? { p: c, src: 'course' } : null;
+  }
+  /* Неделя (пн–сб) учебная? null — ни периода, ни календаря */
   function studyWeek(mon) {
+    var ap = activePeriod(); if (ap) return !SP.period.week(ap.p, mon).off;
     var cal = getCalendar(); if (!cal) return null;
     var m = mondayOf(mon), a = isoDay(m), b = isoDay(new Date(m.getTime() + 5 * 864e5));
     return cal.semesters.some(function (s) { return s.start <= b && s.end >= a; });
   }
-  /* Номер недели семестра и рубежные контроли на этой неделе */
+  /* Номер недели семестра, рубежные контроли на этой неделе; off — учёбы нет ('before' | 'after' | 'break' | 'out') */
   function weekInfo(mon) {
-    var cal = getCalendar(); if (!cal) return null;
+    var ap = activePeriod(), cal = getCalendar();
     var m = mondayOf(mon), a = isoDay(m), b = isoDay(new Date(m.getTime() + 5 * 864e5)), out = { n: 0, total: 0, rk: [] };
-    cal.semesters.forEach(function (s) {
-      if (s.start > b || s.end < a) return;
-      out.n = Math.round((m - mondayOf(new Date(s.start + 'T12:00:00'))) / (7 * 864e5)) + 1; out.total = +s.weeks || 0;
-    });
-    (cal.events || []).forEach(function (e) { if (e.kind === 'rk' && e.from <= b && e.to >= a) out.rk.push(e); });
+    if (ap) { var w = SP.period.week(ap.p, mon); out.n = w.n || 0; out.total = w.total || ap.p.weeks; out.off = w.off || ''; out.name = w.name || ''; }
+    else if (!cal) return null;
+    else {
+      cal.semesters.forEach(function (s) {
+        if (s.start > b || s.end < a) return;
+        out.n = Math.round((m - mondayOf(new Date(s.start + 'T12:00:00'))) / (7 * 864e5)) + 1; out.total = +s.weeks || 0;
+      });
+      if (!out.n) out.off = 'out';
+    }
+    if (cal) (cal.events || []).forEach(function (e) { if (e.kind === 'rk' && e.from <= b && e.to >= a) out.rk.push(e); });
     return out;
   }
   /* Занятия конкретной недели: как в Timetable, если она есть; вне семестра — пусто; иначе неделя-образец */
@@ -676,7 +691,7 @@
     base: function () { return base; },
     refreshBase: refreshBase, checkUpdate: checkUpdate, acceptUpdate: acceptUpdate, pendingUpdate: function () { return pendBase; },
     fetchSite: fetchSite, parseScheduleHtml: parseScheduleHtml, importTimetable: importTimetable, ttLink: ttLink,
-    setCalendar: function (c) { var ok = setCalendar(c); if (ok) SP.emit('hub'); return ok; }, calendar: getCalendar, weekInfo: weekInfo, weekSchedule: weekSchedule,
+    setCalendar: function (c) { var ok = setCalendar(c); if (ok) SP.emit('hub'); return ok; }, calendar: getCalendar, weekInfo: weekInfo, weekSchedule: weekSchedule, activePeriod: activePeriod,
     importFiles: importFiles, exportAll: exportAll, exportGithub: exportGithub,
     importShared: importShared, mateOf: mateOf, mergeAllShared: mergeAllShared,
     subjectNames: function () { var seen = {}; return data.subjects.map(function (x) { return cleanName(x.name); }).filter(function (n) { if (!n || seen[n]) return false; seen[n] = 1; return true; }); },

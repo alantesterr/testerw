@@ -34,9 +34,13 @@
   function weekLessons() { return SP.hub.weekSchedule(monday(weekOff)); }
   function lessonsAt(day, slotId) { return weekLessons().filter(function (l) { return Number(l.day) === day && String(l.slotId) === String(slotId); }); }
   function dayHas(day) { return weekLessons().some(function (l) { return Number(l.day) === day; }); }
-  /* «8-я неделя из 15 · Рубежный контроль 1 (26.10–01.11)» — по академическому календарю Platonus */
+  /* «8-я неделя из 15 · Рубежный контроль 1 (26.10–01.11)» — по учебному периоду (period.js) или календарю Platonus;
+     неделя без учёбы — «Каникулы» или «Учёбы нет — вне учебного периода» (пар на ней нет) */
   function calLine() {
-    var w = SP.hub.weekInfo(monday(weekOff)); if (!w || (!w.n && !w.rk.length)) return '';
+    var w = SP.hub.weekInfo(monday(weekOff)); if (!w) return '';
+    if (w.off) return '<div class="sch-cal sch-off small">' + SP.icon(w.off === 'break' ? 'sun' : 'moon', 'ic-sm') + '<span><b>' + esc(w.off === 'break' ? (w.name ? SP.t('schedule.breakN', { name: w.name }) : SP.t('schedule.break')) : SP.t('schedule.offPeriod')) + '</b>' +
+      (w.off === 'before' ? ' · ' + esc(SP.t('schedule.offBefore')) : '') + '</span></div>';
+    if (!w.n && !w.rk.length) return '';
     var dm = function (s) { return s.slice(8, 10) + '.' + s.slice(5, 7); };
     var parts = [];
     if (w.n) parts.push(SP.t(w.total ? 'schedule.weekOf2' : 'schedule.weekN', { n: w.n, t: w.total }));
@@ -422,6 +426,13 @@
 
   /* ---------- Загрузка / помощь / ручная правка (используются и из Настроек) ---------- */
   SP.schedule = {
+    /* свой учебный период (period.js): если не задан — подставляем период группы, чтобы было что поправить */
+    period: function () {
+      var ap = SP.hub.activePeriod && SP.hub.activePeriod(), own = SP.period.own();
+      SP.period.dialog(own || (ap && ap.p), { text: SP.t('per.ownText'),
+        onSave: function (p) { SP.period.setOwn(p); SP.toast(SP.t('per.saved', { l: SP.period.label(p) }), 'success', { ms: 6000 }); },
+        onClear: own ? function () { SP.period.setOwn(null); SP.toast(SP.t('per.cleared'), 'success'); } : null });
+    },
     /* вид пары точно как в Расписании — для наглядного редактора в «Разработчике» (dev-schedule.js) */
     look: function (l) { var x = info(l); return { name: x.name, ab: x.ab, cls: kindCls(x.ab), kind: kindLong(x.ab) || x.ab, room: ttRoom(x.room), building: x.building ? ttBld(x.building) : '', teacher: x.teacher }; },
     /* Занятия предмета (для папки): день, время, тип, кабинет, преподаватель */
@@ -444,7 +455,10 @@
           if (rep.schedSkipped) rows.push(SP.t('import.kept'));
           var body = '<ul>' + rows.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>' +
             (rep.errs.length ? '<div class="alert alert-danger">' + SP.icon('circle-x') + '<div class="alert-body">' + rep.errs.map(esc).join('<br>') + '<span>' + esc(SP.t('import.safe')) + '</span></div></div>' : '');
-          SP.modal({ title: SP.t(rep.files ? 'import.done' : 'import.failed'), body: body, actions: [{ label: SP.t('common.understood'), kind: 'primary' }] });
+          /* после загрузки своего расписания — предложить указать учебный период (сколько недель учёба, каникулы) */
+          var acts = [{ label: SP.t('common.understood'), kind: rep.sched && !SP.period.own() ? '' : 'primary' }];
+          if (rep.sched && SP.period) acts.push({ label: SP.t('per.setBtn'), icon: 'calendar-days', kind: SP.period.own() ? '' : 'primary', onClick: function () { SP.schedule.period(); } });
+          SP.modal({ title: SP.t(rep.files ? 'import.done' : 'import.failed'), body: body, actions: acts });
           if (rep.files) SP.navigate('schedule');
         });
       };

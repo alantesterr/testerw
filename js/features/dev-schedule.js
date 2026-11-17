@@ -25,7 +25,7 @@
   function empty() { return { version: '', timeSlots: DEF_SLOTS.map(function (x, i) { return { id: 'p' + (i + 1), start: x[0], end: x[1] }; }), subjects: [], schedule: [] }; }
   function norm(x) {
     x = x || {};
-    var s = { version: String(x.version || ''), timeSlots: [], subjects: [], schedule: [] };
+    var s = { version: String(x.version || ''), timeSlots: [], subjects: [], schedule: [], period: SP.period ? SP.period.clean(x.period) : null };
     s.timeSlots = (Array.isArray(x.timeSlots) && x.timeSlots.length ? x.timeSlots : empty().timeSlots).map(function (t) { return { id: String(t.id || uid('p')), start: hm(t.start), end: hm(t.end) }; });
     s.subjects = (Array.isArray(x.subjects) ? x.subjects : []).filter(function (j) { return j && j.name; }).map(function (j) { return { id: String(j.id || uid('s')), code: j.code || '', name: String(j.name), teacher: j.teacher || '' }; });
     s.schedule = (Array.isArray(x.schedule) ? x.schedule : []).filter(function (l) { return l && l.day >= 0 && l.day <= 5; }).map(function (l) {
@@ -54,7 +54,7 @@
   function outJson() {
     var sj = {}; S.subjects.forEach(function (j) { sj[j.id] = j; });
     var o = {
-      version: core.nextVersion(S.version), updatedAt: new Date().toISOString(), timeSlots: S.timeSlots, subjects: S.subjects,
+      version: core.nextVersion(S.version), updatedAt: new Date().toISOString(), period: S.period || undefined, timeSlots: S.timeSlots, subjects: S.subjects,
       schedule: S.schedule.filter(function (l) { return sj[l.subjectId]; }).sort(function (a, b) { return a.day - b.day || slotIdx(a.slotId) - slotIdx(b.slotId); }).map(function (l, i) {
         var j = sj[l.subjectId];
         return { id: 'lesson-' + (i + 1), day: l.day, slotId: l.slotId, subjectId: l.subjectId, code: j.code || '', name: j.name, kind: l.kind, room: l.room, building: l.building, teacher: j.teacher || '' };
@@ -154,6 +154,12 @@
 
     /* сохранить */
     h += saveCard(has);
+
+    /* учебный период группы: вне его и в каникулы у студентов пустые недели (period.js) */
+    h += '<section class="card ds-period' + (S.period ? '' : ' none') + '"><div class="card-head"><div><h2 class="card-title">' + SP.icon('calendar-days') + esc(SP.t('per.title')) + '</h2>' +
+      '<div class="card-sub">' + esc(S.period ? SP.period.label(S.period) : SP.t('per.devNone')) + '</div></div>' +
+      '<button type="button" class="btn' + (S.period ? '' : ' btn-primary') + '" id="dsPeriod">' + SP.icon(S.period ? 'pencil' : 'plus') + '<span>' + esc(SP.t(S.period ? 'common.change' : 'per.setShort')) + '</span></button></div>' +
+      (S.period && S.period.breaks.length ? '<div class="ds-brs">' + S.period.breaks.map(function (b) { return '<span class="hw-chip">' + SP.icon('sun', 'ic-sm') + esc((b.name ? b.name + ': ' : '') + b.from.slice(8, 10) + '.' + b.from.slice(5, 7) + '–' + b.to.slice(8, 10) + '.' + b.to.slice(5, 7)) + '</span>'; }).join('') + '</div>' : '') + '</section>';
 
     /* неделя — как у студента */
     h += '<section class="card ds-week"><div class="card-head"><div><h2 class="card-title">' + SP.icon('calendar-days') + esc(SP.t('dev.s.week')) + '</h2><div class="card-sub">' + esc(SP.t('dev.s.gridHint')) + '</div></div>' +
@@ -286,6 +292,7 @@
     var on = function (s, fn) { var el = SP.$(s, box); if (el) el.onclick = fn; };
     on('#dsReset', function () { SP.confirm({ title: SP.t('dev.reset'), text: SP.t('dev.s.reloadText'), okLabel: SP.t('dev.reset'), danger: true }).then(function (ok) { if (ok) { SP.store.del(dkey()); load(dir, true); } }); });
     on('#dsPub', publish);
+    on('#dsPeriod', function () { SP.period.dialog(S.period, { text: SP.t('per.devText'), onSave: function (p) { S.period = p; changed(true); }, onClear: function () { S.period = null; changed(true); } }); });
     on('#dsAddSlot', function () { var last = S.timeSlots[S.timeSlots.length - 1]; S.timeSlots.push({ id: uid('p'), start: last ? last.end : '08:30', end: '' }); changed(true); keepOpen(1); });
     on('#dsAddSubj', function () { S.subjects.push({ id: uid('s'), code: '', name: '', teacher: '' }); changed(true); keepOpen(0); var l = SP.$$('[data-subj][data-k="name"]', box); if (l.length) l[l.length - 1].focus(); });
     SP.$$('[data-dsview]', box).forEach(function (b) { b.onclick = function () { view = b.getAttribute('data-dsview'); SP.store.set(DRAFT + '-view', view); paint(); }; });

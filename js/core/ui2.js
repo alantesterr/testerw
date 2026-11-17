@@ -25,7 +25,7 @@
   html.classList.add('ui2');
 
   /* ---------- цвет раздела по адресу ---------- */
-  var ICON = { schedule: 'calendar-days', subjects: 'folder', homework: 'notebook-pen', notes: 'book-open', tester: 'list-checks', designer: 'square-pen', dev: 'code', grades: 'graduation-cap', player: 'circle-play', settings: 'settings' };
+  var ICON = { schedule: 'calendar-days', subjects: 'folder', homework: 'notebook-pen', notes: 'book-open', tester: 'list-checks', designer: 'square-pen', dev: 'code', philo: 'graduation-cap', grades: 'graduation-cap', player: 'circle-play', settings: 'settings' };
   function route() { return ((location.hash || '').replace(/^#\/?/, '').split('/')[0]) || 'schedule'; }
   function setRoute() { html.setAttribute('data-route', route()); }
   setRoute(); window.addEventListener('hashchange', setRoute);
@@ -97,11 +97,11 @@
   /* ---------- Настройки: 4 вкладки ---------- */
   /* Главное (группа, вид, язык) · Обновление · Мои данные · Справочник · Ещё (редко нужное: тестер, инструменты, игра, файлы курса, для автора, разработчик).
      «Новости» открываются из Справочника и по колокольчику, отдельной кнопки нет. */
-  var TABS = [['look', 'sun', ['account', 'appearance', 'language']], ['study', 'refresh-cw', ['sync']], ['data', 'database', ['data']], ['guide', 'book-open', ['about']], ['more', 'ellipsis', ['testerPlayer', 'tools', 'game', 'course', 'author']], ['dev', 'code', []], ['news', 'bell', []]];
-  /* «Разработчик» — не вкладка, а сразу переход в раздел #/dev */
+  var TABS = [['look', 'sun', ['account', 'appearance', 'language']], ['study', 'refresh-cw', ['sync']], ['data', 'database', ['data']], ['guide', 'book-open', ['about']], ['more', 'ellipsis', ['testerPlayer', 'tools', 'game', 'course', 'author']], ['philo', 'graduation-cap', []], ['dev', 'code', []], ['news', 'bell', []]];
+  /* «Философия» и «Разработчик» — не вкладки, а сразу переход в раздел (#/philo, #/dev) */
   var tab = 'look';
   try { tab = sessionStorage.getItem('sp-ui2-tab') || 'look'; } catch (e) { }
-  if (tab === 'dev') tab = 'look';
+  if (tab === 'dev' || tab === 'philo') tab = 'look';
   function setTab(t) { tab = t; try { sessionStorage.setItem('sp-ui2-tab', t); } catch (e) { } }
   function settings(root) {
     var page = SP.$('.page', root); if (!page) return;
@@ -129,7 +129,7 @@
       if (tab === 'news') markRead();
     };
     var more = SP.$('#ui2NewsMore', newsSec); if (more) more.onclick = function () { SP.$('#ui2NewsOld', newsSec).hidden = false; more.remove(); };
-    SP.$$('.ui2-tab', nav).forEach(function (b) { b.onclick = function () { var t = b.getAttribute('data-tab'); if (t === 'dev') { SP.navigate('dev'); return; } setTab(t); paint(); }; });
+    SP.$$('.ui2-tab', nav).forEach(function (b) { b.onclick = function () { var t = b.getAttribute('data-tab'); if (t === 'dev' || t === 'philo') { SP.navigate(t); return; } setTab(t); paint(); }; });
     SP.$$('[data-ch]', guide).forEach(function (b) { b.onclick = function () { chapter(+b.getAttribute('data-ch')); }; });
     SP.$('#ui2News', guide).onclick = function () { setTab('news'); paint(); };
     SP.$('#ui2Tour', guide).onclick = function () { SP.store.set(TOUR_KEY, {}); SP.navigate('schedule'); setTimeout(function () { maybeTour('schedule', true); }, 600); };

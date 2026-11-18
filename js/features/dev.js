@@ -505,8 +505,8 @@
   function keyDialog() {
     var m = SP.modal({
       title: SP.t('dev.keyAdd'), size: 'lg',
-      body: '<ol class="dev-steps">' + SP.t('dev.k.steps', { url: 'https://github.com/settings/personal-access-tokens/new', repo: GH.repo }) + '</ol>' +
-        '<div class="field"><label class="label" for="dvK">' + esc(SP.t('dev.k.paste')) + '</label><input class="input" id="dvK" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"><span class="error-text" id="dvKE" role="alert"></span></div>' +
+      body: '<ol class="dev-steps">' + SP.t('dev.k.steps', { url: 'https://github.com/settings/tokens/new?description=StudyPlay&scopes=public_repo', inv: GH_WEB + '/invitations', repo: GH.repo }) + '</ol>' +
+        '<div class="field"><label class="label" for="dvK">' + esc(SP.t('dev.k.paste')) + '</label><input class="input" id="dvK" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_…"><span class="error-text" id="dvKE" role="alert"></span></div>' +
         '<div class="alert alert-warning">' + SP.icon('shield-check') + '<div class="alert-body">' + esc(SP.t('dev.k.warn')) + '</div></div>',
       actions: [{ label: SP.t('common.cancel') }, { label: SP.t('dev.k.check'), kind: 'primary', icon: 'check', close: false, onClick: function (api, b) {
         var v = SP.$('#dvK', m.el).value.trim(), er = SP.$('#dvKE', m.el); er.textContent = '';

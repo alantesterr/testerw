@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-16.1",
+  "version": "2026-11-20.1",
   "files": [
     {
       "subject": "Экзамен",
@@ -60,7 +60,7 @@
     {
       "subject": "Object-Oriented Programming (Borland C ++ Builder)",
       "kind": "test",
-      "name": "C++ Тест 1 (РК1, темы 1–6).docx",
+      "name": "C++ Тест 1 (РК1, темы 11–6).docx",
       "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C++ Тест 1 (РК1, темы 1–6).docx",
       "size": 47457
     },

@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-20.2",
+  "version": "2026-11-27.1",
   "files": [
     {
       "subject": "Экзамен",
@@ -218,6 +218,13 @@
       "name": "C_questions_на_Анг.txt",
       "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/C_questions_English.txt",
       "size": 40420
+    },
+    {
+      "subject": "Object-Oriented Programming (Borland C ++ Builder)",
+      "kind": "test",
+      "name": "StudyPlay_RK1_OOP.docx",
+      "path": "data/ir-252/files/Object-Oriented Programming (Borland C ++ Builder)/StudyPlay_RK1_OOP.docx",
+      "size": 115639
     }
   ]
 }
